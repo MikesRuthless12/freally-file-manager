@@ -117,6 +117,7 @@ workloads.
 - **Synchronized state.** Pause / cancel / resume that originates on the desktop UI flows back to the PWA via `JobStateChanged` streaming events; the inverse path uses standard request / `Ok` reply. Desktop exit emits `ServerShuttingDown` so the PWA shows an explicit "Desktop exited — reconnect when Copy That is running again" screen instead of a generic disconnect.
 - **Push notifications.** APNs ES256 JWT + FCM RS256 JWT signers in `copythat_mobile::notify` for completion notifications when the data channel is asleep. Real provider-token signing is wired today; the runner reads the credentials out of the `MobileSettings` blob (the keychain migration lands in a Phase 37 follow-up).
 - **Exit button.** Phone-side button cleanly disconnects PeerJS, sends `Goodbye`, and clears the in-memory session so a closed tab can't accidentally leak a control link.
+- **Broker supply-chain audit.** The Phase 42 fix-swarm verified `peerjs@^1.5.5` is actively maintained (1.5.5 / Jun 2025 / MIT) and ruled out a replacement; the documented mitigation is to self-host the broker rather than rely on the public `0.peerjs.com` default. Full evaluation + four-candidate comparison in [`docs/PEERJS_REPLACEMENT_PLAN.md`](docs/PEERJS_REPLACEMENT_PLAN.md).
 
 ### `copythat` CLI (Phase 36)
 
@@ -145,6 +146,7 @@ workloads.
 - **`PlatformFastCopyHook` everywhere** — every entry point (CLI, UI start_copy, UI rerun, CLI shell-extension enqueue) attaches the hook so reflink + `CopyFileExW` + the Phase 38 dedup ladder are the default fast paths.
 - **Phase 40 named-pipe broker** — `copythat-ui --enqueue` invocations forward argv to the running first instance via named pipe in **110 ms** instead of booting a fresh ~5 second Tauri runtime per call.
 - **Phase 41 cross-volume auto-engage** — `is_cross_volume(src, dst)` automatically routes large cross-volume copies through the overlapped-IOCP pipeline with 8 in-flight × 4 MiB buffers + cached I/O (matches Robocopy's USB tuning).
+- **Phase 42 fix-swarm** — 15 parallel agents addressed every CRITICAL/HIGH/MEDIUM finding from a 10-agent review-swarm pass: HMAC-authenticated named-pipe broker, mobile pairing nonce challenge-response, IOCP loop generation-counter + cancel-drain hardening, CopyFile2 HRESULT facility-7 check, EncryptionSink explicit-finish enforcement, cloud PUT atomicity, audit chain-hash de-circularization, and ~75 more — all behind `[skip ci]` until reviews land.
 - **1 MiB** is the measured optimum buffer size on the default `CopyFileExW` path; all other sizes regressed in the Phase 13b sweep — see [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md).
 - **Head-to-head methodology + per-scenario numbers** live in [`COMPETITOR-TEST.md`](COMPETITOR-TEST.md) at the repo root (256 MiB + 10 GiB workloads across same-volume, cross-NTFS, external-SSD destinations).
 - **Cross-volume reflink guard** avoids a pointless syscall on copies that can't possibly reflink (different volume IDs).
@@ -154,7 +156,7 @@ workloads.
 
 ## Targets
 
-- Windows 10+
+- Windows 11+ (build 22000+) — Win10 dropped in Phase 42 (Microsoft EOL October 2025)
 - macOS 12+ (Monterey and later)
 - Linux (Ubuntu 22.04+, Fedora 38+, Arch, …)
 
