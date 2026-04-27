@@ -340,10 +340,22 @@ unsafe fn do_overlapped_copy(
     // sector multiple. Probe via a temp open; fall back to 4096
     // (the most common physical-sector size on modern NVMe).
     let sector_bytes: u32 = sector_size_for(dst).unwrap_or(4096);
-    debug_assert!(sector_bytes.is_power_of_two());
+    // Phase 42 — tightened invariants. NO_BUFFERING demands a power-of-
+    // two sector size ≥ 512 B (FAT/NTFS hard floor). 4 KiB is the
+    // physical-sector default on every modern NVMe / SSD; floppy-era
+    // 512 B drives are still spec-legal but vanishingly rare. Guard
+    // against a pathological GetDiskFreeSpaceW return slipping through.
+    debug_assert!(
+        sector_bytes.is_power_of_two() && sector_bytes >= 512,
+        "sector_bytes must be a power of two ≥ 512; got {sector_bytes}"
+    );
     let buffer_bytes = buffer_bytes();
     let n_slots = n_slots();
-    debug_assert!(buffer_bytes as u32 % sector_bytes == 0);
+    debug_assert!(
+        buffer_bytes as u32 % sector_bytes == 0,
+        "buffer_bytes ({buffer_bytes}) must be a multiple of sector_bytes ({sector_bytes}) for NO_BUFFERING"
+    );
+    debug_assert!(n_slots >= 1, "n_slots must be ≥ 1");
 
     // --- Open handles -----------------------------------------------
     let src_handle = OwnedHandle(
@@ -375,6 +387,9 @@ unsafe fn do_overlapped_copy(
     }
 
     // --- IOCP --------------------------------------------------------
+    // SAFETY: CreateIoCompletionPort(INVALID_HANDLE_VALUE, …) is the
+    // documented spelling for "create a fresh port" with no file
+    // associated. The returned handle is owned by `iocp_guard` below.
     let iocp = CreateIoCompletionPort(INVALID_HANDLE_VALUE, ptr::null_mut(), 0, 0);
     if iocp.is_null() {
         return Err(io::Error::other(format!(
@@ -384,6 +399,10 @@ unsafe fn do_overlapped_copy(
     }
     let iocp_guard = OwnedHandle(iocp);
 
+    // SAFETY: src_handle / dst_handle are valid open file handles owned
+    // by the OwnedHandle guards above; iocp is the port we just created.
+    // Re-using the same iocp value as the "ExistingCompletionPort" arg
+    // is the documented attach pattern.
     if CreateIoCompletionPort(src_handle.0, iocp, KEY_SRC, 0) != iocp {
         return Err(io::Error::other(format!(
             "CreateIoCompletionPort src: {}",
@@ -400,6 +419,11 @@ unsafe fn do_overlapped_copy(
     // --- Allocate buffers + contexts --------------------------------
     let mut buffers: Vec<OwnedBuffer> = Vec::with_capacity(n_slots);
     for _ in 0..n_slots {
+        // SAFETY: VirtualAlloc with MEM_COMMIT|MEM_RESERVE and a non-zero
+        // size returns either a valid page-aligned pointer or NULL on OOM.
+        // Page alignment is sector-aligned for any sector_bytes ≤ 4 KiB,
+        // which is the only case NO_BUFFERING cares about. The matching
+        // VirtualFree runs in OwnedBuffer::drop.
         let buf = VirtualAlloc(
             ptr::null_mut(),
             buffer_bytes,
@@ -458,6 +482,8 @@ unsafe fn do_overlapped_copy(
         // 250 ms timeout so we can check cancellation between
         // completions even on a stalled I/O — INFINITE would block
         // the cancel signal indefinitely.
+        // SAFETY: iocp is owned by `iocp_guard`; the three out-pointers
+        // point at stack locals in this scope.
         let ok = GetQueuedCompletionStatus(
             iocp,
             &mut bytes_xferred,
@@ -471,6 +497,8 @@ unsafe fn do_overlapped_copy(
             // Pure timeout — check cancel and loop.
             if ctrl.is_cancelled() && !cancelled {
                 cancelled = true;
+                // SAFETY: src_handle / dst_handle are valid open file
+                // handles owned by their OwnedHandle guards.
                 CancelIoEx(src_handle.0, ptr::null_mut());
                 CancelIoEx(dst_handle.0, ptr::null_mut());
             }
@@ -485,8 +513,16 @@ unsafe fn do_overlapped_copy(
             // acceptable terminators for an in-flight slot.
             if err == ERROR_HANDLE_EOF || cancelled {
                 if !overlapped_ptr.is_null() {
+                    // SAFETY: see the success-path note below — OpCtx is
+                    // `#[repr(C)]` with OVERLAPPED first, and the matching
+                    // Box<OpCtx> outlives the IOCP loop in `ctxs`.
                     let ctx_ptr = overlapped_ptr as *mut OpCtx;
                     let _ctx = &mut *ctx_ptr;
+                    debug_assert!(
+                        _ctx.slot_idx < n_slots,
+                        "OpCtx::slot_idx ({}) out of range at EOF/cancel drain",
+                        _ctx.slot_idx
+                    );
                     in_flight -= 1;
                 }
                 continue;
@@ -495,9 +531,25 @@ unsafe fn do_overlapped_copy(
         }
 
         // Successful completion: re-derive the OpCtx from the OVERLAPPED ptr.
+        // SAFETY: `OpCtx` is `#[repr(C)]` with `OVERLAPPED` as its first
+        // field, so a `*mut OVERLAPPED` returned by GQCS is bit-identical
+        // to a `*mut OpCtx` for the boxed contexts we submitted via
+        // `post_read`. The matching `Box<OpCtx>` lives in `ctxs` for the
+        // entire IOCP loop, so the pointer remains valid here.
         let ctx_ptr = overlapped_ptr as *mut OpCtx;
         let ctx = &mut *ctx_ptr;
+        // Phase 42 — every OpCtx access in the loop is bounded by the
+        // ctxs Vec's actual length. A wild slot_idx would index into
+        // `buffers` below and either OOB-panic or, worse, alias an
+        // unrelated allocation. Sanity-guard before either lookup.
+        debug_assert!(
+            ctx.slot_idx < n_slots,
+            "OpCtx::slot_idx ({}) out of range; n_slots = {}",
+            ctx.slot_idx,
+            n_slots
+        );
         let slot = ctx.slot_idx;
+        debug_assert!(slot < buffers.len() && slot < ctxs.len());
 
         match ctx.op {
             OpKind::Read => {
@@ -513,6 +565,11 @@ unsafe fn do_overlapped_copy(
                 let read_offset = ctx.file_offset;
                 ctx.op = OpKind::Write;
                 set_overlapped_offset(&mut ctx.overlapped, read_offset);
+                debug_assert!(bytes_xferred as usize <= buffer_bytes);
+                // SAFETY: dst_handle is open with FILE_FLAG_OVERLAPPED;
+                // buffer pointer comes from VirtualAlloc'd, sector-aligned
+                // memory owned by `buffers[slot]` for the loop's duration;
+                // `ctx.overlapped` lives in a heap Box owned by `ctxs`.
                 let ok = WriteFile(
                     dst_handle.0,
                     buffers[slot].0,
@@ -533,9 +590,20 @@ unsafe fn do_overlapped_copy(
                 if next_read_offset < alloc_size && !cancelled {
                     let want = (alloc_size - next_read_offset).min(buffer_bytes as u64) as u32;
                     let aligned = round_up_sector(want, sector_bytes);
+                    debug_assert!(aligned as usize <= buffer_bytes);
+                    debug_assert_eq!(
+                        next_read_offset % sector_bytes as u64,
+                        0,
+                        "ReadFile offset must be sector-aligned for NO_BUFFERING"
+                    );
                     ctx.file_offset = next_read_offset;
                     ctx.op = OpKind::Read;
                     set_overlapped_offset(&mut ctx.overlapped, next_read_offset);
+                    // SAFETY: src_handle is open with FILE_FLAG_OVERLAPPED;
+                    // the buffer is sector-aligned VirtualAlloc memory
+                    // owned by `buffers[slot]`; ctx.overlapped lives in the
+                    // matching Box<OpCtx> in `ctxs`. `aligned` is a sector
+                    // multiple bounded by buffer_bytes (asserted above).
                     let ok = ReadFile(
                         src_handle.0,
                         buffers[slot].0,
@@ -563,6 +631,10 @@ unsafe fn do_overlapped_copy(
         if last_cancel_check.elapsed() >= Duration::from_millis(100) {
             if ctrl.is_cancelled() && !cancelled {
                 cancelled = true;
+                // SAFETY: src_handle / dst_handle are valid open file
+                // handles owned by their OwnedHandle guards. CancelIoEx
+                // with a NULL OVERLAPPED cancels every in-flight I/O on
+                // the handle issued by this thread.
                 CancelIoEx(src_handle.0, ptr::null_mut());
                 CancelIoEx(dst_handle.0, ptr::null_mut());
             }
@@ -589,9 +661,18 @@ unsafe fn do_overlapped_copy(
 // Win32 helpers
 // ---------------------------------------------------------------------
 
+/// SAFETY contract: caller must drop the returned HANDLE via
+/// `CloseHandle` (typically wrapped in [`OwnedHandle`]). The function
+/// itself is sound for any `path` Rust can encode as wide-UTF-16; the
+/// `unsafe` annotation reflects the FFI surface, not a precondition.
 #[allow(unsafe_op_in_unsafe_fn)]
 unsafe fn open_for_overlapped(path: &Path, read_only: bool) -> io::Result<HANDLE> {
     let wide: Vec<u16> = OsStr::new(path).encode_wide().chain(Some(0)).collect();
+    debug_assert_eq!(
+        wide.last().copied(),
+        Some(0u16),
+        "wide path buffer must be NUL-terminated for CreateFileW"
+    );
     let access = if read_only {
         GENERIC_READ
     } else {
@@ -607,6 +688,9 @@ unsafe fn open_for_overlapped(path: &Path, read_only: bool) -> io::Result<HANDLE
     if use_no_buffering() {
         flags |= FILE_FLAG_NO_BUFFERING;
     }
+    // SAFETY: `wide` is a NUL-terminated UTF-16 buffer (asserted above)
+    // owned by this scope and outliving the call. The other arguments
+    // are stable Win32 ABI constants and a NULL SECURITY_ATTRIBUTES.
     let h = CreateFileW(
         wide.as_ptr(),
         access,
@@ -622,18 +706,28 @@ unsafe fn open_for_overlapped(path: &Path, read_only: bool) -> io::Result<HANDLE
     Ok(h)
 }
 
+/// SAFETY contract: `handle` must be a valid open file handle the
+/// caller owns and to which it has GENERIC_WRITE access.
 #[allow(unsafe_op_in_unsafe_fn)]
 unsafe fn seek_and_set_eof(handle: HANDLE, new_size: i64) -> io::Result<()> {
     let mut new_pos: i64 = 0;
+    // SAFETY: `&mut new_pos` is a valid stack-allocated i64; FILE_BEGIN
+    // is a stable Win32 constant.
     if SetFilePointerEx(handle, new_size, &mut new_pos, FILE_BEGIN) == 0 {
         return Err(io::Error::last_os_error());
     }
+    // SAFETY: handle was just repositioned successfully; SetEndOfFile
+    // truncates/extends to the current file pointer.
     if SetEndOfFile(handle) == 0 {
         return Err(io::Error::last_os_error());
     }
     Ok(())
 }
 
+/// SAFETY contract: `handle` must be a valid HANDLE opened with
+/// FILE_FLAG_OVERLAPPED; `buffer` must point at writable, sector-
+/// aligned memory of at least `bytes` bytes; the matching
+/// `Box<OpCtx>` must outlive the IOCP completion.
 #[allow(unsafe_op_in_unsafe_fn)]
 unsafe fn post_read(
     handle: HANDLE,
@@ -642,12 +736,18 @@ unsafe fn post_read(
     file_offset: u64,
     ctx: &mut Box<OpCtx>,
 ) -> io::Result<()> {
+    debug_assert!(!buffer.is_null(), "post_read: buffer must be non-null");
+    debug_assert!(bytes > 0, "post_read: zero-byte read is meaningless");
     ctx.op = OpKind::Read;
     ctx.file_offset = file_offset;
     ctx.op_bytes = bytes;
     set_overlapped_offset(&mut ctx.overlapped, file_offset);
     let ctx_ptr: *mut OpCtx = &mut **ctx;
     let overlapped_ptr: *mut OVERLAPPED = ctx_ptr as *mut OVERLAPPED;
+    // SAFETY: OpCtx is `#[repr(C)]` with OVERLAPPED as its first field,
+    // so the cast above lands at the OVERLAPPED. The Box<OpCtx> is
+    // owned by the caller and outlives the IOCP completion. `handle`
+    // and `buffer` satisfy the contract documented at the function level.
     let ok = ReadFile(handle, buffer, bytes, ptr::null_mut(), overlapped_ptr);
     if ok == 0 && GetLastError() != ERROR_IO_PENDING {
         return Err(io::Error::last_os_error());
@@ -657,7 +757,14 @@ unsafe fn post_read(
 
 #[inline]
 fn round_up_sector(value: u32, sector: u32) -> u32 {
-    debug_assert!(sector.is_power_of_two());
+    // Phase 42 — round_up_sector is undefined for non-power-of-two
+    // `sector`. The caller in do_overlapped_copy already asserts the
+    // sector probe returned a power-of-two value, but we keep this
+    // local guard so any future call site that drifts gets caught.
+    debug_assert!(
+        sector.is_power_of_two() && sector > 0,
+        "round_up_sector requires a power-of-two sector ≥ 1; got {sector}"
+    );
     (value + sector - 1) & !(sector - 1)
 }
 
@@ -668,9 +775,17 @@ fn zeroed_overlapped() -> OVERLAPPED {
     unsafe { MaybeUninit::<OVERLAPPED>::zeroed().assume_init() }
 }
 
+/// SAFETY contract: `ov` must point at a writable OVERLAPPED. The
+/// `Anonymous` union access is reading the documented offset variant;
+/// the alternate variant (Pointer) is only meaningful for I/O
+/// completion ports' status-block data, which we do not use.
 #[inline]
 #[allow(unsafe_op_in_unsafe_fn)]
 unsafe fn set_overlapped_offset(ov: &mut OVERLAPPED, offset: u64) {
+    // SAFETY: `Anonymous` is a union of compatible plain-old-data
+    // variants. We only ever read/write through the `Anonymous.Offset` /
+    // `OffsetHigh` pair, matching the variant CreateIoCompletionPort
+    // / ReadFile / WriteFile expect for FILE_FLAG_OVERLAPPED handles.
     let anon = &mut ov.Anonymous.Anonymous;
     anon.Offset = (offset & 0xFFFF_FFFF) as u32;
     anon.OffsetHigh = (offset >> 32) as u32;
@@ -797,12 +912,17 @@ fn sector_size_for(path: &Path) -> Option<u32> {
         .encode_wide()
         .chain(Some(0))
         .collect::<Vec<_>>();
+    debug_assert_eq!(
+        wide.last().copied(),
+        Some(0u16),
+        "wide path buffer must be NUL-terminated for GetDiskFreeSpaceW"
+    );
     let mut sectors_per_cluster: u32 = 0;
     let mut bytes_per_sector: u32 = 0;
     let mut free_clusters: u32 = 0;
     let mut total_clusters: u32 = 0;
     // SAFETY: all out-pointers are valid stack-allocated u32s; the
-    // input is a NUL-terminated UTF-16 path.
+    // input is a NUL-terminated UTF-16 path (asserted above).
     let ok = unsafe {
         GetDiskFreeSpaceW(
             wide.as_ptr(),

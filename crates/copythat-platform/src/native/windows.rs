@@ -274,6 +274,24 @@ pub(crate) async fn try_native_copy(
 
     let src_w = wide(&src);
     let dst_w = wide(&dst);
+    // Phase 42 — tightened invariants. `wide()` always appends a NUL,
+    // but we sanity-guard the FFI precondition explicitly so any future
+    // refactor that strips the terminator gets caught in debug.
+    debug_assert_eq!(
+        src_w.last().copied(),
+        Some(0u16),
+        "src wide buffer must be NUL-terminated for CopyFileExW"
+    );
+    debug_assert_eq!(
+        dst_w.last().copied(),
+        Some(0u16),
+        "dst wide buffer must be NUL-terminated for CopyFileExW"
+    );
+    // CopyFileExW with total == 0 is well-defined (creates an empty
+    // dst), but the dispatcher sizes its NO_BUFFERING decision off
+    // `total` and our progress / event story expects a positive byte
+    // count. Treat zero as a contract violation in debug.
+    debug_assert!(total > 0, "CopyFileExW path expects total > 0");
 
     let flags: u32 = if total >= no_buffering_threshold() {
         COPY_FILE_NO_BUFFERING
@@ -285,9 +303,11 @@ pub(crate) async fn try_native_copy(
     let join = tokio::task::spawn_blocking(move || {
         let mut cancel_pending: BOOL = FALSE;
         // SAFETY: src_w and dst_w are NUL-terminated UTF-16 buffers
-        // owned by this scope; the callback context outlives this
-        // call (held via Arc); cancel_pending is read but not mutated
-        // by CopyFileExW once the call returns.
+        // (debug-asserted above) owned by this scope and moved into
+        // the spawn_blocking closure; the callback context outlives
+        // this call via the Arc held in `ctx_for_block`; cancel_pending
+        // is a stack BOOL the kernel reads but never retains past the
+        // returned call.
         let ok = unsafe {
             CopyFileExW(
                 src_w.as_ptr(),
