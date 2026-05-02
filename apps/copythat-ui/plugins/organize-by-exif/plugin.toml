@@ -1,0 +1,4 @@
+name = "organize-by-exif"
+version = "0.1.0"
+hooks = ["after_file"]
+capabilities = ["read_fs:source", "write_fs:dest"]

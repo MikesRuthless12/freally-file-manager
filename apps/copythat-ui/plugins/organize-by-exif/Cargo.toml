@@ -1,0 +1,39 @@
+# Empty `[workspace]` table — required so cargo treats this manifest
+# as a standalone package and does NOT try to look up the host
+# workspace at C:/Users/miken/Desktop/Havoc Software/CopyThat2026.
+# See https://doc.rust-lang.org/cargo/reference/workspaces.html.
+[workspace]
+
+[package]
+name = "organize-by-exif"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+license = "LicenseRef-AllRightsReserved"
+authors = ["Copy That Contributors"]
+description = "Phase 46.5 sample plugin: rehome copied files under YYYY/MM/ based on EXIF DateTaken."
+publish = false
+
+# Standalone (NOT a workspace member). The host workspace's
+# x86_64 build never tries to compile this; only `xtask
+# build-sample-plugins` (or `cargo build --target
+# wasm32-unknown-unknown --release` from this directory) does.
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# Match the host runtime's serde stack so the JSON ABI shape stays
+# identical on both sides of the linear-memory boundary.
+serde = { version = "1", default-features = false, features = ["derive", "alloc"] }
+serde_json = { version = "1", default-features = false, features = ["alloc"] }
+
+[profile.release]
+# Tight WASM output: drop debug info, fold to one codegen unit, fat
+# LTO. `panic = "abort"` matches the wasm32-unknown-unknown default
+# but is set explicitly so a future Cargo change cannot regress it
+# (panics in a plugin must never try to unwind into the host).
+opt-level = "s"
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = "symbols"

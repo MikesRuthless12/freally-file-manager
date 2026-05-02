@@ -1,0 +1,3 @@
+name = "dedup-warning"
+version = "0.1.0"
+hooks = ["after_job"]
