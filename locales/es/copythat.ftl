@@ -1313,3 +1313,26 @@ err-pinned-destination-path-too-long = Tray destination path is too long (max 10
 err-pinned-destination-label-invalid = Tray destination label contains characters that aren't allowed (newline, return, or NUL).  # MT
 err-pinned-destination-path-invalid = Tray destination path contains characters that aren't allowed (newline, return, or NUL).  # MT
 err-pinned-destination-too-many = You've reached the limit of 50 tray destinations. Remove one to add another.  # MT
+
+# Phase 46.6 — Settings → Plugins tab. The IPC layer in
+# `apps/copythat-ui/src-tauri/src/plugin_commands.rs` enumerates the
+# per-user plugin store under `<config_dir>/plugins/`; the
+# `PluginsTab.svelte` component renders these strings against the
+# returned manifest + grant state.  # MT
+settings-tab-plugins = Plugins  # MT
+plugin-heading = Plugins  # MT
+plugin-hint = Sandboxed WASM plugins extend Copy That with custom hooks. Each plugin runs under per-call CPU and memory limits and only sees the host capabilities you grant it.  # MT
+plugin-list-empty = No plugins installed yet.  # MT
+plugin-enabled = Enabled  # MT
+plugin-disabled = Disabled  # MT
+plugin-hooks = Hooks  # MT
+plugin-capabilities = Capabilities  # MT
+plugin-no-capabilities = (none)  # MT
+plugin-directory = Location  # MT
+plugin-install-from-file = Install from file…  # MT
+plugin-install-from-url = Install from URL…  # MT
+plugin-url-wasm = WASM URL  # MT
+plugin-url-manifest = Manifest URL  # MT
+plugin-url-hash = BLAKE3 hash  # MT
+plugin-url-preview = Preview  # MT
+plugin-url-confirm = Confirm install  # MT

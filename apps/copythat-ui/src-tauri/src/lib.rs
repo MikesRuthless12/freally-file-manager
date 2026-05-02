@@ -54,6 +54,7 @@ pub mod live_mirror;
 pub mod mobile_commands;
 pub mod mount_commands;
 pub mod offload_commands;
+pub mod plugin_commands;
 pub mod power;
 pub mod preview_commands;
 pub mod progress_channel;
@@ -569,6 +570,19 @@ pub fn run() {
             queue_commands::queue_pin_destination,
             queue_commands::queue_get_pinned,
             queue_commands::queue_unpin_destination,
+            // Phase 46.6 — Settings → Plugins UI. The plugin store
+            // lives at `<config_dir>/plugins/`; these commands
+            // round-trip enable/disable/grant state through
+            // `state.toml` files and surface the on-disk manifest +
+            // capabilities to the Settings panel. See
+            // `plugin_commands.rs` for the full lifecycle.
+            plugin_commands::plugin_list,
+            plugin_commands::plugin_enable,
+            plugin_commands::plugin_disable,
+            plugin_commands::plugin_install_from_file,
+            plugin_commands::plugin_install_from_url,
+            plugin_commands::plugin_grant_capability,
+            plugin_commands::plugin_revoke_capability,
         ])
         .setup(move |app| {
             // Phase 44.2b — install the platform-native CoW probe so

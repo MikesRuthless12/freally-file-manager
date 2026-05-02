@@ -800,3 +800,90 @@ export async function queueMerge(srcId: number, dstId: number): Promise<void> {
 export async function queueSetF2Mode(enabled: boolean): Promise<void> {
   await invoke("queue_set_f2_mode", { enabled });
 }
+
+// ---------------------------------------------------------------------
+// Phase 46.6 — Settings → Plugins UI.
+// ---------------------------------------------------------------------
+
+/** One installed plugin as enumerated by `plugin_list`. Mirrors the
+ *  Rust `PluginEntryDto`. */
+export type PluginEntryDto = {
+  name: string;
+  version: string;
+  hooks: string[];
+  manifestCapabilities: string[];
+  grantedCapabilities: string[];
+  enabled: boolean;
+  directory: string;
+};
+
+/** Result of a `plugin_install_from_url` call. `installed = false`
+ *  when the call was a preview (no `expectedHash`); `installed = true`
+ *  when the second confirm-phase call wrote into the plugin store. */
+export type PluginInstallPreviewDto = {
+  name: string;
+  version: string;
+  hash: string;
+  hooks: string[];
+  capabilities: string[];
+  installed: boolean;
+};
+
+/** Enumerate every plugin under `<config_dir>/plugins/`. */
+export async function pluginList(): Promise<PluginEntryDto[]> {
+  return invoke<PluginEntryDto[]>("plugin_list");
+}
+
+/** Flip a plugin's `enabled` bit on. Returns the refreshed entry. */
+export async function pluginEnable(name: string): Promise<PluginEntryDto> {
+  return invoke<PluginEntryDto>("plugin_enable", { name });
+}
+
+/** Flip a plugin's `enabled` bit off. Returns the refreshed entry. */
+export async function pluginDisable(name: string): Promise<PluginEntryDto> {
+  return invoke<PluginEntryDto>("plugin_disable", { name });
+}
+
+/** Add a capability to the per-plugin grant. Refuses capabilities
+ *  the manifest doesn't declare. Idempotent. */
+export async function pluginGrantCapability(
+  name: string,
+  capability: string,
+): Promise<PluginEntryDto> {
+  return invoke<PluginEntryDto>("plugin_grant_capability", {
+    name,
+    capability,
+  });
+}
+
+/** Remove a capability from the per-plugin grant. Idempotent. */
+export async function pluginRevokeCapability(
+  name: string,
+  capability: string,
+): Promise<PluginEntryDto> {
+  return invoke<PluginEntryDto>("plugin_revoke_capability", {
+    name,
+    capability,
+  });
+}
+
+/** Copy a wasm + manifest pair into the plugin store. `manifestPath`
+ *  is optional — when omitted the host reads `plugin.toml` from the
+ *  directory next to the wasm. */
+export async function pluginInstallFromFile(args: {
+  wasmPath: string;
+  manifestPath?: string;
+}): Promise<PluginEntryDto> {
+  return invoke<PluginEntryDto>("plugin_install_from_file", { args });
+}
+
+/** Two-phase URL install. First call without `expectedHash` to get
+ *  the BLAKE3 + manifest preview; second call with `expectedHash`
+ *  set to the preview hash to commit. */
+export async function pluginInstallFromUrl(args: {
+  wasmUrl: string;
+  manifestUrl: string;
+  expectedHash?: string | null;
+}): Promise<PluginInstallPreviewDto> {
+  return invoke<PluginInstallPreviewDto>("plugin_install_from_url", { args });
+}

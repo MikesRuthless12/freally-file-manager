@@ -79,6 +79,13 @@ copythat-mobile = { path = "../../../crates/copythat-mobile", version = "0.19" }
 # `recovery_commands::recovery_apply` at boot + on every
 # `update_settings` flip.
 copythat-recovery = { path = "../../../crates/copythat-recovery", version = "0.19" }
+# Phase 46.6 — Settings → Plugins UI. The Tauri shell owns the
+# per-user plugin store on disk (manifest + .wasm + state.toml per
+# plugin) and surfaces it through `plugin_commands.rs`. The runtime
+# itself lives in `copythat-plugin`; the IPC layer here is responsible
+# for filesystem layout + persistence of enable/grant state, while
+# `PluginManifest::parse` handles validation.
+copythat-plugin = { path = "../../../crates/copythat-plugin", version = "0.19" }
 # Phase 39 — `recovery_commands` opens the default chunk store path
 # the same way `lib.rs` will hand it to a future per-job sink, so
 # the recovery server can pull manifests without a second config
@@ -139,6 +146,20 @@ image = { version = "0.25", default-features = false, features = [
     "webp",
 ] }
 base64 = "0.22"
+# Phase 46.6 — `plugin_install_from_url` BLAKE3-hashes the downloaded
+# .wasm bytes so the user's confirmation gate can pin a known-good
+# digest. Already in the workspace tree via copythat-core /
+# copythat-cloud / copythat-hash; listing it explicitly here
+# documents the direct dependency.
+blake3 = "1"
+# Phase 46.6 — `plugin_install_from_url` downloads the .wasm + adjacent
+# plugin.toml over HTTPS. `default-features = false` strips the
+# native-tls dep we don't want; `rustls-tls` matches what
+# copythat-recovery + copythat-cloud already use, so the workspace
+# resolves to one TLS stack. MIT/Apache-2.0.
+reqwest = { version = "0.12", default-features = false, features = [
+    "rustls-tls",
+] }
 # Phase 22 — `globset` validates per-pattern rules at IPC entry so
 # a malformed glob surfaces an error before it can wedge a running
 # job. `directories` resolves the platform-appropriate cache dir
@@ -365,3 +386,15 @@ path = "../../../tests/smoke/phase_29_dnd.rs"
 [[test]]
 name = "phase_17e_ipc_audit"
 path = "../../../tests/smoke/phase_17e_ipc_audit.rs"
+
+# Phase 46.6 smoke — Settings → Plugins UI IPC layer. Exercises the
+# install/enable/disable + grant/revoke round-trips against a
+# tempdir-backed plugin store, plus the 17-key Fluent parity guard
+# across all 18 shipped locales.
+#
+# Filename note: `phase_46_plugin_ui` (no `patch`/`setup`/`install`/
+# `update` substring) keeps the Windows test binary clear of the
+# UAC installer-detection heuristic.
+[[test]]
+name = "phase_46_plugin_ui"
+path = "../../../tests/smoke/phase_46_plugin_ui.rs"

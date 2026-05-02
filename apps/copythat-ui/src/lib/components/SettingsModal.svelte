@@ -30,6 +30,7 @@
   import ProvenanceTab from "./ProvenanceTab.svelte";
   import RemotesTab from "./RemotesTab.svelte";
   import SanitizeTab from "./SanitizeTab.svelte";
+  import PluginsTab from "../settings/PluginsTab.svelte";
   import { i18nVersion, locale, setLocale, t } from "../i18n";
   import {
     closeSettings,
@@ -74,6 +75,7 @@
     | "mobile"
     | "provenance"
     | "sanitize"
+    | "plugins"
     | "profiles";
 
   let activeTab: TabId = $state("general");
@@ -499,7 +501,7 @@
       {:else}
         <div class="body">
           <div class="tabs" role="tablist" aria-label={t("settings-title")}>
-            {#each [["general", "settings-tab-general"], ["transfer", "settings-tab-transfer"], ["filters", "settings-tab-filters"], ["shell", "settings-tab-shell"], ["secure-delete", "settings-tab-secure-delete"], ["advanced", "settings-tab-advanced"], ["updater", "settings-tab-updater"], ["network", "settings-tab-network"], ["remotes", "settings-tab-remotes"], ["mobile", "settings-tab-mobile"], ["provenance", "provenance-settings-heading"], ["sanitize", "sanitize-heading"], ["profiles", "settings-tab-profiles"]] as const as [id, key] (id)}
+            {#each [["general", "settings-tab-general"], ["transfer", "settings-tab-transfer"], ["filters", "settings-tab-filters"], ["shell", "settings-tab-shell"], ["secure-delete", "settings-tab-secure-delete"], ["advanced", "settings-tab-advanced"], ["updater", "settings-tab-updater"], ["network", "settings-tab-network"], ["remotes", "settings-tab-remotes"], ["mobile", "settings-tab-mobile"], ["provenance", "provenance-settings-heading"], ["sanitize", "sanitize-heading"], ["plugins", "settings-tab-plugins"], ["profiles", "settings-tab-profiles"]] as const as [id, key] (id)}
               <button
                 type="button"
                 role="tab"
@@ -1513,6 +1515,8 @@
               <ProvenanceTab />
             {:else if activeTab === "sanitize"}
               <SanitizeTab />
+            {:else if activeTab === "plugins"}
+              <PluginsTab />
             {:else if activeTab === "profiles"}
               <p class="hint">{t("settings-profiles-hint")}</p>
               <div class="row">
