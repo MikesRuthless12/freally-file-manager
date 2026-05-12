@@ -99,3 +99,7 @@ apps/copythat-ui/src-tauri/Cargo.lock
 # renders, etc.) live under `/icon-previews/` and are not tracked.
 # The approved deliverables live under `/icon/` and ARE tracked.
 /icon-previews/
+
+# IP scrub (2026-05-11) — pulled out of git history via filter-branch.
+QualityAssuranceChecklist.md
+CT26.txt
