@@ -112,3 +112,14 @@ docs/SECURITY.md
 docs/SECURITY_BACKLOG.md
 docs/SECURITY_REVIEW_PREP.md
 docs/dependency-audit.md
+
+# IP scrub batch-3 (2026-05-11) — pulled out of git history via filter-branch.
+docs/PEERJS_REPLACEMENT_PLAN.md
+docs/PERFORMANCE_TUNING.md
+docs/RESEARCH_PHASE_39.md
+docs/RESEARCH_PHASE_40.md
+docs/RESEARCH_PHASE_42.md
+docs/SECURITY.md
+docs/SECURITY_BACKLOG.md
+docs/SECURITY_REVIEW_PREP.md
+docs/dependency-audit.md
