@@ -123,3 +123,10 @@ docs/SECURITY.md
 docs/SECURITY_BACKLOG.md
 docs/SECURITY_REVIEW_PREP.md
 docs/dependency-audit.md
+
+# Internal benchmark docs — not for public Pages (Mike, 2026-06-20)
+docs/BENCHMARKS.md
+docs/BENCHMARKS_PHASE_42.md
+
+# Internal prompt docs — never track (Mike, 2026-06-20)
+*[Pp][Rr][Oo][Mm][Pp][Tt]*.md
