@@ -58,9 +58,7 @@ pub fn enqueue_jobs(
         // piles every routed job into whichever queue currently owns
         // a running job. Falls back to a single anonymous "default"
         // queue when the platform probe yields no drive id.
-        let (qid, id, ctrl) = state
-            .queues
-            .route(kind, src.clone(), Some(dst.clone()));
+        let (qid, id, ctrl) = state.queues.route(kind, src.clone(), Some(dst.clone()));
         let queue = state
             .queues
             .get(qid)

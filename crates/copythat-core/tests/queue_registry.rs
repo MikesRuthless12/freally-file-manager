@@ -9,9 +9,7 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use copythat_core::{
-    JobKind, JobState, QueueId, QueueMergeError, QueueRegistry, VolumeProbe,
-};
+use copythat_core::{JobKind, JobState, QueueId, QueueMergeError, QueueRegistry, VolumeProbe};
 
 #[derive(Debug)]
 struct FakeProbe;
@@ -69,7 +67,10 @@ fn jobs_to_distinct_drives_get_distinct_queues() {
     let (qa, _, _) = reg.route(JobKind::Copy, drive_a("src1"), Some(drive_a("dst1")));
     let (qb, _, _) = reg.route(JobKind::Copy, drive_b("src1"), Some(drive_b("dst1")));
 
-    assert_ne!(qa, qb, "drive-A and drive-B routes must land in different queues");
+    assert_ne!(
+        qa, qb,
+        "drive-A and drive-B routes must land in different queues"
+    );
     assert_eq!(reg.len(), 2);
     assert_eq!(reg.get(qa).unwrap().len(), 1);
     assert_eq!(reg.get(qb).unwrap().len(), 1);
@@ -139,7 +140,8 @@ fn auto_enqueue_next_routes_into_running_queue() {
 
     // Without F2, a drive-B job would create a new queue. With F2 on,
     // it should land in the running drive-A queue instead.
-    reg.auto_enqueue_next.store(true, std::sync::atomic::Ordering::Relaxed);
+    reg.auto_enqueue_next
+        .store(true, std::sync::atomic::Ordering::Relaxed);
     let (qb, _, _) = reg.route(JobKind::Copy, drive_b("s1"), Some(drive_b("d1")));
 
     assert_eq!(
@@ -150,7 +152,8 @@ fn auto_enqueue_next_routes_into_running_queue() {
     assert_eq!(reg.get(qa).unwrap().len(), 2, "running queue grew by one");
 
     // Turning F2 off again restores normal drive-based routing.
-    reg.auto_enqueue_next.store(false, std::sync::atomic::Ordering::Relaxed);
+    reg.auto_enqueue_next
+        .store(false, std::sync::atomic::Ordering::Relaxed);
     let (qb2, _, _) = reg.route(JobKind::Copy, drive_b("s2"), Some(drive_b("d2")));
     assert_ne!(qb2, qa, "with F2 off, drive-B routes to a new queue again");
     assert_eq!(reg.len(), 2);

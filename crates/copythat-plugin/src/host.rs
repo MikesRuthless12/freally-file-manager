@@ -6,7 +6,6 @@ use std::time::Duration;
 
 use crate::{CapabilityGrant, PluginConfig, PluginError, PluginHandle, PluginManifest};
 
-
 /// Owns the `wasmtime::Engine` shared across plugin instances, the
 /// [`PluginConfig`] applied to every `call_hook` dispatch, and the
 /// engine-tied epoch ticker that drives wall-clock budget
@@ -198,11 +197,7 @@ fn read_adjacent_manifest(wasm_path: &Path) -> Result<PluginManifest, PluginErro
             ))
         })?;
     let toml_src = std::fs::read_to_string(&manifest_path).map_err(|e| {
-        PluginError::Manifest(format!(
-            "failed to read {}: {e}",
-            manifest_path.display()
-        ))
+        PluginError::Manifest(format!("failed to read {}: {e}", manifest_path.display()))
     })?;
     PluginManifest::parse(&toml_src)
 }
-

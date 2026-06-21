@@ -25,9 +25,7 @@
 use std::io::Write;
 use std::path::PathBuf;
 
-use copythat_plugin::{
-    HookCtx, HookKind, HookOutcome, PluginConfig, PluginError, PluginHost,
-};
+use copythat_plugin::{HookCtx, HookKind, HookOutcome, PluginConfig, PluginError, PluginHost};
 
 const DEFAULT_MANIFEST: &str = r#"
 name = "wasm_runtime_smoke"
@@ -140,10 +138,7 @@ async fn missing_hook_export_is_diagnosed() {
         .call_hook(HookKind::BeforeFile, HookCtx::default())
         .await
         .expect_err("missing `hook` export must surface");
-    assert!(
-        matches!(err, PluginError::MissingExport("hook")),
-        "{err:?}"
-    );
+    assert!(matches!(err, PluginError::MissingExport("hook")), "{err:?}");
 }
 
 // ---------------------------------------------------------------------------
@@ -299,7 +294,10 @@ async fn out_len_above_memory_cap_rejected_before_allocation() {
     match err {
         PluginError::OutOfBounds { ptr, len } => {
             assert_eq!(ptr, 0, "out_ptr echoed verbatim from packed return");
-            assert_eq!(len, 0xFFFFFFFF, "out_len echoed verbatim from packed return");
+            assert_eq!(
+                len, 0xFFFFFFFF,
+                "out_len echoed verbatim from packed return"
+            );
         }
         other => panic!("expected OutOfBounds clamp, got {other:?}"),
     }
@@ -356,7 +354,10 @@ async fn alloc_returning_null_pointer_is_rejected() {
         .call_hook(HookKind::BeforeFile, HookCtx::default())
         .await
         .expect_err("alloc returning 0 must reject before write_memory");
-    assert!(matches!(err, PluginError::OutOfBounds { ptr: 0, .. }), "{err:?}");
+    assert!(
+        matches!(err, PluginError::OutOfBounds { ptr: 0, .. }),
+        "{err:?}"
+    );
 }
 
 /// `alloc` returns -1 (`0xFFFFFFFF` reinterpreted as i32). Same

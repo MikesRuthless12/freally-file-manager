@@ -112,10 +112,7 @@ fn build_one(dir: &Path, name: &str) -> Result<PathBuf, String> {
     if !status.success() {
         return Err(format!("cargo build failed for {name} (status {status})"));
     }
-    let release_dir = dir
-        .join("target")
-        .join(PLUGIN_TARGET)
-        .join("release");
+    let release_dir = dir.join("target").join(PLUGIN_TARGET).join("release");
     let mut wasms: Vec<PathBuf> = std::fs::read_dir(&release_dir)
         .map_err(|e| format!("reading {}: {e}", release_dir.display()))?
         .filter_map(|entry| entry.ok().map(|e| e.path()))

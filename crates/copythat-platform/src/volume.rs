@@ -104,6 +104,10 @@ mod tests {
         use std::path::PathBuf;
         let probe = PlatformVolumeProbe;
         assert!(probe.drive_label(&PathBuf::from("/home/me")).is_none());
-        assert!(probe.drive_label(&PathBuf::from("/Volumes/Backup")).is_none());
+        assert!(
+            probe
+                .drive_label(&PathBuf::from("/Volumes/Backup"))
+                .is_none()
+        );
     }
 }

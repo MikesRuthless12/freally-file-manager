@@ -23,9 +23,7 @@
 
 use std::path::{Path, PathBuf};
 
-use copythat_plugin::{
-    Capability, CapabilityGrant, HookCtx, HookKind, HookOutcome, PluginHost,
-};
+use copythat_plugin::{Capability, CapabilityGrant, HookCtx, HookKind, HookOutcome, PluginHost};
 use serde_json::json;
 
 /// Resolve `<repo_root>/apps/copythat-ui/plugins/<dir>/target/wasm32-unknown-unknown/release/<crate_underscored>.wasm`.
@@ -197,10 +195,7 @@ async fn notify_discord_emits_webhook_envelope() {
     let envelope: serde_json::Value =
         serde_json::from_str(&message).expect("envelope must be valid JSON");
     assert_eq!(envelope["target"], "discord");
-    assert_eq!(
-        envelope["url"],
-        "https://discord.com/api/webhooks/123/abc"
-    );
+    assert_eq!(envelope["url"], "https://discord.com/api/webhooks/123/abc");
     let payload = &envelope["payload"];
     assert!(
         payload["content"].as_str().unwrap().contains("1234 files"),

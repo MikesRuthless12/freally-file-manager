@@ -62,6 +62,12 @@ tracing = { version = "0.1", default-features = false, features = ["std"] }
 # already-prefixed inputs before our length gate fires.
 dunce = "1"
 
+[target.'cfg(unix)'.dependencies]
+# Linux paranoid-verify uses libc::posix_fadvise (POSIX_FADV_DONTNEED) to drop the
+# page cache before the verify re-read (engine.rs). Matches the other unix crates
+# (copythat-platform / -audit / -snapshot) which already declare libc here.
+libc = "0.2"
+
 [dev-dependencies]
 # Phase 30 — smoke test exercises the TOML round-trip of
 # `PathTranslationSettings`. Dev-only so the settings crate is still

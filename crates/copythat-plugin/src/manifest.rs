@@ -160,7 +160,9 @@ fn is_semver_shaped(s: &str) -> bool {
     if parts.len() != 3 {
         return false;
     }
-    parts.iter().all(|p| !p.is_empty() && p.chars().all(|c| c.is_ascii_digit()))
+    parts
+        .iter()
+        .all(|p| !p.is_empty() && p.chars().all(|c| c.is_ascii_digit()))
 }
 
 #[cfg(test)]
@@ -212,7 +214,10 @@ version = "0.1.0"
 hooks = ["before_job"]
 "#;
         let err = PluginManifest::parse(src).expect_err("empty name must reject");
-        assert!(matches!(err, PluginError::Manifest(ref m) if m.contains("`name`")), "{err:?}");
+        assert!(
+            matches!(err, PluginError::Manifest(ref m) if m.contains("`name`")),
+            "{err:?}"
+        );
     }
 
     #[test]
@@ -223,7 +228,10 @@ version = "0.1.0"
 hooks = []
 "#;
         let err = PluginManifest::parse(src).expect_err("empty hooks must reject");
-        assert!(matches!(err, PluginError::Manifest(ref m) if m.contains("`hooks`")), "{err:?}");
+        assert!(
+            matches!(err, PluginError::Manifest(ref m) if m.contains("`hooks`")),
+            "{err:?}"
+        );
     }
 
     #[test]
@@ -245,7 +253,14 @@ hooks = ["before_job"]
 
     #[test]
     fn semver_with_prerelease_and_build_accepted() {
-        for good in ["1.0.0", "1.2.3", "0.0.0", "1.0.0-rc.1", "1.0.0+build5", "1.0.0-alpha+meta"] {
+        for good in [
+            "1.0.0",
+            "1.2.3",
+            "0.0.0",
+            "1.0.0-rc.1",
+            "1.0.0+build5",
+            "1.0.0-alpha+meta",
+        ] {
             assert!(is_semver_shaped(good), "{good} must be accepted");
         }
     }
@@ -258,7 +273,10 @@ version = "0.1.0"
 hooks = ["never_heard_of_it"]
 "#;
         let err = PluginManifest::parse(src).expect_err("unknown hook must reject");
-        assert!(matches!(err, PluginError::Manifest(ref m) if m.contains("invalid TOML")), "{err:?}");
+        assert!(
+            matches!(err, PluginError::Manifest(ref m) if m.contains("invalid TOML")),
+            "{err:?}"
+        );
     }
 
     #[test]

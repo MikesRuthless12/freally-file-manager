@@ -174,8 +174,7 @@ fn pin_destination_persists_and_dedupes() {
     assert_eq!(after_dupe.len(), 1);
 
     // A different label-or-path appends a row.
-    let after_second =
-        queue_pin_destination_impl(&state, "Backup", "/drive/B/backup").unwrap();
+    let after_second = queue_pin_destination_impl(&state, "Backup", "/drive/B/backup").unwrap();
     assert_eq!(after_second.len(), 2);
 
     // get_pinned reads back what was persisted in AppState.settings.
@@ -223,9 +222,12 @@ fn unpin_destination_removes_match_and_is_idempotent() {
 #[test]
 fn route_job_rejects_unknown_wire_kind() {
     let state = fake_state();
-    let err = queue_route_job_impl(&state, "teleport", "/drive/A/s", Some("/drive/A/d"))
-        .unwrap_err();
-    assert!(err.contains("teleport"), "error mentions the bad kind: {err}");
+    let err =
+        queue_route_job_impl(&state, "teleport", "/drive/A/s", Some("/drive/A/d")).unwrap_err();
+    assert!(
+        err.contains("teleport"),
+        "error mentions the bad kind: {err}"
+    );
 }
 
 #[test]
@@ -250,14 +252,14 @@ fn route_job_rejects_path_traversal() {
     // `..` in src or dst is the canonical Phase 17e signal — the
     // standing rule routes every path-typed command through
     // ipc_safety::validate_ipc_path. The Fluent key surfaces verbatim.
-    let err = queue_route_job_impl(&state, "copy", "/drive/A/../etc", Some("/drive/A/dst"))
-        .unwrap_err();
+    let err =
+        queue_route_job_impl(&state, "copy", "/drive/A/../etc", Some("/drive/A/dst")).unwrap_err();
     assert!(
         err.contains("err-path-escape"),
         "expected path-escape rejection, got {err}",
     );
-    let err = queue_route_job_impl(&state, "copy", "/drive/A/src", Some("/drive/A/../etc"))
-        .unwrap_err();
+    let err =
+        queue_route_job_impl(&state, "copy", "/drive/A/src", Some("/drive/A/../etc")).unwrap_err();
     assert!(err.contains("err-path-escape"));
 }
 
@@ -338,8 +340,7 @@ fn pin_destination_caps_label_and_path_length() {
     // accepted (off-by-one guard).
     let edge_label = "x".repeat(64);
     let edge_path = format!("/{}", "x".repeat(1023));
-    let after =
-        queue_pin_destination_impl(&state, &edge_label, &edge_path).expect("edge accepted");
+    let after = queue_pin_destination_impl(&state, &edge_label, &edge_path).expect("edge accepted");
     assert_eq!(after.len(), 1);
 }
 
@@ -356,10 +357,7 @@ fn pin_destination_caps_list_size_at_max() {
     }
     assert_eq!(queue_get_pinned_impl(&state).len(), CAP);
     let err = queue_pin_destination_impl(&state, "Overflow", "/drive/A/overflow").unwrap_err();
-    assert!(
-        err.contains("err-pinned-destination-too-many"),
-        "got {err}",
-    );
+    assert!(err.contains("err-pinned-destination-too-many"), "got {err}",);
     // List length wasn't affected by the rejected attempt.
     assert_eq!(queue_get_pinned_impl(&state).len(), CAP);
     // Re-pinning an existing row is still a no-op even when the

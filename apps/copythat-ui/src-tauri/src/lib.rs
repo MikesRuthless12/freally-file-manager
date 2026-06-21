@@ -126,8 +126,7 @@ fn build_tray_menu<R: Runtime>(
     pinned: &[PinnedDestinationDto],
 ) -> tauri::Result<Menu<R>> {
     let show = MenuItem::with_id(app, "tray-show", "Show", true, None::<&str>)?;
-    let dropstack =
-        MenuItem::with_id(app, "tray-dropstack", "Drop Stack", true, None::<&str>)?;
+    let dropstack = MenuItem::with_id(app, "tray-dropstack", "Drop Stack", true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "tray-quit", "Quit", true, None::<&str>)?;
 
     if pinned.is_empty() {

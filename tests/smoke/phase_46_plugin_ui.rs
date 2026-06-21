@@ -87,12 +87,8 @@ fn boot_store() -> (tempfile::TempDir, PathBuf, PathBuf) {
 #[test]
 fn case1_install_starts_disabled_with_no_grants() {
     let (_tmp, src, store) = boot_store();
-    let dto = install_from_disk(
-        &store,
-        &src.join("plugin.wasm"),
-        &src.join("plugin.toml"),
-    )
-    .expect("install_from_disk");
+    let dto = install_from_disk(&store, &src.join("plugin.wasm"), &src.join("plugin.toml"))
+        .expect("install_from_disk");
     assert_eq!(dto.name, "smoke-organize");
     assert_eq!(dto.version, "0.1.0");
     assert_eq!(dto.hooks, vec!["after_file"]);
@@ -100,7 +96,10 @@ fn case1_install_starts_disabled_with_no_grants() {
         dto.manifest_capabilities,
         vec!["read_fs:source", "write_fs:dest"]
     );
-    assert!(dto.granted_capabilities.is_empty(), "fresh install grants nothing");
+    assert!(
+        dto.granted_capabilities.is_empty(),
+        "fresh install grants nothing"
+    );
     assert!(!dto.enabled, "fresh install is disabled");
 
     // Files must land at the expected layout the runtime can find
@@ -115,12 +114,7 @@ fn case1_install_starts_disabled_with_no_grants() {
 #[test]
 fn case2_enable_disable_round_trip_persists_to_disk() {
     let (_tmp, src, store) = boot_store();
-    install_from_disk(
-        &store,
-        &src.join("plugin.wasm"),
-        &src.join("plugin.toml"),
-    )
-    .unwrap();
+    install_from_disk(&store, &src.join("plugin.wasm"), &src.join("plugin.toml")).unwrap();
 
     let dto = set_enabled(&store, "smoke-organize", true).expect("enable");
     assert!(dto.enabled);
@@ -139,12 +133,7 @@ fn case2_enable_disable_round_trip_persists_to_disk() {
 #[test]
 fn case3_grant_revoke_round_trip_and_manifest_gate() {
     let (_tmp, src, store) = boot_store();
-    install_from_disk(
-        &store,
-        &src.join("plugin.wasm"),
-        &src.join("plugin.toml"),
-    )
-    .unwrap();
+    install_from_disk(&store, &src.join("plugin.wasm"), &src.join("plugin.toml")).unwrap();
 
     // Grant -> revoke -> grant idempotency.
     let dto = grant(&store, "smoke-organize", "read_fs:source").unwrap();
@@ -228,7 +217,10 @@ fn case6_blake3_hex_is_deterministic() {
     let again = blake3_hex(bytes);
     assert_eq!(got, again, "BLAKE3 must be deterministic");
     assert_eq!(got.len(), 64);
-    assert!(got.chars().all(|c| c.is_ascii_hexdigit() && !c.is_ascii_uppercase()));
+    assert!(
+        got.chars()
+            .all(|c| c.is_ascii_hexdigit() && !c.is_ascii_uppercase())
+    );
 }
 
 #[test]
@@ -244,8 +236,8 @@ fn case8_phase_46_6_fluent_keys_present_in_every_locale() {
     let root = locate_locales_dir().expect("locate locales/");
     for code in LOCALES {
         let path = root.join(code).join("copythat.ftl");
-        let content = fs::read_to_string(&path)
-            .unwrap_or_else(|e| panic!("read {}: {e}", path.display()));
+        let content =
+            fs::read_to_string(&path).unwrap_or_else(|e| panic!("read {}: {e}", path.display()));
         for key in PHASE_46_6_KEYS {
             // Match either a top-of-file declaration or a key that
             // starts on a fresh line. The trailing space before `=`
@@ -348,7 +340,10 @@ hooks = ["after_job"]
 capabilities = ["network", "read_fs:source", "write_fs:dest"]
 "#;
     let dto = install_from_bytes(store, b"\0asm-v2", v2).unwrap();
-    assert!(dto.enabled, "enable bit must survive a capability-set change");
+    assert!(
+        dto.enabled,
+        "enable bit must survive a capability-set change"
+    );
     assert!(
         dto.granted_capabilities.is_empty(),
         "grants must reset when the manifest's capability set changes; got: {:?}",

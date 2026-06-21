@@ -787,7 +787,10 @@ impl std::fmt::Debug for QueueRegistry {
         let guard = self.inner.lock().unwrap_or_else(|p| p.into_inner());
         f.debug_struct("QueueRegistry")
             .field("queues", &guard.entries.len())
-            .field("auto_enqueue_next", &self.auto_enqueue_next.load(Ordering::Relaxed))
+            .field(
+                "auto_enqueue_next",
+                &self.auto_enqueue_next.load(Ordering::Relaxed),
+            )
             .finish()
     }
 }
@@ -911,19 +914,15 @@ impl QueueRegistry {
         // option is freely cloneable without `.as_deref()` (which
         // clippy::needless_option_as_deref flags as a no-op here).
         let probe_path = dst.as_deref().map(Self::probe_path);
-        let dst_drive = probe_path
-            .and_then(|p| self.probe.as_ref().and_then(|pr| pr.volume_id(p)));
-        let dst_label = probe_path
-            .and_then(|p| self.probe.as_ref().and_then(|pr| pr.drive_label(p)));
+        let dst_drive = probe_path.and_then(|p| self.probe.as_ref().and_then(|pr| pr.volume_id(p)));
+        let dst_label =
+            probe_path.and_then(|p| self.probe.as_ref().and_then(|pr| pr.drive_label(p)));
 
         // 3. Find or spawn the target queue under a single critical
         //    section so racing routes don't double-create.
         let (queue, just_created) = {
             let mut inner = self.inner.lock().unwrap_or_else(|p| p.into_inner());
-            let pos = inner
-                .entries
-                .iter()
-                .position(|e| e.drive_id == dst_drive);
+            let pos = inner.entries.iter().position(|e| e.drive_id == dst_drive);
             if let Some(idx) = pos {
                 (inner.entries[idx].queue.clone(), false)
             } else {

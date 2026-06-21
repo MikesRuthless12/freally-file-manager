@@ -188,8 +188,7 @@ mod tests {
 
     #[test]
     fn double_colon_scope_is_rejected() {
-        let err =
-            Capability::parse("read_fs:source:extra").expect_err("double colon must reject");
+        let err = Capability::parse("read_fs:source:extra").expect_err("double colon must reject");
         assert!(err.contains("must not contain `:`"), "{err}");
     }
 

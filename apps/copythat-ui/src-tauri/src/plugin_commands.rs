@@ -395,15 +395,15 @@ pub fn read_entry(plugin_dir: &Path) -> Result<PluginEntryDto, String> {
         PluginManifest::parse(&manifest_src).map_err(|e| format!("parse manifest: {e}"))?;
     let wasm = wasm_path(plugin_dir);
     if !wasm.is_file() {
-        return Err(format!(
-            "plugin.wasm missing at {}",
-            wasm.display()
-        ));
+        return Err(format!("plugin.wasm missing at {}", wasm.display()));
     }
     let state = PluginState::load(&state_path(plugin_dir));
 
-    let manifest_capabilities: Vec<String> =
-        manifest.capabilities.iter().map(Capability::as_str).collect();
+    let manifest_capabilities: Vec<String> = manifest
+        .capabilities
+        .iter()
+        .map(Capability::as_str)
+        .collect();
     // Strip stale grants — if the manifest no longer requests a
     // capability, scrub it from the active grant so a downgrade can't
     // leave a phantom permission live.
@@ -486,8 +486,8 @@ pub fn set_enabled(root: &Path, name: &str, enabled: bool) -> Result<PluginEntry
 /// past the user's review.
 pub fn grant(root: &Path, name: &str, capability: &str) -> Result<PluginEntryDto, String> {
     let dir = plugin_dir(root, name)?;
-    let manifest_src = std::fs::read_to_string(manifest_path(&dir))
-        .map_err(|e| format!("read manifest: {e}"))?;
+    let manifest_src =
+        std::fs::read_to_string(manifest_path(&dir)).map_err(|e| format!("read manifest: {e}"))?;
     let manifest =
         PluginManifest::parse(&manifest_src).map_err(|e| format!("parse manifest: {e}"))?;
     let parsed_cap =
@@ -566,8 +566,8 @@ pub fn install_from_bytes(
             MAX_WASM_BYTES
         ));
     }
-    let new_manifest = PluginManifest::parse(manifest_text)
-        .map_err(|e| format!("validate manifest: {e}"))?;
+    let new_manifest =
+        PluginManifest::parse(manifest_text).map_err(|e| format!("validate manifest: {e}"))?;
     let dir = plugin_dir(root, &new_manifest.name)?;
 
     // Capture the existing manifest's capability set before we write
@@ -661,7 +661,11 @@ pub fn bundle_hash(wasm_bytes: &[u8], manifest_bytes: &[u8]) -> String {
 // HTTP fetch helper (used only by the URL install command)
 // ---------------------------------------------------------------------------
 
-async fn fetch_with_cap(client: &reqwest::Client, url: &str, cap: usize) -> Result<Vec<u8>, String> {
+async fn fetch_with_cap(
+    client: &reqwest::Client,
+    url: &str,
+    cap: usize,
+) -> Result<Vec<u8>, String> {
     let resp = client
         .get(url)
         .send()
@@ -815,8 +819,11 @@ pub async fn plugin_install_from_url(
     // confirmation pins this digest; the commit-phase recompute
     // catches any drift in either component.
     let actual_hash = bundle_hash(&wasm_bytes, manifest_text.as_bytes());
-    let capabilities: Vec<String> =
-        manifest.capabilities.iter().map(Capability::as_str).collect();
+    let capabilities: Vec<String> = manifest
+        .capabilities
+        .iter()
+        .map(Capability::as_str)
+        .collect();
     let hooks: Vec<String> = manifest
         .hooks
         .iter()

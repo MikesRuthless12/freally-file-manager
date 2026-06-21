@@ -177,10 +177,7 @@ impl VolumeTopology {
     pub fn auto_overlapped_threshold(&self, is_cross_volume: bool) -> Option<u64> {
         const GIB: u64 = 1024 * 1024 * 1024;
         match self.bus_type {
-            BusType::Smb
-            | BusType::Iscsi
-            | BusType::Raid
-            | BusType::FileBackedVirtual => Some(GIB),
+            BusType::Smb | BusType::Iscsi | BusType::Raid | BusType::FileBackedVirtual => Some(GIB),
             _ if is_cross_volume => Some(GIB),
             _ => None,
         }

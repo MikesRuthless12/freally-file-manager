@@ -153,9 +153,7 @@ pub(crate) fn has_manage_volume_privilege() -> bool {
         // SAFETY: priv_name is a NUL-terminated UTF-16 buffer; LUID
         // is a plain POD struct that LookupPrivilegeValueW writes
         // into. The NULL system-name pointer means "local system".
-        let ok = unsafe {
-            LookupPrivilegeValueW(std::ptr::null(), priv_name.as_ptr(), &mut luid)
-        };
+        let ok = unsafe { LookupPrivilegeValueW(std::ptr::null(), priv_name.as_ptr(), &mut luid) };
         if ok == 0 {
             return false;
         }

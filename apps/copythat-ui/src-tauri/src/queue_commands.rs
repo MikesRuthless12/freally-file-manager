@@ -46,7 +46,8 @@ const MAX_PINNED_PATH_CHARS: usize = 1024;
 /// corrupt OS tray menu rendering or signal a lossy
 /// WTF-16 → UTF-8 coercion (see `ipc_safety.rs:30`).
 fn pin_string_has_bad_chars(s: &str) -> bool {
-    s.chars().any(|c| matches!(c, '\n' | '\r' | '\0' | '\u{FFFD}'))
+    s.chars()
+        .any(|c| matches!(c, '\n' | '\r' | '\0' | '\u{FFFD}'))
 }
 
 /// Tauri event names. Kept in one place so the JS side has a single
@@ -364,10 +365,7 @@ pub fn queue_pin_destination_impl(
     // `crates/copythat-core/src/queue.rs`. Pin/unpin keeping working
     // after an unrelated mid-write panic is a much better outcome
     // than every subsequent IPC call returning a stuck error.
-    let mut s = state
-        .settings
-        .write()
-        .unwrap_or_else(|p| p.into_inner());
+    let mut s = state.settings.write().unwrap_or_else(|p| p.into_inner());
     if !s.queue.pinned_destinations.iter().any(|p| p == &entry) {
         if s.queue.pinned_destinations.len() >= MAX_PINNED_DESTINATIONS {
             return Err("err-pinned-destination-too-many".to_string());
@@ -408,10 +406,7 @@ pub fn queue_unpin_destination_impl(
     // `crates/copythat-core/src/queue.rs`. Pin/unpin keeping working
     // after an unrelated mid-write panic is a much better outcome
     // than every subsequent IPC call returning a stuck error.
-    let mut s = state
-        .settings
-        .write()
-        .unwrap_or_else(|p| p.into_inner());
+    let mut s = state.settings.write().unwrap_or_else(|p| p.into_inner());
     s.queue.pinned_destinations.retain(|p| p != &target);
     save_settings(state, &s)?;
     Ok(s.queue
@@ -475,10 +470,7 @@ pub fn spawn_registry_event_pump(
                     );
                 }
                 Ok(QueueRegistryEvent::QueueRemoved { id }) => {
-                    let _ = app.emit(
-                        EVENT_QUEUE_REMOVED,
-                        QueueIdEvent { id: id.as_u64() },
-                    );
+                    let _ = app.emit(EVENT_QUEUE_REMOVED, QueueIdEvent { id: id.as_u64() });
                 }
                 Ok(QueueRegistryEvent::QueueMerged { src, dst }) => {
                     let _ = app.emit(

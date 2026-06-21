@@ -140,7 +140,11 @@ fn find_queue_for_job_locates_registry_routed_jobs() {
         copythat_ui_lib::commands::find_queue_for_job(routed_id.as_u64(), &state)
             .expect("registry-routed job is findable");
     assert_eq!(routed_jid, routed_id);
-    assert_eq!(routed_q.id(), qid, "routed job's queue id matches the registry's");
+    assert_eq!(
+        routed_q.id(),
+        qid,
+        "routed job's queue id matches the registry's"
+    );
 
     // An unknown id resolves to None — IPC commands use this to
     // surface an "unknown job id" error.
@@ -174,7 +178,10 @@ fn build_globals_for_state_aggregates_legacy_and_registry() {
     let g = copythat_ui_lib::runner::build_globals_for_state(&state);
     assert_eq!(g.queued_jobs, 3, "all three pending jobs are summed");
     assert_eq!(g.active_jobs, 0);
-    assert_eq!(g.state, "copying", "any pending work flips state to copying");
+    assert_eq!(
+        g.state, "copying",
+        "any pending work flips state to copying"
+    );
 }
 
 #[test]
@@ -214,12 +221,21 @@ fn job_ids_are_unique_across_legacy_queue_and_registry() {
     // adds and a runner keyed on JobId would route events to the
     // wrong row.
     let state = AppState::new();
-    let (legacy_id, _l_ctrl) =
-        state.queue.add(JobKind::Copy, PathBuf::from("/l/s"), Some(PathBuf::from("/l/d")));
-    let (_qid, routed_id, _r_ctrl) =
-        state.queues.route(JobKind::Copy, PathBuf::from("/r/s"), Some(PathBuf::from("/r/d")));
-    let (legacy_id_2, _l2_ctrl) =
-        state.queue.add(JobKind::Copy, PathBuf::from("/l2/s"), Some(PathBuf::from("/l2/d")));
+    let (legacy_id, _l_ctrl) = state.queue.add(
+        JobKind::Copy,
+        PathBuf::from("/l/s"),
+        Some(PathBuf::from("/l/d")),
+    );
+    let (_qid, routed_id, _r_ctrl) = state.queues.route(
+        JobKind::Copy,
+        PathBuf::from("/r/s"),
+        Some(PathBuf::from("/r/d")),
+    );
+    let (legacy_id_2, _l2_ctrl) = state.queue.add(
+        JobKind::Copy,
+        PathBuf::from("/l2/s"),
+        Some(PathBuf::from("/l2/d")),
+    );
 
     let ids = [legacy_id.as_u64(), routed_id.as_u64(), legacy_id_2.as_u64()];
     let mut sorted = ids;
