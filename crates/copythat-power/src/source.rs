@@ -320,8 +320,20 @@ mod thermal_x86 {
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 pub use thermal_x86::RealThermalProbe;
 
+/// Non-x86 fallback: no CPUID leaf 6, so reuse the stub's
+/// "not throttling / unknown" answer. Defined as a unit struct (not a
+/// `type` alias) so `RealThermalProbe` is usable as a value constructor
+/// — e.g. `Arc::new(RealThermalProbe)` in [`ProbeSet::production`] —
+/// uniformly across architectures.
 #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
-pub type RealThermalProbe = StubThermalProbe;
+pub struct RealThermalProbe;
+
+#[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+impl ThermalProbe for RealThermalProbe {
+    fn is_throttling(&self) -> (bool, ThermalKind) {
+        StubThermalProbe.is_throttling()
+    }
+}
 
 // ---------------------------------------------------------------------
 // Bundled probe set (what the poller owns)

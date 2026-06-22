@@ -798,19 +798,21 @@ async fn run_verify_pass(
     if opts.paranoid_verify {
         #[cfg(target_os = "linux")]
         {
-            // POSIX_FADV_DONTNEED — best-effort cache hint.
-            use std::ffi::CString;
-            use std::os::unix::ffi::OsStrExt;
-            if let Ok(c) = CString::new(dst_path.as_os_str().as_bytes()) {
-                // SAFETY: c is NUL-terminated; libc::open + fadvise +
-                // close are standard FFI.
-                unsafe {
-                    let fd = libc::open(c.as_ptr(), libc::O_RDONLY);
-                    if fd >= 0 {
-                        libc::posix_fadvise(fd, 0, 0, libc::POSIX_FADV_DONTNEED);
-                        libc::close(fd);
-                    }
-                }
+            // POSIX_FADV_DONTNEED — best-effort cache hint. Routed
+            // through `nix`'s safe wrapper so this crate stays
+            // `#![forbid(unsafe_code)]`-clean. `len = 0` advises from
+            // `offset` to end-of-file. The `File` closes its fd on
+            // drop, so there's no manual close. Any error is ignored:
+            // the hint is purely advisory and the verify re-read below
+            // is correct with or without it.
+            use std::os::unix::io::AsRawFd;
+            if let Ok(f) = std::fs::File::open(dst_path) {
+                let _ = nix::fcntl::posix_fadvise(
+                    f.as_raw_fd(),
+                    0,
+                    0,
+                    nix::fcntl::PosixFadviseAdvice::POSIX_FADV_DONTNEED,
+                );
             }
         }
         // On Windows the kernel's cache manager already returns to
@@ -2030,6 +2032,12 @@ fn libc_ebusy() -> i32 {
 /// otherwise an absolute symlink at `src` (the common case for
 /// `follow_symlinks=true`) would fail with `ELOOP`/`ERROR_*` and
 /// break the default copy path.
+// `retries` / `base_delay_ms` drive the sharing-violation backoff loop,
+// which only exists on Windows (Unix kernels don't block reads on open
+// files). They're genuinely unused on the unix / fallback paths, so
+// silence the lint there instead of forcing every caller through a
+// cfg-split signature.
+#[cfg_attr(not(windows), allow(unused_variables))]
 async fn open_src_with_retry(
     src: &Path,
     follow_symlinks: bool,

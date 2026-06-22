@@ -1728,7 +1728,7 @@ dependencies = [
  "dunce",
  "filetime",
  "globset",
- "libc",
+ "nix 0.29.0",
  "rand 0.9.4",
  "rusqlite",
  "sysinfo",

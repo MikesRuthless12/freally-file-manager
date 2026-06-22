@@ -1,580 +1,72 @@
 app-name = Copy That v0.19.84
-# MT
 window-title = Copy That v0.19.84
-# MT
-shred-ssd-advisory = Warnung: Das Ziel liegt auf einer SSD. Mehrfaches Überschreiben bereinigt den Flash-Speicher nicht zuverlässig, da Wear-Leveling und Overprovisioning die Daten aus der logischen Blockadresse herausschieben. Für Solid-State-Medien sind ATA SECURE ERASE, NVMe Format mit Secure Erase oder eine vollverschlüsselte Festplatte mit anschließend verworfenem Schlüssel vorzuziehen.
+shred-ssd-advisory = Warnung: Dieses Ziel liegt auf einer SSD. Mehrfaches Überschreiben säubert Flash-Speicher nicht zuverlässig, da Wear-Leveling und Over-Provisioning die Daten unter der logischen Blockadresse wegbewegen. Für Solid-State-Medien nutze stattdessen ATA SECURE ERASE, NVMe Format mit Secure Erase oder eine vollständige Festplattenverschlüsselung mit verworfenem Schlüssel.
 
-# MT
-state-idle = Leerlauf
-# MT
+# Global aggregate states (header pill)
+state-idle = Bereit
 state-copying = Kopieren
-# MT
 state-verifying = Prüfen
-# MT
 state-paused = Pausiert
-# MT
 state-error = Fehler
 
-# MT
+# Per-job states (row badge)
 state-pending = In Warteschlange
-# MT
 state-running = Läuft
-# MT
 state-cancelled = Abgebrochen
-# MT
 state-succeeded = Fertig
-# MT
 state-failed = Fehlgeschlagen
 
-# MT
+# Actions
 action-pause = Pausieren
-# MT
 action-resume = Fortsetzen
-# MT
 action-cancel = Abbrechen
-# MT
-action-pause-all = Alle Aufgaben pausieren
-# MT
-action-resume-all = Alle Aufgaben fortsetzen
-# MT
-action-cancel-all = Alle Aufgaben abbrechen
-# MT
+action-pause-all = Alle Aufträge pausieren
+action-resume-all = Alle Aufträge fortsetzen
+action-cancel-all = Alle Aufträge abbrechen
 action-close = Schließen
-# MT
 action-reveal = Im Ordner anzeigen
-
-# MT
-menu-pause = Pausieren
-# MT
-menu-resume = Fortsetzen
-# MT
-menu-cancel = Abbrechen
-# MT
-menu-remove = Aus Warteschlange entfernen
-# MT
-menu-reveal-source = Quelle im Ordner anzeigen
-# MT
-menu-reveal-destination = Ziel im Ordner anzeigen
-
-# MT
-header-eta-label = Geschätzte Restzeit
-# MT
-header-toolbar-label = Globale Steuerung
-
-# MT
-footer-queued = aktive Aufgaben
-# MT
-footer-total-bytes = in Bearbeitung
-# MT
-footer-errors = Fehler
-# MT
-footer-history = Verlauf
-
-# MT
-empty-title = Dateien oder Ordner zum Kopieren ablegen
-# MT
-empty-hint = Ziehen Sie Elemente auf das Fenster. Wir fragen nach einem Ziel und erstellen dann eine Aufgabe pro Quelle.
-# MT
-empty-region-label = Aufgabenliste
-
-# MT
-details-drawer-label = Aufgabendetails
-# MT
-details-source = Quelle
-# MT
-details-destination = Ziel
-# MT
-details-state = Zustand
-# MT
-details-bytes = Bytes
-# MT
-details-files = Dateien
-# MT
-details-speed = Geschwindigkeit
-# MT
-details-eta = Restzeit
-# MT
-details-error = Fehler
-
-# MT
-drop-dialog-title = Abgelegte Elemente übertragen
-# MT
-drop-dialog-subtitle = { $count } Element(e) bereit zur Übertragung. Wählen Sie einen Zielordner, um zu beginnen.
-# MT
-drop-dialog-mode = Vorgang
-# MT
-drop-dialog-copy = Kopieren
-# MT
-drop-dialog-move = Verschieben
-# MT
-drop-dialog-pick-destination = Ziel auswählen
-# MT
-drop-dialog-change-destination = Ziel ändern
-# MT
-drop-dialog-start-copy = Kopieren starten
-# MT
-drop-dialog-start-move = Verschieben starten
-
-# MT
-eta-calculating = wird berechnet…
-# MT
-eta-unknown = unbekannt
-
-# MT
-toast-job-done = Übertragung abgeschlossen
-# MT
-toast-copy-queued = Kopieren in Warteschlange
-# MT
-toast-move-queued = Verschieben in Warteschlange
-# MT
-toast-error-resolved = Fehler behoben
-# MT
-toast-collision-resolved = Konflikt gelöst
-# MT
-toast-elevated-unavailable = Wiederholung mit erhöhten Rechten kommt in Phase 17 — noch nicht verfügbar
-toast-clipboard-files-detected = Dateien in der Zwischenablage — Tastenkürzel drücken, um über Copy That zu kopieren
-toast-clipboard-no-files = Zwischenablage enthält keine Dateien zum Einfügen
-# MT
-toast-error-log-exported = Fehlerprotokoll exportiert
-
-# MT — Error modal
-error-modal-title = Eine Übertragung ist fehlgeschlagen
-# MT
-error-modal-retry = Wiederholen
-# MT
-error-modal-retry-elevated = Mit erhöhten Rechten wiederholen
-# MT
-error-modal-skip = Überspringen
-# MT
-error-modal-skip-all-kind = Alle Fehler dieser Art überspringen
-# MT
-error-modal-abort = Alle abbrechen
-# MT
-error-modal-path-label = Pfad
-# MT
-error-modal-code-label = Code
-error-drawer-pending-count = Weitere Fehler warten
-error-drawer-toggle = Einklappen oder ausklappen
-
-# MT — Error-kind labels
-err-not-found = Datei nicht gefunden
-# MT
-err-permission-denied = Zugriff verweigert
-# MT
-err-disk-full = Ziellaufwerk ist voll
-# MT
-err-interrupted = Vorgang unterbrochen
-# MT
-err-verify-failed = Prüfung nach Kopie fehlgeschlagen
-# MT
-err-path-escape = Pfad abgelehnt — enthält übergeordnete Verzeichnissegmente (..) oder ungültige Bytes
-# MT
-err-path-invalid-encoding = Path rejected — string contains invalid UTF-8 / replacement characters
-# MT
-err-helper-invalid-json = Privileged helper received malformed JSON; ignoring this request
-err-helper-grant-out-of-band = GrantCapabilities must be handled by the helper run-loop, not the stateless handler
-err-randomness-unavailable = OS random-number generator failed; cannot mint a session id
-# MT
-err-io-other = Unbekannter E/A-Fehler
-err-sparseness-mismatch = Sparse-Layout konnte am Ziel nicht beibehalten werden  # MT
-
-# MT — Collision modal
-collision-modal-title = Datei existiert bereits
-# MT
-collision-modal-overwrite = Überschreiben
-# MT
-collision-modal-overwrite-if-newer = Überschreiben wenn neuer
-# MT
-collision-modal-skip = Überspringen
-# MT
-collision-modal-keep-both = Beide behalten
-# MT
-collision-modal-rename = Umbenennen…
-# MT
-collision-modal-apply-to-all = Auf alle anwenden
-# MT
-collision-modal-source = Quelle
-# MT
-collision-modal-destination = Ziel
-# MT
-collision-modal-size = Größe
-# MT
-collision-modal-modified = Geändert
-# MT
-collision-modal-hash-check = Schnelle Prüfsumme (SHA-256)
-# MT
-collision-modal-rename-placeholder = Neuer Dateiname
-# MT
-collision-modal-confirm-rename = Umbenennen
-
-# MT — Error log drawer
-error-log-title = Fehlerprotokoll
-# MT
-error-log-empty = Keine Fehler protokolliert
-# MT
-error-log-export-csv = CSV exportieren
-# MT
-error-log-export-txt = Text exportieren
-# MT
-error-log-clear = Protokoll leeren
-# MT
-error-log-col-time = Zeit
-# MT
-error-log-col-job = Aufgabe
-# MT
-error-log-col-path = Pfad
-# MT
-error-log-col-code = Code
-# MT
-error-log-col-message = Meldung
-# MT
-error-log-col-resolution = Lösung
-
-# MT — History drawer (Phase 9)
-history-title = Verlauf
-# MT
-history-empty = Noch keine Aufgaben aufgezeichnet
-# MT
-history-unavailable = Der Kopierverlauf ist nicht verfügbar. Die App konnte den SQLite-Speicher beim Start nicht öffnen.
-# MT
-history-filter-any = alle
-# MT
-history-filter-kind = Art
-# MT
-history-filter-status = Status
-# MT
-history-filter-text = Suchen
-# MT
-history-refresh = Aktualisieren
-# MT
-history-export-csv = CSV exportieren
-# MT
-history-purge-30 = Älter als 30 Tage löschen
-# MT
-history-rerun = Erneut ausführen
-# MT
-history-detail-open = Details
-# MT
-history-detail-title = Aufgabendetails
-# MT
-history-detail-empty = Keine Einträge aufgezeichnet
-# MT
-history-col-date = Datum
-# MT
-history-col-kind = Art
-# MT
-history-col-src = Quelle
-# MT
-history-col-dst = Ziel
-# MT
-history-col-files = Dateien
-# MT
-history-col-size = Größe
-# MT
-history-col-status = Status
-# MT
-history-col-duration = Dauer
-# MT
-history-col-error = Fehler
-
-# MT
-toast-history-exported = Verlauf exportiert
-# MT
-toast-history-rerun-queued = Erneute Ausführung in Warteschlange
-
-# MT — Totals drawer (Phase 10)
-footer-totals = Gesamt
-# MT
-totals-title = Gesamtwerte
-# MT
-totals-loading = Lade Gesamtwerte…
-# MT
-totals-card-bytes = Kopierte Bytes insgesamt
-# MT
-totals-card-files = Dateien
-# MT
-totals-card-jobs = Aufgaben
-# MT
-totals-card-avg-rate = Durchschnittlicher Durchsatz
-# MT
-totals-errors = Fehler
-# MT
-totals-spark-title = Letzte 30 Tage
-# MT
-totals-kinds-title = Nach Art
-# MT
-totals-saved-title = Eingesparte Zeit (geschätzt)
-# MT
-totals-saved-note = Geschätzt gegenüber einem Standard-Dateimanager-Kopiervorgang derselben Daten.
-# MT
-totals-reset = Statistik zurücksetzen
-# MT
-totals-reset-confirm = Dadurch werden alle gespeicherten Aufgaben und Einträge gelöscht. Fortfahren?
-# MT
-totals-reset-confirm-yes = Ja, zurücksetzen
-# MT
-toast-totals-reset = Statistik zurückgesetzt
-
-# MT — Phase 11a additions
-header-language-label = Sprache
-# MT
-header-language-title = Sprache ändern
-
-# MT
-kind-copy = Kopieren
-# MT
-kind-move = Verschieben
-# MT
-kind-delete = Löschen
-# MT
-kind-secure-delete = Sicher löschen
-
-# MT
-status-running = Läuft
-# MT
-status-succeeded = Erfolgreich
-# MT
-status-failed = Fehlgeschlagen
-# MT
-status-cancelled = Abgebrochen
-# MT
-status-ok = OK
-# MT
-status-skipped = Übersprungen
-
-# MT
-history-search-placeholder = /pfad
-# MT
-toast-history-purged = { $count } Aufgaben älter als 30 Tage gelöscht
-
-# MT
-err-source-required = Mindestens ein Quellpfad ist erforderlich.
-# MT
-err-destination-empty = Der Zielpfad ist leer.
-# MT
-err-source-empty = Der Quellpfad ist leer.
-
-# MT
-duration-lt-1s = < 1 s
-# MT
-duration-ms = { $ms } ms
-# MT
-duration-seconds = { $s } s
-# MT
-duration-minutes-seconds = { $m } min { $s } s
-# MT
-duration-hours-minutes = { $h } h { $m } min
-# MT
-duration-zero = 0 s
-
-# MT
-rate-unit-per-second = { $size }/s
-
-# MT — Phase 11b Settings modal
-settings-title = Einstellungen
-# MT
-settings-tab-general = Allgemein
-# MT
-settings-tab-appearance = Darstellung
-# MT
-settings-section-language = Sprache
-# MT
-settings-phase-12-hint = Weitere Einstellungen (Design, Übertragungs-Standards, Prüfalgorithmus, Profile) kommen in Phase 12.
-
-# MT — Phase 12 Settings window
-settings-loading = Einstellungen werden geladen…
-# MT
-settings-tab-transfer = Übertragung
-# MT
-settings-tab-shell = Shell
-# MT
-settings-tab-secure-delete = Sicher löschen
-# MT
-settings-tab-advanced = Erweitert
-# MT
-settings-tab-profiles = Profile
-
-# MT
-settings-section-theme = Design
-# MT
-settings-theme-auto = Automatisch
-# MT
-settings-theme-light = Hell
-# MT
-settings-theme-dark = Dunkel
-# MT
-settings-start-with-os = Beim Systemstart starten
-# MT
-settings-single-instance = Einzelne laufende Instanz
-# MT
-settings-minimize-to-tray = Beim Schließen in den Tray minimieren
-settings-error-display-mode = Fehler-Dialogstil
-settings-error-display-modal = Modal (blockiert die App)
-settings-error-display-drawer = Seitenleiste (nicht blockierend)
-settings-error-display-mode-hint = Das Modal hält die Warteschlange an, bis Sie entscheiden. Die Seitenleiste hält die Warteschlange am Laufen und lässt Sie Fehler in der Ecke abarbeiten.
-settings-paste-shortcut = Dateien per globalem Tastenkürzel einfügen
-settings-paste-shortcut-combo = Tastenkombination
-settings-paste-shortcut-hint = Drücken Sie diese Kombination an beliebiger Stelle im System, um aus Explorer / Finder / Dateien kopierte Dateien über Copy That einzufügen. CmdOrCtrl entspricht Cmd auf macOS und Strg auf Windows / Linux.
-settings-clipboard-watcher = Zwischenablage auf kopierte Dateien überwachen
-settings-clipboard-watcher-hint = Zeigt eine Einblendung, wenn Datei-URLs in der Zwischenablage erscheinen, und weist darauf hin, dass Sie über Copy That einfügen können. Prüft alle 500 ms, solange aktiv.
-
-# MT
-settings-buffer-size = Puffergröße
-# MT
-settings-verify = Nach Kopie prüfen
-# MT
-settings-verify-off = Aus
-# MT
-settings-concurrency = Parallelität
-# MT
-settings-concurrency-auto = Automatisch
-# MT
-settings-reflink = Reflink / schnelle Pfade
-# MT
-settings-reflink-prefer = Bevorzugen
-# MT
-settings-reflink-avoid = Reflink vermeiden
-# MT
-settings-reflink-disabled = Immer Async-Engine verwenden
-# MT
-settings-fsync-on-close = Beim Schließen auf Festplatte synchronisieren (langsamer, sicherer)
-# MT
-settings-preserve-timestamps = Zeitstempel beibehalten
-# MT
-settings-preserve-permissions = Berechtigungen beibehalten
-# MT
-settings-preserve-acls = ACLs beibehalten (Phase 14)
-settings-preserve-sparseness = Sparse-Dateien bewahren  # MT
-settings-preserve-sparseness-hint = Bei Sparse-Dateien (VM-Disks, Datenbankdateien) werden nur die zugewiesenen Bereiche kopiert, sodass das Ziel dieselbe Größe auf dem Datenträger wie die Quelle behält.  # MT
-
-# MT
-settings-context-menu = Shell-Kontextmenü-Einträge aktivieren
-# MT
-settings-intercept-copy = Standard-Kopier-Handler abfangen (Windows)
-# MT
-settings-intercept-copy-hint = Wenn aktiv, wird Strg+C / Strg+V im Explorer über Copy That abgewickelt. Registrierung in Phase 14.
-# MT
-settings-notify-completion = Bei Auftragsende benachrichtigen
-
-# MT
-settings-shred-method = Standard-Shred-Methode
-# MT
-settings-shred-zero = Null (1 Durchgang)
-# MT
-settings-shred-random = Zufall (1 Durchgang)
-# MT
-settings-shred-dod3 = DoD 5220.22-M (3 Durchgänge)
-# MT
-settings-shred-dod7 = DoD 5220.22-M (7 Durchgänge)
-# MT
-settings-shred-gutmann = Gutmann (35 Durchgänge)
-# MT
-settings-shred-nist = NIST 800-88
-# MT
-settings-shred-confirm-twice = Vor dem Schreddern doppelte Bestätigung verlangen
-
-# MT
-settings-log-level = Log-Level
-# MT
-settings-log-off = Aus
-# MT
-settings-telemetry = Telemetrie
-# MT
-settings-telemetry-never = Niemals — keine Datenübertragung bei keinem Log-Level
-# MT
-settings-error-policy = Standard-Fehlerrichtlinie
-# MT
-settings-error-policy-ask = Fragen
-# MT
-settings-error-policy-skip = Überspringen
-# MT
-settings-error-policy-retry = Mit Backoff wiederholen
-# MT
-settings-error-policy-abort = Bei erstem Fehler abbrechen
-# MT
-settings-history-retention = Verlaufsaufbewahrung (Tage)
-# MT
-settings-history-retention-hint = 0 = für immer behalten. Jeder andere Wert löscht ältere Aufträge beim Start automatisch.
-# MT
-settings-database-path = Datenbankpfad
-# MT
-settings-database-path-default = (Standard — OS-Datenverzeichnis)
-# MT
-settings-reset-all = Auf Standards zurücksetzen
-# MT
-settings-reset-confirm = Alle Einstellungen auf Standards zurücksetzen? Profile bleiben unberührt.
-
-# MT
-settings-profiles-hint = Aktuelle Einstellungen unter einem Namen speichern; später laden, um ohne Anpassung einzelner Regler umzuschalten.
-# MT
-settings-profile-name-placeholder = Profilname
-# MT
-settings-profile-save = Speichern
-# MT
-settings-profile-import = Importieren…
-# MT
-settings-profile-load = Laden
-# MT
-settings-profile-export = Exportieren…
-# MT
-settings-profile-delete = Löschen
-# MT
-settings-profile-empty = Noch keine Profile gespeichert.
-# MT
-settings-profile-import-prompt = Name für das importierte Profil:
-
-# MT
-toast-settings-reset = Einstellungen zurückgesetzt
-# MT
-toast-profile-saved = Profil gespeichert
-# MT
-toast-profile-loaded = Profil geladen
-# MT
-toast-profile-exported = Profil exportiert
-# MT
-toast-profile-imported = Profil importiert
-
-# Phase 13d — activity feed + header picker buttons
 action-add-files = Dateien hinzufügen
 action-add-folders = Ordner hinzufügen
+
+# Phase 13d — activity feed
 activity-title = Aktivität
 activity-clear = Aktivitätsliste leeren
 activity-empty = Noch keine Dateiaktivität.
-activity-after-done = Nach Abschluss:
-activity-keep-open = Anwendung offen lassen
+activity-after-done = Wenn fertig:
+activity-keep-open = App geöffnet lassen
 activity-close-app = App schließen
 activity-shutdown = PC herunterfahren
 activity-logoff = Abmelden
 activity-sleep = Energiesparmodus
 
 # Phase 14 — preflight free-space dialog
-preflight-block-title = Nicht genug Speicher am Ziel
-preflight-warn-title = Wenig Speicher am Ziel
-preflight-unknown-title = Freier Speicher nicht ermittelbar
-preflight-unknown-body = Die Quelle ist zu groß, um schnell gemessen zu werden, oder das Ziellaufwerk antwortet nicht. Sie können fortfahren; die Schutzfunktion der Engine stoppt den Kopiervorgang sauber, falls der Platz ausgeht.
-preflight-required = Benötigt
+preflight-block-title = Nicht genügend Speicherplatz am Ziel
+preflight-warn-title = Wenig Speicherplatz am Ziel
+preflight-unknown-title = Freier Speicherplatz konnte nicht ermittelt werden
+preflight-unknown-body = Die Quelle ist zu groß, um ihre Größe schnell zu bestimmen, oder das Ziellaufwerk hat nicht reagiert. Du kannst fortfahren; die Speicherplatzüberwachung der Engine stoppt den Kopiervorgang sauber, falls der Platz ausgeht.
+preflight-required = Erforderlich
 preflight-free = Frei
 preflight-reserve = Reserve
 preflight-shortfall = Fehlbetrag
 preflight-continue = Trotzdem fortfahren
+preflight-pick-subset = Auswahl zum Kopieren treffen…
 collision-modal-overwrite-older = Nur ältere überschreiben
 
 # Phase 14e — subset picker
-preflight-pick-subset = Auswählen, was kopiert wird…
-subset-title = Zu kopierende Quellen auswählen
-subset-subtitle = Die komplette Auswahl passt nicht auf das Ziel. Wähle aus, was kopiert werden soll; der Rest bleibt zurück.
-subset-loading = Größen werden gemessen…
+subset-title = Quellen zum Kopieren auswählen
+subset-subtitle = Die vollständige Auswahl passt nicht auf das Ziel. Wähle die Elemente aus, die du kopieren möchtest; der Rest bleibt zurück.
+subset-loading = Größen werden ermittelt…
 subset-too-large = zu groß zum Zählen
 subset-budget = Verfügbar
 subset-remaining = Verbleibend
 subset-confirm = Auswahl kopieren
-history-rerun-hint = Diesen Kopiervorgang erneut ausführen — scannt alle Dateien im Quellbaum
-history-clear-all = Alles löschen
+history-rerun-hint = Diesen Kopiervorgang erneut ausführen — scannt jede Datei im Quellverzeichnis neu
+history-clear-all = Alle löschen
 history-clear-all-confirm = Zum Bestätigen erneut klicken
-history-clear-all-hint = Alle Verlaufszeilen löschen. Ein zweiter Klick bestätigt.
-toast-history-cleared = Verlauf gelöscht ({ $count } Zeilen entfernt)
+history-clear-all-hint = Jede Verlaufszeile löschen. Erfordert einen zweiten Klick zur Bestätigung.
+toast-history-cleared = Verlauf geleert ({ $count } Zeilen entfernt)
 
-# Phase 15 — source-list ordering
+# Phase 15 — source-list ordering in the drop staging dialog
 drop-dialog-sort-label = Reihenfolge:
 sort-custom = Benutzerdefiniert
 sort-name-asc = Name A → Z (Dateien zuerst)
@@ -582,757 +74,1040 @@ sort-name-desc = Name Z → A (Dateien zuerst)
 sort-size-asc = Größe aufsteigend (Dateien zuerst)
 sort-size-desc = Größe absteigend (Dateien zuerst)
 sort-reorder = Neu anordnen
-sort-move-top = Nach ganz oben
+sort-move-top = Ganz nach oben
 sort-move-up = Nach oben
 sort-move-down = Nach unten
-sort-move-bottom = Nach ganz unten
+sort-move-bottom = Ganz nach unten
+
+# Phase 16 — sort preset names for the Activity list (shorter
+# wording than the DropStagingDialog variants; the Activity list
+# is files-only so the "(files first)" suffix isn't relevant).
 sort-name-asc-simple = Name A → Z
 sort-name-desc-simple = Name Z → A
-sort-size-asc-simple = Kleinste zuerst
-sort-size-desc-simple = Größte zuerst
-activity-sort-locked = Sortierung ist deaktiviert, während ein Kopiervorgang läuft. Pausiere ihn oder warte bis zum Ende, dann ändere die Reihenfolge.
+sort-size-asc-simple = Größe aufsteigend
+sort-size-desc-simple = Größe absteigend
+activity-sort-locked = Sortieren ist deaktiviert, während ein Kopiervorgang läuft. Pausiere oder warte, bis er fertig ist, und ändere dann die Reihenfolge.
+
+# Phase 17 — collision-policy picker in the DropStagingDialog
 drop-dialog-collision-label = Wenn eine Datei bereits existiert:
-collision-policy-keep-both = Beide behalten (neue Kopie zu _2, _3 … umbenennen)
+collision-policy-keep-both = Beide behalten (neue Kopie zu _2, _3, … umbenennen)
 collision-policy-skip = Neue Kopie überspringen
 collision-policy-overwrite = Vorhandene Datei überschreiben
 collision-policy-overwrite-if-newer = Nur überschreiben, wenn neuer
 collision-policy-prompt = Jedes Mal fragen
-drop-dialog-busy-checking = Freier Speicher wird geprüft…
+
+# Phase 18 — progress labels on the DropStagingDialog Start button
+drop-dialog-busy-checking = Freier Speicherplatz wird geprüft…
 drop-dialog-busy-enumerating = Dateien werden gezählt…
 drop-dialog-busy-starting = Kopiervorgang wird gestartet…
-toast-enumeration-deferred = Der Quellbaum ist groß — Vorabliste wird übersprungen; Zeilen erscheinen, sobald die Engine sie verarbeitet.
+toast-enumeration-deferred = Der Quellbaum ist groß — die vorab erstellte Dateiliste wird übersprungen; Zeilen erscheinen, sobald die Engine sie abarbeitet.
+
+# Context menu (per-row right-click)
+menu-pause = Pausieren
+menu-resume = Fortsetzen
+menu-cancel = Abbrechen
+menu-remove = Aus Warteschlange entfernen
+menu-reveal-source = Quelle im Ordner anzeigen
+menu-reveal-destination = Ziel im Ordner anzeigen
+
+# Header / toolbar
+header-eta-label = Geschätzte verbleibende Zeit
+header-toolbar-label = Globale Steuerung
+
+# Footer
+footer-queued = aktive Aufträge
+footer-total-bytes = in Bearbeitung
+footer-errors = Fehler
+footer-history = Verlauf
+
+# Empty state
+empty-title = Dateien oder Ordner zum Kopieren ablegen
+empty-hint = Ziehe Elemente auf das Fenster. Wir fragen nach einem Ziel und stellen dann pro Quelle einen Auftrag in die Warteschlange.
+empty-region-label = Auftragsliste
+
+# Details drawer
+details-drawer-label = Auftragsdetails
+details-source = Quelle
+details-destination = Ziel
+details-state = Status
+details-bytes = Bytes
+details-files = Dateien
+details-speed = Geschwindigkeit
+details-eta = Restzeit
+details-error = Fehler
+
+# Drop dialog
+drop-dialog-title = Abgelegte Elemente übertragen
+drop-dialog-subtitle = { $count } Element(e) bereit zur Übertragung. Wähle einen Zielordner, um zu beginnen.
+drop-dialog-mode = Vorgang
+drop-dialog-copy = Kopieren
+drop-dialog-move = Verschieben
+drop-dialog-pick-destination = Ziel wählen
+drop-dialog-change-destination = Ziel ändern
+drop-dialog-start-copy = Kopieren starten
+drop-dialog-start-move = Verschieben starten
+
+# ETA placeholders
+eta-calculating = wird berechnet…
+eta-unknown = unbekannt
+
+# Toast messages
+toast-job-done = Übertragung abgeschlossen
+toast-copy-queued = Kopiervorgang in Warteschlange
+toast-move-queued = Verschieben in Warteschlange
+toast-error-resolved = Fehler behoben
+toast-collision-resolved = Konflikt gelöst
+toast-elevated-unavailable = Wiederholung mit erhöhten Rechten kommt in Phase 17 — noch nicht verfügbar
+toast-clipboard-files-detected = Dateien in der Zwischenablage — drücke dein Einfügen-Kürzel, um mit Copy That zu kopieren
+toast-clipboard-no-files = In der Zwischenablage sind keine Dateien zum Einfügen
+toast-error-log-exported = Fehlerprotokoll exportiert
+
+# Error modal (Phase 8)
+error-modal-title = Eine Übertragung ist fehlgeschlagen
+error-modal-retry = Wiederholen
+error-modal-retry-elevated = Mit erhöhten Rechten wiederholen
+error-modal-skip = Überspringen
+error-modal-skip-all-kind = Alle Fehler dieser Art überspringen
+error-modal-abort = Alle abbrechen
+error-modal-path-label = Pfad
+error-modal-code-label = Code
+error-drawer-pending-count = Weitere Fehler warten
+error-drawer-toggle = Ein- oder ausklappen
+
+# Error-kind labels (Phase 8). Source of truth — engine maps each
+# `CopyErrorKind` to one of these keys via `localized_key()`.
+err-not-found = Datei nicht gefunden
+err-permission-denied = Zugriff verweigert
+err-disk-full = Ziellaufwerk ist voll
+err-interrupted = Vorgang unterbrochen
+err-verify-failed = Prüfung nach dem Kopieren fehlgeschlagen
+err-path-escape = Pfad abgelehnt — enthält übergeordnete Verzeichnissegmente (..) oder unzulässige Bytes
+err-path-invalid-encoding = Pfad abgelehnt — Zeichenkette enthält ungültiges UTF-8 / Ersatzzeichen
+err-helper-invalid-json = Privilegierter Helfer hat fehlerhaftes JSON erhalten; diese Anfrage wird ignoriert
+err-helper-grant-out-of-band = GrantCapabilities muss von der Helfer-Run-Loop verarbeitet werden, nicht vom zustandslosen Handler
+err-randomness-unavailable = Zufallszahlengenerator des Betriebssystems fehlgeschlagen; es kann keine Sitzungs-ID erzeugt werden
+err-sparseness-mismatch = Sparse-Layout konnte am Ziel nicht erhalten werden
+err-io-other = Unbekannter E/A-Fehler
+
+# Collision modal (Phase 8)
+collision-modal-title = Datei existiert bereits
+collision-modal-overwrite = Überschreiben
+collision-modal-overwrite-if-newer = Überschreiben, wenn neuer
+collision-modal-skip = Überspringen
+collision-modal-keep-both = Beide behalten
+collision-modal-rename = Umbenennen…
+collision-modal-apply-to-all = Auf alle anwenden
+collision-modal-source = Quelle
+collision-modal-destination = Ziel
+collision-modal-size = Größe
+collision-modal-modified = Geändert
+collision-modal-hash-check = Schnelle Prüfsumme (SHA-256)
+collision-modal-rename-placeholder = Neuer Dateiname
+collision-modal-confirm-rename = Umbenennen
+
+# Error log drawer (Phase 8)
+error-log-title = Fehlerprotokoll
+error-log-empty = Keine Fehler protokolliert
+error-log-export-csv = CSV exportieren
+error-log-export-txt = Text exportieren
+error-log-clear = Protokoll leeren
+error-log-col-time = Zeit
+error-log-col-job = Auftrag
+error-log-col-path = Pfad
+error-log-col-code = Code
+error-log-col-message = Meldung
+error-log-col-resolution = Lösung
+
+# History drawer (Phase 9)
+history-title = Verlauf
+history-empty = Noch keine Aufträge erfasst
+history-unavailable = Der Kopierverlauf ist nicht verfügbar. Die App konnte den SQLite-Speicher beim Start nicht öffnen.
+history-filter-any = beliebig
+history-filter-kind = Art
+history-filter-status = Status
+history-filter-text = Suchen
+history-refresh = Aktualisieren
+history-export-csv = CSV exportieren
+history-purge-30 = > 30 Tage bereinigen
+history-rerun = Erneut ausführen
+history-detail-open = Details
+history-detail-title = Auftragsdetails
+history-detail-empty = Keine Elemente erfasst
+history-col-date = Datum
+history-col-kind = Art
+history-col-src = Quelle
+history-col-dst = Ziel
+history-col-files = Dateien
+history-col-size = Größe
+history-col-status = Status
+history-col-duration = Dauer
+history-col-error = Fehler
+toast-history-exported = Verlauf exportiert
+toast-history-rerun-queued = Erneute Ausführung in Warteschlange
+
+# Totals drawer (Phase 10)
+footer-totals = Summen
+totals-title = Summen
+totals-loading = Summen werden geladen…
+totals-card-bytes = Insgesamt kopierte Bytes
+totals-card-files = Dateien
+totals-card-jobs = Aufträge
+totals-card-avg-rate = Durchschnittlicher Durchsatz
+totals-errors = Fehler
+totals-spark-title = Letzte 30 Tage
+totals-kinds-title = Nach Art
+totals-saved-title = Gesparte Zeit (geschätzt)
+totals-saved-note = Geschätzt im Vergleich zu einem Standard-Dateimanager bei gleicher Arbeitslast.
+totals-reset = Statistik zurücksetzen
+totals-reset-confirm = Dies löscht jeden gespeicherten Auftrag und jedes Element. Fortfahren?
+totals-reset-confirm-yes = Ja, zurücksetzen
+toast-totals-reset = Statistik zurückgesetzt
+
+# Phase 11a — i18n core: surface remaining user-visible strings so
+# every string on a main-window screen flows through Fluent.
+
+# Header language switcher (temporary placement — folds into
+# Settings → General in Phase 12).
+header-language-label = Sprache
+header-language-title = Sprache ändern
+
+# Job-kind labels. History filter, Totals breakdown, and history
+# rows all map wire-format `kind` strings to these labels.
+kind-copy = Kopieren
+kind-move = Verschieben
+kind-delete = Löschen
+kind-secure-delete = Sicher löschen
+
+# History status labels. Distinct from `state-*` because the
+# history wire format uses plain `running`/`succeeded`/... rather
+# than the live `JobState` enum the queue exposes.
+status-running = Läuft
+status-succeeded = Erfolgreich
+status-failed = Fehlgeschlagen
+status-cancelled = Abgebrochen
+# Per-item status (not job-level): `ok` / `skipped` are only
+# reachable from the history detail view.
+status-ok = OK
+status-skipped = Übersprungen
+
+# History drawer: search field placeholder + purge toast.
+history-search-placeholder = /pfad
+toast-history-purged = { $count } Aufträge älter als 30 Tage bereinigt
+
+# User-facing command-layer validation errors. The Rust side
+# returns these keys when input is missing; the toast layer looks
+# them up rather than showing the raw English.
+err-source-required = Mindestens ein Quellpfad ist erforderlich.
+err-destination-empty = Der Zielpfad ist leer.
+err-source-empty = Der Quellpfad ist leer.
+
+# Localised duration formatting for the Totals drawer and ETA
+# fields. `{ $ms }`, `{ $s }`, `{ $m }`, `{ $h }` are integer
+# placeables — the formatter passes pre-computed values in.
+duration-lt-1s = < 1 s
+duration-ms = { $ms } ms
+duration-seconds = { $s } s
+duration-minutes-seconds = { $m } min { $s } s
+duration-hours-minutes = { $h } h { $m } min
+duration-zero = 0 s
+
+# Rate unit. Appended to a formatted byte size. Some languages
+# render this with a leading space ("Ko/s"); keep it translatable
+# even though the SI-derived "/s" is near-universal.
+rate-unit-per-second = { $size }/s
+
+# Phase 11b — Settings modal skeleton. Phase 12 expanded this into a
+# full six-tab preferences window; the `settings-phase-12-hint` key
+# is retired in favour of `settings-tab-profiles` + concrete labels.
+settings-title = Einstellungen
+settings-tab-general = Allgemein
+settings-tab-appearance = Darstellung
+settings-section-language = Sprache
+settings-phase-12-hint = Weitere Einstellungen (Design, Übertragungsstandards, Prüfalgorithmus, Profile) kommen in Phase 12.
+
+# Phase 12 — full Settings window keys. Grouped by tab so the
+# human-review pass can pick one section at a time. Every field
+# label and every option label that the user will actually read
+# has its own key; dynamic wire values (enum discriminants like
+# "auto" / "prefer") stay untranslated on the wire.
+
+settings-loading = Einstellungen werden geladen…
+settings-tab-transfer = Übertragung
+settings-tab-filters = Filter
+settings-tab-shell = Shell
+settings-tab-secure-delete = Sicher löschen
+settings-tab-advanced = Erweitert
+settings-tab-updater = Updates
+settings-tab-profiles = Profile
+
+# General tab additions
+settings-section-theme = Design
+settings-theme-auto = Automatisch
+settings-theme-light = Hell
+settings-theme-dark = Dunkel
+settings-start-with-os = Beim Systemstart starten
+settings-single-instance = Nur eine laufende Instanz
+settings-minimize-to-tray = Beim Schließen in den Infobereich minimieren
+settings-error-display-mode = Stil der Fehlermeldung
+settings-error-display-modal = Modal (blockiert die App)
+settings-error-display-drawer = Seitenleiste (nicht blockierend)
+settings-error-display-mode-hint = Modal stoppt die Warteschlange, bis du entscheidest. Die Seitenleiste hält die Warteschlange in Bewegung und lässt dich Fehler in der Ecke abarbeiten.
+settings-paste-shortcut = Dateien per globalem Tastenkürzel einfügen
+settings-paste-shortcut-combo = Tastenkombination
+settings-paste-shortcut-hint = Drücke diese Kombination überall auf deinem System, um aus Explorer / Finder / Files kopierte Dateien per Copy That einzufügen. CmdOrCtrl entspricht Cmd unter macOS, Ctrl unter Windows / Linux.
+settings-clipboard-watcher = Zwischenablage auf kopierte Dateien überwachen
+settings-clipboard-watcher-hint = Zeigt eine Benachrichtigung, wenn Datei-URLs in der Zwischenablage erscheinen, mit dem Hinweis, dass du per Copy That einfügen kannst. Prüft alle 500 ms, solange aktiviert.
+
+# Transfer tab
+settings-buffer-size = Puffergröße
+settings-verify = Nach dem Kopieren prüfen
+settings-verify-off = Aus
+settings-concurrency = Parallelität
+settings-concurrency-auto = Automatisch
+settings-reflink = Reflink / schnelle Pfade
+settings-reflink-prefer = Bevorzugen
+settings-reflink-avoid = Reflink vermeiden
+settings-reflink-disabled = Immer asynchrone Engine verwenden
+settings-fsync-on-close = Beim Schließen auf Datenträger synchronisieren (langsamer, sicherer)
+settings-preserve-timestamps = Zeitstempel beibehalten
+settings-preserve-permissions = Berechtigungen beibehalten
+settings-preserve-acls = ACLs beibehalten (Phase 14)
+settings-preserve-sparseness = Sparse-Dateien beibehalten
+settings-preserve-sparseness-hint = Kopiert nur die belegten Bereiche von Sparse-Dateien (VM-Festplatten, Datenbankdateien), sodass das Ziel dieselbe Größe auf dem Datenträger behält wie die Quelle.
+
+# Shell tab
+settings-context-menu = Einträge im Shell-Kontextmenü aktivieren
+settings-intercept-copy = Standard-Kopierhandler abfangen (Windows)
+settings-intercept-copy-hint = Wenn aktiviert, werden Strg+C / Strg+V im Explorer über Copy That geleitet. Die Registrierung kommt in Phase 14.
+settings-notify-completion = Bei Auftragsabschluss benachrichtigen
+
+# Secure delete tab
+settings-shred-method = Standard-Schreddermethode
+settings-shred-zero = Nullen (1 Durchgang)
+settings-shred-random = Zufällig (1 Durchgang)
+settings-shred-dod3 = DoD 5220.22-M (3 Durchgänge)
+settings-shred-dod7 = DoD 5220.22-M (7 Durchgänge)
+settings-shred-gutmann = Gutmann (35 Durchgänge)
+settings-shred-nist = NIST 800-88
+settings-shred-confirm-twice = Vor dem Schreddern doppelte Bestätigung verlangen
+
+# Advanced tab
+settings-log-level = Protokollebene
+settings-log-off = Aus
+settings-telemetry = Telemetrie
+settings-telemetry-never = Niemals — kein Phone-Home auf keiner Protokollebene
+settings-error-policy = Standard-Fehlerverhalten
+settings-error-policy-ask = Fragen
+settings-error-policy-skip = Überspringen
+settings-error-policy-retry = Mit Wartezeit wiederholen
+settings-error-policy-abort = Beim ersten Fehler abbrechen
+settings-history-retention = Verlauf aufbewahren (Tage)
+settings-history-retention-hint = 0 = für immer behalten. Jeder andere Wert bereinigt ältere Aufträge automatisch beim Start.
+settings-database-path = Datenbankpfad
+settings-database-path-default = (Standard — Datenverzeichnis des Betriebssystems)
+settings-reset-all = Auf Standard zurücksetzen
+settings-reset-confirm = Jede Einstellung auf ihren Standard zurücksetzen? Profile sind nicht betroffen.
+
+# Profiles tab
+settings-profiles-hint = Speichere die aktuellen Einstellungen unter einem Namen; lade sie später, um zurückzuwechseln, ohne einzelne Optionen anzupassen.
+settings-profile-name-placeholder = Profilname
+settings-profile-save = Speichern
+settings-profile-import = Importieren…
+settings-profile-load = Laden
+settings-profile-export = Exportieren…
+settings-profile-delete = Löschen
+settings-profile-empty = Noch keine Profile gespeichert.
+settings-profile-import-prompt = Name für das importierte Profil:
+
+# Toasts driven by Phase 12 profile actions
+toast-settings-reset = Einstellungen zurückgesetzt
+toast-profile-saved = Profil gespeichert
+toast-profile-loaded = Profil geladen
+toast-profile-exported = Profil exportiert
+toast-profile-imported = Profil importiert
 
 # Phase 14a — enumeration-time filters
-# MT
-settings-tab-filters = Filter
-# MT
-settings-filters-hint = Überspringt Dateien bereits beim Aufzählen, bevor die Engine sie öffnet. Einschließen gilt nur für Dateien; Ausschließen bereinigt auch passende Ordner.
-# MT
+settings-filters-hint = Überspringt Dateien beim Einlesen, sodass die Engine sie gar nicht erst öffnet. Includes gelten nur für Dateien; Excludes entfernen auch passende Verzeichnisse.
 settings-filters-enabled = Filter für Baumkopien aktivieren
-# MT
-settings-filters-include-globs = Einschluss-Globs
-# MT
+settings-filters-include-globs = Include-Globs
 settings-filters-include-globs-placeholder = **/*.txt
-# MT
-settings-filters-include-globs-hint = Ein Glob pro Zeile. Wenn vorhanden, muss eine Datei mindestens einem entsprechen. Ordner werden stets durchlaufen.
-# MT
-settings-filters-exclude-globs = Ausschluss-Globs
-# MT
+settings-filters-include-globs-hint = Ein Glob pro Zeile. Wenn nicht leer, muss eine Datei mindestens einem Include entsprechen, um erhalten zu bleiben. In Verzeichnisse wird immer hinabgestiegen.
+settings-filters-exclude-globs = Exclude-Globs
 settings-filters-exclude-globs-placeholder = **/node_modules
-# MT
-settings-filters-exclude-globs-hint = Ein Glob pro Zeile. Treffer schneiden den gesamten Unterbaum für Ordner ab; passende Dateien werden übersprungen.
-# MT
+settings-filters-exclude-globs-hint = Ein Glob pro Zeile. Treffer entfernen bei Verzeichnissen den gesamten Unterbaum; passende Dateien werden übersprungen.
 settings-filters-size-range = Dateigrößenbereich
-# MT
 settings-filters-min-size-bytes = Mindestgröße (Bytes, leer = keine Untergrenze)
-# MT
-settings-filters-max-size-bytes = Höchstgröße (Bytes, leer = keine Obergrenze)
-# MT
+settings-filters-max-size-bytes = Maximalgröße (Bytes, leer = keine Obergrenze)
 settings-filters-date-range = Änderungszeitraum
-# MT
-settings-filters-min-mtime = Geändert ab
-# MT
-settings-filters-max-mtime = Geändert bis
-# MT
-settings-filters-attributes = Attribute
-# MT
+settings-filters-min-mtime = Geändert am oder nach
+settings-filters-max-mtime = Geändert am oder vor
+settings-filters-attributes = Attributbits
 settings-filters-skip-hidden = Versteckte Dateien / Ordner überspringen
-# MT
 settings-filters-skip-system = Systemdateien überspringen (nur Windows)
-# MT
 settings-filters-skip-readonly = Schreibgeschützte Dateien überspringen
 
 # Phase 15 — auto-update
-# MT
-settings-tab-updater = Updates
-# MT
-settings-updater-hint = Copy That prüft höchstens einmal am Tag auf signierte Updates. Updates werden beim nächsten Beenden der App installiert.
-# MT
+settings-updater-hint = Copy That sucht höchstens einmal täglich nach signierten Updates. Updates werden beim nächsten Beenden der App installiert.
 settings-updater-auto-check = Beim Start nach Updates suchen
-# MT
-settings-updater-channel = Veröffentlichungskanal
-# MT
+settings-updater-channel = Release-Kanal
 settings-updater-channel-stable = Stabil
-# MT
 settings-updater-channel-beta = Beta (Vorabversion)
-# MT
-settings-updater-last-check = Letzte Prüfung
-# MT
-settings-updater-last-never = Nie
-# MT
+settings-updater-last-check = Zuletzt geprüft
+settings-updater-last-never = Niemals
 settings-updater-check-now = Jetzt nach Updates suchen
-# MT
 settings-updater-checking = Wird geprüft…
-# MT
 settings-updater-available = Update verfügbar
-# MT
-settings-updater-up-to-date = Du verwendest die neueste Version.
-# MT
+settings-updater-up-to-date = Du nutzt die neueste Version.
 settings-updater-dismiss = Diese Version überspringen
-# MT
 settings-updater-dismissed = Übersprungen
-# MT
 toast-update-available = Eine neuere Version ist verfügbar
-# MT
-toast-update-up-to-date = Du hast bereits die neueste Version
+toast-update-up-to-date = Du nutzt bereits die neueste Version
 
 # Phase 19a — disk-backed file enumeration (TeraCopy-compatible scan DB)
-# MT
-scan-progress-title = Scan läuft…
-# MT
+scan-progress-title = Wird gescannt…
 scan-progress-stats = { $files } Dateien · { $bytes } bisher
-# MT
-scan-pause-button = Scan anhalten
-# MT
+scan-pause-button = Scan pausieren
 scan-resume-button = Scan fortsetzen
-# MT
 scan-cancel-button = Scan abbrechen
-# MT
 scan-cancel-confirm = Scan abbrechen und Fortschritt verwerfen?
-# MT
-scan-db-header = Scandatenbank
-# MT
-scan-db-hint = Scandatenbank auf Festplatte für Aufträge mit Millionen von Dateien.
-# MT
+scan-db-header = Scan-Datenbank
+scan-db-hint = Datenträgerbasierte Scan-Datenbank für Aufträge mit mehreren Millionen Dateien.
 advanced-scan-hash-during = Prüfsummen während des Scans berechnen
-# MT
-advanced-scan-db-path = Speicherort der Scandatenbank
-# MT
-advanced-scan-retention-days = Abgeschlossene Scans automatisch löschen nach (Tage)
-# MT
-advanced-scan-max-keep = Maximale Anzahl behaltener Scandatenbanken
+advanced-scan-db-path = Speicherort der Scan-Datenbank
+advanced-scan-retention-days = Abgeschlossene Scans automatisch löschen nach (Tagen)
+advanced-scan-max-keep = Maximale Anzahl aufzubewahrender Scan-Datenbanken
 
 # Phase 19b — filesystem-snapshot source for locked files.
-# MT
-settings-on-locked = When a file is locked
-# MT
-settings-on-locked-ask = Ask the first time
-# MT
-settings-on-locked-retry = Retry briefly, then surface the error
-# MT
-settings-on-locked-skip = Skip the locked file
-# MT
-settings-on-locked-snapshot = Use a filesystem snapshot
-# MT
-settings-on-locked-hint = Eliminate "file in use by another process" errors. Copy That snapshots the source volume (VSS on Windows, ZFS/Btrfs on Linux, APFS on macOS) and reads from the snapshot copy.
-# MT
-snapshot-prompt-title = This file is in use by another process
-# MT
-snapshot-prompt-body = Another program has { $path } open for exclusive write. Choose how Copy That should handle this and similar files on the same volume.
-# MT
-snapshot-source-active = 📷 Reading from { $kind } snapshot of { $volume }
-# MT
-snapshot-create-failed = Could not create a snapshot of the source volume
-# MT
-snapshot-vss-needs-elevation = Reading from a VSS snapshot requires Administrator permission. Copy That will ask you to allow it.
-# MT
-snapshot-cleanup-failed = The snapshot helper reported a cleanup failure — a leftover shadow copy may remain on the volume.
+settings-on-locked = Wenn eine Datei gesperrt ist
+settings-on-locked-ask = Beim ersten Mal fragen
+settings-on-locked-retry = Kurz wiederholen, dann den Fehler anzeigen
+settings-on-locked-skip = Gesperrte Datei überspringen
+settings-on-locked-snapshot = Dateisystem-Snapshot verwenden
+settings-on-locked-hint = Beseitigt Fehler "Datei wird von einem anderen Prozess verwendet". Copy That erstellt einen Snapshot des Quelllaufwerks (VSS unter Windows, ZFS/Btrfs unter Linux, APFS unter macOS) und liest aus der Snapshot-Kopie.
+snapshot-prompt-title = Diese Datei wird von einem anderen Prozess verwendet
+snapshot-prompt-body = Ein anderes Programm hat { $path } exklusiv zum Schreiben geöffnet. Wähle, wie Copy That diese und ähnliche Dateien auf demselben Laufwerk behandeln soll.
+snapshot-source-active = 📷 Liest aus { $kind }-Snapshot von { $volume }
+snapshot-create-failed = Es konnte kein Snapshot des Quelllaufwerks erstellt werden
+snapshot-vss-needs-elevation = Das Lesen aus einem VSS-Snapshot erfordert Administratorrechte. Copy That wird dich um Erlaubnis bitten.
+snapshot-cleanup-failed = Der Snapshot-Helfer hat einen Aufräumfehler gemeldet — eine übrig gebliebene Schattenkopie könnte auf dem Laufwerk verbleiben.
 
 # Phase 20 — durable resume journal.
-# MT
-resume-prompt-title = Resume previous transfers?
-# MT
-resume-prompt-body = Copy That detected { $count } unfinished transfer(s) from a previous session. Choose what to do with each.
-# MT
-resume-prompt-resume = Resume
-# MT
-resume-prompt-resume-all = Resume all
-# MT
-resume-discard-one = Don't resume
-# MT
-resume-discard-all = Discard all
-# MT
-resume-aborted-hash-mismatch = The destination's first { $offset } bytes don't match the source — restarting from the beginning.
-# MT
-settings-auto-resume = Auto-resume interrupted jobs without prompting
-# MT
-settings-auto-resume-hint = Skip the resume prompt at startup and silently re-enqueue every unfinished job. Off by default.
+resume-prompt-title = Vorherige Übertragungen fortsetzen?
+resume-prompt-body = Copy That hat { $count } unvollständige Übertragung(en) aus einer vorherigen Sitzung erkannt. Wähle, was mit jeder geschehen soll.
+resume-prompt-resume = Fortsetzen
+resume-prompt-resume-all = Alle fortsetzen
+resume-discard-one = Nicht fortsetzen
+resume-discard-all = Alle verwerfen
+resume-aborted-hash-mismatch = Die ersten { $offset } Bytes des Ziels stimmen nicht mit der Quelle überein — der Vorgang wird von vorn begonnen.
+settings-auto-resume = Unterbrochene Aufträge ohne Nachfrage automatisch fortsetzen
+settings-auto-resume-hint = Überspringt die Fortsetzungsabfrage beim Start und reiht jeden unvollständigen Auftrag stillschweigend wieder ein. Standardmäßig aus.
 
 # Phase 21 — bandwidth shaping (GCRA token bucket + schedule + auto-throttle).
-# MT
-settings-tab-network = Network
-# MT
-settings-network-hint = Cap your transfer rate to keep the rest of the network usable. Apply globally, follow a daily schedule, or react automatically to metered Wi-Fi / battery / cellular connections.
-# MT
-settings-network-mode = Bandwidth limit
-# MT
-settings-network-mode-off = Off (no limit)
-# MT
-settings-network-mode-fixed = Fixed value
-# MT
-settings-network-mode-schedule = Use schedule
-# MT
-settings-network-cap-mbps = Cap (MB/s)
-# MT
-settings-network-schedule = Schedule (rclone format)
-# MT
-settings-network-schedule-hint = Whitespace-separated HH:MM,rate boundaries plus optional Mon-Fri,rate day rules. Rates: 512k, 10M, 2G, off, unlimited. Example: 08:00,512k 18:00,10M Sat-Sun,unlimited.
-# MT
-settings-network-auto-header = Auto-throttle
-# MT
-settings-network-auto-metered = On metered Wi-Fi
-# MT
-settings-network-auto-battery = On battery
-# MT
-settings-network-auto-cellular = On cellular
-# MT
-settings-network-auto-unchanged = Don't override
-# MT
-settings-network-auto-pause = Pause transfers
-# MT
-settings-network-auto-cap = Cap to fixed value
-# MT
-shape-badge-paused = paused
-# MT
-shape-badge-tooltip = Bandwidth limit active — click to open Settings → Network
-# MT
-shape-badge-source-schedule = scheduled
-# MT
-shape-badge-source-metered = metered
-# MT
-shape-badge-source-battery = on battery
-# MT
-shape-badge-source-cellular = cellular
-# MT
-shape-badge-source-settings = active
-# MT
-shape-error-schedule-invalid = Schedule format is not valid: { $message }
+settings-tab-network = Netzwerk
+settings-network-hint = Begrenze deine Übertragungsrate, damit der Rest des Netzwerks nutzbar bleibt. Wende sie global an, folge einem Tagesplan oder reagiere automatisch auf getaktete WLAN- / Akku- / Mobilfunkverbindungen.
+settings-network-mode = Bandbreitenbegrenzung
+settings-network-mode-off = Aus (keine Begrenzung)
+settings-network-mode-fixed = Fester Wert
+settings-network-mode-schedule = Zeitplan verwenden
+settings-network-cap-mbps = Begrenzung (MB/s)
+settings-network-schedule = Zeitplan (rclone-Format)
+settings-network-schedule-hint = Durch Leerzeichen getrennte HH:MM,Rate-Grenzen plus optionale Mon-Fri,Rate-Tagesregeln. Raten: 512k, 10M, 2G, off, unlimited. Beispiel: 08:00,512k 18:00,10M Sat-Sun,unlimited.
+settings-network-auto-header = Automatische Drosselung
+settings-network-auto-metered = Bei getaktetem WLAN
+settings-network-auto-battery = Im Akkubetrieb
+settings-network-auto-cellular = Bei Mobilfunk
+settings-network-auto-unchanged = Nicht überschreiben
+settings-network-auto-pause = Übertragungen pausieren
+settings-network-auto-cap = Auf festen Wert begrenzen
+shape-badge-paused = pausiert
+shape-badge-tooltip = Bandbreitenbegrenzung aktiv — klicken, um Einstellungen → Netzwerk zu öffnen
+shape-badge-source-schedule = geplant
+shape-badge-source-metered = getaktet
+shape-badge-source-battery = im Akkubetrieb
+shape-badge-source-cellular = Mobilfunk
+shape-badge-source-settings = aktiv
+shape-error-schedule-invalid = Zeitplanformat ist ungültig: { $message }
 
 # Phase 22 — aggregate conflict dialog v2 (thumbnails, per-pattern
 # rules, and reusable conflict profiles). Every key below is user-
 # visible text in the `ConflictBatchModal.svelte` component.
-# MT
-conflict-batch-title = { $count } file conflicts in { $jobname }
-# MT
-conflict-batch-state-pending = Pending
-# MT
-conflict-batch-state-resolved = Resolved
-# MT
-conflict-batch-action-overwrite = Overwrite
-# MT
-conflict-batch-action-skip = Skip
-# MT
-conflict-batch-action-keep-both = Keep both
-# MT
-conflict-batch-action-newer-wins = Newer wins
-# MT
-conflict-batch-action-larger-wins = Larger wins
-# MT
-conflict-batch-bulk-apply-selected = Apply to selected
-# MT
-conflict-batch-bulk-apply-extension = Apply to all of this extension
-# MT
-conflict-batch-bulk-apply-glob = Apply to matching glob…
-# MT
-conflict-batch-bulk-apply-remaining = Apply to all remaining
-# MT
-conflict-batch-bulk-glob-placeholder = e.g. **/*.tmp
-# MT
-conflict-batch-save-profile = Save these rules as profile…
-# MT
-conflict-batch-profile-placeholder = Profile name
-# MT
-conflict-batch-matched-rule = via rule '{ $rule }' → { $action }
-# MT
-conflict-batch-empty = All conflicts resolved
-# MT
-conflict-batch-source-vs-destination = Source vs. destination
-# MT
-conflict-batch-source-label = Source
-# MT
-conflict-batch-destination-label = Destination
-# MT
-conflict-batch-size-label = Size
-# MT
-conflict-batch-modified-label = Modified
-# MT
-conflict-batch-close = Close
-# MT
-conflict-batch-profile-saved = Conflict profile saved
+conflict-batch-title = { $count } Dateikonflikte in { $jobname }
+conflict-batch-state-pending = Ausstehend
+conflict-batch-state-resolved = Gelöst
+conflict-batch-action-overwrite = Überschreiben
+conflict-batch-action-skip = Überspringen
+conflict-batch-action-keep-both = Beide behalten
+conflict-batch-action-newer-wins = Neuere gewinnt
+conflict-batch-action-larger-wins = Größere gewinnt
+conflict-batch-bulk-apply-selected = Auf Auswahl anwenden
+conflict-batch-bulk-apply-extension = Auf alle dieser Erweiterung anwenden
+conflict-batch-bulk-apply-glob = Auf passende Glob anwenden…
+conflict-batch-bulk-apply-remaining = Auf alle übrigen anwenden
+conflict-batch-bulk-glob-placeholder = z. B. **/*.tmp
+conflict-batch-save-profile = Diese Regeln als Profil speichern…
+conflict-batch-profile-placeholder = Profilname
+conflict-batch-matched-rule = über Regel '{ $rule }' → { $action }
+conflict-batch-empty = Alle Konflikte gelöst
+conflict-batch-source-vs-destination = Quelle vs. Ziel
+conflict-batch-source-label = Quelle
+conflict-batch-destination-label = Ziel
+conflict-batch-size-label = Größe
+conflict-batch-modified-label = Geändert
+conflict-batch-close = Schließen
+conflict-batch-profile-saved = Konfliktprofil gespeichert
 
-# Phase 23 — sparse-file preservation. MT-flagged drafts; the
-# authoritative English source lives in locales/en/copythat.ftl.
-sparse-not-supported-title = Ziel füllt Sparse-Dateien aus  # MT
-sparse-not-supported-body = { $dst_fs } unterstützt keine Sparse-Dateien. Löcher in der Quelle wurden als Nullen geschrieben, daher ist das Ziel auf dem Datenträger größer.  # MT
-sparse-warning-densified = Sparse-Layout beibehalten: nur zugewiesene Bereiche wurden kopiert.  # MT
-sparse-warning-mismatch = Sparse-Layout stimmt nicht überein — Ziel könnte größer als erwartet sein.  # MT
+# Phase 23 — sparse-file preservation. The toast fires once per
+# destination volume when the filesystem can't preserve holes; the
+# warning line is surfaced in the job detail drawer so the user knows
+# the dst is larger on disk than the source was.
+sparse-not-supported-title = Ziel füllt Sparse-Dateien auf
+sparse-not-supported-body = { $dst_fs } unterstützt keine Sparse-Dateien. Lücken in der Quelle wurden als Nullen geschrieben, daher belegt das Ziel mehr Platz auf dem Datenträger.
+sparse-warning-densified = Sparse-Layout erhalten: Es wurden nur belegte Bereiche kopiert.
+sparse-warning-mismatch = Abweichung im Sparse-Layout — das Ziel könnte größer als erwartet sein.
 
-# Phase 24 — security-metadata preservation. MT-flagged drafts;
-# the authoritative English source lives in locales/en/copythat.ftl.
-settings-preserve-security-metadata = Sicherheitsmetadaten bewahren  # MT
-settings-preserve-security-metadata-hint = Out-of-Band-Metadatenströme (NTFS-ADS / xattrs / POSIX-ACLs / SELinux-Kontexte / Linux-Datei-Capabilities / macOS-Ressourcen-Forks) bei jeder Kopie erfassen und erneut anwenden.  # MT
-settings-preserve-motw = Mark-of-the-Web (Aus-dem-Internet-heruntergeladen-Flag) bewahren  # MT
-settings-preserve-motw-hint = Sicherheitskritisch. SmartScreen und Office Protected View nutzen diesen Stream, um vor aus dem Internet heruntergeladenen Dateien zu warnen. Deaktivieren erlaubt einer heruntergeladenen Anwendung, ihre Herkunftsmarkierung beim Kopieren abzuwerfen und Betriebssystem-Schutzmaßnahmen zu umgehen.  # MT
-settings-preserve-posix-acls = POSIX-ACLs und erweiterte Attribute bewahren  # MT
-settings-preserve-posix-acls-hint = user.* / system.* / trusted.* xattrs und POSIX-Zugriffssteuerungslisten beim Kopieren übernehmen.  # MT
-settings-preserve-selinux = SELinux-Kontexte bewahren  # MT
-settings-preserve-selinux-hint = Das security.selinux-Label beim Kopieren übernehmen, damit unter MAC-Richtlinien laufende Daemons weiterhin auf die Datei zugreifen können.  # MT
-settings-preserve-resource-forks = macOS-Ressourcen-Forks und Finder-Info bewahren  # MT
-settings-preserve-resource-forks-hint = Den Legacy-Ressourcen-Fork und FinderInfo (Farbtags, Carbon-Metadaten) beim Kopieren übernehmen.  # MT
-settings-appledouble-fallback = AppleDouble-Sidecar auf inkompatiblen Dateisystemen verwenden  # MT
-meta-translated-to-appledouble = Fremde Metadaten im AppleDouble-Sidecar gespeichert (._{ $ext })  # MT
+# Phase 24 — security-metadata preservation. The Mark-of-the-Web
+# (Zone.Identifier ADS) toggle is security-sensitive: turning it off
+# lets a downloaded executable shed its SmartScreen / Office Protected
+# View flag on copy, which is why the tooltip carries an explicit
+# warning. AppleDouble fallback emits `._<filename>` sidecars on
+# destination filesystems that can't hold the foreign metadata.
+settings-preserve-security-metadata = Sicherheitsmetadaten beibehalten
+settings-preserve-security-metadata-hint = Erfasst und überträgt bei jedem Kopiervorgang Out-of-Band-Metadatenströme (NTFS ADS / xattrs / POSIX-ACLs / SELinux-Kontexte / Linux-Dateifähigkeiten / macOS-Resource-Forks) erneut.
+settings-preserve-motw = Mark-of-the-Web beibehalten (Aus-dem-Internet-heruntergeladen-Markierung)
+settings-preserve-motw-hint = Sicherheitskritisch. SmartScreen und die geschützte Office-Ansicht nutzen diesen Stream, um vor aus dem Internet heruntergeladenen Dateien zu warnen. Beim Deaktivieren kann eine heruntergeladene ausführbare Datei ihre Herkunftsmarkierung beim Kopieren ablegen und Schutzmechanismen des Betriebssystems umgehen.
+settings-preserve-posix-acls = POSIX-ACLs und erweiterte Attribute beibehalten
+settings-preserve-posix-acls-hint = Überträgt user.* / system.* / trusted.* xattrs und POSIX-Zugriffssteuerungslisten beim Kopieren.
+settings-preserve-selinux = SELinux-Kontexte beibehalten
+settings-preserve-selinux-hint = Überträgt die security.selinux-Kennzeichnung beim Kopieren, damit unter MAC-Richtlinien laufende Daemons weiterhin auf die Datei zugreifen können.
+settings-preserve-resource-forks = macOS-Resource-Forks und Finder-Infos beibehalten
+settings-preserve-resource-forks-hint = Überträgt den klassischen Resource-Fork und FinderInfo (Farbmarkierungen, Carbon-Metadaten) beim Kopieren.
+settings-appledouble-fallback = AppleDouble-Sidecar auf inkompatiblen Dateisystemen verwenden
+meta-translated-to-appledouble = Fremde Metadaten in AppleDouble-Sidecar gespeichert (._{ $ext })
 
 # Phase 25 — two-way sync with vector-clock conflict detection.
-# MT-flagged drafts; the authoritative English source lives in
-# locales/en/copythat.ftl.
-footer-sync = Sync  # MT
-sync-drawer-title = Zwei-Wege-Synchronisation  # MT
-sync-drawer-hint = Halten Sie zwei Ordner ohne stille Überschreibungen synchron. Gleichzeitige Bearbeitungen erscheinen als auflösbare Konflikte.  # MT
-sync-add-pair = Paar hinzufügen  # MT
-sync-add-cancel = Abbrechen  # MT
-sync-refresh = Aktualisieren  # MT
-sync-add-save = Paar speichern  # MT
-sync-add-saving = Speichern…  # MT
-sync-add-missing-fields = Bezeichnung, linker Pfad und rechter Pfad sind alle erforderlich.  # MT
-sync-remove-confirm = Dieses Sync-Paar entfernen? Die Zustandsdatenbank bleibt erhalten; die Ordner bleiben unberührt.  # MT
-sync-field-label = Bezeichnung  # MT
-sync-field-label-placeholder = z.B. Dokumente ↔ NAS  # MT
-sync-field-left = Linker Ordner  # MT
-sync-field-left-placeholder = Absoluten Pfad wählen oder einfügen  # MT
-sync-field-right = Rechter Ordner  # MT
-sync-field-right-placeholder = Absoluten Pfad wählen oder einfügen  # MT
-sync-field-mode = Modus  # MT
-sync-mode-two-way = Zwei-Wege  # MT
-sync-mode-mirror-left-to-right = Spiegel (links → rechts)  # MT
-sync-mode-mirror-right-to-left = Spiegel (rechts → links)  # MT
-sync-mode-contribute-left-to-right = Beitragen (links → rechts, keine Löschungen)  # MT
-sync-no-pairs = Noch keine Sync-Paare konfiguriert. Klicken Sie auf "Paar hinzufügen", um zu beginnen.  # MT
-sync-loading = Konfigurierte Paare werden geladen…  # MT
-sync-never-run = Nie ausgeführt  # MT
-sync-running = Läuft  # MT
-sync-run-now = Jetzt ausführen  # MT
-sync-cancel = Abbrechen  # MT
-sync-remove-pair = Entfernen  # MT
-sync-view-conflicts = Konflikte ansehen ({ $count })  # MT
-sync-conflicts-heading = Konflikte  # MT
-sync-no-conflicts = Keine Konflikte aus dem letzten Lauf.  # MT
-sync-winner = Sieger  # MT
-sync-side-left-to-right = links  # MT
-sync-side-right-to-left = rechts  # MT
-sync-conflict-kind-concurrent-write = Gleichzeitige Bearbeitung  # MT
-sync-conflict-kind-delete-edit = Löschen ↔ Bearbeiten  # MT
-sync-conflict-kind-add-add = Beide Seiten hinzugefügt  # MT
-sync-conflict-kind-corrupt-equal = Inhalt divergierte ohne neue Schreibung  # MT
-sync-resolve-keep-left = Links behalten  # MT
-sync-resolve-keep-right = Rechts behalten  # MT
-sync-resolve-keep-both = Beide behalten  # MT
-sync-resolve-three-way = Über 3-Wege-Merge auflösen  # MT
-sync-resolve-phase-53-tooltip = Interaktiver 3-Wege-Merge für Nicht-Text-Dateien landet in Phase 53.  # MT
-sync-error-prefix = Sync-Fehler  # MT
+# The drawer lists configured sync pairs; each pair runs an
+# independent reconciliation round against a per-pair `.copythat-sync.db`
+# state store. Concurrent edits from a common ancestor surface as
+# conflicts rather than silent overwrites; the losing side's content
+# is preserved as `name.sync-conflict-YYYYMMDD-HHMMSS-<host>.ext`.
+footer-sync = Sync
+sync-drawer-title = Zwei-Wege-Synchronisierung
+sync-drawer-hint = Halte zwei Ordner synchron, ohne stille Überschreibungen. Gleichzeitige Änderungen erscheinen als Konflikte, die du lösen kannst.
+sync-add-pair = Paar hinzufügen
+sync-add-cancel = Abbrechen
+sync-refresh = Aktualisieren
+sync-add-save = Paar speichern
+sync-add-saving = Wird gespeichert…
+sync-add-missing-fields = Bezeichnung, linker Pfad und rechter Pfad sind alle erforderlich.
+sync-remove-confirm = Dieses Sync-Paar entfernen? Die Statusdatenbank bleibt erhalten; die Ordner bleiben unverändert.
+sync-field-label = Bezeichnung
+sync-field-label-placeholder = z. B. Dokumente ↔ NAS
+sync-field-left = Linker Ordner
+sync-field-left-placeholder = Absoluten Pfad auswählen oder einfügen
+sync-field-right = Rechter Ordner
+sync-field-right-placeholder = Absoluten Pfad auswählen oder einfügen
+sync-field-mode = Modus
+sync-mode-two-way = Zwei-Wege
+sync-mode-mirror-left-to-right = Spiegeln (links → rechts)
+sync-mode-mirror-right-to-left = Spiegeln (rechts → links)
+sync-mode-contribute-left-to-right = Beitragen (links → rechts, keine Löschungen)
+sync-no-pairs = Noch keine Sync-Paare konfiguriert. Klicke auf "Paar hinzufügen", um zu beginnen.
+sync-loading = Konfigurierte Paare werden geladen…
+sync-never-run = Nie ausgeführt
+sync-running = Läuft
+sync-run-now = Jetzt ausführen
+sync-cancel = Abbrechen
+sync-remove-pair = Entfernen
+sync-view-conflicts = Konflikte ansehen ({ $count })
+sync-conflicts-heading = Konflikte
+sync-no-conflicts = Keine Konflikte aus dem letzten Durchlauf.
+sync-winner = Gewinner
+sync-side-left-to-right = links
+sync-side-right-to-left = rechts
+sync-conflict-kind-concurrent-write = Gleichzeitige Änderung
+sync-conflict-kind-delete-edit = Löschen ↔ Bearbeiten
+sync-conflict-kind-add-add = Beide Seiten hinzugefügt
+sync-conflict-kind-corrupt-equal = Inhalt abweichend ohne neue Schreiboperation
+sync-resolve-keep-left = Links behalten
+sync-resolve-keep-right = Rechts behalten
+sync-resolve-keep-both = Beide behalten
+sync-resolve-three-way = Per 3-Wege-Zusammenführung lösen
+sync-resolve-phase-53-tooltip = Interaktive 3-Wege-Zusammenführung für Nicht-Textdateien kommt in Phase 53.
+sync-error-prefix = Sync-Fehler
 
-# Phase 26 — real-time mirror watcher. MT-flagged drafts;
-# the authoritative English source lives in locales/en/copythat.ftl.
-live-mirror-start = Live-Mirror starten  # MT
-live-mirror-stop = Live-Mirror stoppen  # MT
-live-mirror-watching = Wird überwacht  # MT
-live-mirror-toggle-hint = Automatisch bei jeder erkannten Dateisystemänderung erneut synchronisieren. Ein Hintergrund-Thread pro aktivem Paar.  # MT
-watch-event-prefix = Dateiänderung  # MT
-watch-overflow-recovered = Watcher-Puffer übergelaufen; zur Wiederherstellung wird neu aufgelistet  # MT
+# Phase 26 — real-time mirror watcher. "Live mirror" starts a
+# filesystem watcher on the pair's left side; every debounced event
+# triggers a re-sync. The watcher filters vim swap files / Office
+# lock files / atomic-save temp names so one logical save becomes
+# exactly one sync round.
+live-mirror-start = Live-Spiegelung starten
+live-mirror-stop = Live-Spiegelung stoppen
+live-mirror-watching = Wird überwacht
+live-mirror-toggle-hint = Automatisch bei jeder erkannten Dateisystemänderung neu synchronisieren. Ein Hintergrund-Thread pro aktivem Paar.
+watch-event-prefix = Dateiänderung
+watch-overflow-recovered = Watcher-Puffer übergelaufen; erneutes Einlesen zur Wiederherstellung
 
-# Phase 27 — content-defined chunk store. MT-flagged drafts;
-# the authoritative English source lives in locales/en/copythat.ftl.
-chunk-store-section = Chunk-Speicher  # MT
-chunk-store-enable = Chunk-Speicher aktivieren (Delta-Fortsetzung und Deduplizierung)  # MT
-chunk-store-enable-hint = Teilt jede kopierte Datei nach Inhalt (FastCDC) und speichert Chunks inhaltsadressiert. Wiederholungen schreiben nur geänderte Chunks neu; Dateien mit gemeinsamen Inhalten werden automatisch dedupliziert.  # MT
-chunk-store-location = Chunk-Speicher-Ort  # MT
-chunk-store-max-size = Maximale Chunk-Speichergröße  # MT
-chunk-store-prune = Chunks bereinigen älter als (Tage)  # MT
-chunk-store-savings = { $gib } GiB durch Chunk-Deduplizierung gespart  # MT
-chunk-store-disk-usage = Belegt { $size } in { $chunks } Chunks  # MT
+# Phase 27 — content-defined chunk store. Enables delta-resume (a
+# retry only re-writes chunks that actually changed) and same-job
+# dedup (files sharing content blocks store those blocks once). The
+# store is disk-backed under `<data-dir>/chunks/` by default and is
+# the foundation for the Phase 49–51 moonshot repository phases.
+chunk-store-section = Chunk-Speicher
+chunk-store-enable = Chunk-Speicher aktivieren (Delta-Fortsetzung und Dedup)
+chunk-store-enable-hint = Teilt jede kopierte Datei nach Inhalt auf (FastCDC) und speichert Chunks inhaltsadressiert. Wiederholungen schreiben nur geänderte Chunks neu; Dateien mit gemeinsamen Inhalten werden automatisch dedupliziert.
+chunk-store-location = Speicherort des Chunk-Speichers
+chunk-store-max-size = Maximale Größe des Chunk-Speichers
+chunk-store-prune = Chunks bereinigen, die älter sind als (Tage)
+chunk-store-savings = { $gib } GiB durch Chunk-Dedup gespart
+chunk-store-disk-usage = { $size } über { $chunks } Chunks belegt
 
-# Phase 28 — tray-resident Drop Stack. MT-flagged drafts;
-# the authoritative English source lives in locales/en/copythat.ftl.
-dropstack-window-title = Drop Stack  # MT
-dropstack-tray-open = Drop Stack  # MT
-dropstack-empty-title = Drop Stack ist leer  # MT
-dropstack-empty-hint = Ziehen Sie Dateien hierher aus dem Explorer oder klicken Sie mit der rechten Maustaste auf eine Auftragszeile, um sie hinzuzufügen.  # MT
-dropstack-add-to-stack = Zum Drop Stack hinzufügen  # MT
-dropstack-copy-all-to = Alles kopieren nach…  # MT
-dropstack-move-all-to = Alles verschieben nach…  # MT
-dropstack-clear = Stapel leeren  # MT
-dropstack-remove-row = Aus dem Stapel entfernen  # MT
-dropstack-path-missing-toast = { $path } entfernt — die Datei existiert nicht mehr.  # MT
-dropstack-always-on-top = Drop Stack immer im Vordergrund halten  # MT
-dropstack-show-tray-icon = Copy That-Symbol im Infobereich anzeigen  # MT
-dropstack-open-on-start = Drop Stack beim App-Start automatisch öffnen  # MT
-dropstack-count = { $count } Pfad  # MT
+# Phase 28 — tray-resident Drop Stack. The stack is a persistent list
+# of paths gathered from multiple sources (Explorer drag, main-window
+# context menu, CLI, drag onto the Drop Stack window) that the user
+# can dispatch to a destination in one go.
+dropstack-window-title = Drop Stack
+dropstack-tray-open = Drop Stack
+dropstack-empty-title = Drop Stack ist leer
+dropstack-empty-hint = Ziehe Dateien aus dem Explorer hierher oder klicke mit der rechten Maustaste auf eine Auftragszeile, um sie hinzuzufügen.
+dropstack-add-to-stack = Zum Drop Stack hinzufügen
+dropstack-copy-all-to = Alle kopieren nach…
+dropstack-move-all-to = Alle verschieben nach…
+dropstack-clear = Stack leeren
+dropstack-remove-row = Aus Stack entfernen
+dropstack-path-missing-toast = { $path } abgelegt — die Datei existiert nicht mehr.
+dropstack-always-on-top = Drop Stack immer im Vordergrund halten
+dropstack-show-tray-icon = Das Copy That-Infobereichssymbol anzeigen
+dropstack-open-on-start = Drop Stack beim App-Start automatisch öffnen
+dropstack-count = { $count } Pfad
 
-# Phase 29 — spring-loaded folders + native DnD polish.
-settings-dnd-heading = Drag and drop  # MT
-settings-dnd-spring-load = Spring-load folders while dragging  # MT
-settings-dnd-spring-delay = Spring-load delay (ms)  # MT
-settings-dnd-thumbnails = Show drag thumbnails  # MT
-settings-dnd-invalid-highlight = Highlight invalid drop targets  # MT
-dropzone-invalid-title = Not a valid drop target  # MT
-dropzone-invalid-readonly = Destination is read-only  # MT
-dropzone-picker-title = Choose a destination  # MT
-dropzone-picker-up = Up  # MT
-dropzone-picker-path = Current path  # MT
-dropzone-picker-root = Roots  # MT
-dropzone-picker-use-this = Use this folder  # MT
-dropzone-picker-empty = No subfolders  # MT
-dropzone-picker-cancel = Cancel  # MT
+# Phase 29 — spring-loaded folders + native DnD polish. The Settings
+# → General tab carries the knobs; DropTarget / DestinationPicker
+# Svelte components use the dropzone-* keys at runtime.
+settings-dnd-heading = Ziehen und Ablegen
+settings-dnd-spring-load = Ordner beim Ziehen automatisch öffnen
+settings-dnd-spring-delay = Verzögerung beim automatischen Öffnen (ms)
+settings-dnd-thumbnails = Vorschaubilder beim Ziehen anzeigen
+settings-dnd-invalid-highlight = Ungültige Ablageziele hervorheben
+dropzone-invalid-title = Kein gültiges Ablageziel
+dropzone-invalid-readonly = Ziel ist schreibgeschützt
+dropzone-picker-title = Ziel auswählen
+dropzone-picker-up = Nach oben
+dropzone-picker-path = Aktueller Pfad
+dropzone-picker-root = Stammverzeichnisse
+dropzone-picker-use-this = Diesen Ordner verwenden
+dropzone-picker-empty = Keine Unterordner
+dropzone-picker-cancel = Abbrechen
 
-# Phase 30 — cross-platform path translation.
-translate-heading = Cross-platform compatibility  # MT
-translate-unicode-label = Unicode normalization  # MT
-translate-unicode-auto = Auto-detect destination  # MT
-translate-unicode-windows = NFC (Windows / Linux)  # MT
-translate-unicode-macos = Leave as-is (macOS / APFS)  # MT
-translate-line-endings-label = Translate line endings for text files  # MT
-translate-line-endings-allowlist = Text file extensions  # MT
-reserved-name-label = Windows reserved-name handling  # MT
-reserved-name-suffix = Append "_" (CON.txt → CON_.txt)  # MT
-reserved-name-reject = Reject and warn  # MT
-long-path-label = Use Windows long-path prefix (\?\) when over 260 chars  # MT
-long-path-hint = Some network shares and legacy tools don't honor the \?\ namespace.  # MT
+# Phase 30 — cross-platform path translation. Settings → Transfer
+# exposes these under a "Cross-platform compatibility" subsection.
+translate-heading = Plattformübergreifende Kompatibilität
+translate-unicode-label = Unicode-Normalisierung
+translate-unicode-auto = Ziel automatisch erkennen
+translate-unicode-windows = NFC (Windows / Linux)
+translate-unicode-macos = Unverändert lassen (macOS / APFS)
+translate-line-endings-label = Zeilenenden für Textdateien umwandeln
+translate-line-endings-allowlist = Textdatei-Erweiterungen
+reserved-name-label = Behandlung von reservierten Windows-Namen
+reserved-name-suffix = "_" anhängen (CON.txt → CON_.txt)
+reserved-name-reject = Ablehnen und warnen
+long-path-label = Windows-Langpfad-Präfix (\\?\) bei über 260 Zeichen verwenden
+long-path-hint = Manche Netzwerkfreigaben und ältere Tools beachten den \\?\-Namensraum nicht.
 
-# Phase 31 — power-aware copying.
-power-heading = Power & State  # MT
-power-enabled = Enable power-aware rules  # MT
-power-battery-label = On battery  # MT
-power-metered-label = On metered Wi-Fi  # MT
-power-cellular-label = On cellular  # MT
-power-presentation-label = When presenting (Zoom / Teams / Keynote)  # MT
-power-fullscreen-label = When an app is fullscreen  # MT
-power-thermal-label = When CPU is thermal-throttling  # MT
-power-rule-continue = Continue at full speed  # MT
-power-rule-pause = Pause all jobs  # MT
-power-rule-cap = Cap bandwidth  # MT
-power-rule-cap-percent = Cap to a percent of current rate  # MT
-power-reason-on-battery = on battery  # MT
-power-reason-metered-network = metered network  # MT
-power-reason-cellular-network = cellular network  # MT
-power-reason-presenting = presentation mode  # MT
-power-reason-fullscreen = fullscreen app  # MT
-power-reason-thermal-throttling = CPU is throttling  # MT
+# Phase 31 — power-aware copying. Settings → Power & State tab + the
+# header badge that renders "⏸ Paused — Zoom call detected" when the
+# runner's power subscriber has paused or capped due to a policy match.
+power-heading = Energie & Status
+power-enabled = Energiebewusste Regeln aktivieren
+power-battery-label = Im Akkubetrieb
+power-metered-label = Bei getaktetem WLAN
+power-cellular-label = Bei Mobilfunk
+power-presentation-label = Bei Präsentationen (Zoom / Teams / Keynote)
+power-fullscreen-label = Wenn eine App im Vollbild ist
+power-thermal-label = Wenn die CPU thermisch drosselt
+power-rule-continue = Mit voller Geschwindigkeit fortfahren
+power-rule-pause = Alle Aufträge pausieren
+power-rule-cap = Bandbreite begrenzen
+power-rule-cap-percent = Auf einen Prozentsatz der aktuellen Rate begrenzen
+power-reason-on-battery = im Akkubetrieb
+power-reason-metered-network = getaktetes Netzwerk
+power-reason-cellular-network = Mobilfunknetz
+power-reason-presenting = Präsentationsmodus
+power-reason-fullscreen = Vollbild-App
+power-reason-thermal-throttling = CPU drosselt
 
-# Phase 32 — cloud backend matrix via OpenDAL.
-remote-heading = Remote backends  # MT
-remote-add = Add backend  # MT
-remote-list-empty = No remote backends configured  # MT
-remote-test = Test connection  # MT
-remote-test-success = Connection successful  # MT
-remote-test-failed = Connection failed  # MT
-remote-remove = Remove backend  # MT
-remote-name-label = Display name  # MT
-remote-kind-label = Backend type  # MT
-remote-save = Save backend  # MT
-remote-cancel = Cancel  # MT
-backend-s3 = Amazon S3  # MT
-backend-r2 = Cloudflare R2  # MT
-backend-b2 = Backblaze B2  # MT
-backend-azure-blob = Azure Blob Storage  # MT
-backend-gcs = Google Cloud Storage  # MT
-backend-onedrive = OneDrive  # MT
-backend-google-drive = Google Drive  # MT
-backend-dropbox = Dropbox  # MT
-backend-webdav = WebDAV  # MT
-backend-sftp = SFTP  # MT
-backend-ftp = FTP  # MT
-backend-local-fs = Local filesystem  # MT
-cloud-config-bucket = Bucket  # MT
-cloud-config-region = Region  # MT
-cloud-config-endpoint = Endpoint URL  # MT
-cloud-config-root = Root path  # MT
-cloud-error-invalid-config = Backend configuration is invalid  # MT
-cloud-error-network = Network error contacting backend  # MT
-cloud-error-not-found = Object not found at the requested path  # MT
-cloud-error-permission = Permission denied by remote backend  # MT
-cloud-error-keychain = OS keychain access failed  # MT
-settings-tab-remotes = Remotes  # MT
-settings-tab-mobile = Mobile  # MT
+# Phase 32 — cloud backend matrix via OpenDAL. Settings → Remotes
+# tab + the Add-backend wizard that writes one entry per remote into
+# the keychain-backed credential store.
+remote-heading = Remote-Backends
+remote-add = Backend hinzufügen
+remote-list-empty = Keine Remote-Backends konfiguriert
+remote-test = Verbindung testen
+remote-test-success = Verbindung erfolgreich
+remote-test-failed = Verbindung fehlgeschlagen
+remote-remove = Backend entfernen
+remote-name-label = Anzeigename
+remote-kind-label = Backend-Typ
+remote-save = Backend speichern
+remote-cancel = Abbrechen
+backend-s3 = Amazon S3
+backend-r2 = Cloudflare R2
+backend-b2 = Backblaze B2
+backend-azure-blob = Azure Blob Storage
+backend-gcs = Google Cloud Storage
+backend-onedrive = OneDrive
+backend-google-drive = Google Drive
+backend-dropbox = Dropbox
+backend-webdav = WebDAV
+backend-sftp = SFTP
+backend-ftp = FTP
+backend-local-fs = Lokales Dateisystem
+cloud-config-bucket = Bucket
+cloud-config-region = Region
+cloud-config-endpoint = Endpunkt-URL
+cloud-config-root = Stammpfad
+cloud-error-invalid-config = Backend-Konfiguration ist ungültig
+cloud-error-network = Netzwerkfehler beim Kontaktieren des Backends
+cloud-error-not-found = Objekt am angeforderten Pfad nicht gefunden
+cloud-error-permission = Zugriff vom Remote-Backend verweigert
+cloud-error-keychain = Zugriff auf den Schlüsselbund des Betriebssystems fehlgeschlagen
+settings-tab-remotes = Remotes
+settings-tab-mobile = Mobil
 
-# Phase 33 — mount as read-only filesystem.
-mount-heading = Mount snapshot  # MT
-mount-action-mount = Mount snapshot  # MT
-mount-action-unmount = Unmount  # MT
-mount-status-mounted = Mounted at { $path }  # MT
-mount-error-unsafe-mountpoint = Mountpoint path is unsafe  # MT
-mount-error-mountpoint-not-empty = Mountpoint must be an empty directory  # MT
-mount-error-backend-unavailable = Mount backend is not available on this system  # MT
-mount-error-archive-read = Archive read failed  # MT
-mount-picker-title = Pick mountpoint directory  # MT
-mount-toast-mounted = Snapshot mounted at { $path }  # MT
-mount-toast-unmounted = Snapshot unmounted  # MT
-mount-toast-failed = Mount failed: { $reason }  # MT
-settings-mount-heading = Mount snapshots  # MT
-settings-mount-hint = Expose the history archive as a read-only filesystem. Phase 33b wires the runner flow; the kernel FUSE/WinFsp backends land in Phase 33c.  # MT
-settings-mount-on-launch = Mount the latest snapshot on launch  # MT
-settings-mount-on-launch-path = Mountpoint path  # MT
-settings-mount-on-launch-path-placeholder = e.g. C:\Mounts\copythat  # MT
+# Phase 33 — mount Copy That's chunk store + history archive as a
+# read-only filesystem (FUSE / WinFsp). Surfaced by the History tab
+# context menu's "Mount snapshot" action + the Settings → Advanced
+# "Mount latest on launch" toggle.
+mount-heading = Snapshot einbinden
+mount-action-mount = Snapshot einbinden
+mount-action-unmount = Aushängen
+mount-status-mounted = Eingebunden unter { $path }
+mount-error-unsafe-mountpoint = Einbindungspfad ist unsicher
+mount-error-mountpoint-not-empty = Der Einbindungspunkt muss ein leeres Verzeichnis sein
+mount-error-backend-unavailable = Das Einbindungs-Backend ist auf diesem System nicht verfügbar
+mount-error-archive-read = Lesen des Archivs fehlgeschlagen
+mount-picker-title = Verzeichnis für Einbindungspunkt auswählen
+mount-toast-mounted = Snapshot eingebunden unter { $path }
+mount-toast-unmounted = Snapshot ausgehängt
+mount-toast-failed = Einbinden fehlgeschlagen: { $reason }
+settings-mount-heading = Snapshots einbinden
+settings-mount-hint = Stellt das Verlaufsarchiv als schreibgeschütztes Dateisystem bereit. Phase 33b verdrahtet den Runner-Ablauf; die FUSE/WinFsp-Kernel-Backends kommen in Phase 33c.
+settings-mount-on-launch = Den neuesten Snapshot beim Start einbinden
+settings-mount-on-launch-path = Einbindungspfad
+settings-mount-on-launch-path-placeholder = z. B. C:\Mounts\copythat
 
 # Phase 34 — enterprise-grade audit log export + WORM (write-once-read-
 # many) tamper-resistance. Settings → Advanced → Audit log collects the
 # format + destination + rotation + WORM toggle; runtime records job and
 # file events into the tamper-evident chain-hashed sink.
-settings-audit-heading = Audit log  # MT
-settings-audit-hint = Append-only tamper-evident log of every job and file event. Formats include CSV, JSON-lines, RFC 5424 Syslog, ArcSight CEF, and QRadar LEEF.  # MT
-settings-audit-enable = Enable audit logging  # MT
-settings-audit-format = Log format  # MT
-settings-audit-format-json-lines = JSON lines (recommended default)  # MT
-settings-audit-format-csv = CSV (spreadsheet-friendly)  # MT
-settings-audit-format-syslog = Syslog (RFC 5424)  # MT
-settings-audit-format-cef = CEF (ArcSight)  # MT
-settings-audit-format-leef = LEEF 2.0 (IBM QRadar)  # MT
-settings-audit-file-path = Log file path  # MT
-settings-audit-file-path-placeholder = e.g. C:\ProgramData\CopyThat\audit.log  # MT
-settings-audit-max-size = Rotate after (bytes, 0 = never)  # MT
-settings-audit-worm = Enable WORM mode (write-once-read-many)  # MT
-settings-audit-worm-hint = Applies the platform's append-only flag (Linux chattr +a, macOS chflags uappnd, Windows read-only attribute) after every create or rotation. Even an administrator must explicitly clear the flag to truncate the log.  # MT
-settings-audit-test-write = Test write  # MT
-settings-audit-verify-chain = Verify chain  # MT
-toast-audit-test-write-ok = Audit log test write succeeded  # MT
-toast-audit-verify-ok = Audit chain verified intact  # MT
-toast-audit-verify-failed = Audit chain verification reported mismatches  # MT
+settings-audit-heading = Audit-Protokoll
+settings-audit-hint = Manipulationssicheres Protokoll im Anhängemodus für jedes Auftrags- und Dateiereignis. Formate umfassen CSV, JSON-Lines, RFC 5424 Syslog, ArcSight CEF und QRadar LEEF.
+settings-audit-enable = Audit-Protokollierung aktivieren
+settings-audit-format = Protokollformat
+settings-audit-format-json-lines = JSON-Lines (empfohlener Standard)
+settings-audit-format-csv = CSV (tabellenkalkulationsfreundlich)
+settings-audit-format-syslog = Syslog (RFC 5424)
+settings-audit-format-cef = CEF (ArcSight)
+settings-audit-format-leef = LEEF 2.0 (IBM QRadar)
+settings-audit-file-path = Pfad der Protokolldatei
+settings-audit-file-path-placeholder = z. B. C:\ProgramData\CopyThat\audit.log
+settings-audit-max-size = Rotieren nach (Bytes, 0 = nie)
+settings-audit-worm = WORM-Modus aktivieren (write-once-read-many)
+settings-audit-worm-hint = Wendet nach jedem Erstellen oder Rotieren das Nur-Anhängen-Flag der Plattform an (Linux chattr +a, macOS chflags uappnd, Windows-Schreibschutzattribut). Selbst ein Administrator muss das Flag ausdrücklich aufheben, um das Protokoll zu kürzen.
+settings-audit-test-write = Testschreibung
+settings-audit-verify-chain = Kette prüfen
+toast-audit-test-write-ok = Testschreibung des Audit-Protokolls erfolgreich
+toast-audit-verify-ok = Audit-Kette als unversehrt bestätigt
+toast-audit-verify-failed = Prüfung der Audit-Kette meldete Abweichungen
 
 # Phase 35 — destination encryption via age (X25519 / passphrase /
 # SSH) + on-the-fly zstd compression with a per-extension deny
 # heuristic. Surfaced through Settings → Transfer → Encryption +
 # Compression; engine short-circuits to the crypt pipeline when
 # either stage is active.
-settings-crypt-heading = Encryption & compression  # MT
-settings-crypt-hint = Transform file contents before they land at the destination. Encryption uses the age format; compression uses zstd and can skip already-compressed media by extension.  # MT
-settings-crypt-encryption-mode = Encryption  # MT
-settings-crypt-encryption-off = Off  # MT
-settings-crypt-encryption-passphrase = Passphrase (prompt at copy start)  # MT
-settings-crypt-encryption-recipients = Recipient keys from file  # MT
-settings-crypt-encryption-hint = Passphrases are held only in memory for the duration of the copy. Recipient files list one age1… or ssh- public key per line.  # MT
-settings-crypt-recipients-file = Recipients file path  # MT
-settings-crypt-recipients-file-placeholder = e.g. C:\Users\me\recipients.txt  # MT
-settings-crypt-compression-mode = Compression  # MT
-settings-crypt-compression-off = Off  # MT
-settings-crypt-compression-always = Always  # MT
-settings-crypt-compression-smart = Smart (skip already-compressed media)  # MT
-settings-crypt-compression-hint = Smart mode skips jpg, mp4, zip, 7z and similar formats that don't benefit from zstd. Always mode compresses every file at the chosen level.  # MT
-settings-crypt-compression-level = zstd level (1-22)  # MT
-settings-crypt-compression-level-hint = Lower numbers are faster; higher numbers compress harder. Level 3 matches zstd's CLI default.  # MT
-compress-footer-savings = 💾 { $original } → { $compressed } ({ $percent }% saved)  # MT
-compress-savings-toast = Compressed { $percent }% ({ $bytes } saved)  # MT
-crypt-toast-recipients-loaded = Loaded { $count } encryption recipients  # MT
-crypt-toast-recipients-error = Failed to load recipients: { $reason }  # MT
-crypt-toast-passphrase-required = Encryption needs a passphrase before the copy starts  # MT
-crypt-toast-passphrase-set = Encryption passphrase captured  # MT
-crypt-footer-encrypted-badge = 🔒 Encrypted (age)  # MT
-crypt-footer-compressed-badge = 📦 Compressed (zstd)  # MT
+settings-crypt-heading = Verschlüsselung & Komprimierung
+settings-crypt-hint = Wandelt Dateiinhalte um, bevor sie am Ziel ankommen. Die Verschlüsselung nutzt das age-Format; die Komprimierung nutzt zstd und kann bereits komprimierte Medien anhand der Erweiterung überspringen.
+settings-crypt-encryption-mode = Verschlüsselung
+settings-crypt-encryption-off = Aus
+settings-crypt-encryption-passphrase = Passphrase (Abfrage beim Kopierstart)
+settings-crypt-encryption-recipients = Empfängerschlüssel aus Datei
+settings-crypt-encryption-hint = Passphrasen werden nur für die Dauer des Kopiervorgangs im Speicher gehalten. Empfängerdateien listen einen age1…- oder ssh-Public-Key pro Zeile auf.
+settings-crypt-recipients-file = Pfad der Empfängerdatei
+settings-crypt-recipients-file-placeholder = z. B. C:\Users\me\recipients.txt
+settings-crypt-compression-mode = Komprimierung
+settings-crypt-compression-off = Aus
+settings-crypt-compression-always = Immer
+settings-crypt-compression-smart = Intelligent (bereits komprimierte Medien überspringen)
+settings-crypt-compression-hint = Der intelligente Modus überspringt jpg, mp4, zip, 7z und ähnliche Formate, die von zstd nicht profitieren. Der Immer-Modus komprimiert jede Datei mit der gewählten Stufe.
+settings-crypt-compression-level = zstd-Stufe (1-22)
+settings-crypt-compression-level-hint = Niedrigere Zahlen sind schneller; höhere Zahlen komprimieren stärker. Stufe 3 entspricht dem CLI-Standard von zstd.
+compress-footer-savings = 💾 { $original } → { $compressed } ({ $percent } % gespart)
+compress-savings-toast = { $percent } % komprimiert ({ $bytes } gespart)
+crypt-toast-recipients-loaded = { $count } Verschlüsselungsempfänger geladen
+crypt-toast-recipients-error = Empfänger konnten nicht geladen werden: { $reason }
+crypt-toast-passphrase-required = Die Verschlüsselung benötigt eine Passphrase, bevor der Kopiervorgang startet
+crypt-toast-passphrase-set = Verschlüsselungspassphrase erfasst
+crypt-footer-encrypted-badge = 🔒 Verschlüsselt (age)
+crypt-footer-compressed-badge = 📦 Komprimiert (zstd)
 
-# Phase 36 — copythat CLI. MT-flagged English strings pending human
-# translation; tracked in docs/I18N_TODO.md.
-cli-help-tagline = Copy That CLI — byte-exact file copy, sync, verify and audit for CI/CD pipelines.  # MT
-cli-help-exit-codes = Exit codes: 0 success, 1 error, 2 pending, 3 collision, 4 verify-fail, 5 net, 6 perm, 7 disk-full, 8 cancel, 9 config.  # MT
-cli-error-bad-args = copy/move requires at least one source and a destination  # MT
-cli-error-unknown-algo = Unknown verify algorithm: { $algo }  # MT
-cli-error-missing-spec = --spec is required for plan/apply  # MT
-cli-error-spec-parse = Failed to parse jobspec { $path }: { $reason }  # MT
-cli-error-spec-empty-sources = Jobspec source list is empty  # MT
-cli-info-shape-recorded = Bandwidth shape "{ $rate }" recorded; enforcement is plumbed via copythat-shape  # MT
-cli-info-stub-deferred = { $command } is staged for the Phase 36 follow-up wiring  # MT
-cli-plan-summary = Plan: { $actions } action(s), { $bytes } byte(s); { $already_done } already in place  # MT
-cli-plan-pending = Plan reports pending actions; rerun with `apply` to execute  # MT
-cli-plan-already-done = Plan reports nothing to do (idempotent)  # MT
-cli-apply-success = Apply finished without errors  # MT
-cli-apply-failed = Apply finished with one or more errors  # MT
-cli-verify-ok = Verify ok: { $algo } { $digest }  # MT
-cli-verify-failed = Verify FAILED for { $path } ({ $algo })  # MT
-cli-config-set = Set { $key } = { $value }  # MT
-cli-config-reset = Reset { $key } to default  # MT
-cli-config-unknown-key = Unknown config key: { $key }  # MT
-cli-completions-emitted = Shell completions for { $shell } printed to stdout  # MT
+# Phase 36 — copythat CLI surface. Documented exit codes + the
+# user-facing strings for plan/apply/verify/config. Help text stays
+# in English (engineering accessibility) but error / info / status
+# strings are localized so a localized desktop installation surfaces
+# CLI errors in the same language as the GUI.
+cli-help-tagline = Copy That CLI — bytegenaues Kopieren, Synchronisieren, Prüfen und Auditieren von Dateien für CI/CD-Pipelines.
+cli-help-exit-codes = Exit-Codes: 0 Erfolg, 1 Fehler, 2 ausstehend, 3 Konflikt, 4 Prüfung fehlgeschlagen, 5 Netz, 6 Berechtigung, 7 Datenträger voll, 8 Abbruch, 9 Konfiguration.
+cli-error-bad-args = copy/move erfordert mindestens eine Quelle und ein Ziel
+cli-error-unknown-algo = Unbekannter Prüfalgorithmus: { $algo }
+cli-error-missing-spec = --spec ist für plan/apply erforderlich
+cli-error-spec-parse = Jobspec { $path } konnte nicht geparst werden: { $reason }
+cli-error-spec-empty-sources = Quellliste der Jobspec ist leer
+cli-info-shape-recorded = Bandbreitenform "{ $rate }" aufgezeichnet; die Durchsetzung erfolgt über copythat-shape
+cli-info-stub-deferred = { $command } ist für die Folgeverdrahtung in Phase 36 vorgemerkt
+cli-plan-summary = Plan: { $actions } Aktion(en), { $bytes } Byte(s); { $already_done } bereits vorhanden
+cli-plan-pending = Plan meldet ausstehende Aktionen; mit `apply` erneut ausführen, um sie auszuführen
+cli-plan-already-done = Plan meldet, dass nichts zu tun ist (idempotent)
+cli-apply-success = Apply ohne Fehler abgeschlossen
+cli-apply-failed = Apply mit einem oder mehreren Fehlern abgeschlossen
+cli-verify-ok = Prüfung ok: { $algo } { $digest }
+cli-verify-failed = Prüfung FEHLGESCHLAGEN für { $path } ({ $algo })
+cli-config-set = { $key } = { $value } gesetzt
+cli-config-reset = { $key } auf Standard zurückgesetzt
+cli-config-unknown-key = Unbekannter Konfigurationsschlüssel: { $key }
+cli-completions-emitted = Shell-Vervollständigungen für { $shell } nach stdout ausgegeben
 
-# Phase 37 — desktop-side mobile companion. MT-flagged English
-# strings pending human translation; tracked in docs/I18N_TODO.md.
-settings-mobile-heading = Mobile companion  # MT
-settings-mobile-hint = Pair an iPhone or Android phone to browse history, kick off saved profiles and Phase 36 jobspecs, and receive completion notifications.  # MT
-settings-mobile-pair-toggle = Allow new pairings  # MT
-settings-mobile-pair-active = Pair-server active — scan the QR with the Copy That mobile app  # MT
-settings-mobile-pair-button = Start pairing  # MT
-settings-mobile-revoke-button = Revoke  # MT
-settings-mobile-no-pairings = No paired devices yet  # MT
-settings-mobile-pair-port = Bind port (0 = pick a free one)  # MT
-pair-sas-prompt = Both screens should show the same four emojis. Tap Match if they agree.  # MT
-pair-sas-confirm = Match  # MT
-pair-sas-reject = Mismatch — cancel  # MT
-pair-toast-success = Paired with { $device }  # MT
-pair-toast-failed = Pairing failed: { $reason }  # MT
-push-toast-sent = Push sent to { $device }  # MT
-push-toast-failed = Push to { $device } failed: { $reason }  # MT
+# Phase 37 — desktop-side mobile companion. Settings → Mobile panel
+# strings + the SAS-confirmation modal + push-notification toasts.
+# The actual mobile UI lives in the Phase 37 follow-up Tauri Mobile
+# target; the phone displays its own localized SAS prompt.
+settings-mobile-heading = Mobiler Begleiter
+settings-mobile-hint = Koppele ein iPhone oder Android-Telefon, um den Verlauf zu durchsuchen, gespeicherte Profile und Phase-36-Jobspecs zu starten und Abschlussbenachrichtigungen zu erhalten.
+settings-mobile-pair-toggle = Neue Kopplungen zulassen
+settings-mobile-pair-active = Kopplungsserver aktiv — scanne den QR-Code mit der Copy That-Mobil-App
+settings-mobile-pair-button = Kopplung starten
+settings-mobile-revoke-button = Widerrufen
+settings-mobile-no-pairings = Noch keine gekoppelten Geräte
+settings-mobile-pair-port = Bindungsport (0 = einen freien wählen)
+pair-sas-prompt = Beide Bildschirme sollten dieselben vier Emojis zeigen. Tippe auf Übereinstimmung, wenn sie übereinstimmen.
+pair-sas-confirm = Übereinstimmung
+pair-sas-reject = Keine Übereinstimmung — abbrechen
+pair-toast-success = Mit { $device } gekoppelt
+pair-toast-failed = Kopplung fehlgeschlagen: { $reason }
+push-toast-sent = Push an { $device } gesendet
+push-toast-failed = Push an { $device } fehlgeschlagen: { $reason }
 
-# Phase 38 — destination dedup + reflink ladder. MT-flagged
-# English strings pending human translation; tracked in
-# docs/I18N_TODO.md.
-settings-dedup-heading = Destination dedup  # MT
-settings-dedup-hint = When the source and destination share a volume, Copy That can clone files at the filesystem level instead of copying bytes. Reflink is instant + safe; hardlink is faster but both names share state.  # MT
-settings-dedup-mode-auto = Auto ladder (reflink → hardlink → chunk → copy)  # MT
-settings-dedup-mode-reflink-only = Reflink only  # MT
-settings-dedup-mode-hardlink-aggressive = Aggressive (reflink + hardlink even on writable files)  # MT
-settings-dedup-mode-off = Disabled (always byte-copy)  # MT
-settings-dedup-hardlink-policy = Hardlink policy  # MT
-settings-dedup-prescan = Pre-scan destination tree for duplicate content  # MT
-dedup-badge-reflinked = ⚡ Reflinked  # MT
-dedup-badge-hardlinked = 🔗 Hardlinked  # MT
-dedup-badge-chunk-shared = 🧩 Chunk-shared  # MT
-dedup-badge-copied = 📋 Copied  # MT
+# Phase 38 — aggregate destination dedup + reflink fallback ladder.
+# Settings → Transfer → Dedup panel + per-job-row badges (⚡
+# Reflinked / 🔗 Hardlinked / 🧩 Chunk-shared / 📋 Copied) +
+# pre-pass dedup-scan modal.
+settings-dedup-heading = Ziel-Deduplizierung
+settings-dedup-hint = Wenn Quelle und Ziel sich ein Laufwerk teilen, kann Copy That Dateien auf Dateisystemebene klonen, statt Bytes zu kopieren. Reflink ist sofort + sicher; Hardlink ist schneller, aber beide Namen teilen sich den Zustand.
+settings-dedup-mode-auto = Automatische Stufenfolge (Reflink → Hardlink → Chunk → Kopie)
+settings-dedup-mode-reflink-only = Nur Reflink
+settings-dedup-mode-hardlink-aggressive = Aggressiv (Reflink + Hardlink auch bei beschreibbaren Dateien)
+settings-dedup-mode-off = Deaktiviert (immer Byte-Kopie)
+settings-dedup-hardlink-policy = Hardlink-Richtlinie
+settings-dedup-prescan = Zielbaum vorab auf doppelte Inhalte scannen
+dedup-badge-reflinked = ⚡ Reflink
+dedup-badge-hardlinked = 🔗 Hardlink
+dedup-badge-chunk-shared = 🧩 Chunk-geteilt
+dedup-badge-copied = 📋 Kopiert
 phase42-paranoid-verify-label = Paranoide Prüfung
-phase42-paranoid-verify-hint = Verwirft die zwischengespeicherten Seiten des Ziels und liest erneut vom Datenträger, um falsche Schreibcache-Bestätigungen und stille Datenkorruption zu erkennen. Etwa 50 % langsamer als die Standardprüfung; standardmäßig deaktiviert.
+phase42-paranoid-verify-hint = Verwirft die zwischengespeicherten Seiten des Ziels und liest erneut vom Datenträger, um Lügen des Schreibcaches und stille Beschädigungen zu erkennen. Etwa 50 % langsamer als die Standardprüfung; standardmäßig aus.
 phase42-sharing-violation-retries-label = Wiederholungsversuche bei gesperrten Quelldateien
-phase42-sharing-violation-retries-hint = Wie oft erneut versucht werden soll, wenn ein anderer Prozess die Quelldatei mit einer exklusiven Sperre geöffnet hält. Die Wartezeit verdoppelt sich bei jedem Versuch (standardmäßig 50 ms / 100 ms / 200 ms). Standard: 3, entspricht Robocopy /R:3.
-phase42-cloud-placeholder-warning = { $name } ist eine reine Cloud-Datei aus OneDrive. Beim Kopieren wird ein Download ausgelöst — bis zu { $size } über Ihre Netzwerkverbindung.
-phase42-defender-exclusion-hint = Für maximalen Kopierdurchsatz fügen Sie den Zielordner vor Massenübertragungen zu den Microsoft Defender-Ausschlüssen hinzu. Siehe docs/PERFORMANCE_TUNING.md.
+phase42-sharing-violation-retries-hint = Wie oft wiederholt wird, wenn ein anderer Prozess die Quelldatei mit einer exklusiven Sperre offen hält. Die Wartezeit verdoppelt sich bei jedem Versuch (standardmäßig 50 ms / 100 ms / 200 ms). Standard 3, entsprechend Robocopy /R:3.
+phase42-cloud-placeholder-warning = { $name } ist eine reine Cloud-OneDrive-Datei. Beim Kopieren wird ein Download ausgelöst — bis zu { $size } über deine Netzwerkverbindung.
+phase42-defender-exclusion-hint = Für maximalen Kopierdurchsatz füge den Zielordner vor Massenübertragungen den Microsoft-Defender-Ausnahmen hinzu. Siehe docs/PERFORMANCE_TUNING.md.
 
-# Phase 39 — Browser-accessible recovery UI.  # MT
-settings-recovery-heading = Recovery web UI  # MT
-settings-recovery-enable = Enable recovery web UI  # MT
-settings-recovery-bind-address = Bind address  # MT
-settings-recovery-port = Port (0 = pick a free one)  # MT
-settings-recovery-show-url = Show URL & token  # MT
-settings-recovery-rotate-token = Rotate token  # MT
-settings-recovery-allow-non-loopback = Allow non-loopback bind  # MT
-settings-recovery-non-loopback-warning = WARNING: enabling a non-loopback bind exposes the recovery UI to your local network. Anyone who learns the token can browse your file history and download files. Front it with TLS or a reverse proxy if the LAN is untrusted.  # MT
+# Phase 39 — Browser-accessible recovery UI. Settings → Advanced
+# exposes these strings; the recovery server itself renders askama
+# templates that always read English — these eight keys are the
+# Settings prose the user actually reads in their preferred locale.
+settings-recovery-heading = Web-UI zur Wiederherstellung
+settings-recovery-enable = Web-UI zur Wiederherstellung aktivieren
+settings-recovery-bind-address = Bindungsadresse
+settings-recovery-port = Port (0 = einen freien wählen)
+settings-recovery-show-url = URL & Token anzeigen
+settings-recovery-rotate-token = Token rotieren
+settings-recovery-allow-non-loopback = Nicht-Loopback-Bindung zulassen
+settings-recovery-non-loopback-warning = WARNUNG: Das Aktivieren einer Nicht-Loopback-Bindung stellt die Wiederherstellungs-UI deinem lokalen Netzwerk zur Verfügung. Jeder, der das Token erfährt, kann deinen Dateiverlauf durchsuchen und Dateien herunterladen. Stelle ihr TLS oder einen Reverse-Proxy voran, falls das LAN nicht vertrauenswürdig ist.
 
-# Phase 40 — SMB compression negotiation + cloud-VM offload helper.  # MT
-smb-compress-badge = 🗜 SMB compress: { $algo }  # MT
-smb-compress-badge-tooltip = Network traffic to this destination is being compressed in transit (SMB 3.1.1).  # MT
-smb-compress-toast-saved = Saved { $bytes } over the network  # MT
-smb-compress-algo-unknown = unknown algorithm  # MT
-settings-smb-compress-heading = SMB network compression  # MT
-settings-smb-compress-hint = Automatically negotiate SMB 3.1.1 traffic compression on UNC destinations. Free win on slow links; ignored on local destinations.  # MT
-cloud-offload-heading = Cloud-VM offload helper  # MT
-cloud-offload-hint = When copying directly between two clouds, render a deployment template that runs the copy from a tiny ephemeral VM in the cloud — bytes never touch your laptop's network.  # MT
-cloud-offload-render-button = Render template  # MT
-cloud-offload-copy-clipboard = Copy to clipboard  # MT
-cloud-offload-template-format = Template format  # MT
-cloud-offload-self-destruct-warning = The VM auto-shuts down after { $minutes } minutes — confirm IAM role + region before deploying.  # MT
+# Phase 40 — SMB compression negotiation + cloud-VM offload helper.
+# 6 SMB keys (header badge + Settings prose) + 6 cloud-offload keys
+# (Remotes tab wizard for cross-cloud copy templates).
+smb-compress-badge = 🗜 SMB-Komprimierung: { $algo }
+smb-compress-badge-tooltip = Der Netzwerkverkehr zu diesem Ziel wird während der Übertragung komprimiert (SMB 3.1.1).
+smb-compress-toast-saved = { $bytes } über das Netzwerk gespart
+smb-compress-algo-unknown = unbekannter Algorithmus
+settings-smb-compress-heading = SMB-Netzwerkkomprimierung
+settings-smb-compress-hint = Verhandelt automatisch SMB-3.1.1-Verkehrskomprimierung bei UNC-Zielen. Kostenloser Vorteil bei langsamen Verbindungen; bei lokalen Zielen ignoriert.
+cloud-offload-heading = Cloud-VM-Auslagerungshelfer
+cloud-offload-hint = Beim direkten Kopieren zwischen zwei Clouds wird eine Bereitstellungsvorlage erzeugt, die den Kopiervorgang von einer winzigen kurzlebigen VM in der Cloud ausführt — die Bytes berühren nie das Netzwerk deines Laptops.
+cloud-offload-render-button = Vorlage erzeugen
+cloud-offload-copy-clipboard = In die Zwischenablage kopieren
+cloud-offload-template-format = Vorlagenformat
+cloud-offload-self-destruct-warning = Die VM fährt nach { $minutes } Minuten automatisch herunter — bestätige IAM-Rolle + Region vor der Bereitstellung.
 
-# Phase 41 — animated before/after tree-diff preview.  # MT
-preview-modal-title = Preview changes  # MT
-preview-summary-header = What will happen  # MT
-preview-category-additions = { $count } additions  # MT
-preview-category-replacements = { $count } replacements  # MT
-preview-category-skips = { $count } skipped  # MT
-preview-category-conflicts = { $count } conflicts  # MT
-preview-category-unchanged = { $count } unchanged  # MT
-preview-bytes-to-transfer = { $bytes } to transfer  # MT
-preview-reason-source-newer = Source is newer  # MT
-preview-reason-dest-newer = Destination is newer — will skip  # MT
-preview-reason-content-different = Content differs  # MT
-preview-reason-identical = Identical to source  # MT
-preview-button-run = Run plan  # MT
-preview-button-reduce = Reduce my plan…  # MT
+# Phase 41 — animated before/after tree-diff preview. The `Preview
+# changes` modal renders the rolled-up plan before the engine starts
+# work; 14 keys cover the title, the summary header / counts, the
+# row-reason labels, and the two action buttons.
+preview-modal-title = Änderungen in der Vorschau
+preview-summary-header = Was geschehen wird
+preview-category-additions = { $count } Hinzufügungen
+preview-category-replacements = { $count } Ersetzungen
+preview-category-skips = { $count } übersprungen
+preview-category-conflicts = { $count } Konflikte
+preview-category-unchanged = { $count } unverändert
+preview-bytes-to-transfer = { $bytes } zu übertragen
+preview-reason-source-newer = Quelle ist neuer
+preview-reason-dest-newer = Ziel ist neuer — wird übersprungen
+preview-reason-content-different = Inhalt unterscheidet sich
+preview-reason-identical = Identisch mit der Quelle
+preview-button-run = Plan ausführen
+preview-button-reduce = Meinen Plan reduzieren…
 
-# Phase 42 — perceptual-hash visual-similarity dedup.  # MT
-perceptual-warn-title = Looks visually identical  # MT
-perceptual-warn-body = { $name } at the destination appears to match the source picture. Continue copying anyway?  # MT
-perceptual-warn-keep-both = Keep both  # MT
-perceptual-warn-skip = Skip this file  # MT
-perceptual-warn-overwrite = Overwrite anyway  # MT
-perceptual-settings-heading = Visual-similarity dedup  # MT
-perceptual-settings-hint = Detect visually identical images at the destination before they're overwritten. Hash is perceptual (recognises the same picture re-saved as a different format), not byte-exact.  # MT
-perceptual-settings-threshold-label = Warn threshold (lower = stricter match)  # MT
+# Phase 42 — perceptual-hash visual-similarity dedup. Eight keys cover
+# the pre-copy "looks visually identical" warning + the Settings panel.
+perceptual-warn-title = Sieht visuell identisch aus
+perceptual-warn-body = { $name } am Ziel scheint mit dem Quellbild übereinzustimmen. Trotzdem weiterkopieren?
+perceptual-warn-keep-both = Beide behalten
+perceptual-warn-skip = Diese Datei überspringen
+perceptual-warn-overwrite = Trotzdem überschreiben
+perceptual-settings-heading = Deduplizierung nach visueller Ähnlichkeit
+perceptual-settings-hint = Erkennt visuell identische Bilder am Ziel, bevor sie überschrieben werden. Der Hash ist perzeptuell (erkennt dasselbe Bild, das in einem anderen Format neu gespeichert wurde), nicht bytegenau.
+perceptual-settings-threshold-label = Warnschwelle (niedriger = strengere Übereinstimmung)
 
-# Phase 42 Part B — per-file rolling versions.  # MT
-version-list-heading = Previous versions  # MT
-version-list-empty = No prior versions of this file  # MT
-version-list-restore = Restore this version  # MT
-version-retention-heading = Keep previous versions on overwrite  # MT
-version-retention-none = Keep every version forever  # MT
-version-retention-last-n = Keep last { $n } versions  # MT
-version-retention-older-than-days = Drop versions older than { $days } days  # MT
-version-retention-gfs = Hourly { $h } · daily { $d } · weekly { $w } · monthly { $m }  # MT
+# Phase 42 Part B — per-file rolling versions (Time Machine for any
+# destination). 8 keys cover the version-list panel + retention picker.
+version-list-heading = Vorherige Versionen
+version-list-empty = Keine früheren Versionen dieser Datei
+version-list-restore = Diese Version wiederherstellen
+version-retention-heading = Vorherige Versionen beim Überschreiben behalten
+version-retention-none = Jede Version für immer behalten
+version-retention-last-n = Letzte { $n } Versionen behalten
+version-retention-older-than-days = Versionen löschen, die älter sind als { $days } Tage
+version-retention-gfs = Stündlich { $h } · täglich { $d } · wöchentlich { $w } · monatlich { $m }
 
-# Phase 43 — forensic chain-of-custody manifests.  # MT
-provenance-settings-heading = Forensic chain-of-custody  # MT
-provenance-settings-hint = Sign every copy job with a BLAKE3 + ed25519 manifest. Reviewers can re-hash the destination tree later and prove no byte changed since the copy.  # MT
-provenance-settings-enable-default = Sign every new job by default  # MT
-provenance-settings-show-after-job = Show manifest after each completed job  # MT
-provenance-settings-tsa-url-label = Default RFC 3161 timestamp authority URL  # MT
-provenance-settings-tsa-url-hint = Optional. When set, manifests carry a free TSA timestamp proving the bytes existed at this point in time. Leave empty to skip.  # MT
-provenance-settings-keys-heading = Signing keys  # MT
-provenance-settings-keys-generate = Generate new key  # MT
-provenance-settings-keys-import = Import key…  # MT
-provenance-settings-keys-export = Export public key…  # MT
-provenance-job-completed-title = Provenance manifest saved  # MT
-provenance-job-completed-body = { $count } files signed → { $path }  # MT
-provenance-verify-clean = Manifest valid for { $count } files; signature { $sig }; merkle root OK.  # MT
-provenance-verify-tampered = Manifest INVALID — { $tampered } tampered, { $missing } missing.  # MT
-provenance-action-staged = Phase 43 — wiring the IPC for this action lands in a follow-up commit.  # MT
+# Phase 43 — forensic chain-of-custody manifests + BLAKE3 verified
+# streaming. 14 keys cover the Settings → Provenance panel
+# (heading, hint, toggles, TSA URL, signing-key management) plus
+# the post-job manifest notification + the verify command's two
+# headline result lines.
+provenance-settings-heading = Forensische Lückenlose-Beweiskette
+provenance-settings-hint = Signiere jeden Kopierauftrag mit einem BLAKE3 + ed25519-Manifest. Prüfer können den Zielbaum später erneut hashen und nachweisen, dass sich seit dem Kopiervorgang kein Byte geändert hat.
+provenance-settings-enable-default = Jeden neuen Auftrag standardmäßig signieren
+provenance-settings-show-after-job = Manifest nach jedem abgeschlossenen Auftrag anzeigen
+provenance-settings-tsa-url-label = Standard-URL der RFC-3161-Zeitstempelstelle
+provenance-settings-tsa-url-hint = Optional. Wenn gesetzt, tragen Manifeste einen kostenlosen TSA-Zeitstempel, der nachweist, dass die Bytes zu diesem Zeitpunkt existierten. Leer lassen, um zu überspringen.
+provenance-settings-keys-heading = Signaturschlüssel
+provenance-settings-keys-generate = Neuen Schlüssel erzeugen
+provenance-settings-keys-import = Schlüssel importieren…
+provenance-settings-keys-export = Öffentlichen Schlüssel exportieren…
+provenance-job-completed-title = Provenienz-Manifest gespeichert
+provenance-job-completed-body = { $count } Dateien signiert → { $path }
+provenance-verify-clean = Manifest gültig für { $count } Dateien; Signatur { $sig }; Merkle-Wurzel OK.
+provenance-verify-tampered = Manifest UNGÜLTIG — { $tampered } manipuliert, { $missing } fehlend.
+# Phase 43 post-review hardening — toast text for the Settings →
+# Provenance buttons whose Tauri IPC has not yet landed.
+provenance-action-staged = Phase 43 — die IPC-Verdrahtung für diese Aktion kommt in einem Folge-Commit.
 
-# Phase 44 — SSD-aware whole-drive sanitize.  # MT
-sanitize-heading = Whole-drive secure sanitize  # MT
-sanitize-hint = NVMe Sanitize, OPAL Crypto Erase, and ATA Secure Erase wipe a flash drive at the firmware layer in milliseconds. Per-file overwrite is meaningless on flash — multi-pass shred only burns NAND. Use this for actual purge.  # MT
-sanitize-pick-device = Choose the drive to sanitize  # MT
-sanitize-mode-label = Sanitization method  # MT
-sanitize-mode-nvme-format = NVMe Format (with secure erase)  # MT
-sanitize-mode-nvme-sanitize-block = NVMe Sanitize — Block Erase (slow, every cell)  # MT
-sanitize-mode-nvme-sanitize-crypto = NVMe Sanitize — Crypto Erase (instant)  # MT
-sanitize-mode-ata-secure-erase = ATA Secure Erase (legacy SATA SSDs)  # MT
-sanitize-mode-opal-crypto-erase = TCG OPAL Crypto Erase (Self-Encrypting Drives)  # MT
-sanitize-mode-apfs-crypto-erase = APFS Crypto Erase (rotate FileVault key, macOS only)  # MT
-sanitize-confirm-1 = This destroys EVERY byte on { $device }. There is no undo.  # MT
-sanitize-confirm-2 = I understand that all partitions, all files, and all snapshots on { $device } will be permanently unreadable.  # MT
-sanitize-confirm-3 = Type the drive's model name to proceed: { $model }  # MT
-sanitize-running = Sanitizing { $device } ({ $mode }) — this can take from milliseconds (crypto erase) to tens of minutes (block erase). Do not power down.  # MT
-sanitize-completed = Sanitize complete — { $device } is now blank.  # MT
-ssd-honest-shred-meaningless = Per-file shred on a copy-on-write filesystem (Btrfs / ZFS / APFS) cannot reach the underlying blocks. Use whole-drive sanitize plus full-disk-encryption key rotation instead.  # MT
-ssd-honest-advisory = This file lives on flash. Per-file overwrite costs NAND wear and does NOT guarantee the original cells are unrecoverable. For sensitive data, sanitize the whole drive.  # MT
+# Phase 44 — SSD-aware whole-drive sanitize (NVMe Sanitize / OPAL
+# Crypto Erase) + the per-file shred refusal on copy-on-write
+# filesystems. 16 keys cover the new "Drive sanitize" Settings
+# subsection and the localized error messages.
+sanitize-heading = Sichere Bereinigung des gesamten Laufwerks
+sanitize-hint = NVMe Sanitize, OPAL Crypto Erase und ATA Secure Erase löschen ein Flash-Laufwerk in Millisekunden auf Firmware-Ebene. Das Überschreiben einzelner Dateien ist auf Flash bedeutungslos — mehrfaches Schreddern verbraucht nur NAND. Nutze dies für eine echte Bereinigung.
+sanitize-pick-device = Zu bereinigendes Laufwerk auswählen
+sanitize-mode-label = Bereinigungsmethode
+sanitize-mode-nvme-format = NVMe Format (mit Secure Erase)
+sanitize-mode-nvme-sanitize-block = NVMe Sanitize — Block Erase (langsam, jede Zelle)
+sanitize-mode-nvme-sanitize-crypto = NVMe Sanitize — Crypto Erase (sofort)
+sanitize-mode-ata-secure-erase = ATA Secure Erase (ältere SATA-SSDs)
+sanitize-mode-opal-crypto-erase = TCG OPAL Crypto Erase (selbstverschlüsselnde Laufwerke)
+sanitize-mode-apfs-crypto-erase = APFS Crypto Erase (FileVault-Schlüssel rotieren, nur macOS)
+sanitize-confirm-1 = Dies zerstört JEDES Byte auf { $device }. Es gibt kein Rückgängig.
+sanitize-confirm-2 = Ich verstehe, dass alle Partitionen, alle Dateien und alle Snapshots auf { $device } dauerhaft unlesbar werden.
+sanitize-confirm-3 = Gib den Modellnamen des Laufwerks ein, um fortzufahren: { $model }
+sanitize-running = { $device } wird bereinigt ({ $mode }) — dies kann von Millisekunden (Crypto Erase) bis zu mehreren zehn Minuten (Block Erase) dauern. Nicht ausschalten.
+sanitize-completed = Bereinigung abgeschlossen — { $device } ist jetzt leer.
+ssd-honest-shred-meaningless = Das Schreddern einzelner Dateien auf einem Copy-on-Write-Dateisystem (Btrfs / ZFS / APFS) kann die zugrunde liegenden Blöcke nicht erreichen. Nutze stattdessen die Bereinigung des gesamten Laufwerks plus Rotation des Schlüssels der vollständigen Festplattenverschlüsselung.
+ssd-honest-advisory = Diese Datei liegt auf Flash. Das Überschreiben einzelner Dateien verursacht NAND-Verschleiß und garantiert NICHT, dass die ursprünglichen Zellen unwiederherstellbar sind. Für sensible Daten bereinige das gesamte Laufwerk.
 
-# Phase 44.1f.  # MT
-sanitize-action-staged = Phase 44.1 — wiring the IPC for this action lands in a follow-up commit.  # MT
+# Phase 44.1f post-review — placeholder toast for SanitizeTab
+# buttons whose Tauri IPC has not yet landed.
+sanitize-action-staged = Phase 44.1 — die IPC-Verdrahtung für diese Aktion kommt in einem Folge-Commit.
 
-# Phase 45.3 — named-queue tab strip.  # MT
-queue-tab-default = Default  # MT
-queue-tab-empty-state = Job queues  # MT
-queue-badge-tooltip = Pending and running jobs in this queue  # MT
+# Phase 45.3 — named-queue tab strip (Subfeature A). Tabs surface
+# once the QueueRegistry holds at least one queue; the synthesised
+# default tab keeps legacy single-queue jobs reachable.
+queue-tab-default = Standard
+queue-tab-empty-state = Auftragswarteschlangen
+queue-badge-tooltip = Ausstehende und laufende Aufträge in dieser Warteschlange
 
-# Phase 45.4 — drag-progress-merge.  # MT
-queue-drag-hint = Drag onto another queue to merge  # MT
-queue-merge-confirm = Drop to merge  # MT
-queue-merge-toast = Queues merged  # MT
+# Phase 45.4 — drag-progress-merge (Subfeature B). Drag a queue tab
+# onto another to merge their job lists. The default tab is neither
+# draggable nor a drop target; only registry queues participate.
+queue-drag-hint = Auf eine andere Warteschlange ziehen, um zusammenzuführen
+queue-merge-confirm = Zum Zusammenführen ablegen
+queue-merge-toast = Warteschlangen zusammengeführt
 
-# Phase 45.5 — F2-queue UX.  # MT
-queue-f2-active-hint = F2 mode: every new enqueue lands in this queue  # MT
-queue-f2-toggled-on = F2 queue mode ON — new enqueues join the running queue  # MT
-queue-f2-toggled-off = F2 queue mode OFF — new enqueues spawn parallel queues  # MT
-queue-f2-status-bar = F2 queue mode: ON  # MT
+# Phase 45.5 — F2-queue UX (Subfeature C). F2 toggles
+# `auto_enqueue_next` so every fresh enqueue piles into the running
+# queue rather than spawning a parallel one. Status pill renders in
+# the Footer; pulsing dot renders on the running tab.
+queue-f2-active-hint = F2-Modus: Jede neue Einreihung landet in dieser Warteschlange
+queue-f2-toggled-on = F2-Warteschlangenmodus EIN — neue Einreihungen schließen sich der laufenden Warteschlange an
+queue-f2-toggled-off = F2-Warteschlangenmodus AUS — neue Einreihungen erzeugen parallele Warteschlangen
+queue-f2-status-bar = F2-Warteschlangenmodus: EIN
 
-# Phase 45.6 — tray destination targets.  # MT
-tray-target-section-title = Tray destinations  # MT
-tray-target-section-hint = Pinned destinations appear in the tray menu. Click one to arm it as the next drop target.  # MT
-tray-target-empty = No tray destinations pinned yet.  # MT
-tray-target-remove = Remove  # MT
-tray-target-add-label = Label  # MT
-tray-target-add-path = Path or backend URI  # MT
-tray-target-add = Add  # MT
-tray-target-armed-toast = Drop your next file to send it to { $label }  # MT
-tray-target-active-pill = → { $label }  # MT
+# Phase 45.6 — tray destination targets (Subfeature D). Pinned
+# destinations appear in the OS tray menu; clicking one arms it as
+# the active drop target so the next file drop bypasses the
+# DropStagingDialog. Settings → General hosts the list editor.
+tray-target-section-title = Infobereich-Ziele
+tray-target-section-hint = Angeheftete Ziele erscheinen im Infobereichsmenü. Klicke eines an, um es als nächstes Ablageziel scharfzuschalten.
+tray-target-empty = Noch keine Infobereich-Ziele angeheftet.
+tray-target-remove = Entfernen
+tray-target-add-label = Bezeichnung
+tray-target-add-path = Pfad oder Backend-URI
+tray-target-add = Hinzufügen
+tray-target-armed-toast = Lege deine nächste Datei ab, um sie an { $label } zu senden
+tray-target-active-pill = → { $label }
 
-# Phase 45.7 follow-up — pinned-destination validation errors.  # MT
-err-pinned-destination-label-empty = Tray destination label can't be empty.  # MT
-err-pinned-destination-path-empty = Tray destination path can't be empty.  # MT
-err-pinned-destination-label-too-long = Tray destination label is too long (max 64 characters).  # MT
-err-pinned-destination-path-too-long = Tray destination path is too long (max 1024 characters).  # MT
-err-pinned-destination-label-invalid = Tray destination label contains characters that aren't allowed (newline, return, or NUL).  # MT
-err-pinned-destination-path-invalid = Tray destination path contains characters that aren't allowed (newline, return, or NUL).  # MT
-err-pinned-destination-too-many = You've reached the limit of 50 tray destinations. Remove one to add another.  # MT
+# Phase 45.7 follow-up — pinned-destination validation errors. The
+# `queue_pin_destination` IPC returns these Fluent keys verbatim
+# when input fails the IPC-boundary checks; the toast layer renders
+# them via `t(...)` (Toast.svelte detects kebab-case-lowercase and
+# routes through the locale table). Phase 17e's `err-path-escape` /
+# `err-destination-empty` cover the path-traversal + empty cases for
+# `queue_route_job`; the keys below are pin-specific.
+err-pinned-destination-label-empty = Die Bezeichnung des Infobereich-Ziels darf nicht leer sein.
+err-pinned-destination-path-empty = Der Pfad des Infobereich-Ziels darf nicht leer sein.
+err-pinned-destination-label-too-long = Die Bezeichnung des Infobereich-Ziels ist zu lang (max. 64 Zeichen).
+err-pinned-destination-path-too-long = Der Pfad des Infobereich-Ziels ist zu lang (max. 1024 Zeichen).
+err-pinned-destination-label-invalid = Die Bezeichnung des Infobereich-Ziels enthält nicht erlaubte Zeichen (Zeilenumbruch, Wagenrücklauf oder NUL).
+err-pinned-destination-path-invalid = Der Pfad des Infobereich-Ziels enthält nicht erlaubte Zeichen (Zeilenumbruch, Wagenrücklauf oder NUL).
+err-pinned-destination-too-many = Du hast das Limit von 50 Infobereich-Zielen erreicht. Entferne eines, um ein weiteres hinzuzufügen.
 
 # Phase 46.6 — Settings → Plugins tab. The IPC layer in
 # `apps/copythat-ui/src-tauri/src/plugin_commands.rs` enumerates the
 # per-user plugin store under `<config_dir>/plugins/`; the
 # `PluginsTab.svelte` component renders these strings against the
-# returned manifest + grant state.  # MT
-settings-tab-plugins = Plugins  # MT
-plugin-heading = Plugins  # MT
-plugin-hint = Sandboxed WASM plugins extend Copy That with custom hooks. Each plugin runs under per-call CPU and memory limits and only sees the host capabilities you grant it.  # MT
-plugin-list-empty = No plugins installed yet.  # MT
-plugin-enabled = Enabled  # MT
-plugin-disabled = Disabled  # MT
-plugin-hooks = Hooks  # MT
-plugin-capabilities = Capabilities  # MT
-plugin-no-capabilities = (none)  # MT
-plugin-directory = Location  # MT
-plugin-install-from-file = Install from file…  # MT
-plugin-install-from-url = Install from URL…  # MT
-plugin-url-wasm = WASM URL  # MT
-plugin-url-manifest = Manifest URL  # MT
-plugin-url-hash = BLAKE3 hash  # MT
-plugin-url-preview = Preview  # MT
-plugin-url-confirm = Confirm install  # MT
+# returned manifest + grant state.
+settings-tab-plugins = Plugins
+plugin-heading = Plugins
+plugin-hint = In der Sandbox laufende WASM-Plugins erweitern Copy That um eigene Hooks. Jedes Plugin läuft unter CPU- und Speicherlimits pro Aufruf und sieht nur die Host-Fähigkeiten, die du ihm gewährst.
+plugin-list-empty = Noch keine Plugins installiert.
+plugin-enabled = Aktiviert
+plugin-disabled = Deaktiviert
+plugin-hooks = Hooks
+plugin-capabilities = Fähigkeiten
+plugin-no-capabilities = (keine)
+plugin-directory = Speicherort
+plugin-install-from-file = Aus Datei installieren…
+plugin-install-from-url = Aus URL installieren…
+plugin-url-wasm = WASM-URL
+plugin-url-manifest = Manifest-URL
+plugin-url-hash = BLAKE3-Hash
+plugin-url-preview = Vorschau
+plugin-url-confirm = Installation bestätigen

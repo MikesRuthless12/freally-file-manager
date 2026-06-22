@@ -84,16 +84,16 @@
   let profileNameInput = $state("");
   let busy = $state(false);
 
-  // Endonym fallback — used when `Intl.DisplayNames` doesn't return
-  // a localized name (older WebKit / webview2 builds return the
-  // BCP-47 tag verbatim). Each value is the language's own name.
+  // Native self-name (endonym) for each shipped locale — shown verbatim in
+  // the picker so a user finds their language regardless of the active UI
+  // language. Each value is the language's own name.
   const ENDONYMS: Record<string, string> = {
     en: "English",
     es: "Español",
-    "zh-CN": "中文 (简)",
+    "zh-CN": "简体中文",
     hi: "हिन्दी",
     ar: "العربية",
-    "pt-BR": "Português (BR)",
+    "pt-BR": "Português (Brasil)",
     ru: "Русский",
     ja: "日本語",
     de: "Deutsch",
@@ -108,14 +108,10 @@
     uk: "Українська",
   };
 
-  function displayName(code: string, uiLocale: string): string {
-    try {
-      const dn = new Intl.DisplayNames([uiLocale], { type: "language" });
-      const name = dn.of(code);
-      if (name && name !== code) return name;
-    } catch {
-      // Fallback to endonym below.
-    }
+  // Always show the language's native self-name (endonym), never a name
+  // localized to the active UI language — so the list reads the same no
+  // matter which language is currently selected.
+  function displayName(code: string): string {
     return ENDONYMS[code] ?? code;
   }
 
@@ -144,17 +140,18 @@
     return Math.floor(Date.UTC(y, m - 1, d) / 1000);
   }
 
-  // English pinned first; rest sorted by localised display name with
-  // `localeCompare` respecting the active locale's collation.
+  // Fixed display order: English first, then the rest alphabetically by their
+  // English language name. Independent of the active locale, so the picker
+  // never reorders when the user switches languages.
+  const LOCALE_ORDER = [
+    "en", "ar", "zh-CN", "nl", "fr", "de", "hi", "id", "it",
+    "ja", "ko", "pl", "pt-BR", "ru", "es", "tr", "uk", "vi",
+  ];
   const orderedLocales = $derived.by<string[]>(() => {
     const all = $locale.available;
-    const ui = $locale.code;
-    const withoutEn = all.filter((c) => c !== "en");
-    withoutEn.sort((a, b) =>
-      displayName(a, ui).localeCompare(displayName(b, ui), ui),
-    );
-    const head = all.includes("en") ? ["en"] : [];
-    return [...head, ...withoutEn];
+    const known = LOCALE_ORDER.filter((c) => all.includes(c));
+    const extra = all.filter((c) => !LOCALE_ORDER.includes(c));
+    return [...known, ...extra];
   });
 
   // Load settings + profiles whenever the modal opens. Skip if we
@@ -521,7 +518,7 @@
                 <span class="label">{t("settings-section-language")}</span>
                 <select value={$locale.code} onchange={onLocaleChange}>
                   {#each orderedLocales as code (code)}
-                    <option value={code}>{displayName(code, $locale.code)}</option>
+                    <option value={code}>{displayName(code)}</option>
                   {/each}
                 </select>
               </label>

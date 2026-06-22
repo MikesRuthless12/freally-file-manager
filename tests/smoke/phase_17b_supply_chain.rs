@@ -88,7 +88,19 @@ fn supply_chain_config_present() {
 
 #[test]
 fn security_md_documents_audit_and_vet_gates() {
-    let body = read_to_string(&repo_root().join("docs/SECURITY.md"));
+    // `docs/SECURITY.md` is gitignored per the IP scrub (see `.gitignore`
+    // § "IP scrub"). Fresh clones and CI runners won't see it; that's
+    // deliberate. When the file *is* on disk (maintainer working copy),
+    // the content check below still fires so the policy stays honest.
+    let path = repo_root().join("docs/SECURITY.md");
+    if !path.is_file() {
+        eprintln!(
+            "skip security-md audit/vet check: {} not present on disk (gitignored)",
+            path.display()
+        );
+        return;
+    }
+    let body = read_to_string(&path);
     assert!(
         body.contains("`cargo audit` runs on every push"),
         "docs/SECURITY.md must call out the cargo audit gate as live (Phase 17b)",

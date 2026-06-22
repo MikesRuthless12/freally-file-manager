@@ -200,7 +200,7 @@ pub fn select_for_pruning(
     }
     // Sort newest-first for the per-policy walks below.
     let mut sorted: Vec<VersionEntry> = versions.to_vec();
-    sorted.sort_by(|a, b| b.ts_ms.cmp(&a.ts_ms));
+    sorted.sort_by_key(|v| std::cmp::Reverse(v.ts_ms));
     let newest = sorted[0].row_id;
 
     let to_drop: Vec<i64> = match policy {

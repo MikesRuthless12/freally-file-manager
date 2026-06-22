@@ -224,6 +224,76 @@ fn canned_args(key: &str) -> HashMap<&'static str, String> {
             m.insert("device", "Mike's iPhone".to_string());
             m.insert("reason", "APNs 401".to_string());
         }
+        // Phase 41 — pre-execution preview / dry-run plan placeables.
+        "preview-bytes-to-transfer" => {
+            m.insert("bytes", "1.2 GiB".to_string());
+        }
+        "preview-category-additions"
+        | "preview-category-conflicts"
+        | "preview-category-replacements"
+        | "preview-category-skips"
+        | "preview-category-unchanged" => {
+            m.insert("count", "12".to_string());
+        }
+        // Phase 42 — perceptual dedup + cloud-placeholder + SMB compression.
+        "perceptual-warn-body" => {
+            m.insert("name", "vacation.jpg".to_string());
+        }
+        "phase42-cloud-placeholder-warning" => {
+            m.insert("name", "design.psd".to_string());
+            m.insert("size", "850 MiB".to_string());
+        }
+        "smb-compress-badge" => {
+            m.insert("algo", "LZ77".to_string());
+        }
+        "smb-compress-toast-saved" => {
+            m.insert("bytes", "320 MiB".to_string());
+        }
+        // Phase 42 — cloud-offload self-destruct countdown.
+        "cloud-offload-self-destruct-warning" => {
+            m.insert("minutes", "15".to_string());
+        }
+        // Phase 42 — versioning / retention-policy summaries.
+        "version-retention-last-n" => {
+            m.insert("n", "10".to_string());
+        }
+        "version-retention-older-than-days" => {
+            m.insert("days", "30".to_string());
+        }
+        "version-retention-gfs" => {
+            m.insert("h", "24".to_string());
+            m.insert("d", "7".to_string());
+            m.insert("w", "4".to_string());
+            m.insert("m", "12".to_string());
+        }
+        // Phase 43 — forensic provenance manifest placeables.
+        "provenance-job-completed-body" => {
+            m.insert("count", "128".to_string());
+            m.insert("path", "C:/jobs/manifest.cbor".to_string());
+        }
+        "provenance-verify-clean" => {
+            m.insert("count", "128".to_string());
+            m.insert("sig", "ed25519:abc123".to_string());
+        }
+        "provenance-verify-tampered" => {
+            m.insert("tampered", "2".to_string());
+            m.insert("missing", "1".to_string());
+        }
+        // Phase 43 — secure-sanitize (drive erase) confirm + status.
+        "sanitize-confirm-1" | "sanitize-confirm-2" | "sanitize-completed" => {
+            m.insert("device", "/dev/sdb".to_string());
+        }
+        "sanitize-confirm-3" => {
+            m.insert("model", "Samsung PSSD T7".to_string());
+        }
+        "sanitize-running" => {
+            m.insert("device", "/dev/sdb".to_string());
+            m.insert("mode", "crypto erase".to_string());
+        }
+        // Phase 43 — tray quick-target pill + armed toast.
+        "tray-target-active-pill" | "tray-target-armed-toast" => {
+            m.insert("label", "Backup Drive".to_string());
+        }
         _ => {}
     }
     m

@@ -118,29 +118,32 @@ fn image_hash(path: &Path) -> Result<u64, PerceptualError> {
     let hash = hasher.hash_image(&img);
     let bytes = hash.as_bytes();
     // Phase 42 post-review (M1) — defend the discrimination floor.
-    // Pre-fix, `fold_to_u64` XOR-collapsed bytes 8..16 onto bytes
-    // 0..8 in the same byte lanes; for the default 8×8
-    // DoubleGradient config (8-byte output) this is fine, but a
-    // future `hash_size(16, 16)` bump would silently halve
-    // discriminating power without any compile-time signal. Assert
-    // the size at hash construction so a misconfig fails loudly at
-    // the caller's first hash, not silently in user data.
-    debug_assert_eq!(
-        bytes.len(),
-        8,
-        "copythat-perceptual: DoubleGradient at 8×8 should produce 8-byte hashes; \
-         a config change to hash_size(16,16) would require a real mix function in fold_to_u64"
+    // `fold_to_u64` gives each byte its own lane in the `u64`, so the
+    // fold is loss-free for any output up to 8 bytes (the default 8×8
+    // DoubleGradient lands at 5 bytes / 40 bits). Only a larger config
+    // — e.g. a future `hash_size(16, 16)` bump — would exceed 8 bytes
+    // and start XOR-collapsing lanes, silently halving discriminating
+    // power without any compile-time signal. Assert the ≤8-byte bound
+    // so such a misconfig fails loudly at the caller's first hash, not
+    // silently in user data.
+    debug_assert!(
+        bytes.len() <= 8,
+        "copythat-perceptual: hash output is {} bytes; fold_to_u64 is only \
+         loss-free up to 8 bytes — a hash_size(16,16)-style bump needs a real \
+         mix function in fold_to_u64",
+        bytes.len()
     );
     Ok(fold_to_u64(bytes))
 }
 
 /// Fold the `ImageHash` byte buffer into a `u64`. The upstream
 /// `ImageHash` for the default DoubleGradient `8×8` config lands at
-/// exactly 8 bytes (= one `u64`); the byte-aligned XOR fold below is
-/// loss-free in that case. For configs that exceed 8 bytes the fold
-/// is lossy by construction — see the `debug_assert_eq!` in
-/// `image_hash` above for the loud-failure signal a misconfigured
-/// hash size triggers in dev builds.
+/// 5 bytes (40 bits), which fits in a `u64`; the byte-aligned XOR fold
+/// below gives each byte its own lane and is loss-free for any output
+/// up to 8 bytes. For configs that exceed 8 bytes the fold is lossy by
+/// construction — see the `debug_assert!` in `image_hash` above for the
+/// loud-failure signal a misconfigured hash size triggers in dev
+/// builds.
 fn fold_to_u64(bytes: &[u8]) -> u64 {
     let mut acc: u64 = 0;
     for (i, b) in bytes.iter().enumerate() {

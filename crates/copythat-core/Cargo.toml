@@ -62,11 +62,13 @@ tracing = { version = "0.1", default-features = false, features = ["std"] }
 # already-prefixed inputs before our length gate fires.
 dunce = "1"
 
-[target.'cfg(unix)'.dependencies]
-# Linux paranoid-verify uses libc::posix_fadvise (POSIX_FADV_DONTNEED) to drop the
-# page cache before the verify re-read (engine.rs). Matches the other unix crates
-# (copythat-platform / -audit / -snapshot) which already declare libc here.
-libc = "0.2"
+[target.'cfg(target_os = "linux")'.dependencies]
+# Linux paranoid-verify drops the destination page cache before the verify
+# re-read (engine.rs) via posix_fadvise(POSIX_FADV_DONTNEED). We call it through
+# `nix`'s safe wrapper rather than raw `libc` FFI so this crate stays
+# `#![forbid(unsafe_code)]`-clean. `nix` (MIT) is already in the workspace via
+# copythat-audit; the `fs` feature gates posix_fadvise.
+nix = { version = "0.29", default-features = false, features = ["fs"] }
 
 [dev-dependencies]
 # Phase 30 — smoke test exercises the TOML round-trip of

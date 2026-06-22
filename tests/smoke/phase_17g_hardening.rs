@@ -97,7 +97,21 @@ fn tauri_build_script_emits_linux_hardening_flags() {
 fn security_md_documents_phase_17g_as_shipped() {
     // Phase 17g shipped — make sure docs/SECURITY.md picks up the
     // build-hardening section once `cargo audit` and friends ship.
-    let body = read(&repo_root().join("docs/SECURITY.md"));
+    //
+    // `docs/SECURITY.md` is gitignored per the IP scrub (see `.gitignore`
+    // § "IP scrub"). Fresh clones and CI runners won't see it; that's
+    // deliberate. When the file *is* on disk (maintainer working copy),
+    // the content check below still fires so the hardening story stays
+    // honest.
+    let path = repo_root().join("docs/SECURITY.md");
+    if !path.is_file() {
+        eprintln!(
+            "skip security-md 17g check: {} not present on disk (gitignored)",
+            path.display()
+        );
+        return;
+    }
+    let body = read(&path);
     // The section already lists the per-OS targets; we just need to
     // make sure the `[profile.release]` change is documented.
     assert!(

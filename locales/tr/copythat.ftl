@@ -1,580 +1,72 @@
 app-name = Copy That v0.19.84
-# MT
 window-title = Copy That v0.19.84
-# MT
-shred-ssd-advisory = Uyarı: bu hedef bir SSD üzerindedir. Yıpranma dengeleme ve aşırı tahsis, verileri mantıksal blok adresinin dışına taşıdığından, çok geçişli üzerine yazma işlemleri flash belleği güvenilir biçimde temizleyemez. Katı hal ortamları için ATA SECURE ERASE, Güvenli Silme ile NVMe Format veya anahtarı imha edilmiş tam disk şifrelemesini tercih edin.
+shred-ssd-advisory = Uyarı: bu hedef bir SSD üzerinde bulunuyor. Çok geçişli üzerine yazmalar flash belleği güvenilir şekilde temizlemez; çünkü aşınma dengeleme ve fazla yer ayırma, verileri mantıksal blok adresinin altından taşır. Katı hal ortamları için ATA SECURE ERASE, Güvenli Silmeli NVMe Format veya anahtarı imha edilen tam disk şifrelemesini tercih edin.
 
-# MT
+# Global aggregate states (header pill)
 state-idle = Boşta
-# MT
 state-copying = Kopyalanıyor
-# MT
 state-verifying = Doğrulanıyor
-# MT
 state-paused = Duraklatıldı
-# MT
 state-error = Hata
 
-# MT
+# Per-job states (row badge)
 state-pending = Kuyrukta
-# MT
 state-running = Çalışıyor
-# MT
 state-cancelled = İptal edildi
-# MT
 state-succeeded = Tamamlandı
-# MT
 state-failed = Başarısız
 
-# MT
+# Actions
 action-pause = Duraklat
-# MT
 action-resume = Devam et
-# MT
-action-cancel = İptal et
-# MT
+action-cancel = İptal
 action-pause-all = Tüm işleri duraklat
-# MT
-action-resume-all = Tüm işlere devam et
-# MT
+action-resume-all = Tüm işleri sürdür
 action-cancel-all = Tüm işleri iptal et
-# MT
 action-close = Kapat
-# MT
 action-reveal = Klasörde göster
-
-# MT
-menu-pause = Duraklat
-# MT
-menu-resume = Devam et
-# MT
-menu-cancel = İptal et
-# MT
-menu-remove = Kuyruktan kaldır
-# MT
-menu-reveal-source = Kaynağı klasörde göster
-# MT
-menu-reveal-destination = Hedefi klasörde göster
-
-# MT
-header-eta-label = Tahmini kalan süre
-# MT
-header-toolbar-label = Genel denetimler
-
-# MT
-footer-queued = etkin iş
-# MT
-footer-total-bytes = devam ediyor
-# MT
-footer-errors = hata
-# MT
-footer-history = Geçmiş
-
-# MT
-empty-title = Kopyalanacak dosya veya klasörleri bırakın
-# MT
-empty-hint = Öğeleri pencereye sürükleyin. Hedef soracağız, ardından her kaynak için bir iş kuyruğa ekleyeceğiz.
-# MT
-empty-region-label = İş listesi
-
-# MT
-details-drawer-label = İş ayrıntıları
-# MT
-details-source = Kaynak
-# MT
-details-destination = Hedef
-# MT
-details-state = Durum
-# MT
-details-bytes = Bayt
-# MT
-details-files = Dosyalar
-# MT
-details-speed = Hız
-# MT
-details-eta = Kalan süre
-# MT
-details-error = Hata
-
-# MT
-drop-dialog-title = Bırakılan öğeleri aktar
-# MT
-drop-dialog-subtitle = Aktarıma hazır { $count } öğe. Başlamak için bir hedef klasör seçin.
-# MT
-drop-dialog-mode = İşlem
-# MT
-drop-dialog-copy = Kopyala
-# MT
-drop-dialog-move = Taşı
-# MT
-drop-dialog-pick-destination = Hedef seç
-# MT
-drop-dialog-change-destination = Hedefi değiştir
-# MT
-drop-dialog-start-copy = Kopyalamaya başla
-# MT
-drop-dialog-start-move = Taşımaya başla
-
-# MT
-eta-calculating = hesaplanıyor…
-# MT
-eta-unknown = bilinmiyor
-
-# MT
-toast-job-done = Aktarım tamamlandı
-# MT
-toast-copy-queued = Kopyalama kuyruğa alındı
-# MT
-toast-move-queued = Taşıma kuyruğa alındı
-# MT — Phase 8 toast messages
-toast-error-resolved = Hata çözüldü
-# MT
-toast-collision-resolved = Çakışma çözüldü
-# MT
-toast-elevated-unavailable = Yükseltilmiş izinle yeniden deneme 17. aşamada gelecek — henüz kullanılamıyor
-toast-clipboard-files-detected = Panoda dosyalar var — Copy That ile kopyalamak için yapıştırma kısayoluna basın
-toast-clipboard-no-files = Panoda yapıştırılacak dosya yok
-# MT
-toast-error-log-exported = Hata günlüğü dışa aktarıldı
-
-# MT — Error modal
-error-modal-title = Bir aktarım başarısız oldu
-# MT
-error-modal-retry = Yeniden dene
-# MT
-error-modal-retry-elevated = Yükseltilmiş izinle yeniden dene
-# MT
-error-modal-skip = Atla
-# MT
-error-modal-skip-all-kind = Bu türdeki tüm hataları atla
-# MT
-error-modal-abort = Tümünü iptal et
-# MT
-error-modal-path-label = Yol
-# MT
-error-modal-code-label = Kod
-error-drawer-pending-count = Daha fazla hata bekliyor
-error-drawer-toggle = Daralt veya genişlet
-
-# MT — Error-kind labels
-err-not-found = Dosya bulunamadı
-# MT
-err-permission-denied = İzin reddedildi
-# MT
-err-disk-full = Hedef disk dolu
-# MT
-err-interrupted = İşlem kesildi
-# MT
-err-verify-failed = Kopya sonrası doğrulama başarısız
-# MT
-err-path-escape = Yol reddedildi — üst dizin (..) parçaları veya geçersiz baytlar içeriyor
-# MT
-err-path-invalid-encoding = Path rejected — string contains invalid UTF-8 / replacement characters
-# MT
-err-helper-invalid-json = Privileged helper received malformed JSON; ignoring this request
-err-helper-grant-out-of-band = GrantCapabilities must be handled by the helper run-loop, not the stateless handler
-err-randomness-unavailable = OS random-number generator failed; cannot mint a session id
-# MT
-err-io-other = Bilinmeyen G/Ç hatası
-err-sparseness-mismatch = Hedefte seyrek düzen korunamadı  # MT
-
-# MT — Collision modal
-collision-modal-title = Dosya zaten var
-# MT
-collision-modal-overwrite = Üzerine yaz
-# MT
-collision-modal-overwrite-if-newer = Daha yeniyse üzerine yaz
-# MT
-collision-modal-skip = Atla
-# MT
-collision-modal-keep-both = İkisini de sakla
-# MT
-collision-modal-rename = Yeniden adlandır…
-# MT
-collision-modal-apply-to-all = Tümüne uygula
-# MT
-collision-modal-source = Kaynak
-# MT
-collision-modal-destination = Hedef
-# MT
-collision-modal-size = Boyut
-# MT
-collision-modal-modified = Değiştirilme
-# MT
-collision-modal-hash-check = Hızlı özet (SHA-256)
-# MT
-collision-modal-rename-placeholder = Yeni dosya adı
-# MT
-collision-modal-confirm-rename = Yeniden adlandır
-
-# MT — Error log drawer
-error-log-title = Hata günlüğü
-# MT
-error-log-empty = Kaydedilmiş hata yok
-# MT
-error-log-export-csv = CSV dışa aktar
-# MT
-error-log-export-txt = Metin dışa aktar
-# MT
-error-log-clear = Günlüğü temizle
-# MT
-error-log-col-time = Zaman
-# MT
-error-log-col-job = İş
-# MT
-error-log-col-path = Yol
-# MT
-error-log-col-code = Kod
-# MT
-error-log-col-message = Mesaj
-# MT
-error-log-col-resolution = Çözüm
-
-# MT — History drawer (Phase 9)
-history-title = Geçmiş
-# MT
-history-empty = Henüz kaydedilmiş iş yok
-# MT
-history-unavailable = Kopyalama geçmişi kullanılamıyor. Uygulama başlangıçta SQLite deposunu açamadı.
-# MT
-history-filter-any = herhangi
-# MT
-history-filter-kind = Tür
-# MT
-history-filter-status = Durum
-# MT
-history-filter-text = Ara
-# MT
-history-refresh = Yenile
-# MT
-history-export-csv = CSV dışa aktar
-# MT
-history-purge-30 = 30 günden eskiyi sil
-# MT
-history-rerun = Yeniden çalıştır
-# MT
-history-detail-open = Ayrıntılar
-# MT
-history-detail-title = İş ayrıntıları
-# MT
-history-detail-empty = Kaydedilmiş öğe yok
-# MT
-history-col-date = Tarih
-# MT
-history-col-kind = Tür
-# MT
-history-col-src = Kaynak
-# MT
-history-col-dst = Hedef
-# MT
-history-col-files = Dosyalar
-# MT
-history-col-size = Boyut
-# MT
-history-col-status = Durum
-# MT
-history-col-duration = Süre
-# MT
-history-col-error = Hata
-
-# MT
-toast-history-exported = Geçmiş dışa aktarıldı
-# MT
-toast-history-rerun-queued = Yeniden çalıştırma kuyruğa alındı
-
-# MT — Totals drawer (Phase 10)
-footer-totals = Toplamlar
-# MT
-totals-title = Toplamlar
-# MT
-totals-loading = Toplamlar yükleniyor…
-# MT
-totals-card-bytes = Toplam kopyalanan bayt
-# MT
-totals-card-files = Dosyalar
-# MT
-totals-card-jobs = İşler
-# MT
-totals-card-avg-rate = Ortalama hız
-# MT
-totals-errors = hatalar
-# MT
-totals-spark-title = Son 30 gün
-# MT
-totals-kinds-title = Türe göre
-# MT
-totals-saved-title = Kazanılan süre (tahmini)
-# MT
-totals-saved-note = Aynı iş yükünü standart dosya yöneticisiyle kopyalamaya kıyasla tahmini değerdir.
-# MT
-totals-reset = İstatistikleri sıfırla
-# MT
-totals-reset-confirm = Bu, depolanan tüm iş ve öğeleri siler. Devam edilsin mi?
-# MT
-totals-reset-confirm-yes = Evet, sıfırla
-# MT
-toast-totals-reset = İstatistikler sıfırlandı
-
-# MT — Phase 11a additions
-header-language-label = Dil
-# MT
-header-language-title = Dili değiştir
-
-# MT
-kind-copy = Kopyala
-# MT
-kind-move = Taşı
-# MT
-kind-delete = Sil
-# MT
-kind-secure-delete = Güvenli sil
-
-# MT
-status-running = Çalışıyor
-# MT
-status-succeeded = Başarılı
-# MT
-status-failed = Başarısız
-# MT
-status-cancelled = İptal edildi
-# MT
-status-ok = Tamam
-# MT
-status-skipped = Atlandı
-
-# MT
-history-search-placeholder = /yol
-# MT
-toast-history-purged = 30 günden eski { $count } iş silindi
-
-# MT
-err-source-required = En az bir kaynak yolu gerekli.
-# MT
-err-destination-empty = Hedef yolu boş.
-# MT
-err-source-empty = Kaynak yolu boş.
-
-# MT
-duration-lt-1s = < 1 sn
-# MT
-duration-ms = { $ms } ms
-# MT
-duration-seconds = { $s } sn
-# MT
-duration-minutes-seconds = { $m } dk { $s } sn
-# MT
-duration-hours-minutes = { $h } sa { $m } dk
-# MT
-duration-zero = 0 sn
-
-# MT
-rate-unit-per-second = { $size }/sn
-
-# MT — Phase 11b Settings modal
-settings-title = Ayarlar
-# MT
-settings-tab-general = Genel
-# MT
-settings-tab-appearance = Görünüm
-# MT
-settings-section-language = Dil
-# MT
-settings-phase-12-hint = Daha fazla ayar (tema, aktarım varsayılanları, doğrulama algoritması, profiller) 12. aşamada gelecek.
-
-# MT — Phase 12 Settings window
-settings-loading = Ayarlar yükleniyor…
-# MT
-settings-tab-transfer = Aktarım
-# MT
-settings-tab-shell = Kabuk
-# MT
-settings-tab-secure-delete = Güvenli silme
-# MT
-settings-tab-advanced = Gelişmiş
-# MT
-settings-tab-profiles = Profiller
-
-# MT
-settings-section-theme = Tema
-# MT
-settings-theme-auto = Otomatik
-# MT
-settings-theme-light = Açık
-# MT
-settings-theme-dark = Koyu
-# MT
-settings-start-with-os = Sistem başlangıcında çalıştır
-# MT
-settings-single-instance = Tek çalışan örnek
-# MT
-settings-minimize-to-tray = Kapatırken sistem tepsisine küçült
-settings-error-display-mode = Hata istemi stili
-settings-error-display-modal = Modal (uygulamayı engeller)
-settings-error-display-drawer = Çekmece (engellemeyen)
-settings-error-display-mode-hint = Modal, siz karar verene kadar kuyruğu durdurur. Çekmece kuyruğu çalışır durumda tutar ve hataları köşede ayıklamanıza izin verir.
-settings-paste-shortcut = Global kısayolla dosyaları yapıştır
-settings-paste-shortcut-combo = Kısayol kombinasyonu
-settings-paste-shortcut-hint = Explorer / Finder / Dosyalar'dan kopyalanan dosyaları Copy That üzerinden yapıştırmak için sisteminizde herhangi bir yerde bu kombinasyona basın. CmdOrCtrl, macOS'ta Cmd'ye ve Windows / Linux'ta Ctrl'ye çözümlenir.
-settings-clipboard-watcher = Kopyalanan dosyalar için panoyu izle
-settings-clipboard-watcher-hint = Dosya URL'leri panoda göründüğünde bir bildirim gösterir ve Copy That ile yapıştırabileceğinizi belirtir. Etkinken her 500 ms'de bir sorgular.
-
-# MT
-settings-buffer-size = Arabellek boyutu
-# MT
-settings-verify = Kopyalama sonrası doğrula
-# MT
-settings-verify-off = Kapalı
-# MT
-settings-concurrency = Eşzamanlılık
-# MT
-settings-concurrency-auto = Otomatik
-# MT
-settings-reflink = Reflink / hızlı yollar
-# MT
-settings-reflink-prefer = Tercih et
-# MT
-settings-reflink-avoid = Reflinkten kaçın
-# MT
-settings-reflink-disabled = Her zaman async motoru kullan
-# MT
-settings-fsync-on-close = Kapanışta diske senkronize et (daha yavaş, daha güvenli)
-# MT
-settings-preserve-timestamps = Zaman damgalarını koru
-# MT
-settings-preserve-permissions = İzinleri koru
-# MT
-settings-preserve-acls = ACL'leri koru (14. aşama)
-settings-preserve-sparseness = Seyrek dosyaları koru  # MT
-settings-preserve-sparseness-hint = Seyrek dosyaların (VM diskleri, veritabanı dosyaları) yalnızca ayrılmış kapsamlarını kopyalayın; böylece hedefin diskteki boyutu kaynakla aynı kalır.  # MT
-
-# MT
-settings-context-menu = Bağlam menüsü girdilerini etkinleştir
-# MT
-settings-intercept-copy = Varsayılan kopya işleyicisini yakala (Windows)
-# MT
-settings-intercept-copy-hint = Açıkken Explorer'da Ctrl+C / Ctrl+V Copy That üzerinden çalışır. Kayıt 14. aşamada.
-# MT
-settings-notify-completion = İş tamamlandığında bildir
-
-# MT
-settings-shred-method = Varsayılan silme yöntemi
-# MT
-settings-shred-zero = Sıfır (1 geçiş)
-# MT
-settings-shred-random = Rastgele (1 geçiş)
-# MT
-settings-shred-dod3 = DoD 5220.22-M (3 geçiş)
-# MT
-settings-shred-dod7 = DoD 5220.22-M (7 geçiş)
-# MT
-settings-shred-gutmann = Gutmann (35 geçiş)
-# MT
-settings-shred-nist = NIST 800-88
-# MT
-settings-shred-confirm-twice = Silmeden önce çift onay iste
-
-# MT
-settings-log-level = Günlük düzeyi
-# MT
-settings-log-off = Kapalı
-# MT
-settings-telemetry = Telemetri
-# MT
-settings-telemetry-never = Asla — hiçbir günlük düzeyinde veri gönderilmez
-# MT
-settings-error-policy = Varsayılan hata ilkesi
-# MT
-settings-error-policy-ask = Sor
-# MT
-settings-error-policy-skip = Atla
-# MT
-settings-error-policy-retry = Bekleme ile yeniden dene
-# MT
-settings-error-policy-abort = İlk hatada iptal et
-# MT
-settings-history-retention = Geçmiş saklama (gün)
-# MT
-settings-history-retention-hint = 0 = süresiz tut. Başka herhangi bir değer başlangıçta eski işleri otomatik olarak temizler.
-# MT
-settings-database-path = Veritabanı yolu
-# MT
-settings-database-path-default = (varsayılan — OS veri dizini)
-# MT
-settings-reset-all = Varsayılanlara sıfırla
-# MT
-settings-reset-confirm = Tüm tercihler sıfırlansın mı? Profiller etkilenmez.
-
-# MT
-settings-profiles-hint = Mevcut ayarları bir ad altında kaydedin; daha sonra ayrı ayrı tekli düğmeleri değiştirmeden geri yüklemek için yükleyin.
-# MT
-settings-profile-name-placeholder = Profil adı
-# MT
-settings-profile-save = Kaydet
-# MT
-settings-profile-import = İçe aktar…
-# MT
-settings-profile-load = Yükle
-# MT
-settings-profile-export = Dışa aktar…
-# MT
-settings-profile-delete = Sil
-# MT
-settings-profile-empty = Henüz kaydedilmiş profil yok.
-# MT
-settings-profile-import-prompt = İçe aktarılan profil için ad:
-
-# MT
-toast-settings-reset = Ayarlar sıfırlandı
-# MT
-toast-profile-saved = Profil kaydedildi
-# MT
-toast-profile-loaded = Profil yüklendi
-# MT
-toast-profile-exported = Profil dışa aktarıldı
-# MT
-toast-profile-imported = Profil içe aktarıldı
-
-# Phase 13d — activity feed + header picker buttons
 action-add-files = Dosya ekle
 action-add-folders = Klasör ekle
+
+# Phase 13d — activity feed
 activity-title = Etkinlik
 activity-clear = Etkinlik listesini temizle
 activity-empty = Henüz dosya etkinliği yok.
-activity-after-done = Bittiğinde:
+activity-after-done = Tamamlandığında:
 activity-keep-open = Uygulamayı açık tut
 activity-close-app = Uygulamayı kapat
 activity-shutdown = Bilgisayarı kapat
 activity-logoff = Oturumu kapat
-activity-sleep = Uyku moduna al
+activity-sleep = Uyku
 
 # Phase 14 — preflight free-space dialog
 preflight-block-title = Hedefte yeterli alan yok
-preflight-warn-title = Hedefte az alan var
+preflight-warn-title = Hedefte alan az
 preflight-unknown-title = Boş alan belirlenemedi
-preflight-unknown-body = Kaynak hızlı ölçülemeyecek kadar büyük veya hedef disk yanıt vermedi. Devam edebilirsiniz; alan biterse motor kopyalamayı temiz bir şekilde durdurur.
+preflight-unknown-body = Kaynak, boyutunu hızlıca ölçmek için fazla büyük ya da hedef birim yanıt vermedi. Devam edebilirsiniz; alan yetmezse motorun alan koruması kopyalamayı düzgün şekilde durdurur.
 preflight-required = Gerekli
 preflight-free = Boş
-preflight-reserve = Rezerv
+preflight-reserve = Ayrılan
 preflight-shortfall = Eksik
 preflight-continue = Yine de devam et
+preflight-pick-subset = Kopyalanacakları seç…
 collision-modal-overwrite-older = Yalnızca eskileri üzerine yaz
 
 # Phase 14e — subset picker
-preflight-pick-subset = Hangisinin kopyalanacağını seç…
 subset-title = Kopyalanacak kaynakları seçin
-subset-subtitle = Seçimin tamamı hedefe sığmıyor. Kopyalamak istediklerinizi işaretleyin; geri kalanlar atlanır.
+subset-subtitle = Seçimin tamamı hedefe sığmıyor. Kopyalamak istediğiniz öğeleri işaretleyin; geri kalanı atlanır.
 subset-loading = Boyutlar ölçülüyor…
-subset-too-large = sayılamayacak kadar büyük
+subset-too-large = saymak için çok büyük
 subset-budget = Kullanılabilir
 subset-remaining = Kalan
-subset-confirm = Seçileni kopyala
-history-rerun-hint = Bu kopyayı yeniden çalıştır — kaynak ağacındaki her dosyayı yeniden tarar
+subset-confirm = Seçimi kopyala
+history-rerun-hint = Bu kopyalamayı yeniden çalıştır — kaynak ağacındaki her dosyayı yeniden tarar
 history-clear-all = Tümünü temizle
-history-clear-all-confirm = Onaylamak için tekrar tıkla
-history-clear-all-hint = Tüm geçmiş satırlarını siler. Onaylamak için ikinci bir tıklama gerekir.
+history-clear-all-confirm = Onaylamak için tekrar tıklayın
+history-clear-all-hint = Tüm geçmiş satırlarını sil. Onay için ikinci bir tıklama gerekir.
 toast-history-cleared = Geçmiş temizlendi ({ $count } satır kaldırıldı)
 
-# Phase 15 — source-list ordering
+# Phase 15 — source-list ordering in the drop staging dialog
 drop-dialog-sort-label = Sıralama:
 sort-custom = Özel
 sort-name-asc = Ad A → Z (önce dosyalar)
@@ -583,756 +75,1039 @@ sort-size-asc = Boyut küçükten büyüğe (önce dosyalar)
 sort-size-desc = Boyut büyükten küçüğe (önce dosyalar)
 sort-reorder = Yeniden sırala
 sort-move-top = En üste taşı
-sort-move-up = Yukarı
-sort-move-down = Aşağı
+sort-move-up = Yukarı taşı
+sort-move-down = Aşağı taşı
 sort-move-bottom = En alta taşı
+
+# Phase 16 — sort preset names for the Activity list (shorter
+# wording than the DropStagingDialog variants; the Activity list
+# is files-only so the "(files first)" suffix isn't relevant).
 sort-name-asc-simple = Ad A → Z
 sort-name-desc-simple = Ad Z → A
-sort-size-asc-simple = Küçükten büyüğe
-sort-size-desc-simple = Büyükten küçüğe
-activity-sort-locked = Kopyalama sırasında sıralama devre dışıdır. Duraklatın veya bitmesini bekleyin, sonra sırayı değiştirin.
-drop-dialog-collision-label = Dosya zaten varsa:
-collision-policy-keep-both = İkisini de tut (yeni kopyayı _2, _3 … olarak yeniden adlandır)
+sort-size-asc-simple = Boyut küçükten büyüğe
+sort-size-desc-simple = Boyut büyükten küçüğe
+activity-sort-locked = Kopyalama sürerken sıralama devre dışıdır. Duraklatın ya da bitmesini bekleyip sırayı değiştirin.
+
+# Phase 17 — collision-policy picker in the DropStagingDialog
+drop-dialog-collision-label = Bir dosya zaten varsa:
+collision-policy-keep-both = İkisini de tut (yeni kopyayı _2, _3, … olarak yeniden adlandır)
 collision-policy-skip = Yeni kopyayı atla
 collision-policy-overwrite = Mevcut dosyanın üzerine yaz
 collision-policy-overwrite-if-newer = Yalnızca daha yeniyse üzerine yaz
 collision-policy-prompt = Her seferinde sor
-drop-dialog-busy-checking = Boş alan kontrol ediliyor…
+
+# Phase 18 — progress labels on the DropStagingDialog Start button
+drop-dialog-busy-checking = Boş alan denetleniyor…
 drop-dialog-busy-enumerating = Dosyalar sayılıyor…
 drop-dialog-busy-starting = Kopyalama başlatılıyor…
-toast-enumeration-deferred = Kaynak ağaç büyük — ön liste atlanıyor; satırlar motor işlediğinde görünecek.
+toast-enumeration-deferred = Kaynak ağaç büyük — önceden dosya listesi atlanıyor; satırlar motor onları işledikçe görünecek.
+
+# Context menu (per-row right-click)
+menu-pause = Duraklat
+menu-resume = Devam et
+menu-cancel = İptal
+menu-remove = Kuyruktan kaldır
+menu-reveal-source = Kaynağı klasörde göster
+menu-reveal-destination = Hedefi klasörde göster
+
+# Header / toolbar
+header-eta-label = Tahmini kalan süre
+header-toolbar-label = Genel denetimler
+
+# Footer
+footer-queued = etkin iş
+footer-total-bytes = aktarımda
+footer-errors = hata
+footer-history = Geçmiş
+
+# Empty state
+empty-title = Kopyalamak için dosya veya klasör bırakın
+empty-hint = Öğeleri pencereye sürükleyin. Bir hedef soracağız, ardından her kaynak için bir iş kuyruğa alacağız.
+empty-region-label = İş listesi
+
+# Details drawer
+details-drawer-label = İş ayrıntıları
+details-source = Kaynak
+details-destination = Hedef
+details-state = Durum
+details-bytes = Bayt
+details-files = Dosya
+details-speed = Hız
+details-eta = Kalan süre
+details-error = Hata
+
+# Drop dialog
+drop-dialog-title = Bırakılan öğeleri aktar
+drop-dialog-subtitle = { $count } öğe aktarıma hazır. Başlamak için bir hedef klasör seçin.
+drop-dialog-mode = İşlem
+drop-dialog-copy = Kopyala
+drop-dialog-move = Taşı
+drop-dialog-pick-destination = Hedef seç
+drop-dialog-change-destination = Hedefi değiştir
+drop-dialog-start-copy = Kopyalamayı başlat
+drop-dialog-start-move = Taşımayı başlat
+
+# ETA placeholders
+eta-calculating = hesaplanıyor…
+eta-unknown = bilinmiyor
+
+# Toast messages
+toast-job-done = Aktarım tamamlandı
+toast-copy-queued = Kopyalama kuyruğa alındı
+toast-move-queued = Taşıma kuyruğa alındı
+toast-error-resolved = Hata çözüldü
+toast-collision-resolved = Çakışma çözüldü
+toast-elevated-unavailable = Yükseltilmiş yeniden deneme Aşama 17'de gelecek — henüz kullanılamıyor
+toast-clipboard-files-detected = Panoda dosyalar var — Copy That ile kopyalamak için yapıştırma kısayolunuza basın
+toast-clipboard-no-files = Panoda yapıştırılacak dosya yok
+toast-error-log-exported = Hata günlüğü dışa aktarıldı
+
+# Error modal (Phase 8)
+error-modal-title = Bir aktarım başarısız oldu
+error-modal-retry = Yeniden dene
+error-modal-retry-elevated = Yükseltilmiş izinlerle yeniden dene
+error-modal-skip = Atla
+error-modal-skip-all-kind = Bu türdeki tüm hataları atla
+error-modal-abort = Tümünü durdur
+error-modal-path-label = Yol
+error-modal-code-label = Kod
+error-drawer-pending-count = Bekleyen başka hatalar var
+error-drawer-toggle = Daralt veya genişlet
+
+# Error-kind labels (Phase 8). Source of truth — engine maps each
+# `CopyErrorKind` to one of these keys via `localized_key()`.
+err-not-found = Dosya bulunamadı
+err-permission-denied = İzin reddedildi
+err-disk-full = Hedef disk dolu
+err-interrupted = İşlem kesintiye uğradı
+err-verify-failed = Kopyalama sonrası doğrulama başarısız oldu
+err-path-escape = Yol reddedildi — üst dizin (..) bölümleri veya geçersiz baytlar içeriyor
+err-path-invalid-encoding = Yol reddedildi — dize geçersiz UTF-8 / değiştirme karakterleri içeriyor
+err-helper-invalid-json = Ayrıcalıklı yardımcı hatalı biçimli JSON aldı; bu istek yoksayılıyor
+err-helper-grant-out-of-band = GrantCapabilities, durumsuz işleyici tarafından değil yardımcı çalıştırma döngüsü tarafından işlenmelidir
+err-randomness-unavailable = İşletim sistemi rastgele sayı üreteci başarısız oldu; bir oturum kimliği üretilemiyor
+err-sparseness-mismatch = Seyrek düzen hedefte korunamadı
+err-io-other = Bilinmeyen G/Ç hatası
+
+# Collision modal (Phase 8)
+collision-modal-title = Dosya zaten var
+collision-modal-overwrite = Üzerine yaz
+collision-modal-overwrite-if-newer = Daha yeniyse üzerine yaz
+collision-modal-skip = Atla
+collision-modal-keep-both = İkisini de tut
+collision-modal-rename = Yeniden adlandır…
+collision-modal-apply-to-all = Tümüne uygula
+collision-modal-source = Kaynak
+collision-modal-destination = Hedef
+collision-modal-size = Boyut
+collision-modal-modified = Değiştirilme
+collision-modal-hash-check = Hızlı karma (SHA-256)
+collision-modal-rename-placeholder = Yeni dosya adı
+collision-modal-confirm-rename = Yeniden adlandır
+
+# Error log drawer (Phase 8)
+error-log-title = Hata günlüğü
+error-log-empty = Günlüğe alınmış hata yok
+error-log-export-csv = CSV dışa aktar
+error-log-export-txt = Metin dışa aktar
+error-log-clear = Günlüğü temizle
+error-log-col-time = Zaman
+error-log-col-job = İş
+error-log-col-path = Yol
+error-log-col-code = Kod
+error-log-col-message = İleti
+error-log-col-resolution = Çözüm
+
+# History drawer (Phase 9)
+history-title = Geçmiş
+history-empty = Henüz kaydedilmiş iş yok
+history-unavailable = Kopyalama geçmişi kullanılamıyor. Uygulama başlangıçta SQLite deposunu açamadı.
+history-filter-any = herhangi
+history-filter-kind = Tür
+history-filter-status = Durum
+history-filter-text = Ara
+history-refresh = Yenile
+history-export-csv = CSV dışa aktar
+history-purge-30 = 30 günden eskileri temizle
+history-rerun = Yeniden çalıştır
+history-detail-open = Ayrıntılar
+history-detail-title = İş ayrıntıları
+history-detail-empty = Kaydedilmiş öğe yok
+history-col-date = Tarih
+history-col-kind = Tür
+history-col-src = Kaynak
+history-col-dst = Hedef
+history-col-files = Dosya
+history-col-size = Boyut
+history-col-status = Durum
+history-col-duration = Süre
+history-col-error = Hata
+toast-history-exported = Geçmiş dışa aktarıldı
+toast-history-rerun-queued = Yeniden çalıştırma kuyruğa alındı
+
+# Totals drawer (Phase 10)
+footer-totals = Toplamlar
+totals-title = Toplamlar
+totals-loading = Toplamlar yükleniyor…
+totals-card-bytes = Kopyalanan toplam bayt
+totals-card-files = Dosya
+totals-card-jobs = İş
+totals-card-avg-rate = Ortalama verim
+totals-errors = hata
+totals-spark-title = Son 30 gün
+totals-kinds-title = Türe göre
+totals-saved-title = Kazanılan süre (tahmini)
+totals-saved-note = Aynı iş yükünün temel bir dosya yöneticisi kopyalamasına kıyasla tahmini.
+totals-reset = İstatistikleri sıfırla
+totals-reset-confirm = Bu, kaydedilmiş her işi ve öğeyi siler. Devam edilsin mi?
+totals-reset-confirm-yes = Evet, sıfırla
+toast-totals-reset = İstatistikler sıfırlandı
+
+# Phase 11a — i18n core: surface remaining user-visible strings so
+# every string on a main-window screen flows through Fluent.
+
+# Header language switcher (temporary placement — folds into
+# Settings → General in Phase 12).
+header-language-label = Dil
+header-language-title = Dili değiştir
+
+# Job-kind labels. History filter, Totals breakdown, and history
+# rows all map wire-format `kind` strings to these labels.
+kind-copy = Kopyala
+kind-move = Taşı
+kind-delete = Sil
+kind-secure-delete = Güvenli silme
+
+# History status labels. Distinct from `state-*` because the
+# history wire format uses plain `running`/`succeeded`/... rather
+# than the live `JobState` enum the queue exposes.
+status-running = Çalışıyor
+status-succeeded = Başarılı
+status-failed = Başarısız
+status-cancelled = İptal edildi
+# Per-item status (not job-level): `ok` / `skipped` are only
+# reachable from the history detail view.
+status-ok = Tamam
+status-skipped = Atlandı
+
+# History drawer: search field placeholder + purge toast.
+history-search-placeholder = /yol
+toast-history-purged = 30 günden eski { $count } iş temizlendi
+
+# User-facing command-layer validation errors. The Rust side
+# returns these keys when input is missing; the toast layer looks
+# them up rather than showing the raw English.
+err-source-required = En az bir kaynak yolu gereklidir.
+err-destination-empty = Hedef yolu boş.
+err-source-empty = Kaynak yolu boş.
+
+# Localised duration formatting for the Totals drawer and ETA
+# fields. `{ $ms }`, `{ $s }`, `{ $m }`, `{ $h }` are integer
+# placeables — the formatter passes pre-computed values in.
+duration-lt-1s = < 1 sn
+duration-ms = { $ms } ms
+duration-seconds = { $s } sn
+duration-minutes-seconds = { $m } dk { $s } sn
+duration-hours-minutes = { $h } sa { $m } dk
+duration-zero = 0 sn
+
+# Rate unit. Appended to a formatted byte size. Some languages
+# render this with a leading space ("Ko/s"); keep it translatable
+# even though the SI-derived "/s" is near-universal.
+rate-unit-per-second = { $size }/sn
+
+# Phase 11b — Settings modal skeleton. Phase 12 expanded this into a
+# full six-tab preferences window; the `settings-phase-12-hint` key
+# is retired in favour of `settings-tab-profiles` + concrete labels.
+settings-title = Ayarlar
+settings-tab-general = Genel
+settings-tab-appearance = Görünüm
+settings-section-language = Dil
+settings-phase-12-hint = Daha fazla ayar (tema, aktarım varsayılanları, doğrulama algoritması, profiller) Aşama 12'de gelir.
+
+# Phase 12 — full Settings window keys. Grouped by tab so the
+# human-review pass can pick one section at a time. Every field
+# label and every option label that the user will actually read
+# has its own key; dynamic wire values (enum discriminants like
+# "auto" / "prefer") stay untranslated on the wire.
+
+settings-loading = Ayarlar yükleniyor…
+settings-tab-transfer = Aktarım
+settings-tab-filters = Filtreler
+settings-tab-shell = Kabuk
+settings-tab-secure-delete = Güvenli silme
+settings-tab-advanced = Gelişmiş
+settings-tab-updater = Güncellemeler
+settings-tab-profiles = Profiller
+
+# General tab additions
+settings-section-theme = Tema
+settings-theme-auto = Otomatik
+settings-theme-light = Açık
+settings-theme-dark = Koyu
+settings-start-with-os = Sistem başlangıcında çalıştır
+settings-single-instance = Tek çalışan örnek
+settings-minimize-to-tray = Kapatınca sistem tepsisine küçült
+settings-error-display-mode = Hata istemi biçimi
+settings-error-display-modal = Kalıcı pencere (uygulamayı engeller)
+settings-error-display-drawer = Çekmece (engellemez)
+settings-error-display-mode-hint = Kalıcı pencere, siz karar verene kadar kuyruğu durdurur. Çekmece kuyruğu sürdürür ve hataları köşede ayıklamanıza olanak tanır.
+settings-paste-shortcut = Dosyaları genel kısayolla yapıştır
+settings-paste-shortcut-combo = Kısayol birleşimi
+settings-paste-shortcut-hint = Explorer / Finder / Files'tan kopyalanan dosyaları Copy That ile yapıştırmak için bu birleşime sisteminizin herhangi bir yerinde basın. CmdOrCtrl, macOS'ta Cmd, Windows / Linux'ta Ctrl olarak çözümlenir.
+settings-clipboard-watcher = Kopyalanan dosyalar için panoyu izle
+settings-clipboard-watcher-hint = Panoda dosya URL'leri belirdiğinde, Copy That ile yapıştırabileceğinizi belirten bir bildirim göster. Etkinken her 500 ms'de bir yoklar.
+
+# Transfer tab
+settings-buffer-size = Arabellek boyutu
+settings-verify = Kopyalamadan sonra doğrula
+settings-verify-off = Kapalı
+settings-concurrency = Eşzamanlılık
+settings-concurrency-auto = Otomatik
+settings-reflink = Reflink / hızlı yollar
+settings-reflink-prefer = Tercih et
+settings-reflink-avoid = Reflink'ten kaçın
+settings-reflink-disabled = Her zaman eşzamansız motoru kullan
+settings-fsync-on-close = Kapatırken diske eşitle (daha yavaş, daha güvenli)
+settings-preserve-timestamps = Zaman damgalarını koru
+settings-preserve-permissions = İzinleri koru
+settings-preserve-acls = ACL'leri koru (Aşama 14)
+settings-preserve-sparseness = Seyrek dosyaları koru
+settings-preserve-sparseness-hint = Yalnızca seyrek dosyaların (VM diskleri, veritabanı dosyaları) ayrılmış bölümlerini kopyala; böylece hedef, diskte kaynakla aynı boyutta kalır.
+
+# Shell tab
+settings-context-menu = Kabuk bağlam menüsü girişlerini etkinleştir
+settings-intercept-copy = Varsayılan kopyalama işleyicisini yakala (Windows)
+settings-intercept-copy-hint = Açıkken Explorer'ın Ctrl+C / Ctrl+V işlemleri Copy That üzerinden yönlendirilir. Kayıt Aşama 14'te gelir.
+settings-notify-completion = İş tamamlandığında bildir
+
+# Secure delete tab
+settings-shred-method = Varsayılan parçalama yöntemi
+settings-shred-zero = Sıfır (1 geçiş)
+settings-shred-random = Rastgele (1 geçiş)
+settings-shred-dod3 = DoD 5220.22-M (3 geçiş)
+settings-shred-dod7 = DoD 5220.22-M (7 geçiş)
+settings-shred-gutmann = Gutmann (35 geçiş)
+settings-shred-nist = NIST 800-88
+settings-shred-confirm-twice = Parçalamadan önce çift onay iste
+
+# Advanced tab
+settings-log-level = Günlük düzeyi
+settings-log-off = Kapalı
+settings-telemetry = Telemetri
+settings-telemetry-never = Asla — hiçbir günlük düzeyinde sunucuya veri gönderilmez
+settings-error-policy = Varsayılan hata ilkesi
+settings-error-policy-ask = Sor
+settings-error-policy-skip = Atla
+settings-error-policy-retry = Geri çekilmeyle yeniden dene
+settings-error-policy-abort = İlk hatada durdur
+settings-history-retention = Geçmiş saklama süresi (gün)
+settings-history-retention-hint = 0 = sonsuza dek tut. Diğer değerler, başlangıçta eski işleri otomatik temizler.
+settings-database-path = Veritabanı yolu
+settings-database-path-default = (varsayılan — işletim sistemi veri dizini)
+settings-reset-all = Varsayılanlara sıfırla
+settings-reset-confirm = Her tercih varsayılanına sıfırlansın mı? Profiller etkilenmez.
+
+# Profiles tab
+settings-profiles-hint = Geçerli ayarları bir adla kaydedin; tek tek ayarlara dokunmadan geri dönmek için sonra yükleyin.
+settings-profile-name-placeholder = Profil adı
+settings-profile-save = Kaydet
+settings-profile-import = İçe aktar…
+settings-profile-load = Yükle
+settings-profile-export = Dışa aktar…
+settings-profile-delete = Sil
+settings-profile-empty = Henüz kaydedilmiş profil yok.
+settings-profile-import-prompt = İçe aktarılan profilin adı:
+
+# Toasts driven by Phase 12 profile actions
+toast-settings-reset = Ayarlar sıfırlandı
+toast-profile-saved = Profil kaydedildi
+toast-profile-loaded = Profil yüklendi
+toast-profile-exported = Profil dışa aktarıldı
+toast-profile-imported = Profil içe aktarıldı
 
 # Phase 14a — enumeration-time filters
-# MT
-settings-tab-filters = Filtreler
-# MT
-settings-filters-hint = Dosyaları sıralama sırasında atlayarak motorun onları hiç açmamasını sağlar. Dahil etme yalnızca dosyalara uygulanır; hariç tutma eşleşen klasörleri de budar.
-# MT
-settings-filters-enabled = Ağaç kopyaları için filtreleri etkinleştir
-# MT
-settings-filters-include-globs = Dahil etme globları
-# MT
+settings-filters-hint = Motor onları hiç açmasın diye dosyaları sıralama anında atlayın. Dahil etmeler yalnızca dosyalara uygulanır; hariç tutmalar eşleşen dizinleri de budar.
+settings-filters-enabled = Ağaç kopyalamaları için filtreleri etkinleştir
+settings-filters-include-globs = Dahil etme glob'ları
 settings-filters-include-globs-placeholder = **/*.txt
-# MT
-settings-filters-include-globs-hint = Satır başına bir glob. Boş değilse dosyanın en az biriyle eşleşmesi gerekir. Klasörlere daima girilir.
-# MT
-settings-filters-exclude-globs = Hariç tutma globları
-# MT
+settings-filters-include-globs-hint = Satır başına bir glob. Boş değilken bir dosyanın hayatta kalması için en az bir dahil etmeyle eşleşmesi gerekir. Dizinlerin içine her zaman inilir.
+settings-filters-exclude-globs = Hariç tutma glob'ları
 settings-filters-exclude-globs-placeholder = **/node_modules
-# MT
-settings-filters-exclude-globs-hint = Satır başına bir glob. Klasör eşleşmeleri tüm alt ağacı budar; eşleşen dosyalar atlanır.
-# MT
+settings-filters-exclude-globs-hint = Satır başına bir glob. Eşleşmeler dizinler için tüm alt ağacı budar; eşleşen dosyalar atlanır.
 settings-filters-size-range = Dosya boyutu aralığı
-# MT
-settings-filters-min-size-bytes = Minimum boyut (bayt, boş = alt sınır yok)
-# MT
-settings-filters-max-size-bytes = Maksimum boyut (bayt, boş = üst sınır yok)
-# MT
-settings-filters-date-range = Değişiklik tarihi aralığı
-# MT
-settings-filters-min-mtime = Şu tarihte veya sonrası
-# MT
-settings-filters-max-mtime = Şu tarihte veya öncesi
-# MT
-settings-filters-attributes = Öznitelikler
-# MT
+settings-filters-min-size-bytes = En küçük boyut (bayt, boş = alt sınır yok)
+settings-filters-max-size-bytes = En büyük boyut (bayt, boş = üst sınır yok)
+settings-filters-date-range = Değiştirilme zamanı aralığı
+settings-filters-min-mtime = Şu tarihte veya sonrasında değiştirilmiş
+settings-filters-max-mtime = Şu tarihte veya öncesinde değiştirilmiş
+settings-filters-attributes = Öznitelik bitleri
 settings-filters-skip-hidden = Gizli dosyaları / klasörleri atla
-# MT
 settings-filters-skip-system = Sistem dosyalarını atla (yalnızca Windows)
-# MT
 settings-filters-skip-readonly = Salt okunur dosyaları atla
 
 # Phase 15 — auto-update
-# MT
-settings-tab-updater = Güncellemeler
-# MT
-settings-updater-hint = Copy That, imzalı güncellemeleri günde en fazla bir kez kontrol eder. Güncellemeler bir sonraki uygulama çıkışında yüklenir.
-# MT
-settings-updater-auto-check = Başlangıçta güncellemeleri kontrol et
-# MT
-settings-updater-channel = Yayın kanalı
-# MT
+settings-updater-hint = Copy That, imzalı güncellemeleri günde en fazla bir kez denetler. Güncellemeler uygulamadan sonraki çıkışta yüklenir.
+settings-updater-auto-check = Başlangıçta güncellemeleri denetle
+settings-updater-channel = Sürüm kanalı
 settings-updater-channel-stable = Kararlı
-# MT
 settings-updater-channel-beta = Beta (ön sürüm)
-# MT
-settings-updater-last-check = Son kontrol
-# MT
-settings-updater-last-never = Asla
-# MT
-settings-updater-check-now = Güncellemeleri şimdi kontrol et
-# MT
-settings-updater-checking = Kontrol ediliyor…
-# MT
-settings-updater-available = Güncelleme mevcut
-# MT
-settings-updater-up-to-date = En son sürümü kullanıyorsunuz.
-# MT
+settings-updater-last-check = Son denetlenme
+settings-updater-last-never = Hiçbir zaman
+settings-updater-check-now = Şimdi güncellemeleri denetle
+settings-updater-checking = Denetleniyor…
+settings-updater-available = Güncelleme var
+settings-updater-up-to-date = En son sürümü çalıştırıyorsunuz.
 settings-updater-dismiss = Bu sürümü atla
-# MT
 settings-updater-dismissed = Atlandı
-# MT
-toast-update-available = Yeni bir sürüm mevcut
-# MT
+toast-update-available = Daha yeni bir sürüm var
 toast-update-up-to-date = Zaten en son sürümdesiniz
 
 # Phase 19a — disk-backed file enumeration (TeraCopy-compatible scan DB)
-# MT
 scan-progress-title = Taranıyor…
-# MT
-scan-progress-stats = { $files } dosya · şu ana kadar { $bytes }
-# MT
+scan-progress-stats = { $files } dosya · şu ana dek { $bytes }
 scan-pause-button = Taramayı duraklat
-# MT
-scan-resume-button = Taramaya devam et
-# MT
+scan-resume-button = Taramayı sürdür
 scan-cancel-button = Taramayı iptal et
-# MT
-scan-cancel-confirm = Taramayı iptal etmek ve ilerlemeyi atmak ister misiniz?
-# MT
+scan-cancel-confirm = Tarama iptal edilip ilerleme atılsın mı?
 scan-db-header = Tarama veritabanı
-# MT
-scan-db-hint = Milyonlarca dosya içeren işler için disk tabanlı tarama veritabanı.
-# MT
-advanced-scan-hash-during = Tarama sırasında sağlama toplamı hesapla
-# MT
+scan-db-hint = Milyonlarca dosyalı işler için disk üzerinde tarama veritabanı.
+advanced-scan-hash-during = Tarama sırasında sağlama toplamlarını hesapla
 advanced-scan-db-path = Tarama veritabanı konumu
-# MT
-advanced-scan-retention-days = Tamamlanan taramaları otomatik sil (gün)
-# MT
-advanced-scan-max-keep = Saklanacak en fazla tarama veritabanı sayısı
+advanced-scan-retention-days = Tamamlanan taramaları şu süre sonra otomatik sil (gün)
+advanced-scan-max-keep = Tutulacak en fazla tarama veritabanı sayısı
 
 # Phase 19b — filesystem-snapshot source for locked files.
-# MT
-settings-on-locked = When a file is locked
-# MT
-settings-on-locked-ask = Ask the first time
-# MT
-settings-on-locked-retry = Retry briefly, then surface the error
-# MT
-settings-on-locked-skip = Skip the locked file
-# MT
-settings-on-locked-snapshot = Use a filesystem snapshot
-# MT
-settings-on-locked-hint = Eliminate "file in use by another process" errors. Copy That snapshots the source volume (VSS on Windows, ZFS/Btrfs on Linux, APFS on macOS) and reads from the snapshot copy.
-# MT
-snapshot-prompt-title = This file is in use by another process
-# MT
-snapshot-prompt-body = Another program has { $path } open for exclusive write. Choose how Copy That should handle this and similar files on the same volume.
-# MT
-snapshot-source-active = 📷 Reading from { $kind } snapshot of { $volume }
-# MT
-snapshot-create-failed = Could not create a snapshot of the source volume
-# MT
-snapshot-vss-needs-elevation = Reading from a VSS snapshot requires Administrator permission. Copy That will ask you to allow it.
-# MT
-snapshot-cleanup-failed = The snapshot helper reported a cleanup failure — a leftover shadow copy may remain on the volume.
+settings-on-locked = Bir dosya kilitliyken
+settings-on-locked-ask = İlk seferinde sor
+settings-on-locked-retry = Kısa süre yeniden dene, sonra hatayı bildir
+settings-on-locked-skip = Kilitli dosyayı atla
+settings-on-locked-snapshot = Bir dosya sistemi anlık görüntüsü kullan
+settings-on-locked-hint = "Dosya başka bir işlem tarafından kullanılıyor" hatalarını ortadan kaldırır. Copy That, kaynak birimin anlık görüntüsünü alır (Windows'ta VSS, Linux'ta ZFS/Btrfs, macOS'ta APFS) ve anlık görüntü kopyasından okur.
+snapshot-prompt-title = Bu dosya başka bir işlem tarafından kullanılıyor
+snapshot-prompt-body = Başka bir program { $path } dosyasını özel yazma için açık tutuyor. Copy That'in bu ve aynı birimdeki benzer dosyaları nasıl ele alacağını seçin.
+snapshot-source-active = 📷 { $volume } biriminin { $kind } anlık görüntüsünden okunuyor
+snapshot-create-failed = Kaynak birimin anlık görüntüsü oluşturulamadı
+snapshot-vss-needs-elevation = Bir VSS anlık görüntüsünden okumak Yönetici izni gerektirir. Copy That sizden buna izin vermenizi isteyecek.
+snapshot-cleanup-failed = Anlık görüntü yardımcısı bir temizleme hatası bildirdi — birimde kalıntı bir gölge kopya kalmış olabilir.
 
 # Phase 20 — durable resume journal.
-# MT
-resume-prompt-title = Resume previous transfers?
-# MT
-resume-prompt-body = Copy That detected { $count } unfinished transfer(s) from a previous session. Choose what to do with each.
-# MT
-resume-prompt-resume = Resume
-# MT
-resume-prompt-resume-all = Resume all
-# MT
-resume-discard-one = Don't resume
-# MT
-resume-discard-all = Discard all
-# MT
-resume-aborted-hash-mismatch = The destination's first { $offset } bytes don't match the source — restarting from the beginning.
-# MT
-settings-auto-resume = Auto-resume interrupted jobs without prompting
-# MT
-settings-auto-resume-hint = Skip the resume prompt at startup and silently re-enqueue every unfinished job. Off by default.
+resume-prompt-title = Önceki aktarımlar sürdürülsün mü?
+resume-prompt-body = Copy That, önceki bir oturumdan { $count } tamamlanmamış aktarım algıladı. Her biri için ne yapılacağını seçin.
+resume-prompt-resume = Devam et
+resume-prompt-resume-all = Tümünü sürdür
+resume-discard-one = Devam etme
+resume-discard-all = Tümünü at
+resume-aborted-hash-mismatch = Hedefin ilk { $offset } baytı kaynakla eşleşmiyor — baştan başlatılıyor.
+settings-auto-resume = Kesintiye uğrayan işleri sormadan otomatik sürdür
+settings-auto-resume-hint = Başlangıçtaki sürdürme istemini atla ve her tamamlanmamış işi sessizce yeniden kuyruğa al. Varsayılan olarak kapalı.
 
 # Phase 21 — bandwidth shaping (GCRA token bucket + schedule + auto-throttle).
-# MT
-settings-tab-network = Network
-# MT
-settings-network-hint = Cap your transfer rate to keep the rest of the network usable. Apply globally, follow a daily schedule, or react automatically to metered Wi-Fi / battery / cellular connections.
-# MT
-settings-network-mode = Bandwidth limit
-# MT
-settings-network-mode-off = Off (no limit)
-# MT
-settings-network-mode-fixed = Fixed value
-# MT
-settings-network-mode-schedule = Use schedule
-# MT
-settings-network-cap-mbps = Cap (MB/s)
-# MT
-settings-network-schedule = Schedule (rclone format)
-# MT
-settings-network-schedule-hint = Whitespace-separated HH:MM,rate boundaries plus optional Mon-Fri,rate day rules. Rates: 512k, 10M, 2G, off, unlimited. Example: 08:00,512k 18:00,10M Sat-Sun,unlimited.
-# MT
-settings-network-auto-header = Auto-throttle
-# MT
-settings-network-auto-metered = On metered Wi-Fi
-# MT
-settings-network-auto-battery = On battery
-# MT
-settings-network-auto-cellular = On cellular
-# MT
-settings-network-auto-unchanged = Don't override
-# MT
-settings-network-auto-pause = Pause transfers
-# MT
-settings-network-auto-cap = Cap to fixed value
-# MT
-shape-badge-paused = paused
-# MT
-shape-badge-tooltip = Bandwidth limit active — click to open Settings → Network
-# MT
-shape-badge-source-schedule = scheduled
-# MT
-shape-badge-source-metered = metered
-# MT
-shape-badge-source-battery = on battery
-# MT
-shape-badge-source-cellular = cellular
-# MT
-shape-badge-source-settings = active
-# MT
-shape-error-schedule-invalid = Schedule format is not valid: { $message }
+settings-tab-network = Ağ
+settings-network-hint = Ağın geri kalanını kullanılabilir tutmak için aktarım hızınızı sınırlayın. Genel olarak uygulayın, günlük bir programı izleyin ya da sınırlı Wi-Fi / pil / hücresel bağlantılara otomatik tepki verin.
+settings-network-mode = Bant genişliği sınırı
+settings-network-mode-off = Kapalı (sınır yok)
+settings-network-mode-fixed = Sabit değer
+settings-network-mode-schedule = Program kullan
+settings-network-cap-mbps = Sınır (MB/sn)
+settings-network-schedule = Program (rclone biçimi)
+settings-network-schedule-hint = Boşlukla ayrılmış HH:MM,hız sınırları ve isteğe bağlı Mon-Fri,hız gün kuralları. Hızlar: 512k, 10M, 2G, off, unlimited. Örnek: 08:00,512k 18:00,10M Sat-Sun,unlimited.
+settings-network-auto-header = Otomatik kısma
+settings-network-auto-metered = Sınırlı Wi-Fi'de
+settings-network-auto-battery = Pildeyken
+settings-network-auto-cellular = Hücreseldeyken
+settings-network-auto-unchanged = Geçersiz kılma
+settings-network-auto-pause = Aktarımları duraklat
+settings-network-auto-cap = Sabit değere sınırla
+shape-badge-paused = duraklatıldı
+shape-badge-tooltip = Bant genişliği sınırı etkin — Ayarlar → Ağ'ı açmak için tıklayın
+shape-badge-source-schedule = programlı
+shape-badge-source-metered = sınırlı
+shape-badge-source-battery = pildeyken
+shape-badge-source-cellular = hücresel
+shape-badge-source-settings = etkin
+shape-error-schedule-invalid = Program biçimi geçerli değil: { $message }
 
 # Phase 22 — aggregate conflict dialog v2 (thumbnails, per-pattern
 # rules, and reusable conflict profiles). Every key below is user-
 # visible text in the `ConflictBatchModal.svelte` component.
-# MT
-conflict-batch-title = { $count } file conflicts in { $jobname }
-# MT
-conflict-batch-state-pending = Pending
-# MT
-conflict-batch-state-resolved = Resolved
-# MT
-conflict-batch-action-overwrite = Overwrite
-# MT
-conflict-batch-action-skip = Skip
-# MT
-conflict-batch-action-keep-both = Keep both
-# MT
-conflict-batch-action-newer-wins = Newer wins
-# MT
-conflict-batch-action-larger-wins = Larger wins
-# MT
-conflict-batch-bulk-apply-selected = Apply to selected
-# MT
-conflict-batch-bulk-apply-extension = Apply to all of this extension
-# MT
-conflict-batch-bulk-apply-glob = Apply to matching glob…
-# MT
-conflict-batch-bulk-apply-remaining = Apply to all remaining
-# MT
-conflict-batch-bulk-glob-placeholder = e.g. **/*.tmp
-# MT
-conflict-batch-save-profile = Save these rules as profile…
-# MT
-conflict-batch-profile-placeholder = Profile name
-# MT
-conflict-batch-matched-rule = via rule '{ $rule }' → { $action }
-# MT
-conflict-batch-empty = All conflicts resolved
-# MT
-conflict-batch-source-vs-destination = Source vs. destination
-# MT
-conflict-batch-source-label = Source
-# MT
-conflict-batch-destination-label = Destination
-# MT
-conflict-batch-size-label = Size
-# MT
-conflict-batch-modified-label = Modified
-# MT
-conflict-batch-close = Close
-# MT
-conflict-batch-profile-saved = Conflict profile saved
+conflict-batch-title = { $jobname } içinde { $count } dosya çakışması
+conflict-batch-state-pending = Bekliyor
+conflict-batch-state-resolved = Çözüldü
+conflict-batch-action-overwrite = Üzerine yaz
+conflict-batch-action-skip = Atla
+conflict-batch-action-keep-both = İkisini de tut
+conflict-batch-action-newer-wins = Yeni olan kazanır
+conflict-batch-action-larger-wins = Büyük olan kazanır
+conflict-batch-bulk-apply-selected = Seçilenlere uygula
+conflict-batch-bulk-apply-extension = Bu uzantının tümüne uygula
+conflict-batch-bulk-apply-glob = Eşleşen glob'a uygula…
+conflict-batch-bulk-apply-remaining = Kalan tümüne uygula
+conflict-batch-bulk-glob-placeholder = ör. **/*.tmp
+conflict-batch-save-profile = Bu kuralları profil olarak kaydet…
+conflict-batch-profile-placeholder = Profil adı
+conflict-batch-matched-rule = '{ $rule }' kuralı yoluyla → { $action }
+conflict-batch-empty = Tüm çakışmalar çözüldü
+conflict-batch-source-vs-destination = Kaynak ile hedef
+conflict-batch-source-label = Kaynak
+conflict-batch-destination-label = Hedef
+conflict-batch-size-label = Boyut
+conflict-batch-modified-label = Değiştirilme
+conflict-batch-close = Kapat
+conflict-batch-profile-saved = Çakışma profili kaydedildi
 
-# Phase 23 — sparse-file preservation. MT-flagged drafts; the
-# authoritative English source lives in locales/en/copythat.ftl.
-sparse-not-supported-title = Hedef seyrek dosyaları dolduruyor  # MT
-sparse-not-supported-body = { $dst_fs } seyrek dosyaları desteklemiyor. Kaynaktaki boşluklar sıfır olarak yazıldı, bu nedenle hedef diskte daha büyük.  # MT
-sparse-warning-densified = Seyrek düzen korundu: yalnızca ayrılmış kapsamlar kopyalandı.  # MT
-sparse-warning-mismatch = Seyrek düzen uyuşmazlığı — hedef beklenenden büyük olabilir.  # MT
+# Phase 23 — sparse-file preservation. The toast fires once per
+# destination volume when the filesystem can't preserve holes; the
+# warning line is surfaced in the job detail drawer so the user knows
+# the dst is larger on disk than the source was.
+sparse-not-supported-title = Hedef, seyrek dosyaları dolduruyor
+sparse-not-supported-body = { $dst_fs } seyrek dosyaları desteklemiyor. Kaynaktaki boşluklar sıfır olarak yazıldı; bu nedenle hedef diskte daha büyük.
+sparse-warning-densified = Seyrek düzen korundu: yalnızca ayrılmış bölümler kopyalandı.
+sparse-warning-mismatch = Seyrek düzen uyuşmazlığı — hedef beklenenden büyük olabilir.
 
-# Phase 24 — security-metadata preservation. MT-flagged drafts;
-# the authoritative English source lives in locales/en/copythat.ftl.
-settings-preserve-security-metadata = Güvenlik meta verilerini koru  # MT
-settings-preserve-security-metadata-hint = Her kopyalamada bant dışı meta veri akışlarını (NTFS ADS / xattrs / POSIX ACL'leri / SELinux bağlamları / Linux dosya yetenekleri / macOS kaynak çatalları) yakalayın ve yeniden uygulayın.  # MT
-settings-preserve-motw = Mark-of-the-Web'i (internetten-indirildi bayrağını) koru  # MT
-settings-preserve-motw-hint = Güvenlik için kritik. SmartScreen ve Office Protected View, internetten indirilen dosyalar hakkında uyarmak için bu akışı kullanır. Devre dışı bırakmak, indirilen bir çalıştırılabilir dosyanın kopyalama sırasında kaynak işaretini düşürmesine ve işletim sistemi güvenlik önlemlerini atlamasına olanak tanır.  # MT
-settings-preserve-posix-acls = POSIX ACL'leri ve genişletilmiş öznitelikleri koru  # MT
-settings-preserve-posix-acls-hint = Kopyalama sırasında user.* / system.* / trusted.* xattrs ve POSIX erişim kontrol listelerini taşı.  # MT
-settings-preserve-selinux = SELinux bağlamlarını koru  # MT
-settings-preserve-selinux-hint = MAC politikaları altında çalışan arka plan programlarının dosyaya erişmeye devam edebilmesi için kopyalama sırasında security.selinux etiketini taşı.  # MT
-settings-preserve-resource-forks = macOS kaynak çatallarını ve Finder bilgilerini koru  # MT
-settings-preserve-resource-forks-hint = Kopyalama sırasında eski kaynak çatalını ve FinderInfo'yu (renk etiketleri, Carbon meta verileri) taşı.  # MT
-settings-appledouble-fallback = Uyumsuz dosya sistemlerinde AppleDouble yan dosyası kullan  # MT
-meta-translated-to-appledouble = Yabancı meta veriler AppleDouble yan dosyasında saklandı (._{ $ext })  # MT
+# Phase 24 — security-metadata preservation. The Mark-of-the-Web
+# (Zone.Identifier ADS) toggle is security-sensitive: turning it off
+# lets a downloaded executable shed its SmartScreen / Office Protected
+# View flag on copy, which is why the tooltip carries an explicit
+# warning. AppleDouble fallback emits `._<filename>` sidecars on
+# destination filesystems that can't hold the foreign metadata.
+settings-preserve-security-metadata = Güvenlik meta verilerini koru
+settings-preserve-security-metadata-hint = Her kopyalamada bant dışı meta veri akışlarını (NTFS ADS / xattr'lar / POSIX ACL'leri / SELinux bağlamları / Linux dosya yetenekleri / macOS kaynak çatalları) yakala ve yeniden uygula.
+settings-preserve-motw = Mark-of-the-Web'i koru (internetten indirildi işareti)
+settings-preserve-motw-hint = Güvenlik için kritik. SmartScreen ve Office Korumalı Görünüm, internetten indirilen dosyalar hakkında uyarmak için bu akışı kullanır. Devre dışı bırakmak, indirilen bir yürütülebilir dosyanın kopyalanırken köken işaretini bırakmasına ve işletim sistemi korumalarını aşmasına izin verir.
+settings-preserve-posix-acls = POSIX ACL'lerini ve genişletilmiş öznitelikleri koru
+settings-preserve-posix-acls-hint = user.* / system.* / trusted.* xattr'larını ve POSIX erişim denetim listelerini kopyalama boyunca taşı.
+settings-preserve-selinux = SELinux bağlamlarını koru
+settings-preserve-selinux-hint = security.selinux etiketini kopyalama boyunca taşı; böylece MAC ilkeleri altında çalışan arka plan hizmetleri dosyaya yine erişebilir.
+settings-preserve-resource-forks = macOS kaynak çatallarını ve Finder bilgisini koru
+settings-preserve-resource-forks-hint = Eski kaynak çatalını ve FinderInfo'yu (renk etiketleri, Carbon meta verisi) kopyalama boyunca taşı.
+settings-appledouble-fallback = Uyumsuz dosya sistemlerinde AppleDouble yan dosyası kullan
+meta-translated-to-appledouble = Yabancı meta veri AppleDouble yan dosyasında saklandı (._{ $ext })
 
 # Phase 25 — two-way sync with vector-clock conflict detection.
-# MT-flagged drafts; the authoritative English source lives in
-# locales/en/copythat.ftl.
-footer-sync = Eşzm  # MT
-sync-drawer-title = Çift yönlü eşitleme  # MT
-sync-drawer-hint = İki klasörü sessiz üzerine yazmalar olmadan eşitleyin. Eşzamanlı düzenlemeler çözülebilir çatışmalar olarak görünür.  # MT
-sync-add-pair = Çift ekle  # MT
-sync-add-cancel = İptal  # MT
-sync-refresh = Yenile  # MT
-sync-add-save = Çifti kaydet  # MT
-sync-add-saving = Kaydediliyor…  # MT
-sync-add-missing-fields = Etiket, sol yol ve sağ yol hepsi gereklidir.  # MT
-sync-remove-confirm = Bu eşitleme çiftini kaldır? Durum veritabanı korunur; klasörlere dokunulmaz.  # MT
-sync-field-label = Etiket  # MT
-sync-field-label-placeholder = örn. Belgeler ↔ NAS  # MT
-sync-field-left = Sol klasör  # MT
-sync-field-left-placeholder = Mutlak bir yol seçin veya yapıştırın  # MT
-sync-field-right = Sağ klasör  # MT
-sync-field-right-placeholder = Mutlak bir yol seçin veya yapıştırın  # MT
-sync-field-mode = Mod  # MT
-sync-mode-two-way = Çift yönlü  # MT
-sync-mode-mirror-left-to-right = Ayna (sol → sağ)  # MT
-sync-mode-mirror-right-to-left = Ayna (sağ → sol)  # MT
-sync-mode-contribute-left-to-right = Katkı (sol → sağ, silme yok)  # MT
-sync-no-pairs = Henüz yapılandırılmış eşitleme çifti yok. Başlamak için "Çift ekle" düğmesine tıklayın.  # MT
-sync-loading = Yapılandırılmış çiftler yükleniyor…  # MT
-sync-never-run = Hiç çalıştırılmadı  # MT
-sync-running = Çalışıyor  # MT
-sync-run-now = Şimdi çalıştır  # MT
-sync-cancel = İptal  # MT
-sync-remove-pair = Kaldır  # MT
-sync-view-conflicts = Çatışmaları görüntüle ({ $count })  # MT
-sync-conflicts-heading = Çatışmalar  # MT
-sync-no-conflicts = Son çalıştırmadan çatışma yok.  # MT
-sync-winner = Kazanan  # MT
-sync-side-left-to-right = sol  # MT
-sync-side-right-to-left = sağ  # MT
-sync-conflict-kind-concurrent-write = Eşzamanlı düzenleme  # MT
-sync-conflict-kind-delete-edit = Sil ↔ düzenle  # MT
-sync-conflict-kind-add-add = Her iki taraf da ekledi  # MT
-sync-conflict-kind-corrupt-equal = İçerik yeni bir yazma olmadan ayrıldı  # MT
-sync-resolve-keep-left = Solu tut  # MT
-sync-resolve-keep-right = Sağı tut  # MT
-sync-resolve-keep-both = İkisini de tut  # MT
-sync-resolve-three-way = 3-yönlü birleştirme ile çöz  # MT
-sync-resolve-phase-53-tooltip = Metin dışı dosyalar için etkileşimli 3-yönlü birleştirme Faz 53'te gelir.  # MT
-sync-error-prefix = Eşitleme hatası  # MT
+# The drawer lists configured sync pairs; each pair runs an
+# independent reconciliation round against a per-pair `.copythat-sync.db`
+# state store. Concurrent edits from a common ancestor surface as
+# conflicts rather than silent overwrites; the losing side's content
+# is preserved as `name.sync-conflict-YYYYMMDD-HHMMSS-<host>.ext`.
+footer-sync = Eşitleme
+sync-drawer-title = İki yönlü eşitleme
+sync-drawer-hint = İki klasörü sessiz üzerine yazmalar olmadan eşitleyin. Eşzamanlı düzenlemeler, çözebileceğiniz çakışmalar olarak ortaya çıkar.
+sync-add-pair = Çift ekle
+sync-add-cancel = İptal
+sync-refresh = Yenile
+sync-add-save = Çifti kaydet
+sync-add-saving = Kaydediliyor…
+sync-add-missing-fields = Etiket, sol yol ve sağ yolun tümü gereklidir.
+sync-remove-confirm = Bu eşitleme çifti kaldırılsın mı? Durum veritabanı korunur; klasörlere dokunulmaz.
+sync-field-label = Etiket
+sync-field-label-placeholder = ör. Belgeler ↔ NAS
+sync-field-left = Sol klasör
+sync-field-left-placeholder = Mutlak bir yol seçin veya yapıştırın
+sync-field-right = Sağ klasör
+sync-field-right-placeholder = Mutlak bir yol seçin veya yapıştırın
+sync-field-mode = Mod
+sync-mode-two-way = İki yönlü
+sync-mode-mirror-left-to-right = Yansıt (sol → sağ)
+sync-mode-mirror-right-to-left = Yansıt (sağ → sol)
+sync-mode-contribute-left-to-right = Katkıda bulun (sol → sağ, silme yok)
+sync-no-pairs = Henüz yapılandırılmış eşitleme çifti yok. Başlamak için "Çift ekle"ye tıklayın.
+sync-loading = Yapılandırılmış çiftler yükleniyor…
+sync-never-run = Hiç çalıştırılmadı
+sync-running = Çalışıyor
+sync-run-now = Şimdi çalıştır
+sync-cancel = İptal
+sync-remove-pair = Kaldır
+sync-view-conflicts = Çakışmaları görüntüle ({ $count })
+sync-conflicts-heading = Çakışmalar
+sync-no-conflicts = Son çalıştırmadan çakışma yok.
+sync-winner = Kazanan
+sync-side-left-to-right = sol
+sync-side-right-to-left = sağ
+sync-conflict-kind-concurrent-write = Eşzamanlı düzenleme
+sync-conflict-kind-delete-edit = Silme ↔ düzenleme
+sync-conflict-kind-add-add = Her iki taraf da ekledi
+sync-conflict-kind-corrupt-equal = İçerik yeni bir yazma olmadan ayrıştı
+sync-resolve-keep-left = Solu tut
+sync-resolve-keep-right = Sağı tut
+sync-resolve-keep-both = İkisini de tut
+sync-resolve-three-way = 3 yönlü birleştirmeyle çöz
+sync-resolve-phase-53-tooltip = Metin dışı dosyalar için etkileşimli 3 yönlü birleştirme Aşama 53'te gelir.
+sync-error-prefix = Eşitleme hatası
 
-# Phase 26 — real-time mirror watcher. MT-flagged drafts;
-# the authoritative English source lives in locales/en/copythat.ftl.
-live-mirror-start = Canlı yansıtmayı başlat  # MT
-live-mirror-stop = Canlı yansıtmayı durdur  # MT
-live-mirror-watching = İzleniyor  # MT
-live-mirror-toggle-hint = Algılanan her dosya sistemi değişikliğinde otomatik olarak yeniden eşitleme. Etkin çift başına bir arka plan iş parçacığı.  # MT
-watch-event-prefix = Dosya değişikliği  # MT
-watch-overflow-recovered = İzleyici arabelleği taştı; kurtarmak için yeniden numaralandırılıyor  # MT
+# Phase 26 — real-time mirror watcher. "Live mirror" starts a
+# filesystem watcher on the pair's left side; every debounced event
+# triggers a re-sync. The watcher filters vim swap files / Office
+# lock files / atomic-save temp names so one logical save becomes
+# exactly one sync round.
+live-mirror-start = Canlı yansıtmayı başlat
+live-mirror-stop = Canlı yansıtmayı durdur
+live-mirror-watching = İzleniyor
+live-mirror-toggle-hint = Algılanan her dosya sistemi değişikliğinde otomatik yeniden eşitle. Etkin çift başına bir arka plan iş parçacığı.
+watch-event-prefix = Dosya değişikliği
+watch-overflow-recovered = İzleyici arabelleği taştı; kurtarmak için yeniden sıralanıyor
 
-# Phase 27 — content-defined chunk store. MT-flagged drafts;
-# the authoritative English source lives in locales/en/copythat.ftl.
-chunk-store-section = Parça deposu  # MT
-chunk-store-enable = Parça deposunu etkinleştir (delta devam ve tekilleştirme)  # MT
-chunk-store-enable-hint = Her kopyalanan dosyayı içeriğe göre böler (FastCDC) ve parçaları içerik-adresli olarak depolar. Yeniden denemeler yalnızca değişen parçaları yeniden yazar; paylaşılan içeriğe sahip dosyalar otomatik olarak tekilleştirilir.  # MT
-chunk-store-location = Parça deposu konumu  # MT
-chunk-store-max-size = Maksimum parça deposu boyutu  # MT
-chunk-store-prune = Şundan eski parçaları temizle (gün)  # MT
-chunk-store-savings = Parça tekilleştirme ile { $gib } GiB tasarruf edildi  # MT
-chunk-store-disk-usage = { $chunks } parçada { $size } kullanılıyor  # MT
+# Phase 27 — content-defined chunk store. Enables delta-resume (a
+# retry only re-writes chunks that actually changed) and same-job
+# dedup (files sharing content blocks store those blocks once). The
+# store is disk-backed under `<data-dir>/chunks/` by default and is
+# the foundation for the Phase 49–51 moonshot repository phases.
+chunk-store-section = Yığın deposu
+chunk-store-enable = Yığın deposunu etkinleştir (delta sürdürme ve yinelenenleri ayıklama)
+chunk-store-enable-hint = Kopyalanan her dosyayı içeriğine göre (FastCDC) böler ve yığınları içerik adresli depolar. Yeniden denemeler yalnızca değişen yığınları yeniden yazar; içerik paylaşan dosyalar otomatik olarak yinelenenleri ayıklar.
+chunk-store-location = Yığın deposu konumu
+chunk-store-max-size = En fazla yığın deposu boyutu
+chunk-store-prune = Şu süreden eski yığınları buda (gün)
+chunk-store-savings = Yığın yinelenenleri ayıklama ile { $gib } GiB kazanıldı
+chunk-store-disk-usage = { $chunks } yığın genelinde { $size } kullanılıyor
 
-# Phase 28 — tray-resident Drop Stack. MT-flagged drafts;
-# the authoritative English source lives in locales/en/copythat.ftl.
-dropstack-window-title = Drop Stack  # MT
-dropstack-tray-open = Drop Stack  # MT
-dropstack-empty-title = Drop Stack boş  # MT
-dropstack-empty-hint = Dosyaları Gezgin'den buraya sürükleyin veya bir iş satırına sağ tıklayarak ekleyin.  # MT
-dropstack-add-to-stack = Drop Stack'e ekle  # MT
-dropstack-copy-all-to = Hepsini kopyala…  # MT
-dropstack-move-all-to = Hepsini taşı…  # MT
-dropstack-clear = Yığını temizle  # MT
-dropstack-remove-row = Yığından çıkar  # MT
-dropstack-path-missing-toast = { $path } kaldırıldı — dosya artık yok.  # MT
-dropstack-always-on-top = Drop Stack'i her zaman en üstte tut  # MT
-dropstack-show-tray-icon = Copy That tepsi simgesini göster  # MT
-dropstack-open-on-start = Uygulama başlangıcında Drop Stack'i otomatik aç  # MT
-dropstack-count = { $count } yol  # MT
+# Phase 28 — tray-resident Drop Stack. The stack is a persistent list
+# of paths gathered from multiple sources (Explorer drag, main-window
+# context menu, CLI, drag onto the Drop Stack window) that the user
+# can dispatch to a destination in one go.
+dropstack-window-title = Drop Stack
+dropstack-tray-open = Drop Stack
+dropstack-empty-title = Drop Stack boş
+dropstack-empty-hint = Buraya Explorer'dan dosya sürükleyin ya da eklemek için bir iş satırına sağ tıklayın.
+dropstack-add-to-stack = Drop Stack'e ekle
+dropstack-copy-all-to = Tümünü şuraya kopyala…
+dropstack-move-all-to = Tümünü şuraya taşı…
+dropstack-clear = Yığını temizle
+dropstack-remove-row = Yığından kaldır
+dropstack-path-missing-toast = { $path } bırakıldı — dosya artık yok.
+dropstack-always-on-top = Drop Stack'i her zaman üstte tut
+dropstack-show-tray-icon = Copy That tepsi simgesini göster
+dropstack-open-on-start = Uygulama başlangıcında Drop Stack'i otomatik aç
+dropstack-count = { $count } yol
 
-# Phase 29 — spring-loaded folders + native DnD polish.
-settings-dnd-heading = Drag and drop  # MT
-settings-dnd-spring-load = Spring-load folders while dragging  # MT
-settings-dnd-spring-delay = Spring-load delay (ms)  # MT
-settings-dnd-thumbnails = Show drag thumbnails  # MT
-settings-dnd-invalid-highlight = Highlight invalid drop targets  # MT
-dropzone-invalid-title = Not a valid drop target  # MT
-dropzone-invalid-readonly = Destination is read-only  # MT
-dropzone-picker-title = Choose a destination  # MT
-dropzone-picker-up = Up  # MT
-dropzone-picker-path = Current path  # MT
-dropzone-picker-root = Roots  # MT
-dropzone-picker-use-this = Use this folder  # MT
-dropzone-picker-empty = No subfolders  # MT
-dropzone-picker-cancel = Cancel  # MT
+# Phase 29 — spring-loaded folders + native DnD polish. The Settings
+# → General tab carries the knobs; DropTarget / DestinationPicker
+# Svelte components use the dropzone-* keys at runtime.
+settings-dnd-heading = Sürükle ve bırak
+settings-dnd-spring-load = Sürüklerken klasörleri otomatik aç
+settings-dnd-spring-delay = Otomatik açma gecikmesi (ms)
+settings-dnd-thumbnails = Sürükleme küçük resimlerini göster
+settings-dnd-invalid-highlight = Geçersiz bırakma hedeflerini vurgula
+dropzone-invalid-title = Geçerli bir bırakma hedefi değil
+dropzone-invalid-readonly = Hedef salt okunur
+dropzone-picker-title = Bir hedef seçin
+dropzone-picker-up = Yukarı
+dropzone-picker-path = Geçerli yol
+dropzone-picker-root = Kökler
+dropzone-picker-use-this = Bu klasörü kullan
+dropzone-picker-empty = Alt klasör yok
+dropzone-picker-cancel = İptal
 
-# Phase 30 — cross-platform path translation.
-translate-heading = Cross-platform compatibility  # MT
-translate-unicode-label = Unicode normalization  # MT
-translate-unicode-auto = Auto-detect destination  # MT
-translate-unicode-windows = NFC (Windows / Linux)  # MT
-translate-unicode-macos = Leave as-is (macOS / APFS)  # MT
-translate-line-endings-label = Translate line endings for text files  # MT
-translate-line-endings-allowlist = Text file extensions  # MT
-reserved-name-label = Windows reserved-name handling  # MT
-reserved-name-suffix = Append "_" (CON.txt → CON_.txt)  # MT
-reserved-name-reject = Reject and warn  # MT
-long-path-label = Use Windows long-path prefix (\?\) when over 260 chars  # MT
-long-path-hint = Some network shares and legacy tools don't honor the \?\ namespace.  # MT
+# Phase 30 — cross-platform path translation. Settings → Transfer
+# exposes these under a "Cross-platform compatibility" subsection.
+translate-heading = Platformlar arası uyumluluk
+translate-unicode-label = Unicode normalleştirme
+translate-unicode-auto = Hedefi otomatik algıla
+translate-unicode-windows = NFC (Windows / Linux)
+translate-unicode-macos = Olduğu gibi bırak (macOS / APFS)
+translate-line-endings-label = Metin dosyaları için satır sonlarını çevir
+translate-line-endings-allowlist = Metin dosyası uzantıları
+reserved-name-label = Windows ayrılmış ad işleme
+reserved-name-suffix = "_" ekle (CON.txt → CON_.txt)
+reserved-name-reject = Reddet ve uyar
+long-path-label = 260 karakteri aşınca Windows uzun yol önekini (\\?\) kullan
+long-path-hint = Bazı ağ paylaşımları ve eski araçlar \\?\ ad alanını desteklemez.
 
-# Phase 31 — power-aware copying.
-power-heading = Power & State  # MT
-power-enabled = Enable power-aware rules  # MT
-power-battery-label = On battery  # MT
-power-metered-label = On metered Wi-Fi  # MT
-power-cellular-label = On cellular  # MT
-power-presentation-label = When presenting (Zoom / Teams / Keynote)  # MT
-power-fullscreen-label = When an app is fullscreen  # MT
-power-thermal-label = When CPU is thermal-throttling  # MT
-power-rule-continue = Continue at full speed  # MT
-power-rule-pause = Pause all jobs  # MT
-power-rule-cap = Cap bandwidth  # MT
-power-rule-cap-percent = Cap to a percent of current rate  # MT
-power-reason-on-battery = on battery  # MT
-power-reason-metered-network = metered network  # MT
-power-reason-cellular-network = cellular network  # MT
-power-reason-presenting = presentation mode  # MT
-power-reason-fullscreen = fullscreen app  # MT
-power-reason-thermal-throttling = CPU is throttling  # MT
+# Phase 31 — power-aware copying. Settings → Power & State tab + the
+# header badge that renders "⏸ Paused — Zoom call detected" when the
+# runner's power subscriber has paused or capped due to a policy match.
+power-heading = Güç ve Durum
+power-enabled = Güce duyarlı kuralları etkinleştir
+power-battery-label = Pildeyken
+power-metered-label = Sınırlı Wi-Fi'de
+power-cellular-label = Hücreseldeyken
+power-presentation-label = Sunum yaparken (Zoom / Teams / Keynote)
+power-fullscreen-label = Bir uygulama tam ekrandayken
+power-thermal-label = CPU ısı kısıtlaması yaparken
+power-rule-continue = Tam hızda devam et
+power-rule-pause = Tüm işleri duraklat
+power-rule-cap = Bant genişliğini sınırla
+power-rule-cap-percent = Geçerli hızın bir yüzdesine sınırla
+power-reason-on-battery = pildeyken
+power-reason-metered-network = sınırlı ağ
+power-reason-cellular-network = hücresel ağ
+power-reason-presenting = sunum modu
+power-reason-fullscreen = tam ekran uygulaması
+power-reason-thermal-throttling = CPU kısıtlama yapıyor
 
-# Phase 32 — cloud backend matrix via OpenDAL.
-remote-heading = Remote backends  # MT
-remote-add = Add backend  # MT
-remote-list-empty = No remote backends configured  # MT
-remote-test = Test connection  # MT
-remote-test-success = Connection successful  # MT
-remote-test-failed = Connection failed  # MT
-remote-remove = Remove backend  # MT
-remote-name-label = Display name  # MT
-remote-kind-label = Backend type  # MT
-remote-save = Save backend  # MT
-remote-cancel = Cancel  # MT
-backend-s3 = Amazon S3  # MT
-backend-r2 = Cloudflare R2  # MT
-backend-b2 = Backblaze B2  # MT
-backend-azure-blob = Azure Blob Storage  # MT
-backend-gcs = Google Cloud Storage  # MT
-backend-onedrive = OneDrive  # MT
-backend-google-drive = Google Drive  # MT
-backend-dropbox = Dropbox  # MT
-backend-webdav = WebDAV  # MT
-backend-sftp = SFTP  # MT
-backend-ftp = FTP  # MT
-backend-local-fs = Local filesystem  # MT
-cloud-config-bucket = Bucket  # MT
-cloud-config-region = Region  # MT
-cloud-config-endpoint = Endpoint URL  # MT
-cloud-config-root = Root path  # MT
-cloud-error-invalid-config = Backend configuration is invalid  # MT
-cloud-error-network = Network error contacting backend  # MT
-cloud-error-not-found = Object not found at the requested path  # MT
-cloud-error-permission = Permission denied by remote backend  # MT
-cloud-error-keychain = OS keychain access failed  # MT
-settings-tab-remotes = Remotes  # MT
-settings-tab-mobile = Mobile  # MT
+# Phase 32 — cloud backend matrix via OpenDAL. Settings → Remotes
+# tab + the Add-backend wizard that writes one entry per remote into
+# the keychain-backed credential store.
+remote-heading = Uzak arka uçlar
+remote-add = Arka uç ekle
+remote-list-empty = Yapılandırılmış uzak arka uç yok
+remote-test = Bağlantıyı sına
+remote-test-success = Bağlantı başarılı
+remote-test-failed = Bağlantı başarısız
+remote-remove = Arka ucu kaldır
+remote-name-label = Görünen ad
+remote-kind-label = Arka uç türü
+remote-save = Arka ucu kaydet
+remote-cancel = İptal
+backend-s3 = Amazon S3
+backend-r2 = Cloudflare R2
+backend-b2 = Backblaze B2
+backend-azure-blob = Azure Blob Storage
+backend-gcs = Google Cloud Storage
+backend-onedrive = OneDrive
+backend-google-drive = Google Drive
+backend-dropbox = Dropbox
+backend-webdav = WebDAV
+backend-sftp = SFTP
+backend-ftp = FTP
+backend-local-fs = Yerel dosya sistemi
+cloud-config-bucket = Kova
+cloud-config-region = Bölge
+cloud-config-endpoint = Uç nokta URL'si
+cloud-config-root = Kök yol
+cloud-error-invalid-config = Arka uç yapılandırması geçersiz
+cloud-error-network = Arka uca bağlanırken ağ hatası
+cloud-error-not-found = İstenen yolda nesne bulunamadı
+cloud-error-permission = Uzak arka uç izni reddetti
+cloud-error-keychain = İşletim sistemi anahtar zinciri erişimi başarısız oldu
+settings-tab-remotes = Uzak konumlar
+settings-tab-mobile = Mobil
 
-# Phase 33 — mount as read-only filesystem.
-mount-heading = Mount snapshot  # MT
-mount-action-mount = Mount snapshot  # MT
-mount-action-unmount = Unmount  # MT
-mount-status-mounted = Mounted at { $path }  # MT
-mount-error-unsafe-mountpoint = Mountpoint path is unsafe  # MT
-mount-error-mountpoint-not-empty = Mountpoint must be an empty directory  # MT
-mount-error-backend-unavailable = Mount backend is not available on this system  # MT
-mount-error-archive-read = Archive read failed  # MT
-mount-picker-title = Pick mountpoint directory  # MT
-mount-toast-mounted = Snapshot mounted at { $path }  # MT
-mount-toast-unmounted = Snapshot unmounted  # MT
-mount-toast-failed = Mount failed: { $reason }  # MT
-settings-mount-heading = Mount snapshots  # MT
-settings-mount-hint = Expose the history archive as a read-only filesystem. Phase 33b wires the runner flow; the kernel FUSE/WinFsp backends land in Phase 33c.  # MT
-settings-mount-on-launch = Mount the latest snapshot on launch  # MT
-settings-mount-on-launch-path = Mountpoint path  # MT
-settings-mount-on-launch-path-placeholder = e.g. C:\Mounts\copythat  # MT
+# Phase 33 — mount Copy That's chunk store + history archive as a
+# read-only filesystem (FUSE / WinFsp). Surfaced by the History tab
+# context menu's "Mount snapshot" action + the Settings → Advanced
+# "Mount latest on launch" toggle.
+mount-heading = Anlık görüntü bağla
+mount-action-mount = Anlık görüntü bağla
+mount-action-unmount = Bağlantıyı kaldır
+mount-status-mounted = { $path } konumunda bağlandı
+mount-error-unsafe-mountpoint = Bağlama noktası yolu güvenli değil
+mount-error-mountpoint-not-empty = Bağlama noktası boş bir dizin olmalıdır
+mount-error-backend-unavailable = Bağlama arka ucu bu sistemde kullanılamıyor
+mount-error-archive-read = Arşiv okuması başarısız oldu
+mount-picker-title = Bağlama noktası dizinini seçin
+mount-toast-mounted = Anlık görüntü { $path } konumunda bağlandı
+mount-toast-unmounted = Anlık görüntü bağlantısı kaldırıldı
+mount-toast-failed = Bağlama başarısız: { $reason }
+settings-mount-heading = Anlık görüntüleri bağla
+settings-mount-hint = Geçmiş arşivini salt okunur bir dosya sistemi olarak sun. Aşama 33b çalıştırma akışını bağlar; çekirdek FUSE/WinFsp arka uçları Aşama 33c'de gelir.
+settings-mount-on-launch = En son anlık görüntüyü başlangıçta bağla
+settings-mount-on-launch-path = Bağlama noktası yolu
+settings-mount-on-launch-path-placeholder = ör. C:\Mounts\copythat
 
 # Phase 34 — enterprise-grade audit log export + WORM (write-once-read-
 # many) tamper-resistance. Settings → Advanced → Audit log collects the
 # format + destination + rotation + WORM toggle; runtime records job and
 # file events into the tamper-evident chain-hashed sink.
-settings-audit-heading = Audit log  # MT
-settings-audit-hint = Append-only tamper-evident log of every job and file event. Formats include CSV, JSON-lines, RFC 5424 Syslog, ArcSight CEF, and QRadar LEEF.  # MT
-settings-audit-enable = Enable audit logging  # MT
-settings-audit-format = Log format  # MT
-settings-audit-format-json-lines = JSON lines (recommended default)  # MT
-settings-audit-format-csv = CSV (spreadsheet-friendly)  # MT
-settings-audit-format-syslog = Syslog (RFC 5424)  # MT
-settings-audit-format-cef = CEF (ArcSight)  # MT
-settings-audit-format-leef = LEEF 2.0 (IBM QRadar)  # MT
-settings-audit-file-path = Log file path  # MT
-settings-audit-file-path-placeholder = e.g. C:\ProgramData\CopyThat\audit.log  # MT
-settings-audit-max-size = Rotate after (bytes, 0 = never)  # MT
-settings-audit-worm = Enable WORM mode (write-once-read-many)  # MT
-settings-audit-worm-hint = Applies the platform's append-only flag (Linux chattr +a, macOS chflags uappnd, Windows read-only attribute) after every create or rotation. Even an administrator must explicitly clear the flag to truncate the log.  # MT
-settings-audit-test-write = Test write  # MT
-settings-audit-verify-chain = Verify chain  # MT
-toast-audit-test-write-ok = Audit log test write succeeded  # MT
-toast-audit-verify-ok = Audit chain verified intact  # MT
-toast-audit-verify-failed = Audit chain verification reported mismatches  # MT
+settings-audit-heading = Denetim günlüğü
+settings-audit-hint = Her iş ve dosya olayının yalnızca eklemeli, kurcalamaya karşı kanıtlı günlüğü. Biçimler CSV, JSON satırları, RFC 5424 Syslog, ArcSight CEF ve QRadar LEEF içerir.
+settings-audit-enable = Denetim günlüğünü etkinleştir
+settings-audit-format = Günlük biçimi
+settings-audit-format-json-lines = JSON satırları (önerilen varsayılan)
+settings-audit-format-csv = CSV (elektronik tabloya uygun)
+settings-audit-format-syslog = Syslog (RFC 5424)
+settings-audit-format-cef = CEF (ArcSight)
+settings-audit-format-leef = LEEF 2.0 (IBM QRadar)
+settings-audit-file-path = Günlük dosyası yolu
+settings-audit-file-path-placeholder = ör. C:\ProgramData\CopyThat\audit.log
+settings-audit-max-size = Şu boyuttan sonra döndür (bayt, 0 = asla)
+settings-audit-worm = WORM modunu etkinleştir (bir kez yaz, çok kez oku)
+settings-audit-worm-hint = Her oluşturma veya döndürmeden sonra platformun yalnızca eklemeli bayrağını uygular (Linux chattr +a, macOS chflags uappnd, Windows salt okunur özniteliği). Bir yönetici bile günlüğü kısaltmak için bayrağı açıkça temizlemelidir.
+settings-audit-test-write = Yazmayı sına
+settings-audit-verify-chain = Zinciri doğrula
+toast-audit-test-write-ok = Denetim günlüğü yazma sınaması başarılı oldu
+toast-audit-verify-ok = Denetim zinciri sağlam olarak doğrulandı
+toast-audit-verify-failed = Denetim zinciri doğrulaması uyuşmazlık bildirdi
 
 # Phase 35 — destination encryption via age (X25519 / passphrase /
 # SSH) + on-the-fly zstd compression with a per-extension deny
 # heuristic. Surfaced through Settings → Transfer → Encryption +
 # Compression; engine short-circuits to the crypt pipeline when
 # either stage is active.
-settings-crypt-heading = Encryption & compression  # MT
-settings-crypt-hint = Transform file contents before they land at the destination. Encryption uses the age format; compression uses zstd and can skip already-compressed media by extension.  # MT
-settings-crypt-encryption-mode = Encryption  # MT
-settings-crypt-encryption-off = Off  # MT
-settings-crypt-encryption-passphrase = Passphrase (prompt at copy start)  # MT
-settings-crypt-encryption-recipients = Recipient keys from file  # MT
-settings-crypt-encryption-hint = Passphrases are held only in memory for the duration of the copy. Recipient files list one age1… or ssh- public key per line.  # MT
-settings-crypt-recipients-file = Recipients file path  # MT
-settings-crypt-recipients-file-placeholder = e.g. C:\Users\me\recipients.txt  # MT
-settings-crypt-compression-mode = Compression  # MT
-settings-crypt-compression-off = Off  # MT
-settings-crypt-compression-always = Always  # MT
-settings-crypt-compression-smart = Smart (skip already-compressed media)  # MT
-settings-crypt-compression-hint = Smart mode skips jpg, mp4, zip, 7z and similar formats that don't benefit from zstd. Always mode compresses every file at the chosen level.  # MT
-settings-crypt-compression-level = zstd level (1-22)  # MT
-settings-crypt-compression-level-hint = Lower numbers are faster; higher numbers compress harder. Level 3 matches zstd's CLI default.  # MT
-compress-footer-savings = 💾 { $original } → { $compressed } ({ $percent }% saved)  # MT
-compress-savings-toast = Compressed { $percent }% ({ $bytes } saved)  # MT
-crypt-toast-recipients-loaded = Loaded { $count } encryption recipients  # MT
-crypt-toast-recipients-error = Failed to load recipients: { $reason }  # MT
-crypt-toast-passphrase-required = Encryption needs a passphrase before the copy starts  # MT
-crypt-toast-passphrase-set = Encryption passphrase captured  # MT
-crypt-footer-encrypted-badge = 🔒 Encrypted (age)  # MT
-crypt-footer-compressed-badge = 📦 Compressed (zstd)  # MT
+settings-crypt-heading = Şifreleme ve sıkıştırma
+settings-crypt-hint = Dosya içeriklerini hedefe ulaşmadan önce dönüştürün. Şifreleme age biçimini kullanır; sıkıştırma zstd kullanır ve uzantıya göre zaten sıkıştırılmış medyayı atlayabilir.
+settings-crypt-encryption-mode = Şifreleme
+settings-crypt-encryption-off = Kapalı
+settings-crypt-encryption-passphrase = Parola (kopyalama başında sorulur)
+settings-crypt-encryption-recipients = Dosyadan alıcı anahtarları
+settings-crypt-encryption-hint = Parolalar yalnızca kopyalama süresince bellekte tutulur. Alıcı dosyaları satır başına bir age1… veya ssh- ortak anahtarı listeler.
+settings-crypt-recipients-file = Alıcılar dosyası yolu
+settings-crypt-recipients-file-placeholder = ör. C:\Users\me\recipients.txt
+settings-crypt-compression-mode = Sıkıştırma
+settings-crypt-compression-off = Kapalı
+settings-crypt-compression-always = Her zaman
+settings-crypt-compression-smart = Akıllı (zaten sıkıştırılmış medyayı atla)
+settings-crypt-compression-hint = Akıllı mod, zstd'den yarar görmeyen jpg, mp4, zip, 7z ve benzeri biçimleri atlar. Her zaman modu her dosyayı seçilen düzeyde sıkıştırır.
+settings-crypt-compression-level = zstd düzeyi (1-22)
+settings-crypt-compression-level-hint = Düşük sayılar daha hızlıdır; yüksek sayılar daha sıkı sıkıştırır. Düzey 3, zstd'nin CLI varsayılanıyla eşleşir.
+compress-footer-savings = 💾 { $original } → { $compressed } (%{ $percent } kazanç)
+compress-savings-toast = %{ $percent } sıkıştırıldı ({ $bytes } kazanıldı)
+crypt-toast-recipients-loaded = { $count } şifreleme alıcısı yüklendi
+crypt-toast-recipients-error = Alıcılar yüklenemedi: { $reason }
+crypt-toast-passphrase-required = Şifreleme, kopyalama başlamadan önce bir parola gerektirir
+crypt-toast-passphrase-set = Şifreleme parolası yakalandı
+crypt-footer-encrypted-badge = 🔒 Şifrelendi (age)
+crypt-footer-compressed-badge = 📦 Sıkıştırıldı (zstd)
 
-# Phase 36 — copythat CLI. MT-flagged English strings pending human
-# translation; tracked in docs/I18N_TODO.md.
-cli-help-tagline = Copy That CLI — byte-exact file copy, sync, verify and audit for CI/CD pipelines.  # MT
-cli-help-exit-codes = Exit codes: 0 success, 1 error, 2 pending, 3 collision, 4 verify-fail, 5 net, 6 perm, 7 disk-full, 8 cancel, 9 config.  # MT
-cli-error-bad-args = copy/move requires at least one source and a destination  # MT
-cli-error-unknown-algo = Unknown verify algorithm: { $algo }  # MT
-cli-error-missing-spec = --spec is required for plan/apply  # MT
-cli-error-spec-parse = Failed to parse jobspec { $path }: { $reason }  # MT
-cli-error-spec-empty-sources = Jobspec source list is empty  # MT
-cli-info-shape-recorded = Bandwidth shape "{ $rate }" recorded; enforcement is plumbed via copythat-shape  # MT
-cli-info-stub-deferred = { $command } is staged for the Phase 36 follow-up wiring  # MT
-cli-plan-summary = Plan: { $actions } action(s), { $bytes } byte(s); { $already_done } already in place  # MT
-cli-plan-pending = Plan reports pending actions; rerun with `apply` to execute  # MT
-cli-plan-already-done = Plan reports nothing to do (idempotent)  # MT
-cli-apply-success = Apply finished without errors  # MT
-cli-apply-failed = Apply finished with one or more errors  # MT
-cli-verify-ok = Verify ok: { $algo } { $digest }  # MT
-cli-verify-failed = Verify FAILED for { $path } ({ $algo })  # MT
-cli-config-set = Set { $key } = { $value }  # MT
-cli-config-reset = Reset { $key } to default  # MT
-cli-config-unknown-key = Unknown config key: { $key }  # MT
-cli-completions-emitted = Shell completions for { $shell } printed to stdout  # MT
+# Phase 36 — copythat CLI surface. Documented exit codes + the
+# user-facing strings for plan/apply/verify/config. Help text stays
+# in English (engineering accessibility) but error / info / status
+# strings are localized so a localized desktop installation surfaces
+# CLI errors in the same language as the GUI.
+cli-help-tagline = Copy That CLI — CI/CD ardışık düzenleri için bayt düzeyinde tam dosya kopyalama, eşitleme, doğrulama ve denetim.
+cli-help-exit-codes = Çıkış kodları: 0 başarı, 1 hata, 2 bekliyor, 3 çakışma, 4 doğrulama-başarısız, 5 ağ, 6 izin, 7 disk-dolu, 8 iptal, 9 yapılandırma.
+cli-error-bad-args = copy/move en az bir kaynak ve bir hedef gerektirir
+cli-error-unknown-algo = Bilinmeyen doğrulama algoritması: { $algo }
+cli-error-missing-spec = plan/apply için --spec gereklidir
+cli-error-spec-parse = jobspec { $path } ayrıştırılamadı: { $reason }
+cli-error-spec-empty-sources = Jobspec kaynak listesi boş
+cli-info-shape-recorded = Bant genişliği şekli "{ $rate }" kaydedildi; uygulama copythat-shape aracılığıyla bağlanır
+cli-info-stub-deferred = { $command } Aşama 36 takip bağlantısı için hazırlandı
+cli-plan-summary = Plan: { $actions } eylem, { $bytes } bayt; { $already_done } zaten yerinde
+cli-plan-pending = Plan bekleyen eylemler bildiriyor; yürütmek için `apply` ile yeniden çalıştırın
+cli-plan-already-done = Plan yapılacak bir şey olmadığını bildiriyor (etkisiz)
+cli-apply-success = Apply hatasız tamamlandı
+cli-apply-failed = Apply bir veya daha fazla hatayla tamamlandı
+cli-verify-ok = Doğrulama tamam: { $algo } { $digest }
+cli-verify-failed = { $path } için doğrulama BAŞARISIZ ({ $algo })
+cli-config-set = { $key } = { $value } ayarlandı
+cli-config-reset = { $key } varsayılana sıfırlandı
+cli-config-unknown-key = Bilinmeyen yapılandırma anahtarı: { $key }
+cli-completions-emitted = { $shell } için kabuk tamamlamaları stdout'a yazdırıldı
 
-# Phase 37 — desktop-side mobile companion. MT-flagged English
-# strings pending human translation; tracked in docs/I18N_TODO.md.
-settings-mobile-heading = Mobile companion  # MT
-settings-mobile-hint = Pair an iPhone or Android phone to browse history, kick off saved profiles and Phase 36 jobspecs, and receive completion notifications.  # MT
-settings-mobile-pair-toggle = Allow new pairings  # MT
-settings-mobile-pair-active = Pair-server active — scan the QR with the Copy That mobile app  # MT
-settings-mobile-pair-button = Start pairing  # MT
-settings-mobile-revoke-button = Revoke  # MT
-settings-mobile-no-pairings = No paired devices yet  # MT
-settings-mobile-pair-port = Bind port (0 = pick a free one)  # MT
-pair-sas-prompt = Both screens should show the same four emojis. Tap Match if they agree.  # MT
-pair-sas-confirm = Match  # MT
-pair-sas-reject = Mismatch — cancel  # MT
-pair-toast-success = Paired with { $device }  # MT
-pair-toast-failed = Pairing failed: { $reason }  # MT
-push-toast-sent = Push sent to { $device }  # MT
-push-toast-failed = Push to { $device } failed: { $reason }  # MT
+# Phase 37 — desktop-side mobile companion. Settings → Mobile panel
+# strings + the SAS-confirmation modal + push-notification toasts.
+# The actual mobile UI lives in the Phase 37 follow-up Tauri Mobile
+# target; the phone displays its own localized SAS prompt.
+settings-mobile-heading = Mobil yardımcı
+settings-mobile-hint = Geçmişe göz atmak, kaydedilmiş profilleri ve Aşama 36 jobspec'lerini başlatmak ve tamamlanma bildirimleri almak için bir iPhone veya Android telefon eşleştirin.
+settings-mobile-pair-toggle = Yeni eşleştirmelere izin ver
+settings-mobile-pair-active = Eşleştirme sunucusu etkin — QR'yi Copy That mobil uygulamasıyla tarayın
+settings-mobile-pair-button = Eşleştirmeyi başlat
+settings-mobile-revoke-button = İptal et
+settings-mobile-no-pairings = Henüz eşleştirilmiş cihaz yok
+settings-mobile-pair-port = Bağlama bağlantı noktası (0 = boş olanı seç)
+pair-sas-prompt = Her iki ekran da aynı dört emojiyi göstermeli. Aynılarsa Eşleşiyor'a dokunun.
+pair-sas-confirm = Eşleşiyor
+pair-sas-reject = Uyuşmuyor — iptal et
+pair-toast-success = { $device } ile eşleştirildi
+pair-toast-failed = Eşleştirme başarısız: { $reason }
+push-toast-sent = { $device } cihazına push gönderildi
+push-toast-failed = { $device } cihazına push başarısız: { $reason }
 
-# Phase 38 — destination dedup + reflink ladder. MT-flagged
-# English strings pending human translation; tracked in
-# docs/I18N_TODO.md.
-settings-dedup-heading = Destination dedup  # MT
-settings-dedup-hint = When the source and destination share a volume, Copy That can clone files at the filesystem level instead of copying bytes. Reflink is instant + safe; hardlink is faster but both names share state.  # MT
-settings-dedup-mode-auto = Auto ladder (reflink → hardlink → chunk → copy)  # MT
-settings-dedup-mode-reflink-only = Reflink only  # MT
-settings-dedup-mode-hardlink-aggressive = Aggressive (reflink + hardlink even on writable files)  # MT
-settings-dedup-mode-off = Disabled (always byte-copy)  # MT
-settings-dedup-hardlink-policy = Hardlink policy  # MT
-settings-dedup-prescan = Pre-scan destination tree for duplicate content  # MT
-dedup-badge-reflinked = ⚡ Reflinked  # MT
-dedup-badge-hardlinked = 🔗 Hardlinked  # MT
-dedup-badge-chunk-shared = 🧩 Chunk-shared  # MT
-dedup-badge-copied = 📋 Copied  # MT
+# Phase 38 — aggregate destination dedup + reflink fallback ladder.
+# Settings → Transfer → Dedup panel + per-job-row badges (⚡
+# Reflinked / 🔗 Hardlinked / 🧩 Chunk-shared / 📋 Copied) +
+# pre-pass dedup-scan modal.
+settings-dedup-heading = Hedef yinelenenleri ayıklama
+settings-dedup-hint = Kaynak ve hedef aynı birimi paylaştığında Copy That, baytları kopyalamak yerine dosyaları dosya sistemi düzeyinde klonlayabilir. Reflink anlık ve güvenlidir; hardlink daha hızlıdır ama her iki ad da durumu paylaşır.
+settings-dedup-mode-auto = Otomatik merdiven (reflink → hardlink → yığın → kopya)
+settings-dedup-mode-reflink-only = Yalnızca reflink
+settings-dedup-mode-hardlink-aggressive = Agresif (yazılabilir dosyalarda bile reflink + hardlink)
+settings-dedup-mode-off = Devre dışı (her zaman bayt kopyası)
+settings-dedup-hardlink-policy = Hardlink ilkesi
+settings-dedup-prescan = Yinelenen içerik için hedef ağacını önceden tara
+dedup-badge-reflinked = ⚡ Reflink yapıldı
+dedup-badge-hardlinked = 🔗 Hardlink yapıldı
+dedup-badge-chunk-shared = 🧩 Yığın paylaşımlı
+dedup-badge-copied = 📋 Kopyalandı
 phase42-paranoid-verify-label = Paranoyak doğrulama
-phase42-paranoid-verify-hint = Hedefteki önbelleğe alınmış sayfaları atar ve yazma önbelleği yalanlarını ve sessiz bozulmayı yakalamak için diskten yeniden okur. Varsayılan doğrulamadan yaklaşık %50 daha yavaştır; varsayılan olarak kapalıdır.
+phase42-paranoid-verify-hint = Hedefin önbelleğe alınmış sayfalarını atar ve yazma önbelleği yalanlarını ve sessiz bozulmayı yakalamak için diskten yeniden okur. Varsayılan doğrulamadan yaklaşık %50 daha yavaştır; varsayılan olarak kapalı.
 phase42-sharing-violation-retries-label = Kilitli kaynak dosyalarda yeniden deneme sayısı
-phase42-sharing-violation-retries-hint = Başka bir işlem kaynak dosyayı özel bir kilitle açık tuttuğunda kaç kez yeniden denenecek. Bekleme süresi her denemede iki katına çıkar (varsayılan olarak 50 ms / 100 ms / 200 ms). Varsayılan: 3, Robocopy /R:3 ile aynı.
-phase42-cloud-placeholder-warning = { $name } yalnızca bulutta bulunan bir OneDrive dosyasıdır. Kopyalanması, ağ bağlantınız üzerinden { $size }'a kadar bir indirme tetikleyecektir.
-phase42-defender-exclusion-hint = En yüksek kopyalama hızı için, toplu aktarımlardan önce hedef klasörü Microsoft Defender istisnalarına ekleyin. Bkz. docs/PERFORMANCE_TUNING.md.
+phase42-sharing-violation-retries-hint = Başka bir işlem kaynak dosyayı özel kilitle açık tuttuğunda kaç kez yeniden denenecek. Geri çekilme her denemede iki katına çıkar (varsayılan olarak 50 ms / 100 ms / 200 ms). Varsayılan 3, Robocopy /R:3 ile eşleşir.
+phase42-cloud-placeholder-warning = { $name } yalnızca bulutta bulunan bir OneDrive dosyasıdır. Kopyalamak bir indirmeyi tetikler — ağ bağlantınız üzerinden { $size } kadar.
+phase42-defender-exclusion-hint = En yüksek kopyalama verimi için toplu aktarımlardan önce hedef klasörü Microsoft Defender hariç tutmalarına ekleyin. docs/PERFORMANCE_TUNING.md belgesine bakın.
 
-# Phase 39 — Browser-accessible recovery UI.  # MT
-settings-recovery-heading = Recovery web UI  # MT
-settings-recovery-enable = Enable recovery web UI  # MT
-settings-recovery-bind-address = Bind address  # MT
-settings-recovery-port = Port (0 = pick a free one)  # MT
-settings-recovery-show-url = Show URL & token  # MT
-settings-recovery-rotate-token = Rotate token  # MT
-settings-recovery-allow-non-loopback = Allow non-loopback bind  # MT
-settings-recovery-non-loopback-warning = WARNING: enabling a non-loopback bind exposes the recovery UI to your local network. Anyone who learns the token can browse your file history and download files. Front it with TLS or a reverse proxy if the LAN is untrusted.  # MT
+# Phase 39 — Browser-accessible recovery UI. Settings → Advanced
+# exposes these strings; the recovery server itself renders askama
+# templates that always read English — these eight keys are the
+# Settings prose the user actually reads in their preferred locale.
+settings-recovery-heading = Kurtarma web arayüzü
+settings-recovery-enable = Kurtarma web arayüzünü etkinleştir
+settings-recovery-bind-address = Bağlama adresi
+settings-recovery-port = Bağlantı noktası (0 = boş olanı seç)
+settings-recovery-show-url = URL ve belirteci göster
+settings-recovery-rotate-token = Belirteci döndür
+settings-recovery-allow-non-loopback = Geri döngü dışı bağlamaya izin ver
+settings-recovery-non-loopback-warning = UYARI: geri döngü dışı bağlamayı etkinleştirmek kurtarma arayüzünü yerel ağınıza açar. Belirteci öğrenen herkes dosya geçmişinize göz atıp dosya indirebilir. LAN güvenilir değilse önüne TLS veya ters proxy koyun.
 
-# Phase 40 — SMB compression negotiation + cloud-VM offload helper.  # MT
-smb-compress-badge = 🗜 SMB compress: { $algo }  # MT
-smb-compress-badge-tooltip = Network traffic to this destination is being compressed in transit (SMB 3.1.1).  # MT
-smb-compress-toast-saved = Saved { $bytes } over the network  # MT
-smb-compress-algo-unknown = unknown algorithm  # MT
-settings-smb-compress-heading = SMB network compression  # MT
-settings-smb-compress-hint = Automatically negotiate SMB 3.1.1 traffic compression on UNC destinations. Free win on slow links; ignored on local destinations.  # MT
-cloud-offload-heading = Cloud-VM offload helper  # MT
-cloud-offload-hint = When copying directly between two clouds, render a deployment template that runs the copy from a tiny ephemeral VM in the cloud — bytes never touch your laptop's network.  # MT
-cloud-offload-render-button = Render template  # MT
-cloud-offload-copy-clipboard = Copy to clipboard  # MT
-cloud-offload-template-format = Template format  # MT
-cloud-offload-self-destruct-warning = The VM auto-shuts down after { $minutes } minutes — confirm IAM role + region before deploying.  # MT
+# Phase 40 — SMB compression negotiation + cloud-VM offload helper.
+# 6 SMB keys (header badge + Settings prose) + 6 cloud-offload keys
+# (Remotes tab wizard for cross-cloud copy templates).
+smb-compress-badge = 🗜 SMB sıkıştırma: { $algo }
+smb-compress-badge-tooltip = Bu hedefe giden ağ trafiği aktarım sırasında sıkıştırılıyor (SMB 3.1.1).
+smb-compress-toast-saved = Ağ üzerinden { $bytes } kazanıldı
+smb-compress-algo-unknown = bilinmeyen algoritma
+settings-smb-compress-heading = SMB ağ sıkıştırması
+settings-smb-compress-hint = UNC hedeflerinde SMB 3.1.1 trafik sıkıştırmasını otomatik olarak müzakere et. Yavaş bağlantılarda bedava kazanç; yerel hedeflerde yoksayılır.
+cloud-offload-heading = Bulut VM boşaltma yardımcısı
+cloud-offload-hint = Doğrudan iki bulut arasında kopyalarken, kopyalamayı bulutta küçük bir geçici VM'den çalıştıran bir dağıtım şablonu oluştur — baytlar dizüstü bilgisayarınızın ağına hiç dokunmaz.
+cloud-offload-render-button = Şablonu oluştur
+cloud-offload-copy-clipboard = Panoya kopyala
+cloud-offload-template-format = Şablon biçimi
+cloud-offload-self-destruct-warning = VM, { $minutes } dakika sonra otomatik kapanır — dağıtmadan önce IAM rolünü ve bölgeyi doğrulayın.
 
-# Phase 41 — animated before/after tree-diff preview.  # MT
-preview-modal-title = Preview changes  # MT
-preview-summary-header = What will happen  # MT
-preview-category-additions = { $count } additions  # MT
-preview-category-replacements = { $count } replacements  # MT
-preview-category-skips = { $count } skipped  # MT
-preview-category-conflicts = { $count } conflicts  # MT
-preview-category-unchanged = { $count } unchanged  # MT
-preview-bytes-to-transfer = { $bytes } to transfer  # MT
-preview-reason-source-newer = Source is newer  # MT
-preview-reason-dest-newer = Destination is newer — will skip  # MT
-preview-reason-content-different = Content differs  # MT
-preview-reason-identical = Identical to source  # MT
-preview-button-run = Run plan  # MT
-preview-button-reduce = Reduce my plan…  # MT
+# Phase 41 — animated before/after tree-diff preview. The `Preview
+# changes` modal renders the rolled-up plan before the engine starts
+# work; 14 keys cover the title, the summary header / counts, the
+# row-reason labels, and the two action buttons.
+preview-modal-title = Değişiklikleri önizle
+preview-summary-header = Ne olacak
+preview-category-additions = { $count } ekleme
+preview-category-replacements = { $count } değiştirme
+preview-category-skips = { $count } atlandı
+preview-category-conflicts = { $count } çakışma
+preview-category-unchanged = { $count } değişmedi
+preview-bytes-to-transfer = aktarılacak { $bytes }
+preview-reason-source-newer = Kaynak daha yeni
+preview-reason-dest-newer = Hedef daha yeni — atlanacak
+preview-reason-content-different = İçerik farklı
+preview-reason-identical = Kaynakla aynı
+preview-button-run = Planı çalıştır
+preview-button-reduce = Planımı küçült…
 
-# Phase 42 — perceptual-hash visual-similarity dedup.  # MT
-perceptual-warn-title = Looks visually identical  # MT
-perceptual-warn-body = { $name } at the destination appears to match the source picture. Continue copying anyway?  # MT
-perceptual-warn-keep-both = Keep both  # MT
-perceptual-warn-skip = Skip this file  # MT
-perceptual-warn-overwrite = Overwrite anyway  # MT
-perceptual-settings-heading = Visual-similarity dedup  # MT
-perceptual-settings-hint = Detect visually identical images at the destination before they're overwritten. Hash is perceptual (recognises the same picture re-saved as a different format), not byte-exact.  # MT
-perceptual-settings-threshold-label = Warn threshold (lower = stricter match)  # MT
+# Phase 42 — perceptual-hash visual-similarity dedup. Eight keys cover
+# the pre-copy "looks visually identical" warning + the Settings panel.
+perceptual-warn-title = Görsel olarak aynı görünüyor
+perceptual-warn-body = Hedefteki { $name }, kaynak resimle eşleşiyor gibi görünüyor. Yine de kopyalamaya devam edilsin mi?
+perceptual-warn-keep-both = İkisini de tut
+perceptual-warn-skip = Bu dosyayı atla
+perceptual-warn-overwrite = Yine de üzerine yaz
+perceptual-settings-heading = Görsel benzerlik yinelenenleri ayıklama
+perceptual-settings-hint = Hedefteki görsel olarak aynı görüntüleri, üzerlerine yazılmadan önce algıla. Karma, bayt düzeyinde değil algısaldır (aynı resmi farklı bir biçimde yeniden kaydedilmiş olarak tanır).
+perceptual-settings-threshold-label = Uyarı eşiği (düşük = daha sıkı eşleşme)
 
-# Phase 42 Part B — per-file rolling versions.  # MT
-version-list-heading = Previous versions  # MT
-version-list-empty = No prior versions of this file  # MT
-version-list-restore = Restore this version  # MT
-version-retention-heading = Keep previous versions on overwrite  # MT
-version-retention-none = Keep every version forever  # MT
-version-retention-last-n = Keep last { $n } versions  # MT
-version-retention-older-than-days = Drop versions older than { $days } days  # MT
-version-retention-gfs = Hourly { $h } · daily { $d } · weekly { $w } · monthly { $m }  # MT
+# Phase 42 Part B — per-file rolling versions (Time Machine for any
+# destination). 8 keys cover the version-list panel + retention picker.
+version-list-heading = Önceki sürümler
+version-list-empty = Bu dosyanın önceki sürümü yok
+version-list-restore = Bu sürümü geri yükle
+version-retention-heading = Üzerine yazınca önceki sürümleri tut
+version-retention-none = Her sürümü sonsuza dek tut
+version-retention-last-n = Son { $n } sürümü tut
+version-retention-older-than-days = { $days } günden eski sürümleri at
+version-retention-gfs = Saatlik { $h } · günlük { $d } · haftalık { $w } · aylık { $m }
 
-# Phase 43 — forensic chain-of-custody manifests.  # MT
-provenance-settings-heading = Forensic chain-of-custody  # MT
-provenance-settings-hint = Sign every copy job with a BLAKE3 + ed25519 manifest. Reviewers can re-hash the destination tree later and prove no byte changed since the copy.  # MT
-provenance-settings-enable-default = Sign every new job by default  # MT
-provenance-settings-show-after-job = Show manifest after each completed job  # MT
-provenance-settings-tsa-url-label = Default RFC 3161 timestamp authority URL  # MT
-provenance-settings-tsa-url-hint = Optional. When set, manifests carry a free TSA timestamp proving the bytes existed at this point in time. Leave empty to skip.  # MT
-provenance-settings-keys-heading = Signing keys  # MT
-provenance-settings-keys-generate = Generate new key  # MT
-provenance-settings-keys-import = Import key…  # MT
-provenance-settings-keys-export = Export public key…  # MT
-provenance-job-completed-title = Provenance manifest saved  # MT
-provenance-job-completed-body = { $count } files signed → { $path }  # MT
-provenance-verify-clean = Manifest valid for { $count } files; signature { $sig }; merkle root OK.  # MT
-provenance-verify-tampered = Manifest INVALID — { $tampered } tampered, { $missing } missing.  # MT
-provenance-action-staged = Phase 43 — wiring the IPC for this action lands in a follow-up commit.  # MT
+# Phase 43 — forensic chain-of-custody manifests + BLAKE3 verified
+# streaming. 14 keys cover the Settings → Provenance panel
+# (heading, hint, toggles, TSA URL, signing-key management) plus
+# the post-job manifest notification + the verify command's two
+# headline result lines.
+provenance-settings-heading = Adli vesayet zinciri
+provenance-settings-hint = Her kopyalama işini BLAKE3 + ed25519 bildirimiyle imzalayın. İncelemeciler hedef ağacı sonra yeniden karmalayıp kopyalamadan bu yana hiçbir baytın değişmediğini kanıtlayabilir.
+provenance-settings-enable-default = Her yeni işi varsayılan olarak imzala
+provenance-settings-show-after-job = Tamamlanan her işin ardından bildirimi göster
+provenance-settings-tsa-url-label = Varsayılan RFC 3161 zaman damgası yetkilisi URL'si
+provenance-settings-tsa-url-hint = İsteğe bağlı. Ayarlandığında bildirimler, baytların bu zaman noktasında var olduğunu kanıtlayan ücretsiz bir TSA zaman damgası taşır. Atlamak için boş bırakın.
+provenance-settings-keys-heading = İmzalama anahtarları
+provenance-settings-keys-generate = Yeni anahtar oluştur
+provenance-settings-keys-import = Anahtar içe aktar…
+provenance-settings-keys-export = Ortak anahtarı dışa aktar…
+provenance-job-completed-title = Köken bildirimi kaydedildi
+provenance-job-completed-body = { $count } dosya imzalandı → { $path }
+provenance-verify-clean = Bildirim { $count } dosya için geçerli; imza { $sig }; merkle kökü tamam.
+provenance-verify-tampered = Bildirim GEÇERSİZ — { $tampered } kurcalanmış, { $missing } eksik.
+# Phase 43 post-review hardening — toast text for the Settings →
+# Provenance buttons whose Tauri IPC has not yet landed.
+provenance-action-staged = Aşama 43 — bu eylem için IPC bağlantısı bir takip işlemesinde gelir.
 
-# Phase 44 — SSD-aware whole-drive sanitize.  # MT
-sanitize-heading = Whole-drive secure sanitize  # MT
-sanitize-hint = NVMe Sanitize, OPAL Crypto Erase, and ATA Secure Erase wipe a flash drive at the firmware layer in milliseconds. Per-file overwrite is meaningless on flash — multi-pass shred only burns NAND. Use this for actual purge.  # MT
-sanitize-pick-device = Choose the drive to sanitize  # MT
-sanitize-mode-label = Sanitization method  # MT
-sanitize-mode-nvme-format = NVMe Format (with secure erase)  # MT
-sanitize-mode-nvme-sanitize-block = NVMe Sanitize — Block Erase (slow, every cell)  # MT
-sanitize-mode-nvme-sanitize-crypto = NVMe Sanitize — Crypto Erase (instant)  # MT
-sanitize-mode-ata-secure-erase = ATA Secure Erase (legacy SATA SSDs)  # MT
-sanitize-mode-opal-crypto-erase = TCG OPAL Crypto Erase (Self-Encrypting Drives)  # MT
-sanitize-mode-apfs-crypto-erase = APFS Crypto Erase (rotate FileVault key, macOS only)  # MT
-sanitize-confirm-1 = This destroys EVERY byte on { $device }. There is no undo.  # MT
-sanitize-confirm-2 = I understand that all partitions, all files, and all snapshots on { $device } will be permanently unreadable.  # MT
-sanitize-confirm-3 = Type the drive's model name to proceed: { $model }  # MT
-sanitize-running = Sanitizing { $device } ({ $mode }) — this can take from milliseconds (crypto erase) to tens of minutes (block erase). Do not power down.  # MT
-sanitize-completed = Sanitize complete — { $device } is now blank.  # MT
-ssd-honest-shred-meaningless = Per-file shred on a copy-on-write filesystem (Btrfs / ZFS / APFS) cannot reach the underlying blocks. Use whole-drive sanitize plus full-disk-encryption key rotation instead.  # MT
-ssd-honest-advisory = This file lives on flash. Per-file overwrite costs NAND wear and does NOT guarantee the original cells are unrecoverable. For sensitive data, sanitize the whole drive.  # MT
+# Phase 44 — SSD-aware whole-drive sanitize (NVMe Sanitize / OPAL
+# Crypto Erase) + the per-file shred refusal on copy-on-write
+# filesystems. 16 keys cover the new "Drive sanitize" Settings
+# subsection and the localized error messages.
+sanitize-heading = Tüm sürücüyü güvenli temizleme
+sanitize-hint = NVMe Sanitize, OPAL Crypto Erase ve ATA Secure Erase, bir flash sürücüyü milisaniyeler içinde donanım yazılımı katmanında siler. Dosya başına üzerine yazma flash'ta anlamsızdır — çok geçişli parçalama yalnızca NAND'ı yıpratır. Gerçek temizleme için bunu kullanın.
+sanitize-pick-device = Temizlenecek sürücüyü seçin
+sanitize-mode-label = Temizleme yöntemi
+sanitize-mode-nvme-format = NVMe Format (güvenli silmeli)
+sanitize-mode-nvme-sanitize-block = NVMe Sanitize — Blok Silme (yavaş, her hücre)
+sanitize-mode-nvme-sanitize-crypto = NVMe Sanitize — Crypto Erase (anlık)
+sanitize-mode-ata-secure-erase = ATA Secure Erase (eski SATA SSD'leri)
+sanitize-mode-opal-crypto-erase = TCG OPAL Crypto Erase (Kendinden Şifrelemeli Sürücüler)
+sanitize-mode-apfs-crypto-erase = APFS Crypto Erase (FileVault anahtarını döndür, yalnızca macOS)
+sanitize-confirm-1 = Bu, { $device } üzerindeki HER baytı yok eder. Geri alınamaz.
+sanitize-confirm-2 = { $device } üzerindeki tüm bölümlerin, tüm dosyaların ve tüm anlık görüntülerin kalıcı olarak okunamaz hâle geleceğini anlıyorum.
+sanitize-confirm-3 = Devam etmek için sürücünün model adını yazın: { $model }
+sanitize-running = { $device } temizleniyor ({ $mode }) — bu, milisaniyelerden (crypto erase) onlarca dakikaya (blok silme) kadar sürebilir. Gücü kapatmayın.
+sanitize-completed = Temizleme tamamlandı — { $device } artık boş.
+ssd-honest-shred-meaningless = Bir kopyala-yaz dosya sisteminde (Btrfs / ZFS / APFS) dosya başına parçalama, alttaki bloklara ulaşamaz. Bunun yerine tüm sürücüyü güvenli temizleyin ve tam disk şifreleme anahtarını döndürün.
+ssd-honest-advisory = Bu dosya flash üzerinde bulunuyor. Dosya başına üzerine yazma NAND yıpranmasına yol açar ve özgün hücrelerin kurtarılamaz olduğunu GARANTİ ETMEZ. Hassas veriler için tüm sürücüyü güvenli temizleyin.
 
-# Phase 44.1f.  # MT
-sanitize-action-staged = Phase 44.1 — wiring the IPC for this action lands in a follow-up commit.  # MT
+# Phase 44.1f post-review — placeholder toast for SanitizeTab
+# buttons whose Tauri IPC has not yet landed.
+sanitize-action-staged = Aşama 44.1 — bu eylem için IPC bağlantısı bir takip işlemesinde gelir.
 
-# Phase 45.3 — named-queue tab strip.  # MT
-queue-tab-default = Default  # MT
-queue-tab-empty-state = Job queues  # MT
-queue-badge-tooltip = Pending and running jobs in this queue  # MT
+# Phase 45.3 — named-queue tab strip (Subfeature A). Tabs surface
+# once the QueueRegistry holds at least one queue; the synthesised
+# default tab keeps legacy single-queue jobs reachable.
+queue-tab-default = Varsayılan
+queue-tab-empty-state = İş kuyrukları
+queue-badge-tooltip = Bu kuyruktaki bekleyen ve çalışan işler
 
-# Phase 45.4 — drag-progress-merge.  # MT
-queue-drag-hint = Drag onto another queue to merge  # MT
-queue-merge-confirm = Drop to merge  # MT
-queue-merge-toast = Queues merged  # MT
+# Phase 45.4 — drag-progress-merge (Subfeature B). Drag a queue tab
+# onto another to merge their job lists. The default tab is neither
+# draggable nor a drop target; only registry queues participate.
+queue-drag-hint = Birleştirmek için başka bir kuyruğun üzerine sürükleyin
+queue-merge-confirm = Birleştirmek için bırakın
+queue-merge-toast = Kuyruklar birleştirildi
 
-# Phase 45.5 — F2-queue UX.  # MT
-queue-f2-active-hint = F2 mode: every new enqueue lands in this queue  # MT
-queue-f2-toggled-on = F2 queue mode ON — new enqueues join the running queue  # MT
-queue-f2-toggled-off = F2 queue mode OFF — new enqueues spawn parallel queues  # MT
-queue-f2-status-bar = F2 queue mode: ON  # MT
+# Phase 45.5 — F2-queue UX (Subfeature C). F2 toggles
+# `auto_enqueue_next` so every fresh enqueue piles into the running
+# queue rather than spawning a parallel one. Status pill renders in
+# the Footer; pulsing dot renders on the running tab.
+queue-f2-active-hint = F2 modu: her yeni kuyruğa alma bu kuyruğa düşer
+queue-f2-toggled-on = F2 kuyruk modu AÇIK — yeni kuyruğa almalar çalışan kuyruğa katılır
+queue-f2-toggled-off = F2 kuyruk modu KAPALI — yeni kuyruğa almalar paralel kuyruklar oluşturur
+queue-f2-status-bar = F2 kuyruk modu: AÇIK
 
-# Phase 45.6 — tray destination targets.  # MT
-tray-target-section-title = Tray destinations  # MT
-tray-target-section-hint = Pinned destinations appear in the tray menu. Click one to arm it as the next drop target.  # MT
-tray-target-empty = No tray destinations pinned yet.  # MT
-tray-target-remove = Remove  # MT
-tray-target-add-label = Label  # MT
-tray-target-add-path = Path or backend URI  # MT
-tray-target-add = Add  # MT
-tray-target-armed-toast = Drop your next file to send it to { $label }  # MT
-tray-target-active-pill = → { $label }  # MT
+# Phase 45.6 — tray destination targets (Subfeature D). Pinned
+# destinations appear in the OS tray menu; clicking one arms it as
+# the active drop target so the next file drop bypasses the
+# DropStagingDialog. Settings → General hosts the list editor.
+tray-target-section-title = Tepsi hedefleri
+tray-target-section-hint = Sabitlenmiş hedefler tepsi menüsünde görünür. Bir sonraki bırakma hedefi olarak hazırlamak için birine tıklayın.
+tray-target-empty = Henüz sabitlenmiş tepsi hedefi yok.
+tray-target-remove = Kaldır
+tray-target-add-label = Etiket
+tray-target-add-path = Yol veya arka uç URI'si
+tray-target-add = Ekle
+tray-target-armed-toast = Bir sonraki dosyanızı { $label } hedefine göndermek için bırakın
+tray-target-active-pill = → { $label }
 
-# Phase 45.7 follow-up — pinned-destination validation errors.  # MT
-err-pinned-destination-label-empty = Tray destination label can't be empty.  # MT
-err-pinned-destination-path-empty = Tray destination path can't be empty.  # MT
-err-pinned-destination-label-too-long = Tray destination label is too long (max 64 characters).  # MT
-err-pinned-destination-path-too-long = Tray destination path is too long (max 1024 characters).  # MT
-err-pinned-destination-label-invalid = Tray destination label contains characters that aren't allowed (newline, return, or NUL).  # MT
-err-pinned-destination-path-invalid = Tray destination path contains characters that aren't allowed (newline, return, or NUL).  # MT
-err-pinned-destination-too-many = You've reached the limit of 50 tray destinations. Remove one to add another.  # MT
+# Phase 45.7 follow-up — pinned-destination validation errors. The
+# `queue_pin_destination` IPC returns these Fluent keys verbatim
+# when input fails the IPC-boundary checks; the toast layer renders
+# them via `t(...)` (Toast.svelte detects kebab-case-lowercase and
+# routes through the locale table). Phase 17e's `err-path-escape` /
+# `err-destination-empty` cover the path-traversal + empty cases for
+# `queue_route_job`; the keys below are pin-specific.
+err-pinned-destination-label-empty = Tepsi hedefi etiketi boş olamaz.
+err-pinned-destination-path-empty = Tepsi hedefi yolu boş olamaz.
+err-pinned-destination-label-too-long = Tepsi hedefi etiketi çok uzun (en fazla 64 karakter).
+err-pinned-destination-path-too-long = Tepsi hedefi yolu çok uzun (en fazla 1024 karakter).
+err-pinned-destination-label-invalid = Tepsi hedefi etiketi izin verilmeyen karakterler içeriyor (satır sonu, satır başı veya NUL).
+err-pinned-destination-path-invalid = Tepsi hedefi yolu izin verilmeyen karakterler içeriyor (satır sonu, satır başı veya NUL).
+err-pinned-destination-too-many = 50 tepsi hedefi sınırına ulaştınız. Başka bir tane eklemek için birini kaldırın.
 
 # Phase 46.6 — Settings → Plugins tab. The IPC layer in
 # `apps/copythat-ui/src-tauri/src/plugin_commands.rs` enumerates the
 # per-user plugin store under `<config_dir>/plugins/`; the
 # `PluginsTab.svelte` component renders these strings against the
-# returned manifest + grant state.  # MT
-settings-tab-plugins = Plugins  # MT
-plugin-heading = Plugins  # MT
-plugin-hint = Sandboxed WASM plugins extend Copy That with custom hooks. Each plugin runs under per-call CPU and memory limits and only sees the host capabilities you grant it.  # MT
-plugin-list-empty = No plugins installed yet.  # MT
-plugin-enabled = Enabled  # MT
-plugin-disabled = Disabled  # MT
-plugin-hooks = Hooks  # MT
-plugin-capabilities = Capabilities  # MT
-plugin-no-capabilities = (none)  # MT
-plugin-directory = Location  # MT
-plugin-install-from-file = Install from file…  # MT
-plugin-install-from-url = Install from URL…  # MT
-plugin-url-wasm = WASM URL  # MT
-plugin-url-manifest = Manifest URL  # MT
-plugin-url-hash = BLAKE3 hash  # MT
-plugin-url-preview = Preview  # MT
-plugin-url-confirm = Confirm install  # MT
+# returned manifest + grant state.
+settings-tab-plugins = Eklentiler
+plugin-heading = Eklentiler
+plugin-hint = Yalıtılmış WASM eklentileri Copy That'i özel kancalarla genişletir. Her eklenti çağrı başına CPU ve bellek sınırları altında çalışır ve yalnızca verdiğiniz ana bilgisayar yeteneklerini görür.
+plugin-list-empty = Henüz yüklü eklenti yok.
+plugin-enabled = Etkin
+plugin-disabled = Devre dışı
+plugin-hooks = Kancalar
+plugin-capabilities = Yetenekler
+plugin-no-capabilities = (yok)
+plugin-directory = Konum
+plugin-install-from-file = Dosyadan yükle…
+plugin-install-from-url = URL'den yükle…
+plugin-url-wasm = WASM URL'si
+plugin-url-manifest = Bildirim URL'si
+plugin-url-hash = BLAKE3 karması
+plugin-url-preview = Önizleme
+plugin-url-confirm = Yüklemeyi onayla

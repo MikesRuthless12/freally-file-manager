@@ -1,1338 +1,1113 @@
 app-name = Copy That v0.19.84
-# MT
 window-title = Copy That v0.19.84
-# MT
-shred-ssd-advisory = 경고: 이 대상은 SSD에 있습니다. 웨어 레벨링과 오버프로비저닝이 논리 블록 주소 아래의 데이터를 이동시키므로, 여러 번의 덮어쓰기로는 플래시 메모리를 안정적으로 말소할 수 없습니다. 솔리드 스테이트 매체에서는 ATA SECURE ERASE, NVMe Format(보안 삭제 포함), 또는 키를 파기한 전체 디스크 암호화를 우선적으로 사용하십시오.
+shred-ssd-advisory = 경고: 이 대상은 SSD에 있습니다. 웨어 레벨링과 오버 프로비저닝으로 인해 데이터가 논리 블록 주소 밖으로 이동하기 때문에 다중 패스 덮어쓰기로는 플래시 메모리를 안정적으로 소거할 수 없습니다. 솔리드 스테이트 미디어에는 ATA SECURE ERASE, Secure Erase를 사용한 NVMe Format, 또는 키를 폐기하는 전체 디스크 암호화를 사용하세요.
 
-# MT
+# Global aggregate states (header pill)
 state-idle = 대기 중
-# MT
 state-copying = 복사 중
-# MT
 state-verifying = 검증 중
-# MT
 state-paused = 일시 중지됨
-# MT
 state-error = 오류
 
-# MT
-state-pending = 대기열
-# MT
+# Per-job states (row badge)
+state-pending = 대기열에 있음
 state-running = 실행 중
-# MT
 state-cancelled = 취소됨
-# MT
 state-succeeded = 완료
-# MT
 state-failed = 실패
 
-# MT
+# Actions
 action-pause = 일시 중지
-# MT
-action-resume = 재개
-# MT
+action-resume = 다시 시작
 action-cancel = 취소
-# MT
 action-pause-all = 모든 작업 일시 중지
-# MT
-action-resume-all = 모든 작업 재개
-# MT
+action-resume-all = 모든 작업 다시 시작
 action-cancel-all = 모든 작업 취소
-# MT
 action-close = 닫기
-# MT
-action-reveal = 폴더에서 보기
-
-# MT
-menu-pause = 일시 중지
-# MT
-menu-resume = 재개
-# MT
-menu-cancel = 취소
-# MT
-menu-remove = 대기열에서 제거
-# MT
-menu-reveal-source = 원본을 폴더에서 보기
-# MT
-menu-reveal-destination = 대상을 폴더에서 보기
-
-# MT
-header-eta-label = 예상 남은 시간
-# MT
-header-toolbar-label = 전역 컨트롤
-
-# MT
-footer-queued = 개의 활성 작업
-# MT
-footer-total-bytes = 진행 중
-# MT
-footer-errors = 개의 오류
-# MT
-footer-history = 기록
-
-# MT
-empty-title = 복사할 파일이나 폴더를 놓으세요
-# MT
-empty-hint = 창에 항목을 끌어다 놓으세요. 대상 폴더를 물어본 뒤 원본마다 하나의 작업을 대기열에 추가합니다.
-# MT
-empty-region-label = 작업 목록
-
-# MT
-details-drawer-label = 작업 세부 정보
-# MT
-details-source = 원본
-# MT
-details-destination = 대상
-# MT
-details-state = 상태
-# MT
-details-bytes = 바이트
-# MT
-details-files = 파일
-# MT
-details-speed = 속도
-# MT
-details-eta = 남은 시간
-# MT
-details-error = 오류
-
-# MT
-drop-dialog-title = 드롭한 항목 전송
-# MT
-drop-dialog-subtitle = 전송할 준비가 된 항목 { $count }개. 시작하려면 대상 폴더를 선택하세요.
-# MT
-drop-dialog-mode = 작업
-# MT
-drop-dialog-copy = 복사
-# MT
-drop-dialog-move = 이동
-# MT
-drop-dialog-pick-destination = 대상 선택
-# MT
-drop-dialog-change-destination = 대상 변경
-# MT
-drop-dialog-start-copy = 복사 시작
-# MT
-drop-dialog-start-move = 이동 시작
-
-# MT
-eta-calculating = 계산 중…
-# MT
-eta-unknown = 알 수 없음
-
-# MT
-toast-job-done = 전송 완료
-# MT
-toast-copy-queued = 복사가 대기열에 추가됨
-# MT
-toast-move-queued = 이동이 대기열에 추가됨
-# MT — Phase 8 toast messages
-toast-error-resolved = 오류가 해결되었습니다
-# MT
-toast-collision-resolved = 충돌이 해결되었습니다
-# MT
-toast-elevated-unavailable = 상승 권한으로 재시도 기능은 17단계에서 제공됩니다 — 아직 사용할 수 없음
-toast-clipboard-files-detected = 클립보드에 파일 있음 — 붙여넣기 단축키를 눌러 Copy That으로 복사
-toast-clipboard-no-files = 클립보드에 붙여넣을 파일이 없음
-# MT
-toast-error-log-exported = 오류 로그를 내보냈습니다
-
-# MT — Error modal
-error-modal-title = 전송이 실패했습니다
-# MT
-error-modal-retry = 다시 시도
-# MT
-error-modal-retry-elevated = 상승 권한으로 다시 시도
-# MT
-error-modal-skip = 건너뛰기
-# MT
-error-modal-skip-all-kind = 이 종류의 오류를 모두 건너뛰기
-# MT
-error-modal-abort = 모두 중단
-# MT
-error-modal-path-label = 경로
-# MT
-error-modal-code-label = 코드
-error-drawer-pending-count = 대기 중인 추가 오류
-error-drawer-toggle = 접기 또는 펼치기
-
-# MT — Error-kind labels
-err-not-found = 파일을 찾을 수 없습니다
-# MT
-err-permission-denied = 권한이 거부되었습니다
-# MT
-err-disk-full = 대상 디스크가 가득 찼습니다
-# MT
-err-interrupted = 작업이 중단되었습니다
-# MT
-err-verify-failed = 복사 후 확인 실패
-# MT
-err-path-escape = 경로 거부됨 — 상위 디렉터리(..) 세그먼트 또는 잘못된 바이트 포함
-# MT
-err-path-invalid-encoding = Path rejected — string contains invalid UTF-8 / replacement characters
-# MT
-err-helper-invalid-json = Privileged helper received malformed JSON; ignoring this request
-err-helper-grant-out-of-band = GrantCapabilities must be handled by the helper run-loop, not the stateless handler
-err-randomness-unavailable = OS random-number generator failed; cannot mint a session id
-# MT
-err-io-other = 알 수 없는 I/O 오류
-err-sparseness-mismatch = 대상에서 스파스 레이아웃을 보존할 수 없습니다  # MT
-
-# MT — Collision modal
-collision-modal-title = 파일이 이미 있습니다
-# MT
-collision-modal-overwrite = 덮어쓰기
-# MT
-collision-modal-overwrite-if-newer = 더 새 파일이면 덮어쓰기
-# MT
-collision-modal-skip = 건너뛰기
-# MT
-collision-modal-keep-both = 둘 다 유지
-# MT
-collision-modal-rename = 이름 바꾸기…
-# MT
-collision-modal-apply-to-all = 모두 적용
-# MT
-collision-modal-source = 원본
-# MT
-collision-modal-destination = 대상
-# MT
-collision-modal-size = 크기
-# MT
-collision-modal-modified = 수정됨
-# MT
-collision-modal-hash-check = 빠른 해시 (SHA-256)
-# MT
-collision-modal-rename-placeholder = 새 파일 이름
-# MT
-collision-modal-confirm-rename = 이름 바꾸기
-
-# MT — Error log drawer
-error-log-title = 오류 로그
-# MT
-error-log-empty = 기록된 오류가 없습니다
-# MT
-error-log-export-csv = CSV 내보내기
-# MT
-error-log-export-txt = 텍스트 내보내기
-# MT
-error-log-clear = 로그 지우기
-# MT
-error-log-col-time = 시간
-# MT
-error-log-col-job = 작업
-# MT
-error-log-col-path = 경로
-# MT
-error-log-col-code = 코드
-# MT
-error-log-col-message = 메시지
-# MT
-error-log-col-resolution = 해결
-
-# MT — History drawer (Phase 9)
-history-title = 기록
-# MT
-history-empty = 기록된 작업이 없습니다
-# MT
-history-unavailable = 복사 기록을 사용할 수 없습니다. 앱이 시작 시 SQLite 저장소를 열지 못했습니다.
-# MT
-history-filter-any = 모두
-# MT
-history-filter-kind = 종류
-# MT
-history-filter-status = 상태
-# MT
-history-filter-text = 검색
-# MT
-history-refresh = 새로 고침
-# MT
-history-export-csv = CSV 내보내기
-# MT
-history-purge-30 = 30일 이전 삭제
-# MT
-history-rerun = 다시 실행
-# MT
-history-detail-open = 세부 정보
-# MT
-history-detail-title = 작업 세부 정보
-# MT
-history-detail-empty = 기록된 항목이 없습니다
-# MT
-history-col-date = 날짜
-# MT
-history-col-kind = 종류
-# MT
-history-col-src = 원본
-# MT
-history-col-dst = 대상
-# MT
-history-col-files = 파일
-# MT
-history-col-size = 크기
-# MT
-history-col-status = 상태
-# MT
-history-col-duration = 소요 시간
-# MT
-history-col-error = 오류
-
-# MT
-toast-history-exported = 기록을 내보냈습니다
-# MT
-toast-history-rerun-queued = 다시 실행을 대기열에 추가했습니다
-
-# MT — Totals drawer (Phase 10)
-footer-totals = 합계
-# MT
-totals-title = 합계
-# MT
-totals-loading = 합계 불러오는 중…
-# MT
-totals-card-bytes = 총 복사 바이트
-# MT
-totals-card-files = 파일
-# MT
-totals-card-jobs = 작업
-# MT
-totals-card-avg-rate = 평균 처리량
-# MT
-totals-errors = 오류
-# MT
-totals-spark-title = 지난 30일
-# MT
-totals-kinds-title = 종류별
-# MT
-totals-saved-title = 절약된 시간 (추정)
-# MT
-totals-saved-note = 표준 파일 관리자로 동일한 작업을 복사한 기준과 비교한 추정치입니다.
-# MT
-totals-reset = 통계 재설정
-# MT
-totals-reset-confirm = 저장된 모든 작업과 항목이 삭제됩니다. 계속하시겠습니까?
-# MT
-totals-reset-confirm-yes = 예, 재설정
-# MT
-toast-totals-reset = 통계가 재설정되었습니다
-
-# MT — Phase 11a additions
-header-language-label = 언어
-# MT
-header-language-title = 언어 변경
-
-# MT
-kind-copy = 복사
-# MT
-kind-move = 이동
-# MT
-kind-delete = 삭제
-# MT
-kind-secure-delete = 안전하게 삭제
-
-# MT
-status-running = 실행 중
-# MT
-status-succeeded = 성공
-# MT
-status-failed = 실패
-# MT
-status-cancelled = 취소됨
-# MT
-status-ok = 확인
-# MT
-status-skipped = 건너뜀
-
-# MT
-history-search-placeholder = /경로
-# MT
-toast-history-purged = 30일보다 오래된 작업 { $count }개 삭제됨
-
-# MT
-err-source-required = 하나 이상의 원본 경로가 필요합니다.
-# MT
-err-destination-empty = 대상 경로가 비어 있습니다.
-# MT
-err-source-empty = 원본 경로가 비어 있습니다.
-
-# MT
-duration-lt-1s = < 1초
-# MT
-duration-ms = { $ms } ms
-# MT
-duration-seconds = { $s }초
-# MT
-duration-minutes-seconds = { $m }분 { $s }초
-# MT
-duration-hours-minutes = { $h }시간 { $m }분
-# MT
-duration-zero = 0초
-
-# MT
-rate-unit-per-second = { $size }/초
-
-# MT — Phase 11b Settings modal
-settings-title = 설정
-# MT
-settings-tab-general = 일반
-# MT
-settings-tab-appearance = 모양
-# MT
-settings-section-language = 언어
-# MT
-settings-phase-12-hint = 더 많은 설정(테마, 전송 기본값, 확인 알고리즘, 프로필)은 12단계에서 추가됩니다.
-
-# MT — Phase 12 Settings window
-settings-loading = 설정 불러오는 중…
-# MT
-settings-tab-transfer = 전송
-# MT
-settings-tab-shell = 셸
-# MT
-settings-tab-secure-delete = 안전하게 삭제
-# MT
-settings-tab-advanced = 고급
-# MT
-settings-tab-profiles = 프로필
-
-# MT
-settings-section-theme = 테마
-# MT
-settings-theme-auto = 자동
-# MT
-settings-theme-light = 라이트
-# MT
-settings-theme-dark = 다크
-# MT
-settings-start-with-os = 시스템 시작 시 실행
-# MT
-settings-single-instance = 단일 인스턴스 실행
-# MT
-settings-minimize-to-tray = 닫을 때 트레이로 최소화
-settings-error-display-mode = 오류 프롬프트 스타일
-settings-error-display-modal = 모달 (앱 차단)
-settings-error-display-drawer = 드로어 (비차단)
-settings-error-display-mode-hint = 모달은 결정할 때까지 큐를 중지합니다. 드로어는 큐를 계속 실행하고 모서리에서 오류를 분류할 수 있습니다.
-settings-paste-shortcut = 전역 단축키로 파일 붙여넣기
-settings-paste-shortcut-combo = 단축키 조합
-settings-paste-shortcut-hint = 시스템 어디에서나 이 조합을 누르면 Explorer / Finder / Files에서 복사한 파일을 Copy That을 통해 붙여넣을 수 있습니다. CmdOrCtrl은 macOS에서는 Cmd, Windows / Linux에서는 Ctrl로 해석됩니다.
-settings-clipboard-watcher = 복사된 파일에 대해 클립보드 감시
-settings-clipboard-watcher-hint = 파일 URL이 클립보드에 나타날 때 토스트를 표시하여 Copy That으로 붙여넣을 수 있음을 알립니다. 활성화된 동안 500 ms마다 폴링합니다.
-
-# MT
-settings-buffer-size = 버퍼 크기
-# MT
-settings-verify = 복사 후 확인
-# MT
-settings-verify-off = 끄기
-# MT
-settings-concurrency = 동시성
-# MT
-settings-concurrency-auto = 자동
-# MT
-settings-reflink = Reflink / 빠른 경로
-# MT
-settings-reflink-prefer = 선호
-# MT
-settings-reflink-avoid = reflink 피하기
-# MT
-settings-reflink-disabled = 항상 비동기 엔진 사용
-# MT
-settings-fsync-on-close = 닫을 때 디스크에 동기화 (느림, 안전함)
-# MT
-settings-preserve-timestamps = 타임스탬프 유지
-# MT
-settings-preserve-permissions = 권한 유지
-# MT
-settings-preserve-acls = ACL 유지 (14단계)
-settings-preserve-sparseness = 스파스 파일 보존  # MT
-settings-preserve-sparseness-hint = 스파스 파일(VM 디스크, 데이터베이스 파일)의 할당된 범위만 복사하여 대상이 원본과 동일한 디스크 크기를 유지합니다.  # MT
-
-# MT
-settings-context-menu = 셸 컨텍스트 메뉴 항목 사용
-# MT
-settings-intercept-copy = 기본 복사 처리기 가로채기 (Windows)
-# MT
-settings-intercept-copy-hint = 켜면 Explorer의 Ctrl+C / Ctrl+V가 Copy That을 거칩니다. 등록은 14단계.
-# MT
-settings-notify-completion = 작업 완료 시 알림
-
-# MT
-settings-shred-method = 기본 파쇄 방법
-# MT
-settings-shred-zero = 영 (1회)
-# MT
-settings-shred-random = 무작위 (1회)
-# MT
-settings-shred-dod3 = DoD 5220.22-M (3회)
-# MT
-settings-shred-dod7 = DoD 5220.22-M (7회)
-# MT
-settings-shred-gutmann = Gutmann (35회)
-# MT
-settings-shred-nist = NIST 800-88
-# MT
-settings-shred-confirm-twice = 파쇄 전 이중 확인 요구
-
-# MT
-settings-log-level = 로그 수준
-# MT
-settings-log-off = 끄기
-# MT
-settings-telemetry = 원격 측정
-# MT
-settings-telemetry-never = 사용 안 함 — 어떤 로그 수준에서도 데이터 전송 없음
-# MT
-settings-error-policy = 기본 오류 정책
-# MT
-settings-error-policy-ask = 물어보기
-# MT
-settings-error-policy-skip = 건너뛰기
-# MT
-settings-error-policy-retry = 대기 후 재시도
-# MT
-settings-error-policy-abort = 첫 오류에 중단
-# MT
-settings-history-retention = 기록 보존 (일)
-# MT
-settings-history-retention-hint = 0 = 영구 보관. 다른 값은 시작 시 오래된 작업을 자동 정리합니다.
-# MT
-settings-database-path = 데이터베이스 경로
-# MT
-settings-database-path-default = (기본값 — OS 데이터 디렉터리)
-# MT
-settings-reset-all = 기본값으로 재설정
-# MT
-settings-reset-confirm = 모든 기본 설정을 재설정하시겠습니까? 프로필은 영향받지 않습니다.
-
-# MT
-settings-profiles-hint = 현재 설정을 이름으로 저장하세요; 나중에 불러오면 개별 조정 없이 전환할 수 있습니다.
-# MT
-settings-profile-name-placeholder = 프로필 이름
-# MT
-settings-profile-save = 저장
-# MT
-settings-profile-import = 가져오기…
-# MT
-settings-profile-load = 불러오기
-# MT
-settings-profile-export = 내보내기…
-# MT
-settings-profile-delete = 삭제
-# MT
-settings-profile-empty = 저장된 프로필이 없습니다.
-# MT
-settings-profile-import-prompt = 가져올 프로필의 이름:
-
-# MT
-toast-settings-reset = 설정이 재설정되었습니다
-# MT
-toast-profile-saved = 프로필이 저장되었습니다
-# MT
-toast-profile-loaded = 프로필을 불러왔습니다
-# MT
-toast-profile-exported = 프로필을 내보냈습니다
-# MT
-toast-profile-imported = 프로필을 가져왔습니다
-
-# Phase 13d — activity feed + header picker buttons
+action-reveal = 폴더에서 표시
 action-add-files = 파일 추가
 action-add-folders = 폴더 추가
+
+# Phase 13d — activity feed
 activity-title = 활동
 activity-clear = 활동 목록 지우기
 activity-empty = 아직 파일 활동이 없습니다.
 activity-after-done = 완료 시:
-activity-keep-open = 앱 열어두기
+activity-keep-open = 앱 열어 두기
 activity-close-app = 앱 닫기
 activity-shutdown = PC 종료
 activity-logoff = 로그오프
-activity-sleep = 절전 모드
+activity-sleep = 절전
 
 # Phase 14 — preflight free-space dialog
 preflight-block-title = 대상에 공간이 부족합니다
-preflight-warn-title = 대상의 공간이 부족합니다
-preflight-unknown-title = 여유 공간을 확인할 수 없습니다
-preflight-unknown-body = 원본이 너무 커서 빠르게 측정할 수 없거나 대상 볼륨이 응답하지 않았습니다. 계속할 수 있으며, 공간이 부족해지면 엔진이 복사를 깔끔하게 중단합니다.
-preflight-required = 필요
-preflight-free = 남음
+preflight-warn-title = 대상의 공간이 적습니다
+preflight-unknown-title = 사용 가능한 공간을 확인할 수 없습니다
+preflight-unknown-body = 원본이 너무 커서 빠르게 크기를 측정할 수 없거나 대상 볼륨이 응답하지 않았습니다. 계속 진행할 수 있으며, 공간이 부족해지면 엔진의 공간 보호 기능이 복사를 정상적으로 중단합니다.
+preflight-required = 필요한 공간
+preflight-free = 사용 가능
 preflight-reserve = 예약
-preflight-shortfall = 부족
+preflight-shortfall = 부족분
 preflight-continue = 그래도 계속
-collision-modal-overwrite-older = 오래된 파일만 덮어쓰기
+preflight-pick-subset = 복사할 항목 선택…
+collision-modal-overwrite-older = 오래된 것만 덮어쓰기
 
 # Phase 14e — subset picker
-preflight-pick-subset = 복사할 항목 선택…
 subset-title = 복사할 원본 선택
-subset-subtitle = 전체 선택이 대상에 맞지 않습니다. 복사할 항목을 선택하면 나머지는 복사되지 않습니다.
+subset-subtitle = 전체 선택 항목이 대상에 맞지 않습니다. 복사할 항목을 선택하세요. 나머지는 그대로 남습니다.
 subset-loading = 크기 측정 중…
-subset-too-large = 너무 커서 셀 수 없음
+subset-too-large = 너무 커서 계산 불가
 subset-budget = 사용 가능
-subset-remaining = 남음
-subset-confirm = 선택 복사
-history-rerun-hint = 이 복사 재실행 — 원본 트리의 모든 파일을 다시 스캔
-history-clear-all = 전체 지우기
+subset-remaining = 남은 용량
+subset-confirm = 선택 항목 복사
+history-rerun-hint = 이 복사를 다시 실행합니다 — 원본 트리의 모든 파일을 다시 스캔합니다
+history-clear-all = 모두 지우기
 history-clear-all-confirm = 확인하려면 다시 클릭
-history-clear-all-hint = 모든 기록 행을 삭제합니다. 두 번째 클릭으로 확인합니다.
-toast-history-cleared = 기록이 지워졌습니다 ({ $count } 행 제거됨)
+history-clear-all-hint = 모든 기록 행을 삭제합니다. 확인을 위해 한 번 더 클릭해야 합니다.
+toast-history-cleared = 기록을 지웠습니다 ({ $count }개 행 제거됨)
 
-# Phase 15 — source-list ordering
+# Phase 15 — source-list ordering in the drop staging dialog
 drop-dialog-sort-label = 정렬:
 sort-custom = 사용자 지정
 sort-name-asc = 이름 A → Z (파일 먼저)
 sort-name-desc = 이름 Z → A (파일 먼저)
-sort-size-asc = 크기 작은 순 (파일 먼저)
-sort-size-desc = 크기 큰 순 (파일 먼저)
-sort-reorder = 재정렬
+sort-size-asc = 크기 작은 것 먼저 (파일 먼저)
+sort-size-desc = 크기 큰 것 먼저 (파일 먼저)
+sort-reorder = 순서 변경
 sort-move-top = 맨 위로 이동
-sort-move-up = 위로
-sort-move-down = 아래로
+sort-move-up = 위로 이동
+sort-move-down = 아래로 이동
 sort-move-bottom = 맨 아래로 이동
+
+# Phase 16 — sort preset names for the Activity list (shorter
+# wording than the DropStagingDialog variants; the Activity list
+# is files-only so the "(files first)" suffix isn't relevant).
 sort-name-asc-simple = 이름 A → Z
 sort-name-desc-simple = 이름 Z → A
-sort-size-asc-simple = 작은 순
-sort-size-desc-simple = 큰 순
-activity-sort-locked = 복사가 실행 중일 때는 정렬이 비활성화됩니다. 일시중지하거나 완료를 기다린 후 순서를 변경하세요.
-drop-dialog-collision-label = 파일이 이미 존재하는 경우:
-collision-policy-keep-both = 둘 다 유지 (새 복사본의 이름을 _2, _3 … 로 변경)
+sort-size-asc-simple = 크기 작은 것 먼저
+sort-size-desc-simple = 크기 큰 것 먼저
+activity-sort-locked = 복사가 실행되는 동안에는 정렬을 사용할 수 없습니다. 일시 중지하거나 완료될 때까지 기다린 후 순서를 변경하세요.
+
+# Phase 17 — collision-policy picker in the DropStagingDialog
+drop-dialog-collision-label = 파일이 이미 있는 경우:
+collision-policy-keep-both = 둘 다 유지 (새 복사본 이름을 _2, _3, …으로 변경)
 collision-policy-skip = 새 복사본 건너뛰기
 collision-policy-overwrite = 기존 파일 덮어쓰기
-collision-policy-overwrite-if-newer = 새로운 경우에만 덮어쓰기
+collision-policy-overwrite-if-newer = 더 새로운 경우에만 덮어쓰기
 collision-policy-prompt = 매번 묻기
-drop-dialog-busy-checking = 여유 공간 확인 중…
+
+# Phase 18 — progress labels on the DropStagingDialog Start button
+drop-dialog-busy-checking = 사용 가능한 공간 확인 중…
 drop-dialog-busy-enumerating = 파일 수 계산 중…
 drop-dialog-busy-starting = 복사 시작 중…
-toast-enumeration-deferred = 원본 트리가 큽니다 — 사전 목록을 생략합니다. 엔진이 처리하는 대로 행이 나타납니다.
+toast-enumeration-deferred = 원본 트리가 큽니다 — 사전 파일 목록 작성을 건너뜁니다. 엔진이 처리하는 대로 행이 표시됩니다.
+
+# Context menu (per-row right-click)
+menu-pause = 일시 중지
+menu-resume = 다시 시작
+menu-cancel = 취소
+menu-remove = 대기열에서 제거
+menu-reveal-source = 원본을 폴더에서 표시
+menu-reveal-destination = 대상을 폴더에서 표시
+
+# Header / toolbar
+header-eta-label = 예상 남은 시간
+header-toolbar-label = 전역 컨트롤
+
+# Footer
+footer-queued = 활성 작업
+footer-total-bytes = 진행 중
+footer-errors = 오류
+footer-history = 기록
+
+# Empty state
+empty-title = 복사할 파일 또는 폴더를 끌어다 놓으세요
+empty-hint = 항목을 창으로 끌어다 놓으세요. 대상을 물어본 다음 원본마다 작업을 하나씩 대기열에 추가합니다.
+empty-region-label = 작업 목록
+
+# Details drawer
+details-drawer-label = 작업 세부 정보
+details-source = 원본
+details-destination = 대상
+details-state = 상태
+details-bytes = 바이트
+details-files = 파일
+details-speed = 속도
+details-eta = 예상 시간
+details-error = 오류
+
+# Drop dialog
+drop-dialog-title = 끌어다 놓은 항목 전송
+drop-dialog-subtitle = { $count }개 항목을 전송할 준비가 되었습니다. 대상 폴더를 선택하여 시작하세요.
+drop-dialog-mode = 작업
+drop-dialog-copy = 복사
+drop-dialog-move = 이동
+drop-dialog-pick-destination = 대상 선택
+drop-dialog-change-destination = 대상 변경
+drop-dialog-start-copy = 복사 시작
+drop-dialog-start-move = 이동 시작
+
+# ETA placeholders
+eta-calculating = 계산 중…
+eta-unknown = 알 수 없음
+
+# Toast messages
+toast-job-done = 전송 완료
+toast-copy-queued = 복사가 대기열에 추가됨
+toast-move-queued = 이동이 대기열에 추가됨
+toast-error-resolved = 오류 해결됨
+toast-collision-resolved = 충돌 해결됨
+toast-elevated-unavailable = 권한 상승 재시도는 Phase 17에 추가됩니다 — 아직 사용할 수 없습니다
+toast-clipboard-files-detected = 클립보드에 파일이 있습니다 — 붙여넣기 단축키를 눌러 Copy That으로 복사하세요
+toast-clipboard-no-files = 클립보드에 붙여넣을 파일이 없습니다
+toast-error-log-exported = 오류 로그를 내보냈습니다
+
+# Error modal (Phase 8)
+error-modal-title = 전송에 실패했습니다
+error-modal-retry = 다시 시도
+error-modal-retry-elevated = 상승된 권한으로 다시 시도
+error-modal-skip = 건너뛰기
+error-modal-skip-all-kind = 이 종류의 오류 모두 건너뛰기
+error-modal-abort = 모두 중단
+error-modal-path-label = 경로
+error-modal-code-label = 코드
+error-drawer-pending-count = 대기 중인 오류 더 있음
+error-drawer-toggle = 접거나 펼치기
+
+# Error-kind labels (Phase 8). Source of truth — engine maps each
+# `CopyErrorKind` to one of these keys via `localized_key()`.
+err-not-found = 파일을 찾을 수 없음
+err-permission-denied = 권한이 거부됨
+err-disk-full = 대상 디스크가 가득 참
+err-interrupted = 작업이 중단됨
+err-verify-failed = 복사 후 검증 실패
+err-path-escape = 경로 거부됨 — 상위 디렉터리(..) 세그먼트 또는 잘못된 바이트가 포함됨
+err-path-invalid-encoding = 경로 거부됨 — 문자열에 잘못된 UTF-8 / 대체 문자가 포함됨
+err-helper-invalid-json = 권한 있는 도우미가 잘못된 형식의 JSON을 받았습니다. 이 요청을 무시합니다
+err-helper-grant-out-of-band = GrantCapabilities는 무상태 핸들러가 아니라 도우미 실행 루프에서 처리해야 합니다
+err-randomness-unavailable = OS 난수 생성기에 실패했습니다. 세션 ID를 생성할 수 없습니다
+err-sparseness-mismatch = 대상에서 희소 레이아웃을 보존할 수 없습니다
+err-io-other = 알 수 없는 I/O 오류
+
+# Collision modal (Phase 8)
+collision-modal-title = 파일이 이미 있습니다
+collision-modal-overwrite = 덮어쓰기
+collision-modal-overwrite-if-newer = 더 새로우면 덮어쓰기
+collision-modal-skip = 건너뛰기
+collision-modal-keep-both = 둘 다 유지
+collision-modal-rename = 이름 변경…
+collision-modal-apply-to-all = 모두 적용
+collision-modal-source = 원본
+collision-modal-destination = 대상
+collision-modal-size = 크기
+collision-modal-modified = 수정한 날짜
+collision-modal-hash-check = 빠른 해시 (SHA-256)
+collision-modal-rename-placeholder = 새 파일 이름
+collision-modal-confirm-rename = 이름 변경
+
+# Error log drawer (Phase 8)
+error-log-title = 오류 로그
+error-log-empty = 기록된 오류가 없습니다
+error-log-export-csv = CSV 내보내기
+error-log-export-txt = 텍스트 내보내기
+error-log-clear = 로그 지우기
+error-log-col-time = 시간
+error-log-col-job = 작업
+error-log-col-path = 경로
+error-log-col-code = 코드
+error-log-col-message = 메시지
+error-log-col-resolution = 해결 방법
+
+# History drawer (Phase 9)
+history-title = 기록
+history-empty = 아직 기록된 작업이 없습니다
+history-unavailable = 복사 기록을 사용할 수 없습니다. 시작 시 앱이 SQLite 저장소를 열지 못했습니다.
+history-filter-any = 전체
+history-filter-kind = 종류
+history-filter-status = 상태
+history-filter-text = 검색
+history-refresh = 새로 고침
+history-export-csv = CSV 내보내기
+history-purge-30 = 30일 초과 정리
+history-rerun = 다시 실행
+history-detail-open = 세부 정보
+history-detail-title = 작업 세부 정보
+history-detail-empty = 기록된 항목이 없습니다
+history-col-date = 날짜
+history-col-kind = 종류
+history-col-src = 원본
+history-col-dst = 대상
+history-col-files = 파일
+history-col-size = 크기
+history-col-status = 상태
+history-col-duration = 소요 시간
+history-col-error = 오류
+toast-history-exported = 기록을 내보냈습니다
+toast-history-rerun-queued = 다시 실행이 대기열에 추가됨
+
+# Totals drawer (Phase 10)
+footer-totals = 합계
+totals-title = 합계
+totals-loading = 합계 불러오는 중…
+totals-card-bytes = 복사한 총 바이트
+totals-card-files = 파일
+totals-card-jobs = 작업
+totals-card-avg-rate = 평균 처리량
+totals-errors = 오류
+totals-spark-title = 최근 30일
+totals-kinds-title = 종류별
+totals-saved-title = 절약한 시간 (예상)
+totals-saved-note = 동일한 작업량을 기준 파일 관리자로 복사한 경우와 비교한 예상치입니다.
+totals-reset = 통계 초기화
+totals-reset-confirm = 저장된 모든 작업과 항목이 삭제됩니다. 계속하시겠습니까?
+totals-reset-confirm-yes = 예, 초기화합니다
+toast-totals-reset = 통계 초기화됨
+
+# Phase 11a — i18n core: surface remaining user-visible strings so
+# every string on a main-window screen flows through Fluent.
+
+# Header language switcher (temporary placement — folds into
+# Settings → General in Phase 12).
+header-language-label = 언어
+header-language-title = 언어 변경
+
+# Job-kind labels. History filter, Totals breakdown, and history
+# rows all map wire-format `kind` strings to these labels.
+kind-copy = 복사
+kind-move = 이동
+kind-delete = 삭제
+kind-secure-delete = 보안 삭제
+
+# History status labels. Distinct from `state-*` because the
+# history wire format uses plain `running`/`succeeded`/... rather
+# than the live `JobState` enum the queue exposes.
+status-running = 실행 중
+status-succeeded = 성공
+status-failed = 실패
+status-cancelled = 취소됨
+# Per-item status (not job-level): `ok` / `skipped` are only
+# reachable from the history detail view.
+status-ok = 정상
+status-skipped = 건너뜀
+
+# History drawer: search field placeholder + purge toast.
+history-search-placeholder = /path
+toast-history-purged = 30일이 지난 작업 { $count }개를 정리했습니다
+
+# User-facing command-layer validation errors. The Rust side
+# returns these keys when input is missing; the toast layer looks
+# them up rather than showing the raw English.
+err-source-required = 원본 경로가 하나 이상 필요합니다.
+err-destination-empty = 대상 경로가 비어 있습니다.
+err-source-empty = 원본 경로가 비어 있습니다.
+
+# Localised duration formatting for the Totals drawer and ETA
+# fields. `{ $ms }`, `{ $s }`, `{ $m }`, `{ $h }` are integer
+# placeables — the formatter passes pre-computed values in.
+duration-lt-1s = < 1초
+duration-ms = { $ms }밀리초
+duration-seconds = { $s }초
+duration-minutes-seconds = { $m }분 { $s }초
+duration-hours-minutes = { $h }시간 { $m }분
+duration-zero = 0초
+
+# Rate unit. Appended to a formatted byte size. Some languages
+# render this with a leading space ("Ko/s"); keep it translatable
+# even though the SI-derived "/s" is near-universal.
+rate-unit-per-second = { $size }/s
+
+# Phase 11b — Settings modal skeleton. Phase 12 expanded this into a
+# full six-tab preferences window; the `settings-phase-12-hint` key
+# is retired in favour of `settings-tab-profiles` + concrete labels.
+settings-title = 설정
+settings-tab-general = 일반
+settings-tab-appearance = 모양
+settings-section-language = 언어
+settings-phase-12-hint = 추가 설정(테마, 전송 기본값, 검증 알고리즘, 프로필)은 Phase 12에 추가됩니다.
+
+# Phase 12 — full Settings window keys. Grouped by tab so the
+# human-review pass can pick one section at a time. Every field
+# label and every option label that the user will actually read
+# has its own key; dynamic wire values (enum discriminants like
+# "auto" / "prefer") stay untranslated on the wire.
+
+settings-loading = 설정 불러오는 중…
+settings-tab-transfer = 전송
+settings-tab-filters = 필터
+settings-tab-shell = 셸
+settings-tab-secure-delete = 보안 삭제
+settings-tab-advanced = 고급
+settings-tab-updater = 업데이트
+settings-tab-profiles = 프로필
+
+# General tab additions
+settings-section-theme = 테마
+settings-theme-auto = 자동
+settings-theme-light = 라이트
+settings-theme-dark = 다크
+settings-start-with-os = 시스템 시작 시 실행
+settings-single-instance = 단일 실행 인스턴스
+settings-minimize-to-tray = 닫을 때 트레이로 최소화
+settings-error-display-mode = 오류 알림 스타일
+settings-error-display-modal = 모달 (앱 차단)
+settings-error-display-drawer = 서랍 (차단하지 않음)
+settings-error-display-mode-hint = 모달은 결정할 때까지 대기열을 멈춥니다. 서랍은 대기열을 계속 진행하면서 화면 구석에서 오류를 처리할 수 있게 합니다.
+settings-paste-shortcut = 전역 단축키로 파일 붙여넣기
+settings-paste-shortcut-combo = 단축키 조합
+settings-paste-shortcut-hint = 시스템 어디에서나 이 조합을 눌러 Explorer / Finder / Files에서 복사한 파일을 Copy That으로 붙여넣으세요. CmdOrCtrl은 macOS에서는 Cmd로, Windows / Linux에서는 Ctrl로 처리됩니다.
+settings-clipboard-watcher = 복사된 파일이 있는지 클립보드 감시
+settings-clipboard-watcher-hint = 클립보드에 파일 URL이 나타나면 Copy That으로 붙여넣을 수 있음을 알리는 알림을 표시합니다. 사용 설정 시 500밀리초마다 폴링합니다.
+
+# Transfer tab
+settings-buffer-size = 버퍼 크기
+settings-verify = 복사 후 검증
+settings-verify-off = 끄기
+settings-concurrency = 동시 실행
+settings-concurrency-auto = 자동
+settings-reflink = Reflink / 빠른 경로
+settings-reflink-prefer = 우선 사용
+settings-reflink-avoid = reflink 피하기
+settings-reflink-disabled = 항상 비동기 엔진 사용
+settings-fsync-on-close = 닫을 때 디스크에 동기화 (느리지만 더 안전함)
+settings-preserve-timestamps = 타임스탬프 보존
+settings-preserve-permissions = 권한 보존
+settings-preserve-acls = ACL 보존 (Phase 14)
+settings-preserve-sparseness = 희소 파일 보존
+settings-preserve-sparseness-hint = 희소 파일(VM 디스크, 데이터베이스 파일)의 할당된 익스텐트만 복사하여 대상의 디스크상 크기가 원본과 동일하게 유지되도록 합니다.
+
+# Shell tab
+settings-context-menu = 셸 컨텍스트 메뉴 항목 사용
+settings-intercept-copy = 기본 복사 처리기 가로채기 (Windows)
+settings-intercept-copy-hint = 켜면 Explorer의 Ctrl+C / Ctrl+V가 Copy That을 통해 처리됩니다. 등록 기능은 Phase 14에 추가됩니다.
+settings-notify-completion = 작업 완료 시 알림
+
+# Secure delete tab
+settings-shred-method = 기본 분쇄 방법
+settings-shred-zero = 0으로 채우기 (1회 패스)
+settings-shred-random = 무작위 (1회 패스)
+settings-shred-dod3 = DoD 5220.22-M (3회 패스)
+settings-shred-dod7 = DoD 5220.22-M (7회 패스)
+settings-shred-gutmann = Gutmann (35회 패스)
+settings-shred-nist = NIST 800-88
+settings-shred-confirm-twice = 분쇄 전에 이중 확인 요구
+
+# Advanced tab
+settings-log-level = 로그 수준
+settings-log-off = 끄기
+settings-telemetry = 텔레메트리
+settings-telemetry-never = 사용 안 함 — 어떤 로그 수준에서도 데이터를 전송하지 않음
+settings-error-policy = 기본 오류 정책
+settings-error-policy-ask = 묻기
+settings-error-policy-skip = 건너뛰기
+settings-error-policy-retry = 백오프하며 다시 시도
+settings-error-policy-abort = 첫 실패 시 중단
+settings-history-retention = 기록 보존 기간 (일)
+settings-history-retention-hint = 0 = 영구 보존. 다른 값을 지정하면 시작 시 오래된 작업을 자동으로 정리합니다.
+settings-database-path = 데이터베이스 경로
+settings-database-path-default = (기본값 — OS 데이터 디렉터리)
+settings-reset-all = 기본값으로 초기화
+settings-reset-confirm = 모든 환경 설정을 기본값으로 초기화하시겠습니까? 프로필은 영향을 받지 않습니다.
+
+# Profiles tab
+settings-profiles-hint = 현재 설정을 이름을 지정해 저장하세요. 나중에 불러오면 개별 항목을 건드리지 않고 되돌릴 수 있습니다.
+settings-profile-name-placeholder = 프로필 이름
+settings-profile-save = 저장
+settings-profile-import = 가져오기…
+settings-profile-load = 불러오기
+settings-profile-export = 내보내기…
+settings-profile-delete = 삭제
+settings-profile-empty = 아직 저장된 프로필이 없습니다.
+settings-profile-import-prompt = 가져온 프로필의 이름:
+
+# Toasts driven by Phase 12 profile actions
+toast-settings-reset = 설정 초기화됨
+toast-profile-saved = 프로필 저장됨
+toast-profile-loaded = 프로필 불러옴
+toast-profile-exported = 프로필 내보냄
+toast-profile-imported = 프로필 가져옴
 
 # Phase 14a — enumeration-time filters
-# MT
-settings-tab-filters = 필터
-# MT
-settings-filters-hint = 열거 시점에서 파일을 건너뛰어 엔진이 아예 열지 않게 합니다. 포함은 파일에만 적용되고, 제외는 디렉터리도 가지치기합니다.
-# MT
+settings-filters-hint = 열거 시점에 파일을 건너뛰어 엔진이 아예 열지 않도록 합니다. 포함 규칙은 파일에만 적용되고, 제외 규칙은 일치하는 디렉터리도 잘라냅니다.
 settings-filters-enabled = 트리 복사에 필터 사용
-# MT
-settings-filters-include-globs = 포함 글롭
-# MT
+settings-filters-include-globs = 포함 글로브
 settings-filters-include-globs-placeholder = **/*.txt
-# MT
-settings-filters-include-globs-hint = 한 줄에 하나. 비어 있지 않으면 파일은 최소 하나와 일치해야 합니다. 디렉터리는 항상 내려갑니다.
-# MT
-settings-filters-exclude-globs = 제외 글롭
-# MT
+settings-filters-include-globs-hint = 한 줄에 글로브 하나씩 입력하세요. 비어 있지 않으면 파일이 살아남으려면 하나 이상의 포함 규칙과 일치해야 합니다. 디렉터리에는 항상 들어갑니다.
+settings-filters-exclude-globs = 제외 글로브
 settings-filters-exclude-globs-placeholder = **/node_modules
-# MT
-settings-filters-exclude-globs-hint = 한 줄에 하나. 디렉터리에 일치하면 서브트리 전체를 가지치기하고, 파일에 일치하면 건너뜁니다.
-# MT
+settings-filters-exclude-globs-hint = 한 줄에 글로브 하나씩 입력하세요. 디렉터리는 일치하면 하위 트리 전체가 잘리고, 일치하는 파일은 건너뜁니다.
 settings-filters-size-range = 파일 크기 범위
-# MT
-settings-filters-min-size-bytes = 최소 크기(바이트, 빈 값 = 하한 없음)
-# MT
-settings-filters-max-size-bytes = 최대 크기(바이트, 빈 값 = 상한 없음)
-# MT
+settings-filters-min-size-bytes = 최소 크기 (바이트, 비워두면 하한 없음)
+settings-filters-max-size-bytes = 최대 크기 (바이트, 비워두면 상한 없음)
 settings-filters-date-range = 수정 시간 범위
-# MT
-settings-filters-min-mtime = 이 날짜 이후 수정됨
-# MT
-settings-filters-max-mtime = 이 날짜 이전 수정됨
-# MT
+settings-filters-min-mtime = 수정 시점 이후
+settings-filters-max-mtime = 수정 시점 이전
 settings-filters-attributes = 속성 비트
-# MT
 settings-filters-skip-hidden = 숨김 파일 / 폴더 건너뛰기
-# MT
-settings-filters-skip-system = 시스템 파일 건너뛰기(Windows 전용)
-# MT
+settings-filters-skip-system = 시스템 파일 건너뛰기 (Windows 전용)
 settings-filters-skip-readonly = 읽기 전용 파일 건너뛰기
 
 # Phase 15 — auto-update
-# MT
-settings-tab-updater = 업데이트
-# MT
-settings-updater-hint = Copy That는 하루에 한 번 서명된 업데이트를 확인합니다. 다음 앱 종료 시 업데이트가 설치됩니다.
-# MT
+settings-updater-hint = Copy That은 서명된 업데이트를 하루에 최대 한 번 확인합니다. 업데이트는 다음에 앱을 종료할 때 설치됩니다.
 settings-updater-auto-check = 실행 시 업데이트 확인
-# MT
 settings-updater-channel = 릴리스 채널
-# MT
 settings-updater-channel-stable = 안정 버전
-# MT
-settings-updater-channel-beta = 베타 (프리릴리스)
-# MT
+settings-updater-channel-beta = 베타 (사전 출시)
 settings-updater-last-check = 마지막 확인
-# MT
-settings-updater-last-never = 없음
-# MT
+settings-updater-last-never = 안 함
 settings-updater-check-now = 지금 업데이트 확인
-# MT
 settings-updater-checking = 확인 중…
-# MT
 settings-updater-available = 업데이트 사용 가능
-# MT
 settings-updater-up-to-date = 최신 릴리스를 사용 중입니다.
-# MT
 settings-updater-dismiss = 이 버전 건너뛰기
-# MT
 settings-updater-dismissed = 건너뜀
-# MT
-toast-update-available = 새 버전이 사용 가능합니다
-# MT
-toast-update-up-to-date = 이미 최신 버전입니다
+toast-update-available = 더 새로운 버전을 사용할 수 있습니다
+toast-update-up-to-date = 이미 최신 버전을 사용 중입니다
 
 # Phase 19a — disk-backed file enumeration (TeraCopy-compatible scan DB)
-# MT
 scan-progress-title = 스캔 중…
-# MT
-scan-progress-stats = { $files } 파일 · 지금까지 { $bytes }
-# MT
-scan-pause-button = 스캔 일시 정지
-# MT
-scan-resume-button = 스캔 재개
-# MT
+scan-progress-stats = { $files }개 파일 · 지금까지 { $bytes }
+scan-pause-button = 스캔 일시 중지
+scan-resume-button = 스캔 다시 시작
 scan-cancel-button = 스캔 취소
-# MT
 scan-cancel-confirm = 스캔을 취소하고 진행 상황을 버리시겠습니까?
-# MT
 scan-db-header = 스캔 데이터베이스
-# MT
-scan-db-hint = 수백만 개 파일 작업을 위한 디스크 기반 스캔 데이터베이스.
-# MT
+scan-db-hint = 수백만 개 파일 작업을 위한 디스크 기반 스캔 데이터베이스입니다.
 advanced-scan-hash-during = 스캔 중 체크섬 계산
-# MT
 advanced-scan-db-path = 스캔 데이터베이스 위치
-# MT
-advanced-scan-retention-days = 완료된 스캔 자동 삭제 기간(일)
-# MT
+advanced-scan-retention-days = 완료된 스캔 자동 삭제 기간 (일)
 advanced-scan-max-keep = 보관할 최대 스캔 데이터베이스 수
 
 # Phase 19b — filesystem-snapshot source for locked files.
-# MT
-settings-on-locked = When a file is locked
-# MT
-settings-on-locked-ask = Ask the first time
-# MT
-settings-on-locked-retry = Retry briefly, then surface the error
-# MT
-settings-on-locked-skip = Skip the locked file
-# MT
-settings-on-locked-snapshot = Use a filesystem snapshot
-# MT
-settings-on-locked-hint = Eliminate "file in use by another process" errors. Copy That snapshots the source volume (VSS on Windows, ZFS/Btrfs on Linux, APFS on macOS) and reads from the snapshot copy.
-# MT
-snapshot-prompt-title = This file is in use by another process
-# MT
-snapshot-prompt-body = Another program has { $path } open for exclusive write. Choose how Copy That should handle this and similar files on the same volume.
-# MT
-snapshot-source-active = 📷 Reading from { $kind } snapshot of { $volume }
-# MT
-snapshot-create-failed = Could not create a snapshot of the source volume
-# MT
-snapshot-vss-needs-elevation = Reading from a VSS snapshot requires Administrator permission. Copy That will ask you to allow it.
-# MT
-snapshot-cleanup-failed = The snapshot helper reported a cleanup failure — a leftover shadow copy may remain on the volume.
+settings-on-locked = 파일이 잠겨 있을 때
+settings-on-locked-ask = 처음 한 번 묻기
+settings-on-locked-retry = 잠시 다시 시도한 후 오류 표시
+settings-on-locked-skip = 잠긴 파일 건너뛰기
+settings-on-locked-snapshot = 파일 시스템 스냅샷 사용
+settings-on-locked-hint = "다른 프로세스가 파일을 사용 중" 오류를 없앱니다. Copy That이 원본 볼륨의 스냅샷(Windows에서는 VSS, Linux에서는 ZFS/Btrfs, macOS에서는 APFS)을 만들어 스냅샷 복사본에서 읽습니다.
+snapshot-prompt-title = 이 파일은 다른 프로세스에서 사용 중입니다
+snapshot-prompt-body = 다른 프로그램이 { $path }을(를) 독점 쓰기로 열어 두었습니다. 같은 볼륨의 이 파일 및 유사한 파일을 Copy That이 어떻게 처리할지 선택하세요.
+snapshot-source-active = 📷 { $volume }의 { $kind } 스냅샷에서 읽는 중
+snapshot-create-failed = 원본 볼륨의 스냅샷을 만들 수 없습니다
+snapshot-vss-needs-elevation = VSS 스냅샷에서 읽으려면 관리자 권한이 필요합니다. Copy That이 허용을 요청합니다.
+snapshot-cleanup-failed = 스냅샷 도우미가 정리 실패를 보고했습니다 — 볼륨에 남은 섀도 복사본이 남아 있을 수 있습니다.
 
 # Phase 20 — durable resume journal.
-# MT
-resume-prompt-title = Resume previous transfers?
-# MT
-resume-prompt-body = Copy That detected { $count } unfinished transfer(s) from a previous session. Choose what to do with each.
-# MT
-resume-prompt-resume = Resume
-# MT
-resume-prompt-resume-all = Resume all
-# MT
-resume-discard-one = Don't resume
-# MT
-resume-discard-all = Discard all
-# MT
-resume-aborted-hash-mismatch = The destination's first { $offset } bytes don't match the source — restarting from the beginning.
-# MT
-settings-auto-resume = Auto-resume interrupted jobs without prompting
-# MT
-settings-auto-resume-hint = Skip the resume prompt at startup and silently re-enqueue every unfinished job. Off by default.
+resume-prompt-title = 이전 전송을 다시 시작하시겠습니까?
+resume-prompt-body = Copy That이 이전 세션에서 완료되지 않은 전송 { $count }개를 감지했습니다. 각각에 대해 어떻게 할지 선택하세요.
+resume-prompt-resume = 다시 시작
+resume-prompt-resume-all = 모두 다시 시작
+resume-discard-one = 다시 시작 안 함
+resume-discard-all = 모두 버리기
+resume-aborted-hash-mismatch = 대상의 처음 { $offset }바이트가 원본과 일치하지 않습니다 — 처음부터 다시 시작합니다.
+settings-auto-resume = 묻지 않고 중단된 작업 자동으로 다시 시작
+settings-auto-resume-hint = 시작 시 다시 시작 프롬프트를 건너뛰고 완료되지 않은 모든 작업을 조용히 다시 대기열에 추가합니다. 기본적으로 꺼져 있습니다.
 
 # Phase 21 — bandwidth shaping (GCRA token bucket + schedule + auto-throttle).
-# MT
-settings-tab-network = Network
-# MT
-settings-network-hint = Cap your transfer rate to keep the rest of the network usable. Apply globally, follow a daily schedule, or react automatically to metered Wi-Fi / battery / cellular connections.
-# MT
-settings-network-mode = Bandwidth limit
-# MT
-settings-network-mode-off = Off (no limit)
-# MT
-settings-network-mode-fixed = Fixed value
-# MT
-settings-network-mode-schedule = Use schedule
-# MT
-settings-network-cap-mbps = Cap (MB/s)
-# MT
-settings-network-schedule = Schedule (rclone format)
-# MT
-settings-network-schedule-hint = Whitespace-separated HH:MM,rate boundaries plus optional Mon-Fri,rate day rules. Rates: 512k, 10M, 2G, off, unlimited. Example: 08:00,512k 18:00,10M Sat-Sun,unlimited.
-# MT
-settings-network-auto-header = Auto-throttle
-# MT
-settings-network-auto-metered = On metered Wi-Fi
-# MT
-settings-network-auto-battery = On battery
-# MT
-settings-network-auto-cellular = On cellular
-# MT
-settings-network-auto-unchanged = Don't override
-# MT
-settings-network-auto-pause = Pause transfers
-# MT
-settings-network-auto-cap = Cap to fixed value
-# MT
-shape-badge-paused = paused
-# MT
-shape-badge-tooltip = Bandwidth limit active — click to open Settings → Network
-# MT
-shape-badge-source-schedule = scheduled
-# MT
-shape-badge-source-metered = metered
-# MT
-shape-badge-source-battery = on battery
-# MT
-shape-badge-source-cellular = cellular
-# MT
-shape-badge-source-settings = active
-# MT
-shape-error-schedule-invalid = Schedule format is not valid: { $message }
+settings-tab-network = 네트워크
+settings-network-hint = 전송 속도를 제한하여 나머지 네트워크를 계속 사용할 수 있게 하세요. 전역으로 적용하거나, 일일 일정을 따르거나, 종량제 Wi-Fi / 배터리 / 셀룰러 연결에 자동으로 반응하도록 할 수 있습니다.
+settings-network-mode = 대역폭 제한
+settings-network-mode-off = 끄기 (제한 없음)
+settings-network-mode-fixed = 고정값
+settings-network-mode-schedule = 일정 사용
+settings-network-cap-mbps = 제한 (MB/s)
+settings-network-schedule = 일정 (rclone 형식)
+settings-network-schedule-hint = 공백으로 구분된 HH:MM,rate 경계와 선택적 Mon-Fri,rate 요일 규칙을 입력하세요. 속도: 512k, 10M, 2G, off, unlimited. 예: 08:00,512k 18:00,10M Sat-Sun,unlimited.
+settings-network-auto-header = 자동 속도 제한
+settings-network-auto-metered = 종량제 Wi-Fi에서
+settings-network-auto-battery = 배터리에서
+settings-network-auto-cellular = 셀룰러에서
+settings-network-auto-unchanged = 재정의 안 함
+settings-network-auto-pause = 전송 일시 중지
+settings-network-auto-cap = 고정값으로 제한
+shape-badge-paused = 일시 중지됨
+shape-badge-tooltip = 대역폭 제한 활성 — 클릭하여 설정 → 네트워크 열기
+shape-badge-source-schedule = 예약됨
+shape-badge-source-metered = 종량제
+shape-badge-source-battery = 배터리 사용 중
+shape-badge-source-cellular = 셀룰러
+shape-badge-source-settings = 활성
+shape-error-schedule-invalid = 일정 형식이 유효하지 않습니다: { $message }
 
 # Phase 22 — aggregate conflict dialog v2 (thumbnails, per-pattern
 # rules, and reusable conflict profiles). Every key below is user-
 # visible text in the `ConflictBatchModal.svelte` component.
-# MT
-conflict-batch-title = { $count } file conflicts in { $jobname }
-# MT
-conflict-batch-state-pending = Pending
-# MT
-conflict-batch-state-resolved = Resolved
-# MT
-conflict-batch-action-overwrite = Overwrite
-# MT
-conflict-batch-action-skip = Skip
-# MT
-conflict-batch-action-keep-both = Keep both
-# MT
-conflict-batch-action-newer-wins = Newer wins
-# MT
-conflict-batch-action-larger-wins = Larger wins
-# MT
-conflict-batch-bulk-apply-selected = Apply to selected
-# MT
-conflict-batch-bulk-apply-extension = Apply to all of this extension
-# MT
-conflict-batch-bulk-apply-glob = Apply to matching glob…
-# MT
-conflict-batch-bulk-apply-remaining = Apply to all remaining
-# MT
-conflict-batch-bulk-glob-placeholder = e.g. **/*.tmp
-# MT
-conflict-batch-save-profile = Save these rules as profile…
-# MT
-conflict-batch-profile-placeholder = Profile name
-# MT
-conflict-batch-matched-rule = via rule '{ $rule }' → { $action }
-# MT
-conflict-batch-empty = All conflicts resolved
-# MT
-conflict-batch-source-vs-destination = Source vs. destination
-# MT
-conflict-batch-source-label = Source
-# MT
-conflict-batch-destination-label = Destination
-# MT
-conflict-batch-size-label = Size
-# MT
-conflict-batch-modified-label = Modified
-# MT
-conflict-batch-close = Close
-# MT
-conflict-batch-profile-saved = Conflict profile saved
+conflict-batch-title = { $jobname }에 파일 충돌 { $count }개
+conflict-batch-state-pending = 대기 중
+conflict-batch-state-resolved = 해결됨
+conflict-batch-action-overwrite = 덮어쓰기
+conflict-batch-action-skip = 건너뛰기
+conflict-batch-action-keep-both = 둘 다 유지
+conflict-batch-action-newer-wins = 더 새로운 것 우선
+conflict-batch-action-larger-wins = 더 큰 것 우선
+conflict-batch-bulk-apply-selected = 선택 항목에 적용
+conflict-batch-bulk-apply-extension = 이 확장자 전체에 적용
+conflict-batch-bulk-apply-glob = 일치하는 글로브에 적용…
+conflict-batch-bulk-apply-remaining = 남은 항목 전체에 적용
+conflict-batch-bulk-glob-placeholder = 예: **/*.tmp
+conflict-batch-save-profile = 이 규칙을 프로필로 저장…
+conflict-batch-profile-placeholder = 프로필 이름
+conflict-batch-matched-rule = '{ $rule }' 규칙으로 → { $action }
+conflict-batch-empty = 모든 충돌이 해결됨
+conflict-batch-source-vs-destination = 원본 vs. 대상
+conflict-batch-source-label = 원본
+conflict-batch-destination-label = 대상
+conflict-batch-size-label = 크기
+conflict-batch-modified-label = 수정한 날짜
+conflict-batch-close = 닫기
+conflict-batch-profile-saved = 충돌 프로필 저장됨
 
-# Phase 23 — sparse-file preservation. MT-flagged drafts; the
-# authoritative English source lives in locales/en/copythat.ftl.
-sparse-not-supported-title = 대상이 스파스 파일을 채움  # MT
-sparse-not-supported-body = { $dst_fs }는 스파스 파일을 지원하지 않습니다. 원본의 구멍이 0으로 기록되어 대상이 디스크에서 더 큽니다.  # MT
-sparse-warning-densified = 스파스 레이아웃 보존: 할당된 범위만 복사되었습니다.  # MT
-sparse-warning-mismatch = 스파스 레이아웃 불일치 — 대상이 예상보다 클 수 있습니다.  # MT
+# Phase 23 — sparse-file preservation. The toast fires once per
+# destination volume when the filesystem can't preserve holes; the
+# warning line is surfaced in the job detail drawer so the user knows
+# the dst is larger on disk than the source was.
+sparse-not-supported-title = 대상이 희소 파일을 채웁니다
+sparse-not-supported-body = { $dst_fs }은(는) 희소 파일을 지원하지 않습니다. 원본의 빈 공간이 0으로 기록되어 대상이 디스크상에서 더 큽니다.
+sparse-warning-densified = 희소 레이아웃 보존됨: 할당된 익스텐트만 복사되었습니다.
+sparse-warning-mismatch = 희소 레이아웃 불일치 — 대상이 예상보다 클 수 있습니다.
 
-# Phase 24 — security-metadata preservation. MT-flagged drafts;
-# the authoritative English source lives in locales/en/copythat.ftl.
-settings-preserve-security-metadata = 보안 메타데이터 보존  # MT
-settings-preserve-security-metadata-hint = 모든 복사에서 대역 외 메타데이터 스트림(NTFS ADS / xattrs / POSIX ACL / SELinux 컨텍스트 / Linux 파일 기능 / macOS 리소스 포크)을 캡처하고 다시 적용합니다.  # MT
-settings-preserve-motw = Mark-of-the-Web(인터넷에서 다운로드 플래그) 보존  # MT
-settings-preserve-motw-hint = 보안에 매우 중요. SmartScreen 및 Office Protected View는 이 스트림을 사용하여 인터넷에서 다운로드한 파일에 대해 경고합니다. 비활성화하면 다운로드한 실행 파일이 복사 시 출처 표식을 잃고 운영 체제 보호를 우회할 수 있습니다.  # MT
-settings-preserve-posix-acls = POSIX ACL 및 확장 속성 보존  # MT
-settings-preserve-posix-acls-hint = 복사 시 user.* / system.* / trusted.* xattrs 및 POSIX 액세스 제어 목록을 전달합니다.  # MT
-settings-preserve-selinux = SELinux 컨텍스트 보존  # MT
-settings-preserve-selinux-hint = MAC 정책하에서 실행되는 데몬이 파일에 계속 액세스할 수 있도록 복사 시 security.selinux 레이블을 전달합니다.  # MT
-settings-preserve-resource-forks = macOS 리소스 포크 및 Finder 정보 보존  # MT
-settings-preserve-resource-forks-hint = 복사 시 레거시 리소스 포크 및 FinderInfo(색상 태그, Carbon 메타데이터)를 전달합니다.  # MT
-settings-appledouble-fallback = 호환되지 않는 파일 시스템에서 AppleDouble 사이드카 사용  # MT
-meta-translated-to-appledouble = 외래 메타데이터가 AppleDouble 사이드카에 저장됨 (._{ $ext })  # MT
+# Phase 24 — security-metadata preservation. The Mark-of-the-Web
+# (Zone.Identifier ADS) toggle is security-sensitive: turning it off
+# lets a downloaded executable shed its SmartScreen / Office Protected
+# View flag on copy, which is why the tooltip carries an explicit
+# warning. AppleDouble fallback emits `._<filename>` sidecars on
+# destination filesystems that can't hold the foreign metadata.
+settings-preserve-security-metadata = 보안 메타데이터 보존
+settings-preserve-security-metadata-hint = 모든 복사 시 대역 외 메타데이터 스트림(NTFS ADS / xattr / POSIX ACL / SELinux 컨텍스트 / Linux 파일 기능 / macOS 리소스 포크)을 캡처하여 다시 적용합니다.
+settings-preserve-motw = Mark-of-the-Web 보존 (인터넷에서 다운로드함 플래그)
+settings-preserve-motw-hint = 보안에 중요합니다. SmartScreen과 Office Protected View는 이 스트림을 사용해 인터넷에서 다운로드한 파일에 대해 경고합니다. 비활성화하면 다운로드한 실행 파일이 복사 시 출처 표시를 잃고 운영 체제 보호 기능을 우회할 수 있습니다.
+settings-preserve-posix-acls = POSIX ACL 및 확장 속성 보존
+settings-preserve-posix-acls-hint = 복사 시 user.* / system.* / trusted.* xattr와 POSIX 액세스 제어 목록을 함께 전달합니다.
+settings-preserve-selinux = SELinux 컨텍스트 보존
+settings-preserve-selinux-hint = 복사 시 security.selinux 레이블을 함께 전달하여 MAC 정책에서 실행되는 데몬이 계속 파일에 액세스할 수 있도록 합니다.
+settings-preserve-resource-forks = macOS 리소스 포크 및 Finder 정보 보존
+settings-preserve-resource-forks-hint = 복사 시 레거시 리소스 포크와 FinderInfo(색상 태그, Carbon 메타데이터)를 함께 전달합니다.
+settings-appledouble-fallback = 호환되지 않는 파일 시스템에서 AppleDouble 사이드카 사용
+meta-translated-to-appledouble = 외부 메타데이터를 AppleDouble 사이드카에 저장함 (._{ $ext })
 
 # Phase 25 — two-way sync with vector-clock conflict detection.
-# MT-flagged drafts; the authoritative English source lives in
-# locales/en/copythat.ftl.
-footer-sync = 동기화  # MT
-sync-drawer-title = 양방향 동기화  # MT
-sync-drawer-hint = 두 폴더를 조용한 덮어쓰기 없이 동기화합니다. 동시 편집은 해결 가능한 충돌로 표시됩니다.  # MT
-sync-add-pair = 쌍 추가  # MT
-sync-add-cancel = 취소  # MT
-sync-refresh = 새로 고침  # MT
-sync-add-save = 쌍 저장  # MT
-sync-add-saving = 저장 중…  # MT
-sync-add-missing-fields = 레이블, 왼쪽 경로, 오른쪽 경로는 모두 필수입니다.  # MT
-sync-remove-confirm = 이 동기화 쌍을 제거하시겠습니까? 상태 데이터베이스는 보존되며 폴더는 영향을 받지 않습니다.  # MT
-sync-field-label = 레이블  # MT
-sync-field-label-placeholder = 예: 문서 ↔ NAS  # MT
-sync-field-left = 왼쪽 폴더  # MT
-sync-field-left-placeholder = 절대 경로를 선택하거나 붙여넣기  # MT
-sync-field-right = 오른쪽 폴더  # MT
-sync-field-right-placeholder = 절대 경로를 선택하거나 붙여넣기  # MT
-sync-field-mode = 모드  # MT
-sync-mode-two-way = 양방향  # MT
-sync-mode-mirror-left-to-right = 미러 (왼쪽 → 오른쪽)  # MT
-sync-mode-mirror-right-to-left = 미러 (오른쪽 → 왼쪽)  # MT
-sync-mode-contribute-left-to-right = 기여 (왼쪽 → 오른쪽, 삭제 없음)  # MT
-sync-no-pairs = 아직 구성된 동기화 쌍이 없습니다. "쌍 추가"를 클릭하여 시작하세요.  # MT
-sync-loading = 구성된 쌍 로드 중…  # MT
-sync-never-run = 실행된 적 없음  # MT
-sync-running = 실행 중  # MT
-sync-run-now = 지금 실행  # MT
-sync-cancel = 취소  # MT
-sync-remove-pair = 제거  # MT
-sync-view-conflicts = 충돌 보기 ({ $count })  # MT
-sync-conflicts-heading = 충돌  # MT
-sync-no-conflicts = 마지막 실행의 충돌 없음.  # MT
-sync-winner = 승자  # MT
-sync-side-left-to-right = 왼쪽  # MT
-sync-side-right-to-left = 오른쪽  # MT
-sync-conflict-kind-concurrent-write = 동시 편집  # MT
-sync-conflict-kind-delete-edit = 삭제 ↔ 편집  # MT
-sync-conflict-kind-add-add = 양쪽 모두 추가함  # MT
-sync-conflict-kind-corrupt-equal = 새로 쓰기 없이 내용이 분기됨  # MT
-sync-resolve-keep-left = 왼쪽 유지  # MT
-sync-resolve-keep-right = 오른쪽 유지  # MT
-sync-resolve-keep-both = 둘 다 유지  # MT
-sync-resolve-three-way = 3-way 병합으로 해결  # MT
-sync-resolve-phase-53-tooltip = 비텍스트 파일을 위한 대화형 3-way 병합은 53단계에 제공됩니다.  # MT
-sync-error-prefix = 동기화 오류  # MT
+# The drawer lists configured sync pairs; each pair runs an
+# independent reconciliation round against a per-pair `.copythat-sync.db`
+# state store. Concurrent edits from a common ancestor surface as
+# conflicts rather than silent overwrites; the losing side's content
+# is preserved as `name.sync-conflict-YYYYMMDD-HHMMSS-<host>.ext`.
+footer-sync = 동기화
+sync-drawer-title = 양방향 동기화
+sync-drawer-hint = 자동 덮어쓰기 없이 두 폴더를 동기화 상태로 유지하세요. 동시에 편집한 내용은 해결할 수 있는 충돌로 표시됩니다.
+sync-add-pair = 쌍 추가
+sync-add-cancel = 취소
+sync-refresh = 새로 고침
+sync-add-save = 쌍 저장
+sync-add-saving = 저장 중…
+sync-add-missing-fields = 레이블, 왼쪽 경로, 오른쪽 경로가 모두 필요합니다.
+sync-remove-confirm = 이 동기화 쌍을 제거하시겠습니까? 상태 데이터베이스는 보존되며 폴더는 그대로 유지됩니다.
+sync-field-label = 레이블
+sync-field-label-placeholder = 예: 문서 ↔ NAS
+sync-field-left = 왼쪽 폴더
+sync-field-left-placeholder = 절대 경로를 선택하거나 붙여넣으세요
+sync-field-right = 오른쪽 폴더
+sync-field-right-placeholder = 절대 경로를 선택하거나 붙여넣으세요
+sync-field-mode = 모드
+sync-mode-two-way = 양방향
+sync-mode-mirror-left-to-right = 미러 (왼쪽 → 오른쪽)
+sync-mode-mirror-right-to-left = 미러 (오른쪽 → 왼쪽)
+sync-mode-contribute-left-to-right = 기여 (왼쪽 → 오른쪽, 삭제 없음)
+sync-no-pairs = 아직 구성된 동기화 쌍이 없습니다. "쌍 추가"를 클릭하여 시작하세요.
+sync-loading = 구성된 쌍 불러오는 중…
+sync-never-run = 실행한 적 없음
+sync-running = 실행 중
+sync-run-now = 지금 실행
+sync-cancel = 취소
+sync-remove-pair = 제거
+sync-view-conflicts = 충돌 보기 ({ $count })
+sync-conflicts-heading = 충돌
+sync-no-conflicts = 마지막 실행에서 충돌이 없습니다.
+sync-winner = 우선 항목
+sync-side-left-to-right = 왼쪽
+sync-side-right-to-left = 오른쪽
+sync-conflict-kind-concurrent-write = 동시 편집
+sync-conflict-kind-delete-edit = 삭제 ↔ 편집
+sync-conflict-kind-add-add = 양쪽에서 추가됨
+sync-conflict-kind-corrupt-equal = 새 쓰기 없이 콘텐츠가 갈라짐
+sync-resolve-keep-left = 왼쪽 유지
+sync-resolve-keep-right = 오른쪽 유지
+sync-resolve-keep-both = 둘 다 유지
+sync-resolve-three-way = 3방향 병합으로 해결
+sync-resolve-phase-53-tooltip = 텍스트가 아닌 파일에 대한 대화형 3방향 병합은 Phase 53에 추가됩니다.
+sync-error-prefix = 동기화 오류
 
-# Phase 26 — real-time mirror watcher. MT-flagged drafts;
-# the authoritative English source lives in locales/en/copythat.ftl.
-live-mirror-start = 실시간 미러 시작  # MT
-live-mirror-stop = 실시간 미러 중지  # MT
-live-mirror-watching = 감시 중  # MT
-live-mirror-toggle-hint = 감지된 모든 파일 시스템 변경 시 자동으로 다시 동기화합니다. 활성 쌍당 하나의 백그라운드 스레드.  # MT
-watch-event-prefix = 파일 변경  # MT
-watch-overflow-recovered = 감시자 버퍼 오버플로; 복구를 위해 재열거 중  # MT
+# Phase 26 — real-time mirror watcher. "Live mirror" starts a
+# filesystem watcher on the pair's left side; every debounced event
+# triggers a re-sync. The watcher filters vim swap files / Office
+# lock files / atomic-save temp names so one logical save becomes
+# exactly one sync round.
+live-mirror-start = 라이브 미러 시작
+live-mirror-stop = 라이브 미러 중지
+live-mirror-watching = 감시 중
+live-mirror-toggle-hint = 감지된 모든 파일 시스템 변경 시 자동으로 다시 동기화합니다. 활성 쌍마다 백그라운드 스레드 하나가 실행됩니다.
+watch-event-prefix = 파일 변경
+watch-overflow-recovered = 감시 버퍼가 넘쳤습니다. 복구를 위해 다시 열거합니다
 
-# Phase 27 — content-defined chunk store. MT-flagged drafts;
-# the authoritative English source lives in locales/en/copythat.ftl.
-chunk-store-section = 청크 저장소  # MT
-chunk-store-enable = 청크 저장소 활성화 (델타 재개 및 중복 제거)  # MT
-chunk-store-enable-hint = 복사되는 모든 파일을 콘텐츠별로 분할 (FastCDC)하고 청크를 콘텐츠 주소 지정 방식으로 저장합니다. 재시도는 변경된 청크만 다시 씁니다. 공유 콘텐츠가 있는 파일은 자동으로 중복 제거됩니다.  # MT
-chunk-store-location = 청크 저장소 위치  # MT
-chunk-store-max-size = 청크 저장소 최대 크기  # MT
-chunk-store-prune = 다음 일수보다 오래된 청크 정리 (일)  # MT
-chunk-store-savings = 청크 중복 제거를 통해 { $gib } GiB 절약됨  # MT
-chunk-store-disk-usage = { $chunks }개 청크에 { $size } 사용 중  # MT
+# Phase 27 — content-defined chunk store. Enables delta-resume (a
+# retry only re-writes chunks that actually changed) and same-job
+# dedup (files sharing content blocks store those blocks once). The
+# store is disk-backed under `<data-dir>/chunks/` by default and is
+# the foundation for the Phase 49–51 moonshot repository phases.
+chunk-store-section = 청크 저장소
+chunk-store-enable = 청크 저장소 사용 (델타 재개 및 중복 제거)
+chunk-store-enable-hint = 복사하는 모든 파일을 콘텐츠(FastCDC)로 분할하여 콘텐츠 주소 방식으로 청크를 저장합니다. 다시 시도하면 변경된 청크만 다시 기록하고, 콘텐츠를 공유하는 파일은 자동으로 중복 제거됩니다.
+chunk-store-location = 청크 저장소 위치
+chunk-store-max-size = 최대 청크 저장소 크기
+chunk-store-prune = 청크 정리 기간 (일)
+chunk-store-savings = 청크 중복 제거로 { $gib } GiB 절약
+chunk-store-disk-usage = 청크 { $chunks }개에 걸쳐 { $size } 사용 중
 
-# Phase 28 — tray-resident Drop Stack. MT-flagged drafts;
-# the authoritative English source lives in locales/en/copythat.ftl.
-dropstack-window-title = 드롭 스택  # MT
-dropstack-tray-open = 드롭 스택  # MT
-dropstack-empty-title = 드롭 스택이 비어 있습니다  # MT
-dropstack-empty-hint = 탐색기에서 파일을 여기로 끌거나 작업 행을 마우스 오른쪽 버튼으로 클릭하여 추가하세요.  # MT
-dropstack-add-to-stack = 드롭 스택에 추가  # MT
-dropstack-copy-all-to = 모두 복사…  # MT
-dropstack-move-all-to = 모두 이동…  # MT
-dropstack-clear = 스택 지우기  # MT
-dropstack-remove-row = 스택에서 제거  # MT
-dropstack-path-missing-toast = { $path }을(를) 제거했습니다 — 파일이 더 이상 존재하지 않습니다.  # MT
-dropstack-always-on-top = 드롭 스택을 항상 위에 유지  # MT
-dropstack-show-tray-icon = Copy That 트레이 아이콘 표시  # MT
-dropstack-open-on-start = 앱 시작 시 드롭 스택 자동 열기  # MT
-dropstack-count = { $count }개 경로  # MT
+# Phase 28 — tray-resident Drop Stack. The stack is a persistent list
+# of paths gathered from multiple sources (Explorer drag, main-window
+# context menu, CLI, drag onto the Drop Stack window) that the user
+# can dispatch to a destination in one go.
+dropstack-window-title = Drop Stack
+dropstack-tray-open = Drop Stack
+dropstack-empty-title = Drop Stack이 비어 있습니다
+dropstack-empty-hint = Explorer에서 파일을 여기로 끌어다 놓거나 작업 행을 마우스 오른쪽 버튼으로 클릭하여 추가하세요.
+dropstack-add-to-stack = Drop Stack에 추가
+dropstack-copy-all-to = 모두 복사할 위치…
+dropstack-move-all-to = 모두 이동할 위치…
+dropstack-clear = 스택 지우기
+dropstack-remove-row = 스택에서 제거
+dropstack-path-missing-toast = { $path }을(를) 끌어다 놓음 — 파일이 더 이상 존재하지 않습니다.
+dropstack-always-on-top = Drop Stack을 항상 위에 유지
+dropstack-show-tray-icon = Copy That 트레이 아이콘 표시
+dropstack-open-on-start = 앱 시작 시 Drop Stack 자동으로 열기
+dropstack-count = { $count }개 경로
 
-# Phase 29 — spring-loaded folders + native DnD polish.
-settings-dnd-heading = Drag and drop  # MT
-settings-dnd-spring-load = Spring-load folders while dragging  # MT
-settings-dnd-spring-delay = Spring-load delay (ms)  # MT
-settings-dnd-thumbnails = Show drag thumbnails  # MT
-settings-dnd-invalid-highlight = Highlight invalid drop targets  # MT
-dropzone-invalid-title = Not a valid drop target  # MT
-dropzone-invalid-readonly = Destination is read-only  # MT
-dropzone-picker-title = Choose a destination  # MT
-dropzone-picker-up = Up  # MT
-dropzone-picker-path = Current path  # MT
-dropzone-picker-root = Roots  # MT
-dropzone-picker-use-this = Use this folder  # MT
-dropzone-picker-empty = No subfolders  # MT
-dropzone-picker-cancel = Cancel  # MT
+# Phase 29 — spring-loaded folders + native DnD polish. The Settings
+# → General tab carries the knobs; DropTarget / DestinationPicker
+# Svelte components use the dropzone-* keys at runtime.
+settings-dnd-heading = 끌어서 놓기
+settings-dnd-spring-load = 끄는 동안 폴더 자동 열기
+settings-dnd-spring-delay = 자동 열기 지연 (밀리초)
+settings-dnd-thumbnails = 끌기 썸네일 표시
+settings-dnd-invalid-highlight = 잘못된 놓기 대상 강조 표시
+dropzone-invalid-title = 유효한 놓기 대상이 아닙니다
+dropzone-invalid-readonly = 대상이 읽기 전용입니다
+dropzone-picker-title = 대상 선택
+dropzone-picker-up = 위로
+dropzone-picker-path = 현재 경로
+dropzone-picker-root = 루트
+dropzone-picker-use-this = 이 폴더 사용
+dropzone-picker-empty = 하위 폴더 없음
+dropzone-picker-cancel = 취소
 
-# Phase 30 — cross-platform path translation.
-translate-heading = Cross-platform compatibility  # MT
-translate-unicode-label = Unicode normalization  # MT
-translate-unicode-auto = Auto-detect destination  # MT
-translate-unicode-windows = NFC (Windows / Linux)  # MT
-translate-unicode-macos = Leave as-is (macOS / APFS)  # MT
-translate-line-endings-label = Translate line endings for text files  # MT
-translate-line-endings-allowlist = Text file extensions  # MT
-reserved-name-label = Windows reserved-name handling  # MT
-reserved-name-suffix = Append "_" (CON.txt → CON_.txt)  # MT
-reserved-name-reject = Reject and warn  # MT
-long-path-label = Use Windows long-path prefix (\?\) when over 260 chars  # MT
-long-path-hint = Some network shares and legacy tools don't honor the \?\ namespace.  # MT
+# Phase 30 — cross-platform path translation. Settings → Transfer
+# exposes these under a "Cross-platform compatibility" subsection.
+translate-heading = 크로스 플랫폼 호환성
+translate-unicode-label = 유니코드 정규화
+translate-unicode-auto = 대상 자동 감지
+translate-unicode-windows = NFC (Windows / Linux)
+translate-unicode-macos = 그대로 두기 (macOS / APFS)
+translate-line-endings-label = 텍스트 파일의 줄 끝 변환
+translate-line-endings-allowlist = 텍스트 파일 확장자
+reserved-name-label = Windows 예약 이름 처리
+reserved-name-suffix = "_" 추가 (CON.txt → CON_.txt)
+reserved-name-reject = 거부하고 경고
+long-path-label = 260자를 초과하면 Windows 긴 경로 접두사(\\?\) 사용
+long-path-hint = 일부 네트워크 공유와 레거시 도구는 \\?\ 네임스페이스를 따르지 않습니다.
 
-# Phase 31 — power-aware copying.
-power-heading = Power & State  # MT
-power-enabled = Enable power-aware rules  # MT
-power-battery-label = On battery  # MT
-power-metered-label = On metered Wi-Fi  # MT
-power-cellular-label = On cellular  # MT
-power-presentation-label = When presenting (Zoom / Teams / Keynote)  # MT
-power-fullscreen-label = When an app is fullscreen  # MT
-power-thermal-label = When CPU is thermal-throttling  # MT
-power-rule-continue = Continue at full speed  # MT
-power-rule-pause = Pause all jobs  # MT
-power-rule-cap = Cap bandwidth  # MT
-power-rule-cap-percent = Cap to a percent of current rate  # MT
-power-reason-on-battery = on battery  # MT
-power-reason-metered-network = metered network  # MT
-power-reason-cellular-network = cellular network  # MT
-power-reason-presenting = presentation mode  # MT
-power-reason-fullscreen = fullscreen app  # MT
-power-reason-thermal-throttling = CPU is throttling  # MT
+# Phase 31 — power-aware copying. Settings → Power & State tab + the
+# header badge that renders "⏸ Paused — Zoom call detected" when the
+# runner's power subscriber has paused or capped due to a policy match.
+power-heading = 전원 및 상태
+power-enabled = 전원 인식 규칙 사용
+power-battery-label = 배터리에서
+power-metered-label = 종량제 Wi-Fi에서
+power-cellular-label = 셀룰러에서
+power-presentation-label = 발표 중일 때 (Zoom / Teams / Keynote)
+power-fullscreen-label = 앱이 전체 화면일 때
+power-thermal-label = CPU가 열로 인해 제한될 때
+power-rule-continue = 최고 속도로 계속
+power-rule-pause = 모든 작업 일시 중지
+power-rule-cap = 대역폭 제한
+power-rule-cap-percent = 현재 속도의 백분율로 제한
+power-reason-on-battery = 배터리 사용 중
+power-reason-metered-network = 종량제 네트워크
+power-reason-cellular-network = 셀룰러 네트워크
+power-reason-presenting = 발표 모드
+power-reason-fullscreen = 전체 화면 앱
+power-reason-thermal-throttling = CPU 제한 중
 
-# Phase 32 — cloud backend matrix via OpenDAL.
-remote-heading = Remote backends  # MT
-remote-add = Add backend  # MT
-remote-list-empty = No remote backends configured  # MT
-remote-test = Test connection  # MT
-remote-test-success = Connection successful  # MT
-remote-test-failed = Connection failed  # MT
-remote-remove = Remove backend  # MT
-remote-name-label = Display name  # MT
-remote-kind-label = Backend type  # MT
-remote-save = Save backend  # MT
-remote-cancel = Cancel  # MT
-backend-s3 = Amazon S3  # MT
-backend-r2 = Cloudflare R2  # MT
-backend-b2 = Backblaze B2  # MT
-backend-azure-blob = Azure Blob Storage  # MT
-backend-gcs = Google Cloud Storage  # MT
-backend-onedrive = OneDrive  # MT
-backend-google-drive = Google Drive  # MT
-backend-dropbox = Dropbox  # MT
-backend-webdav = WebDAV  # MT
-backend-sftp = SFTP  # MT
-backend-ftp = FTP  # MT
-backend-local-fs = Local filesystem  # MT
-cloud-config-bucket = Bucket  # MT
-cloud-config-region = Region  # MT
-cloud-config-endpoint = Endpoint URL  # MT
-cloud-config-root = Root path  # MT
-cloud-error-invalid-config = Backend configuration is invalid  # MT
-cloud-error-network = Network error contacting backend  # MT
-cloud-error-not-found = Object not found at the requested path  # MT
-cloud-error-permission = Permission denied by remote backend  # MT
-cloud-error-keychain = OS keychain access failed  # MT
-settings-tab-remotes = Remotes  # MT
-settings-tab-mobile = Mobile  # MT
+# Phase 32 — cloud backend matrix via OpenDAL. Settings → Remotes
+# tab + the Add-backend wizard that writes one entry per remote into
+# the keychain-backed credential store.
+remote-heading = 원격 백엔드
+remote-add = 백엔드 추가
+remote-list-empty = 구성된 원격 백엔드가 없습니다
+remote-test = 연결 테스트
+remote-test-success = 연결 성공
+remote-test-failed = 연결 실패
+remote-remove = 백엔드 제거
+remote-name-label = 표시 이름
+remote-kind-label = 백엔드 유형
+remote-save = 백엔드 저장
+remote-cancel = 취소
+backend-s3 = Amazon S3
+backend-r2 = Cloudflare R2
+backend-b2 = Backblaze B2
+backend-azure-blob = Azure Blob Storage
+backend-gcs = Google Cloud Storage
+backend-onedrive = OneDrive
+backend-google-drive = Google Drive
+backend-dropbox = Dropbox
+backend-webdav = WebDAV
+backend-sftp = SFTP
+backend-ftp = FTP
+backend-local-fs = 로컬 파일 시스템
+cloud-config-bucket = 버킷
+cloud-config-region = 리전
+cloud-config-endpoint = 엔드포인트 URL
+cloud-config-root = 루트 경로
+cloud-error-invalid-config = 백엔드 구성이 올바르지 않습니다
+cloud-error-network = 백엔드에 연결하는 중 네트워크 오류 발생
+cloud-error-not-found = 요청한 경로에서 객체를 찾을 수 없습니다
+cloud-error-permission = 원격 백엔드에서 권한이 거부되었습니다
+cloud-error-keychain = OS 키체인 액세스에 실패했습니다
+settings-tab-remotes = 원격
+settings-tab-mobile = 모바일
 
-# Phase 33 — mount as read-only filesystem.
-mount-heading = Mount snapshot  # MT
-mount-action-mount = Mount snapshot  # MT
-mount-action-unmount = Unmount  # MT
-mount-status-mounted = Mounted at { $path }  # MT
-mount-error-unsafe-mountpoint = Mountpoint path is unsafe  # MT
-mount-error-mountpoint-not-empty = Mountpoint must be an empty directory  # MT
-mount-error-backend-unavailable = Mount backend is not available on this system  # MT
-mount-error-archive-read = Archive read failed  # MT
-mount-picker-title = Pick mountpoint directory  # MT
-mount-toast-mounted = Snapshot mounted at { $path }  # MT
-mount-toast-unmounted = Snapshot unmounted  # MT
-mount-toast-failed = Mount failed: { $reason }  # MT
-settings-mount-heading = Mount snapshots  # MT
-settings-mount-hint = Expose the history archive as a read-only filesystem. Phase 33b wires the runner flow; the kernel FUSE/WinFsp backends land in Phase 33c.  # MT
-settings-mount-on-launch = Mount the latest snapshot on launch  # MT
-settings-mount-on-launch-path = Mountpoint path  # MT
-settings-mount-on-launch-path-placeholder = e.g. C:\Mounts\copythat  # MT
+# Phase 33 — mount Copy That's chunk store + history archive as a
+# read-only filesystem (FUSE / WinFsp). Surfaced by the History tab
+# context menu's "Mount snapshot" action + the Settings → Advanced
+# "Mount latest on launch" toggle.
+mount-heading = 스냅샷 마운트
+mount-action-mount = 스냅샷 마운트
+mount-action-unmount = 마운트 해제
+mount-status-mounted = { $path }에 마운트됨
+mount-error-unsafe-mountpoint = 마운트 지점 경로가 안전하지 않습니다
+mount-error-mountpoint-not-empty = 마운트 지점은 빈 디렉터리여야 합니다
+mount-error-backend-unavailable = 이 시스템에서 마운트 백엔드를 사용할 수 없습니다
+mount-error-archive-read = 아카이브 읽기에 실패했습니다
+mount-picker-title = 마운트 지점 디렉터리 선택
+mount-toast-mounted = { $path }에 스냅샷이 마운트됨
+mount-toast-unmounted = 스냅샷 마운트 해제됨
+mount-toast-failed = 마운트 실패: { $reason }
+settings-mount-heading = 스냅샷 마운트
+settings-mount-hint = 기록 아카이브를 읽기 전용 파일 시스템으로 노출합니다. Phase 33b에서 실행 흐름을 연결하고, 커널 FUSE/WinFsp 백엔드는 Phase 33c에 추가됩니다.
+settings-mount-on-launch = 실행 시 최신 스냅샷 마운트
+settings-mount-on-launch-path = 마운트 지점 경로
+settings-mount-on-launch-path-placeholder = 예: C:\Mounts\copythat
 
 # Phase 34 — enterprise-grade audit log export + WORM (write-once-read-
 # many) tamper-resistance. Settings → Advanced → Audit log collects the
 # format + destination + rotation + WORM toggle; runtime records job and
 # file events into the tamper-evident chain-hashed sink.
-settings-audit-heading = Audit log  # MT
-settings-audit-hint = Append-only tamper-evident log of every job and file event. Formats include CSV, JSON-lines, RFC 5424 Syslog, ArcSight CEF, and QRadar LEEF.  # MT
-settings-audit-enable = Enable audit logging  # MT
-settings-audit-format = Log format  # MT
-settings-audit-format-json-lines = JSON lines (recommended default)  # MT
-settings-audit-format-csv = CSV (spreadsheet-friendly)  # MT
-settings-audit-format-syslog = Syslog (RFC 5424)  # MT
-settings-audit-format-cef = CEF (ArcSight)  # MT
-settings-audit-format-leef = LEEF 2.0 (IBM QRadar)  # MT
-settings-audit-file-path = Log file path  # MT
-settings-audit-file-path-placeholder = e.g. C:\ProgramData\CopyThat\audit.log  # MT
-settings-audit-max-size = Rotate after (bytes, 0 = never)  # MT
-settings-audit-worm = Enable WORM mode (write-once-read-many)  # MT
-settings-audit-worm-hint = Applies the platform's append-only flag (Linux chattr +a, macOS chflags uappnd, Windows read-only attribute) after every create or rotation. Even an administrator must explicitly clear the flag to truncate the log.  # MT
-settings-audit-test-write = Test write  # MT
-settings-audit-verify-chain = Verify chain  # MT
-toast-audit-test-write-ok = Audit log test write succeeded  # MT
-toast-audit-verify-ok = Audit chain verified intact  # MT
-toast-audit-verify-failed = Audit chain verification reported mismatches  # MT
+settings-audit-heading = 감사 로그
+settings-audit-hint = 모든 작업 및 파일 이벤트에 대한 추가 전용 변조 감지 로그입니다. 형식에는 CSV, JSON-lines, RFC 5424 Syslog, ArcSight CEF, QRadar LEEF가 포함됩니다.
+settings-audit-enable = 감사 로깅 사용
+settings-audit-format = 로그 형식
+settings-audit-format-json-lines = JSON lines (권장 기본값)
+settings-audit-format-csv = CSV (스프레드시트 친화적)
+settings-audit-format-syslog = Syslog (RFC 5424)
+settings-audit-format-cef = CEF (ArcSight)
+settings-audit-format-leef = LEEF 2.0 (IBM QRadar)
+settings-audit-file-path = 로그 파일 경로
+settings-audit-file-path-placeholder = 예: C:\ProgramData\CopyThat\audit.log
+settings-audit-max-size = 회전 기준 크기 (바이트, 0 = 안 함)
+settings-audit-worm = WORM 모드 사용 (write-once-read-many)
+settings-audit-worm-hint = 생성 또는 회전할 때마다 플랫폼의 추가 전용 플래그(Linux chattr +a, macOS chflags uappnd, Windows 읽기 전용 속성)를 적용합니다. 관리자라도 로그를 잘라내려면 플래그를 명시적으로 해제해야 합니다.
+settings-audit-test-write = 테스트 쓰기
+settings-audit-verify-chain = 체인 검증
+toast-audit-test-write-ok = 감사 로그 테스트 쓰기 성공
+toast-audit-verify-ok = 감사 체인이 손상 없이 검증됨
+toast-audit-verify-failed = 감사 체인 검증에서 불일치가 보고됨
 
 # Phase 35 — destination encryption via age (X25519 / passphrase /
 # SSH) + on-the-fly zstd compression with a per-extension deny
 # heuristic. Surfaced through Settings → Transfer → Encryption +
 # Compression; engine short-circuits to the crypt pipeline when
 # either stage is active.
-settings-crypt-heading = Encryption & compression  # MT
-settings-crypt-hint = Transform file contents before they land at the destination. Encryption uses the age format; compression uses zstd and can skip already-compressed media by extension.  # MT
-settings-crypt-encryption-mode = Encryption  # MT
-settings-crypt-encryption-off = Off  # MT
-settings-crypt-encryption-passphrase = Passphrase (prompt at copy start)  # MT
-settings-crypt-encryption-recipients = Recipient keys from file  # MT
-settings-crypt-encryption-hint = Passphrases are held only in memory for the duration of the copy. Recipient files list one age1… or ssh- public key per line.  # MT
-settings-crypt-recipients-file = Recipients file path  # MT
-settings-crypt-recipients-file-placeholder = e.g. C:\Users\me\recipients.txt  # MT
-settings-crypt-compression-mode = Compression  # MT
-settings-crypt-compression-off = Off  # MT
-settings-crypt-compression-always = Always  # MT
-settings-crypt-compression-smart = Smart (skip already-compressed media)  # MT
-settings-crypt-compression-hint = Smart mode skips jpg, mp4, zip, 7z and similar formats that don't benefit from zstd. Always mode compresses every file at the chosen level.  # MT
-settings-crypt-compression-level = zstd level (1-22)  # MT
-settings-crypt-compression-level-hint = Lower numbers are faster; higher numbers compress harder. Level 3 matches zstd's CLI default.  # MT
-compress-footer-savings = 💾 { $original } → { $compressed } ({ $percent }% saved)  # MT
-compress-savings-toast = Compressed { $percent }% ({ $bytes } saved)  # MT
-crypt-toast-recipients-loaded = Loaded { $count } encryption recipients  # MT
-crypt-toast-recipients-error = Failed to load recipients: { $reason }  # MT
-crypt-toast-passphrase-required = Encryption needs a passphrase before the copy starts  # MT
-crypt-toast-passphrase-set = Encryption passphrase captured  # MT
-crypt-footer-encrypted-badge = 🔒 Encrypted (age)  # MT
-crypt-footer-compressed-badge = 📦 Compressed (zstd)  # MT
+settings-crypt-heading = 암호화 및 압축
+settings-crypt-hint = 파일 콘텐츠를 대상에 도달하기 전에 변환합니다. 암호화는 age 형식을 사용하고, 압축은 zstd를 사용하며 확장자별로 이미 압축된 미디어를 건너뛸 수 있습니다.
+settings-crypt-encryption-mode = 암호화
+settings-crypt-encryption-off = 끄기
+settings-crypt-encryption-passphrase = 암호 (복사 시작 시 입력)
+settings-crypt-encryption-recipients = 파일에서 수신자 키 사용
+settings-crypt-encryption-hint = 암호는 복사가 진행되는 동안에만 메모리에 보관됩니다. 수신자 파일에는 한 줄에 age1… 또는 ssh- 공개 키를 하나씩 나열합니다.
+settings-crypt-recipients-file = 수신자 파일 경로
+settings-crypt-recipients-file-placeholder = 예: C:\Users\me\recipients.txt
+settings-crypt-compression-mode = 압축
+settings-crypt-compression-off = 끄기
+settings-crypt-compression-always = 항상
+settings-crypt-compression-smart = 스마트 (이미 압축된 미디어 건너뛰기)
+settings-crypt-compression-hint = 스마트 모드는 zstd로 이점이 없는 jpg, mp4, zip, 7z 및 유사한 형식을 건너뜁니다. 항상 모드는 선택한 수준으로 모든 파일을 압축합니다.
+settings-crypt-compression-level = zstd 수준 (1-22)
+settings-crypt-compression-level-hint = 숫자가 낮을수록 빠르고, 높을수록 더 강하게 압축합니다. 수준 3은 zstd의 CLI 기본값과 같습니다.
+compress-footer-savings = 💾 { $original } → { $compressed } ({ $percent }% 절약)
+compress-savings-toast = { $percent }% 압축 ({ $bytes } 절약)
+crypt-toast-recipients-loaded = 암호화 수신자 { $count }명을 불러옴
+crypt-toast-recipients-error = 수신자를 불러오지 못함: { $reason }
+crypt-toast-passphrase-required = 복사를 시작하기 전에 암호화에 암호가 필요합니다
+crypt-toast-passphrase-set = 암호화 암호가 입력됨
+crypt-footer-encrypted-badge = 🔒 암호화됨 (age)
+crypt-footer-compressed-badge = 📦 압축됨 (zstd)
 
-# Phase 36 — copythat CLI. MT-flagged English strings pending human
-# translation; tracked in docs/I18N_TODO.md.
-cli-help-tagline = Copy That CLI — byte-exact file copy, sync, verify and audit for CI/CD pipelines.  # MT
-cli-help-exit-codes = Exit codes: 0 success, 1 error, 2 pending, 3 collision, 4 verify-fail, 5 net, 6 perm, 7 disk-full, 8 cancel, 9 config.  # MT
-cli-error-bad-args = copy/move requires at least one source and a destination  # MT
-cli-error-unknown-algo = Unknown verify algorithm: { $algo }  # MT
-cli-error-missing-spec = --spec is required for plan/apply  # MT
-cli-error-spec-parse = Failed to parse jobspec { $path }: { $reason }  # MT
-cli-error-spec-empty-sources = Jobspec source list is empty  # MT
-cli-info-shape-recorded = Bandwidth shape "{ $rate }" recorded; enforcement is plumbed via copythat-shape  # MT
-cli-info-stub-deferred = { $command } is staged for the Phase 36 follow-up wiring  # MT
-cli-plan-summary = Plan: { $actions } action(s), { $bytes } byte(s); { $already_done } already in place  # MT
-cli-plan-pending = Plan reports pending actions; rerun with `apply` to execute  # MT
-cli-plan-already-done = Plan reports nothing to do (idempotent)  # MT
-cli-apply-success = Apply finished without errors  # MT
-cli-apply-failed = Apply finished with one or more errors  # MT
-cli-verify-ok = Verify ok: { $algo } { $digest }  # MT
-cli-verify-failed = Verify FAILED for { $path } ({ $algo })  # MT
-cli-config-set = Set { $key } = { $value }  # MT
-cli-config-reset = Reset { $key } to default  # MT
-cli-config-unknown-key = Unknown config key: { $key }  # MT
-cli-completions-emitted = Shell completions for { $shell } printed to stdout  # MT
+# Phase 36 — copythat CLI surface. Documented exit codes + the
+# user-facing strings for plan/apply/verify/config. Help text stays
+# in English (engineering accessibility) but error / info / status
+# strings are localized so a localized desktop installation surfaces
+# CLI errors in the same language as the GUI.
+cli-help-tagline = Copy That CLI — CI/CD 파이프라인을 위한 바이트 단위 정확한 파일 복사, 동기화, 검증 및 감사.
+cli-help-exit-codes = 종료 코드: 0 성공, 1 오류, 2 대기, 3 충돌, 4 검증 실패, 5 네트워크, 6 권한, 7 디스크 가득 참, 8 취소, 9 구성.
+cli-error-bad-args = copy/move에는 원본이 하나 이상과 대상이 필요합니다
+cli-error-unknown-algo = 알 수 없는 검증 알고리즘: { $algo }
+cli-error-missing-spec = plan/apply에는 --spec이 필요합니다
+cli-error-spec-parse = jobspec { $path } 구문 분석 실패: { $reason }
+cli-error-spec-empty-sources = Jobspec 원본 목록이 비어 있습니다
+cli-info-shape-recorded = 대역폭 셰이프 "{ $rate }" 기록됨; 적용은 copythat-shape을 통해 연결됩니다
+cli-info-stub-deferred = { $command }은(는) Phase 36 후속 연결 작업으로 준비되어 있습니다
+cli-plan-summary = 계획: 작업 { $actions }개, { $bytes }바이트; { $already_done }개는 이미 처리됨
+cli-plan-pending = 계획에 대기 중인 작업이 보고됨; `apply`로 다시 실행하여 실행하세요
+cli-plan-already-done = 계획에 할 작업이 없음 (멱등성)
+cli-apply-success = 적용이 오류 없이 완료됨
+cli-apply-failed = 적용이 하나 이상의 오류와 함께 완료됨
+cli-verify-ok = 검증 정상: { $algo } { $digest }
+cli-verify-failed = { $path } 검증 실패 ({ $algo })
+cli-config-set = { $key } = { $value } 설정함
+cli-config-reset = { $key }을(를) 기본값으로 초기화함
+cli-config-unknown-key = 알 수 없는 구성 키: { $key }
+cli-completions-emitted = { $shell }의 셸 자동 완성이 stdout으로 출력됨
 
-# Phase 37 — desktop-side mobile companion. MT-flagged English
-# strings pending human translation; tracked in docs/I18N_TODO.md.
-settings-mobile-heading = Mobile companion  # MT
-settings-mobile-hint = Pair an iPhone or Android phone to browse history, kick off saved profiles and Phase 36 jobspecs, and receive completion notifications.  # MT
-settings-mobile-pair-toggle = Allow new pairings  # MT
-settings-mobile-pair-active = Pair-server active — scan the QR with the Copy That mobile app  # MT
-settings-mobile-pair-button = Start pairing  # MT
-settings-mobile-revoke-button = Revoke  # MT
-settings-mobile-no-pairings = No paired devices yet  # MT
-settings-mobile-pair-port = Bind port (0 = pick a free one)  # MT
-pair-sas-prompt = Both screens should show the same four emojis. Tap Match if they agree.  # MT
-pair-sas-confirm = Match  # MT
-pair-sas-reject = Mismatch — cancel  # MT
-pair-toast-success = Paired with { $device }  # MT
-pair-toast-failed = Pairing failed: { $reason }  # MT
-push-toast-sent = Push sent to { $device }  # MT
-push-toast-failed = Push to { $device } failed: { $reason }  # MT
+# Phase 37 — desktop-side mobile companion. Settings → Mobile panel
+# strings + the SAS-confirmation modal + push-notification toasts.
+# The actual mobile UI lives in the Phase 37 follow-up Tauri Mobile
+# target; the phone displays its own localized SAS prompt.
+settings-mobile-heading = 모바일 컴패니언
+settings-mobile-hint = iPhone 또는 Android 휴대폰을 페어링하여 기록을 탐색하고, 저장된 프로필과 Phase 36 jobspec을 시작하고, 완료 알림을 받으세요.
+settings-mobile-pair-toggle = 새 페어링 허용
+settings-mobile-pair-active = 페어링 서버 활성 — Copy That 모바일 앱으로 QR을 스캔하세요
+settings-mobile-pair-button = 페어링 시작
+settings-mobile-revoke-button = 취소
+settings-mobile-no-pairings = 아직 페어링된 기기가 없습니다
+settings-mobile-pair-port = 바인딩 포트 (0 = 빈 포트 선택)
+pair-sas-prompt = 두 화면에 같은 네 개의 이모지가 표시되어야 합니다. 일치하면 일치를 누르세요.
+pair-sas-confirm = 일치
+pair-sas-reject = 불일치 — 취소
+pair-toast-success = { $device }과(와) 페어링됨
+pair-toast-failed = 페어링 실패: { $reason }
+push-toast-sent = { $device }에 푸시 보냄
+push-toast-failed = { $device }에 푸시 실패: { $reason }
 
-# Phase 38 — destination dedup + reflink ladder. MT-flagged
-# English strings pending human translation; tracked in
-# docs/I18N_TODO.md.
-settings-dedup-heading = Destination dedup  # MT
-settings-dedup-hint = When the source and destination share a volume, Copy That can clone files at the filesystem level instead of copying bytes. Reflink is instant + safe; hardlink is faster but both names share state.  # MT
-settings-dedup-mode-auto = Auto ladder (reflink → hardlink → chunk → copy)  # MT
-settings-dedup-mode-reflink-only = Reflink only  # MT
-settings-dedup-mode-hardlink-aggressive = Aggressive (reflink + hardlink even on writable files)  # MT
-settings-dedup-mode-off = Disabled (always byte-copy)  # MT
-settings-dedup-hardlink-policy = Hardlink policy  # MT
-settings-dedup-prescan = Pre-scan destination tree for duplicate content  # MT
-dedup-badge-reflinked = ⚡ Reflinked  # MT
-dedup-badge-hardlinked = 🔗 Hardlinked  # MT
-dedup-badge-chunk-shared = 🧩 Chunk-shared  # MT
-dedup-badge-copied = 📋 Copied  # MT
-phase42-paranoid-verify-label = 편집증 검증
-phase42-paranoid-verify-hint = 대상의 캐시된 페이지를 버리고 디스크에서 다시 읽어 쓰기 캐시의 거짓 보고와 무성한 손상을 감지합니다. 기본 검증보다 약 50% 느리며, 기본적으로 꺼져 있습니다.
+# Phase 38 — aggregate destination dedup + reflink fallback ladder.
+# Settings → Transfer → Dedup panel + per-job-row badges (⚡
+# Reflinked / 🔗 Hardlinked / 🧩 Chunk-shared / 📋 Copied) +
+# pre-pass dedup-scan modal.
+settings-dedup-heading = 대상 중복 제거
+settings-dedup-hint = 원본과 대상이 볼륨을 공유하면 Copy That은 바이트를 복사하는 대신 파일 시스템 수준에서 파일을 복제할 수 있습니다. Reflink는 즉각적이고 안전하며, 하드링크는 더 빠르지만 두 이름이 상태를 공유합니다.
+settings-dedup-mode-auto = 자동 단계 (reflink → 하드링크 → 청크 → 복사)
+settings-dedup-mode-reflink-only = reflink만
+settings-dedup-mode-hardlink-aggressive = 적극적 (쓰기 가능한 파일에서도 reflink + 하드링크)
+settings-dedup-mode-off = 비활성화 (항상 바이트 복사)
+settings-dedup-hardlink-policy = 하드링크 정책
+settings-dedup-prescan = 중복 콘텐츠에 대해 대상 트리 사전 스캔
+dedup-badge-reflinked = ⚡ Reflink됨
+dedup-badge-hardlinked = 🔗 하드링크됨
+dedup-badge-chunk-shared = 🧩 청크 공유됨
+dedup-badge-copied = 📋 복사됨
+phase42-paranoid-verify-label = 편집증적 검증
+phase42-paranoid-verify-hint = 대상의 캐시된 페이지를 버리고 디스크에서 다시 읽어 쓰기 캐시의 거짓과 무음 손상을 잡아냅니다. 기본 검증보다 약 50% 느리며 기본적으로 꺼져 있습니다.
 phase42-sharing-violation-retries-label = 잠긴 원본 파일에 대한 재시도 횟수
-phase42-sharing-violation-retries-hint = 다른 프로세스가 원본 파일을 독점 잠금으로 열어 두고 있을 때 재시도할 횟수입니다. 대기 시간은 시도마다 두 배가 됩니다 (기본값 50 ms / 100 ms / 200 ms). 기본값은 3이며, Robocopy /R:3과 동일합니다.
-phase42-cloud-placeholder-warning = { $name }은(는) 클라우드 전용 OneDrive 파일입니다. 복사하면 네트워크 연결을 통해 최대 { $size }의 다운로드가 시작됩니다.
-phase42-defender-exclusion-hint = 최대 복사 처리량을 얻으려면 대량 전송 전에 대상 폴더를 Microsoft Defender 제외 항목에 추가하십시오. docs/PERFORMANCE_TUNING.md를 참조하십시오.
+phase42-sharing-violation-retries-hint = 다른 프로세스가 원본 파일을 독점 잠금으로 열고 있을 때 다시 시도할 횟수입니다. 백오프는 시도할 때마다 두 배가 됩니다(기본값 50밀리초 / 100밀리초 / 200밀리초). 기본값 3으로, Robocopy /R:3과 동일합니다.
+phase42-cloud-placeholder-warning = { $name }은(는) 클라우드 전용 OneDrive 파일입니다. 복사하면 다운로드가 시작되어 네트워크 연결을 통해 최대 { $size }이(가) 전송됩니다.
+phase42-defender-exclusion-hint = 복사 처리량을 최대화하려면 대량 전송 전에 대상 폴더를 Microsoft Defender 제외 항목에 추가하세요. docs/PERFORMANCE_TUNING.md를 참조하세요.
 
-# Phase 39 — Browser-accessible recovery UI.  # MT
-settings-recovery-heading = Recovery web UI  # MT
-settings-recovery-enable = Enable recovery web UI  # MT
-settings-recovery-bind-address = Bind address  # MT
-settings-recovery-port = Port (0 = pick a free one)  # MT
-settings-recovery-show-url = Show URL & token  # MT
-settings-recovery-rotate-token = Rotate token  # MT
-settings-recovery-allow-non-loopback = Allow non-loopback bind  # MT
-settings-recovery-non-loopback-warning = WARNING: enabling a non-loopback bind exposes the recovery UI to your local network. Anyone who learns the token can browse your file history and download files. Front it with TLS or a reverse proxy if the LAN is untrusted.  # MT
+# Phase 39 — Browser-accessible recovery UI. Settings → Advanced
+# exposes these strings; the recovery server itself renders askama
+# templates that always read English — these eight keys are the
+# Settings prose the user actually reads in their preferred locale.
+settings-recovery-heading = 복구 웹 UI
+settings-recovery-enable = 복구 웹 UI 사용
+settings-recovery-bind-address = 바인딩 주소
+settings-recovery-port = 포트 (0 = 빈 포트 선택)
+settings-recovery-show-url = URL 및 토큰 표시
+settings-recovery-rotate-token = 토큰 교체
+settings-recovery-allow-non-loopback = 루프백이 아닌 바인딩 허용
+settings-recovery-non-loopback-warning = 경고: 루프백이 아닌 바인딩을 사용하면 복구 UI가 로컬 네트워크에 노출됩니다. 토큰을 알게 된 누구나 파일 기록을 탐색하고 파일을 다운로드할 수 있습니다. LAN을 신뢰할 수 없는 경우 TLS나 리버스 프록시로 앞단을 보호하세요.
 
-# Phase 40 — SMB compression negotiation + cloud-VM offload helper.  # MT
-smb-compress-badge = 🗜 SMB compress: { $algo }  # MT
-smb-compress-badge-tooltip = Network traffic to this destination is being compressed in transit (SMB 3.1.1).  # MT
-smb-compress-toast-saved = Saved { $bytes } over the network  # MT
-smb-compress-algo-unknown = unknown algorithm  # MT
-settings-smb-compress-heading = SMB network compression  # MT
-settings-smb-compress-hint = Automatically negotiate SMB 3.1.1 traffic compression on UNC destinations. Free win on slow links; ignored on local destinations.  # MT
-cloud-offload-heading = Cloud-VM offload helper  # MT
-cloud-offload-hint = When copying directly between two clouds, render a deployment template that runs the copy from a tiny ephemeral VM in the cloud — bytes never touch your laptop's network.  # MT
-cloud-offload-render-button = Render template  # MT
-cloud-offload-copy-clipboard = Copy to clipboard  # MT
-cloud-offload-template-format = Template format  # MT
-cloud-offload-self-destruct-warning = The VM auto-shuts down after { $minutes } minutes — confirm IAM role + region before deploying.  # MT
+# Phase 40 — SMB compression negotiation + cloud-VM offload helper.
+# 6 SMB keys (header badge + Settings prose) + 6 cloud-offload keys
+# (Remotes tab wizard for cross-cloud copy templates).
+smb-compress-badge = 🗜 SMB 압축: { $algo }
+smb-compress-badge-tooltip = 이 대상으로의 네트워크 트래픽이 전송 중 압축되고 있습니다 (SMB 3.1.1).
+smb-compress-toast-saved = 네트워크에서 { $bytes } 절약
+smb-compress-algo-unknown = 알 수 없는 알고리즘
+settings-smb-compress-heading = SMB 네트워크 압축
+settings-smb-compress-hint = UNC 대상에서 SMB 3.1.1 트래픽 압축을 자동으로 협상합니다. 느린 링크에서는 무료 이득이며, 로컬 대상에서는 무시됩니다.
+cloud-offload-heading = 클라우드 VM 오프로드 도우미
+cloud-offload-hint = 두 클라우드 사이를 직접 복사할 때, 클라우드의 작은 임시 VM에서 복사를 실행하는 배포 템플릿을 생성합니다 — 바이트가 노트북 네트워크를 거치지 않습니다.
+cloud-offload-render-button = 템플릿 생성
+cloud-offload-copy-clipboard = 클립보드에 복사
+cloud-offload-template-format = 템플릿 형식
+cloud-offload-self-destruct-warning = VM은 { $minutes }분 후 자동으로 종료됩니다 — 배포 전에 IAM 역할 + 리전을 확인하세요.
 
-# Phase 41 — animated before/after tree-diff preview.  # MT
-preview-modal-title = Preview changes  # MT
-preview-summary-header = What will happen  # MT
-preview-category-additions = { $count } additions  # MT
-preview-category-replacements = { $count } replacements  # MT
-preview-category-skips = { $count } skipped  # MT
-preview-category-conflicts = { $count } conflicts  # MT
-preview-category-unchanged = { $count } unchanged  # MT
-preview-bytes-to-transfer = { $bytes } to transfer  # MT
-preview-reason-source-newer = Source is newer  # MT
-preview-reason-dest-newer = Destination is newer — will skip  # MT
-preview-reason-content-different = Content differs  # MT
-preview-reason-identical = Identical to source  # MT
-preview-button-run = Run plan  # MT
-preview-button-reduce = Reduce my plan…  # MT
+# Phase 41 — animated before/after tree-diff preview. The `Preview
+# changes` modal renders the rolled-up plan before the engine starts
+# work; 14 keys cover the title, the summary header / counts, the
+# row-reason labels, and the two action buttons.
+preview-modal-title = 변경 사항 미리 보기
+preview-summary-header = 무엇이 일어날지
+preview-category-additions = 추가 { $count }개
+preview-category-replacements = 교체 { $count }개
+preview-category-skips = 건너뜀 { $count }개
+preview-category-conflicts = 충돌 { $count }개
+preview-category-unchanged = 변경 없음 { $count }개
+preview-bytes-to-transfer = 전송할 { $bytes }
+preview-reason-source-newer = 원본이 더 새로움
+preview-reason-dest-newer = 대상이 더 새로움 — 건너뜁니다
+preview-reason-content-different = 콘텐츠가 다름
+preview-reason-identical = 원본과 동일
+preview-button-run = 계획 실행
+preview-button-reduce = 계획 줄이기…
 
-# Phase 42 — perceptual-hash visual-similarity dedup.  # MT
-perceptual-warn-title = Looks visually identical  # MT
-perceptual-warn-body = { $name } at the destination appears to match the source picture. Continue copying anyway?  # MT
-perceptual-warn-keep-both = Keep both  # MT
-perceptual-warn-skip = Skip this file  # MT
-perceptual-warn-overwrite = Overwrite anyway  # MT
-perceptual-settings-heading = Visual-similarity dedup  # MT
-perceptual-settings-hint = Detect visually identical images at the destination before they're overwritten. Hash is perceptual (recognises the same picture re-saved as a different format), not byte-exact.  # MT
-perceptual-settings-threshold-label = Warn threshold (lower = stricter match)  # MT
+# Phase 42 — perceptual-hash visual-similarity dedup. Eight keys cover
+# the pre-copy "looks visually identical" warning + the Settings panel.
+perceptual-warn-title = 시각적으로 동일해 보임
+perceptual-warn-body = 대상의 { $name }이(가) 원본 사진과 일치하는 것으로 보입니다. 그래도 계속 복사하시겠습니까?
+perceptual-warn-keep-both = 둘 다 유지
+perceptual-warn-skip = 이 파일 건너뛰기
+perceptual-warn-overwrite = 그래도 덮어쓰기
+perceptual-settings-heading = 시각적 유사성 중복 제거
+perceptual-settings-hint = 대상의 이미지가 덮어쓰이기 전에 시각적으로 동일한 이미지를 감지합니다. 해시는 바이트 단위가 아니라 지각적(같은 사진을 다른 형식으로 다시 저장한 경우도 인식)입니다.
+perceptual-settings-threshold-label = 경고 임곗값 (낮을수록 엄격한 일치)
 
-# Phase 42 Part B — per-file rolling versions.  # MT
-version-list-heading = Previous versions  # MT
-version-list-empty = No prior versions of this file  # MT
-version-list-restore = Restore this version  # MT
-version-retention-heading = Keep previous versions on overwrite  # MT
-version-retention-none = Keep every version forever  # MT
-version-retention-last-n = Keep last { $n } versions  # MT
-version-retention-older-than-days = Drop versions older than { $days } days  # MT
-version-retention-gfs = Hourly { $h } · daily { $d } · weekly { $w } · monthly { $m }  # MT
+# Phase 42 Part B — per-file rolling versions (Time Machine for any
+# destination). 8 keys cover the version-list panel + retention picker.
+version-list-heading = 이전 버전
+version-list-empty = 이 파일의 이전 버전이 없습니다
+version-list-restore = 이 버전 복원
+version-retention-heading = 덮어쓸 때 이전 버전 유지
+version-retention-none = 모든 버전 영구 유지
+version-retention-last-n = 최근 { $n }개 버전 유지
+version-retention-older-than-days = { $days }일이 지난 버전 삭제
+version-retention-gfs = 매시간 { $h }개 · 매일 { $d }개 · 매주 { $w }개 · 매월 { $m }개
 
-# Phase 43 — forensic chain-of-custody manifests.  # MT
-provenance-settings-heading = Forensic chain-of-custody  # MT
-provenance-settings-hint = Sign every copy job with a BLAKE3 + ed25519 manifest. Reviewers can re-hash the destination tree later and prove no byte changed since the copy.  # MT
-provenance-settings-enable-default = Sign every new job by default  # MT
-provenance-settings-show-after-job = Show manifest after each completed job  # MT
-provenance-settings-tsa-url-label = Default RFC 3161 timestamp authority URL  # MT
-provenance-settings-tsa-url-hint = Optional. When set, manifests carry a free TSA timestamp proving the bytes existed at this point in time. Leave empty to skip.  # MT
-provenance-settings-keys-heading = Signing keys  # MT
-provenance-settings-keys-generate = Generate new key  # MT
-provenance-settings-keys-import = Import key…  # MT
-provenance-settings-keys-export = Export public key…  # MT
-provenance-job-completed-title = Provenance manifest saved  # MT
-provenance-job-completed-body = { $count } files signed → { $path }  # MT
-provenance-verify-clean = Manifest valid for { $count } files; signature { $sig }; merkle root OK.  # MT
-provenance-verify-tampered = Manifest INVALID — { $tampered } tampered, { $missing } missing.  # MT
-provenance-action-staged = Phase 43 — wiring the IPC for this action lands in a follow-up commit.  # MT
+# Phase 43 — forensic chain-of-custody manifests + BLAKE3 verified
+# streaming. 14 keys cover the Settings → Provenance panel
+# (heading, hint, toggles, TSA URL, signing-key management) plus
+# the post-job manifest notification + the verify command's two
+# headline result lines.
+provenance-settings-heading = 포렌식 보관 연속성
+provenance-settings-hint = 모든 복사 작업에 BLAKE3 + ed25519 매니페스트로 서명합니다. 검토자는 나중에 대상 트리를 다시 해시하여 복사 이후 단 한 바이트도 변경되지 않았음을 증명할 수 있습니다.
+provenance-settings-enable-default = 기본적으로 모든 새 작업에 서명
+provenance-settings-show-after-job = 완료된 작업마다 매니페스트 표시
+provenance-settings-tsa-url-label = 기본 RFC 3161 타임스탬프 기관 URL
+provenance-settings-tsa-url-hint = 선택 사항입니다. 설정하면 매니페스트에 해당 시점에 바이트가 존재했음을 증명하는 무료 TSA 타임스탬프가 포함됩니다. 건너뛰려면 비워 두세요.
+provenance-settings-keys-heading = 서명 키
+provenance-settings-keys-generate = 새 키 생성
+provenance-settings-keys-import = 키 가져오기…
+provenance-settings-keys-export = 공개 키 내보내기…
+provenance-job-completed-title = 출처 매니페스트 저장됨
+provenance-job-completed-body = 파일 { $count }개 서명됨 → { $path }
+provenance-verify-clean = 파일 { $count }개에 대한 매니페스트 유효; 서명 { $sig }; 머클 루트 정상.
+provenance-verify-tampered = 매니페스트 무효 — 변조 { $tampered }개, 누락 { $missing }개.
+# Phase 43 post-review hardening — toast text for the Settings →
+# Provenance buttons whose Tauri IPC has not yet landed.
+provenance-action-staged = Phase 43 — 이 작업에 대한 IPC 연결은 후속 커밋에 추가됩니다.
 
-# Phase 44 — SSD-aware whole-drive sanitize.  # MT
-sanitize-heading = Whole-drive secure sanitize  # MT
-sanitize-hint = NVMe Sanitize, OPAL Crypto Erase, and ATA Secure Erase wipe a flash drive at the firmware layer in milliseconds. Per-file overwrite is meaningless on flash — multi-pass shred only burns NAND. Use this for actual purge.  # MT
-sanitize-pick-device = Choose the drive to sanitize  # MT
-sanitize-mode-label = Sanitization method  # MT
-sanitize-mode-nvme-format = NVMe Format (with secure erase)  # MT
-sanitize-mode-nvme-sanitize-block = NVMe Sanitize — Block Erase (slow, every cell)  # MT
-sanitize-mode-nvme-sanitize-crypto = NVMe Sanitize — Crypto Erase (instant)  # MT
-sanitize-mode-ata-secure-erase = ATA Secure Erase (legacy SATA SSDs)  # MT
-sanitize-mode-opal-crypto-erase = TCG OPAL Crypto Erase (Self-Encrypting Drives)  # MT
-sanitize-mode-apfs-crypto-erase = APFS Crypto Erase (rotate FileVault key, macOS only)  # MT
-sanitize-confirm-1 = This destroys EVERY byte on { $device }. There is no undo.  # MT
-sanitize-confirm-2 = I understand that all partitions, all files, and all snapshots on { $device } will be permanently unreadable.  # MT
-sanitize-confirm-3 = Type the drive's model name to proceed: { $model }  # MT
-sanitize-running = Sanitizing { $device } ({ $mode }) — this can take from milliseconds (crypto erase) to tens of minutes (block erase). Do not power down.  # MT
-sanitize-completed = Sanitize complete — { $device } is now blank.  # MT
-ssd-honest-shred-meaningless = Per-file shred on a copy-on-write filesystem (Btrfs / ZFS / APFS) cannot reach the underlying blocks. Use whole-drive sanitize plus full-disk-encryption key rotation instead.  # MT
-ssd-honest-advisory = This file lives on flash. Per-file overwrite costs NAND wear and does NOT guarantee the original cells are unrecoverable. For sensitive data, sanitize the whole drive.  # MT
+# Phase 44 — SSD-aware whole-drive sanitize (NVMe Sanitize / OPAL
+# Crypto Erase) + the per-file shred refusal on copy-on-write
+# filesystems. 16 keys cover the new "Drive sanitize" Settings
+# subsection and the localized error messages.
+sanitize-heading = 전체 드라이브 보안 소거
+sanitize-hint = NVMe Sanitize, OPAL Crypto Erase, ATA Secure Erase는 펌웨어 계층에서 플래시 드라이브를 밀리초 안에 지웁니다. 파일별 덮어쓰기는 플래시에서 무의미합니다 — 다중 패스 분쇄는 NAND만 소모할 뿐입니다. 실제 소거에는 이것을 사용하세요.
+sanitize-pick-device = 소거할 드라이브 선택
+sanitize-mode-label = 소거 방법
+sanitize-mode-nvme-format = NVMe Format (보안 소거 포함)
+sanitize-mode-nvme-sanitize-block = NVMe Sanitize — Block Erase (느림, 모든 셀)
+sanitize-mode-nvme-sanitize-crypto = NVMe Sanitize — Crypto Erase (즉시)
+sanitize-mode-ata-secure-erase = ATA Secure Erase (레거시 SATA SSD)
+sanitize-mode-opal-crypto-erase = TCG OPAL Crypto Erase (자체 암호화 드라이브)
+sanitize-mode-apfs-crypto-erase = APFS Crypto Erase (FileVault 키 교체, macOS 전용)
+sanitize-confirm-1 = 이 작업은 { $device }의 모든 바이트를 파괴합니다. 되돌릴 수 없습니다.
+sanitize-confirm-2 = { $device }의 모든 파티션, 모든 파일, 모든 스냅샷이 영구적으로 읽을 수 없게 됨을 이해합니다.
+sanitize-confirm-3 = 진행하려면 드라이브의 모델 이름을 입력하세요: { $model }
+sanitize-running = { $device } 소거 중 ({ $mode }) — 밀리초(크립토 소거)에서 수십 분(블록 소거)까지 걸릴 수 있습니다. 전원을 끄지 마세요.
+sanitize-completed = 소거 완료 — { $device }이(가) 이제 비어 있습니다.
+ssd-honest-shred-meaningless = 쓰기 시 복사 파일 시스템(Btrfs / ZFS / APFS)에서의 파일별 분쇄는 기본 블록에 도달할 수 없습니다. 대신 전체 드라이브 소거와 전체 디스크 암호화 키 교체를 사용하세요.
+ssd-honest-advisory = 이 파일은 플래시에 있습니다. 파일별 덮어쓰기는 NAND 마모를 유발하며 원본 셀을 복구할 수 없음을 보장하지 않습니다. 민감한 데이터의 경우 전체 드라이브를 소거하세요.
 
-# Phase 44.1f.  # MT
-sanitize-action-staged = Phase 44.1 — wiring the IPC for this action lands in a follow-up commit.  # MT
+# Phase 44.1f post-review — placeholder toast for SanitizeTab
+# buttons whose Tauri IPC has not yet landed.
+sanitize-action-staged = Phase 44.1 — 이 작업에 대한 IPC 연결은 후속 커밋에 추가됩니다.
 
-# Phase 45.3 — named-queue tab strip.  # MT
-queue-tab-default = Default  # MT
-queue-tab-empty-state = Job queues  # MT
-queue-badge-tooltip = Pending and running jobs in this queue  # MT
+# Phase 45.3 — named-queue tab strip (Subfeature A). Tabs surface
+# once the QueueRegistry holds at least one queue; the synthesised
+# default tab keeps legacy single-queue jobs reachable.
+queue-tab-default = 기본
+queue-tab-empty-state = 작업 대기열
+queue-badge-tooltip = 이 대기열의 대기 중 및 실행 중인 작업
 
-# Phase 45.4 — drag-progress-merge.  # MT
-queue-drag-hint = Drag onto another queue to merge  # MT
-queue-merge-confirm = Drop to merge  # MT
-queue-merge-toast = Queues merged  # MT
+# Phase 45.4 — drag-progress-merge (Subfeature B). Drag a queue tab
+# onto another to merge their job lists. The default tab is neither
+# draggable nor a drop target; only registry queues participate.
+queue-drag-hint = 다른 대기열로 끌어다 놓아 병합
+queue-merge-confirm = 놓아서 병합
+queue-merge-toast = 대기열 병합됨
 
-# Phase 45.5 — F2-queue UX.  # MT
-queue-f2-active-hint = F2 mode: every new enqueue lands in this queue  # MT
-queue-f2-toggled-on = F2 queue mode ON — new enqueues join the running queue  # MT
-queue-f2-toggled-off = F2 queue mode OFF — new enqueues spawn parallel queues  # MT
-queue-f2-status-bar = F2 queue mode: ON  # MT
+# Phase 45.5 — F2-queue UX (Subfeature C). F2 toggles
+# `auto_enqueue_next` so every fresh enqueue piles into the running
+# queue rather than spawning a parallel one. Status pill renders in
+# the Footer; pulsing dot renders on the running tab.
+queue-f2-active-hint = F2 모드: 모든 새 대기 추가가 이 대기열에 들어갑니다
+queue-f2-toggled-on = F2 대기열 모드 켜짐 — 새 대기 추가가 실행 중인 대기열에 합류합니다
+queue-f2-toggled-off = F2 대기열 모드 꺼짐 — 새 대기 추가가 병렬 대기열을 생성합니다
+queue-f2-status-bar = F2 대기열 모드: 켜짐
 
-# Phase 45.6 — tray destination targets.  # MT
-tray-target-section-title = Tray destinations  # MT
-tray-target-section-hint = Pinned destinations appear in the tray menu. Click one to arm it as the next drop target.  # MT
-tray-target-empty = No tray destinations pinned yet.  # MT
-tray-target-remove = Remove  # MT
-tray-target-add-label = Label  # MT
-tray-target-add-path = Path or backend URI  # MT
-tray-target-add = Add  # MT
-tray-target-armed-toast = Drop your next file to send it to { $label }  # MT
-tray-target-active-pill = → { $label }  # MT
+# Phase 45.6 — tray destination targets (Subfeature D). Pinned
+# destinations appear in the OS tray menu; clicking one arms it as
+# the active drop target so the next file drop bypasses the
+# DropStagingDialog. Settings → General hosts the list editor.
+tray-target-section-title = 트레이 대상
+tray-target-section-hint = 고정된 대상이 트레이 메뉴에 나타납니다. 하나를 클릭하면 다음 놓기 대상으로 설정됩니다.
+tray-target-empty = 아직 고정된 트레이 대상이 없습니다.
+tray-target-remove = 제거
+tray-target-add-label = 레이블
+tray-target-add-path = 경로 또는 백엔드 URI
+tray-target-add = 추가
+tray-target-armed-toast = 다음 파일을 놓아 { $label }(으)로 보내세요
+tray-target-active-pill = → { $label }
 
-# Phase 45.7 follow-up — pinned-destination validation errors.  # MT
-err-pinned-destination-label-empty = Tray destination label can't be empty.  # MT
-err-pinned-destination-path-empty = Tray destination path can't be empty.  # MT
-err-pinned-destination-label-too-long = Tray destination label is too long (max 64 characters).  # MT
-err-pinned-destination-path-too-long = Tray destination path is too long (max 1024 characters).  # MT
-err-pinned-destination-label-invalid = Tray destination label contains characters that aren't allowed (newline, return, or NUL).  # MT
-err-pinned-destination-path-invalid = Tray destination path contains characters that aren't allowed (newline, return, or NUL).  # MT
-err-pinned-destination-too-many = You've reached the limit of 50 tray destinations. Remove one to add another.  # MT
+# Phase 45.7 follow-up — pinned-destination validation errors. The
+# `queue_pin_destination` IPC returns these Fluent keys verbatim
+# when input fails the IPC-boundary checks; the toast layer renders
+# them via `t(...)` (Toast.svelte detects kebab-case-lowercase and
+# routes through the locale table). Phase 17e's `err-path-escape` /
+# `err-destination-empty` cover the path-traversal + empty cases for
+# `queue_route_job`; the keys below are pin-specific.
+err-pinned-destination-label-empty = 트레이 대상 레이블은 비워 둘 수 없습니다.
+err-pinned-destination-path-empty = 트레이 대상 경로는 비워 둘 수 없습니다.
+err-pinned-destination-label-too-long = 트레이 대상 레이블이 너무 깁니다 (최대 64자).
+err-pinned-destination-path-too-long = 트레이 대상 경로가 너무 깁니다 (최대 1024자).
+err-pinned-destination-label-invalid = 트레이 대상 레이블에 허용되지 않는 문자(줄 바꿈, 캐리지 리턴, NUL)가 포함되어 있습니다.
+err-pinned-destination-path-invalid = 트레이 대상 경로에 허용되지 않는 문자(줄 바꿈, 캐리지 리턴, NUL)가 포함되어 있습니다.
+err-pinned-destination-too-many = 트레이 대상 50개 한도에 도달했습니다. 하나를 제거하면 다른 것을 추가할 수 있습니다.
 
 # Phase 46.6 — Settings → Plugins tab. The IPC layer in
 # `apps/copythat-ui/src-tauri/src/plugin_commands.rs` enumerates the
 # per-user plugin store under `<config_dir>/plugins/`; the
 # `PluginsTab.svelte` component renders these strings against the
-# returned manifest + grant state.  # MT
-settings-tab-plugins = Plugins  # MT
-plugin-heading = Plugins  # MT
-plugin-hint = Sandboxed WASM plugins extend Copy That with custom hooks. Each plugin runs under per-call CPU and memory limits and only sees the host capabilities you grant it.  # MT
-plugin-list-empty = No plugins installed yet.  # MT
-plugin-enabled = Enabled  # MT
-plugin-disabled = Disabled  # MT
-plugin-hooks = Hooks  # MT
-plugin-capabilities = Capabilities  # MT
-plugin-no-capabilities = (none)  # MT
-plugin-directory = Location  # MT
-plugin-install-from-file = Install from file…  # MT
-plugin-install-from-url = Install from URL…  # MT
-plugin-url-wasm = WASM URL  # MT
-plugin-url-manifest = Manifest URL  # MT
-plugin-url-hash = BLAKE3 hash  # MT
-plugin-url-preview = Preview  # MT
-plugin-url-confirm = Confirm install  # MT
+# returned manifest + grant state.
+settings-tab-plugins = 플러그인
+plugin-heading = 플러그인
+plugin-hint = 샌드박스 처리된 WASM 플러그인이 사용자 지정 후크로 Copy That을 확장합니다. 각 플러그인은 호출별 CPU 및 메모리 제한에서 실행되며 사용자가 부여한 호스트 기능만 볼 수 있습니다.
+plugin-list-empty = 아직 설치된 플러그인이 없습니다.
+plugin-enabled = 사용
+plugin-disabled = 사용 안 함
+plugin-hooks = 후크
+plugin-capabilities = 기능
+plugin-no-capabilities = (없음)
+plugin-directory = 위치
+plugin-install-from-file = 파일에서 설치…
+plugin-install-from-url = URL에서 설치…
+plugin-url-wasm = WASM URL
+plugin-url-manifest = 매니페스트 URL
+plugin-url-hash = BLAKE3 해시
+plugin-url-preview = 미리 보기
+plugin-url-confirm = 설치 확인
