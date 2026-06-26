@@ -41,7 +41,12 @@ use copythat_core::{
     CopyControl, CopyError, CopyEvent, CopyOptions, LockedFilePolicy, SnapshotGuard, SnapshotHook,
     SnapshotLease, copy_file,
 };
-use copythat_snapshot::{SnapshotKind, capabilities, translate_path};
+use copythat_snapshot::{SnapshotKind, capabilities};
+// `translate_path` is only exercised by the Windows-gated VSS opt-in
+// test below (Case 4); importing it unconditionally trips
+// `unused_imports` under `-D warnings` on Linux / macOS.
+#[cfg(windows)]
+use copythat_snapshot::translate_path;
 use tempfile::tempdir;
 use tokio::sync::mpsc;
 
