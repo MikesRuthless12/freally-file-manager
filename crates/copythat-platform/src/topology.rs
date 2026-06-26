@@ -19,7 +19,7 @@
 //! Cached per-volume by serial number so the IOCTL only runs once per
 //! drive per process.
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 /// Storage bus class as reported by `STORAGE_DEVICE_DESCRIPTOR.BusType`.
 ///
@@ -274,6 +274,7 @@ fn win_probe(path: &Path) -> Option<VolumeTopology> {
     use std::ffi::OsStr;
     use std::mem::MaybeUninit;
     use std::os::windows::ffi::OsStrExt;
+    use std::path::PathBuf;
     use std::ptr;
 
     use windows_sys::Win32::Foundation::{CloseHandle, GENERIC_READ, INVALID_HANDLE_VALUE};

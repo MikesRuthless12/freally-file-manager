@@ -194,6 +194,12 @@ mod zfs_version_warning {
     /// emit-warning condition is met (OpenZFS 2.2.0-2.2.6 with
     /// `zfs_bclone_enabled=1`). Lets tests assert the boundary
     /// without fiddling with stderr / OnceLock state.
+    ///
+    /// Test-only: the production `check_once` path inlines this same
+    /// condition, so the helper exists purely to let `zfs_warning_tests`
+    /// assert the boundary. Gated behind `cfg(test)` to avoid a
+    /// dead-code warning in the normal Linux lib build.
+    #[cfg(test)]
     pub(super) fn should_warn(maj: u32, min: u32, patch: u32, bclone: bool) -> bool {
         maj == 2 && min == 2 && patch <= 6 && bclone
     }
