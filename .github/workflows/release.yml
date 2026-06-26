@@ -112,6 +112,12 @@ jobs:
           # after that one click. See docs/SIGNING_UPGRADE.md for the
           # paid-Notary upgrade path.
           APPLE_SIGNING_IDENTITY: "-"
+          # Free (ed25519 / minisign) updater signing. With these set
+          # and `bundle.createUpdaterArtifacts: true`, `tauri build`
+          # emits a signed updater bundle plus a `.sig` and per-target
+          # `latest.json` for the publish-updater-manifest job to merge.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: pnpm tauri build --target ${{ matrix.target.rust-target }} --bundles ${{ matrix.target.bundles }}
 
       - name: Collect Windows artifacts
@@ -124,6 +130,10 @@ jobs:
             -Include *.msi,*.exe,*.zip,*.sig,latest.json `
             -ErrorAction SilentlyContinue |
             ForEach-Object { Copy-Item $_.FullName -Destination release-staging }
+          # Per-target manifest name so the four runners don't collide on
+          # the release; publish-updater-manifest merges them into one.
+          $lj = Join-Path release-staging latest.json
+          if (Test-Path $lj) { Move-Item -Force $lj (Join-Path release-staging "latest-${{ matrix.target.label }}.json") }
 
       - name: Collect macOS artifacts
         if: runner.os == 'macOS'
@@ -133,6 +143,9 @@ jobs:
           find "apps/copythat-ui/src-tauri/target/${{ matrix.target.rust-target }}/release/bundle" \
             -type f \( -name "*.dmg" -o -name "*.app.tar.gz" -o -name "*.sig" -o -name "latest.json" \) \
             -exec cp {} release-staging/ \; || true
+          # Per-target manifest name so the four runners don't collide on
+          # the release; publish-updater-manifest merges them into one.
+          [ -f release-staging/latest.json ] && mv -f release-staging/latest.json "release-staging/latest-${{ matrix.target.label }}.json" || true
 
       - name: Collect Linux artifacts
         if: matrix.target.os == 'ubuntu-latest'
@@ -142,6 +155,9 @@ jobs:
           find "apps/copythat-ui/src-tauri/target/${{ matrix.target.rust-target }}/release/bundle" \
             -type f \( -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" -o -name "*.tar.gz" -o -name "*.sig" -o -name "latest.json" \) \
             -exec cp {} release-staging/ \; || true
+          # Per-target manifest name so the four runners don't collide on
+          # the release; publish-updater-manifest merges them into one.
+          [ -f release-staging/latest.json ] && mv -f release-staging/latest.json "release-staging/latest-${{ matrix.target.label }}.json" || true
 
       - name: Linux GPG sign (optional, skipped if no key)
         if: matrix.target.os == 'ubuntu-latest'
@@ -175,36 +191,91 @@ jobs:
           path: release-staging/
           if-no-files-found: ignore
 
-  # Updater-manifest publishing job. Gated off until a MiniSign key
-  # pair is in place (tracked in docs/SIGNING_UPGRADE.md). The updater
-  # plugin refuses to install unsigned artifacts, so there is no point
-  # publishing a manifest before the key exists. Flip `if:` to true
-  # once TAURI_SIGNING_PRIVATE_KEY + TAURI_SIGNING_PRIVATE_KEY_PASSWORD
-  # are added as repository secrets.
+  # Updater-manifest publishing job. The updater endpoint configured in
+  # tauri.conf.json is the GitHub Release asset
+  # `…/releases/latest/download/latest.json`, so each runner's per-target
+  # `latest-<label>.json` (uploaded by the build job) is merged here into
+  # one universal `latest.json` and uploaded back to the same release.
+  # Requires TAURI_SIGNING_PRIVATE_KEY + TAURI_SIGNING_PRIVATE_KEY_PASSWORD
+  # repo secrets so the build job's bundles are signed (see that job's
+  # env). Tracked in docs/SIGNING_UPGRADE.md.
   publish-updater-manifest:
     name: Publish updater manifest
     needs: build
     runs-on: ubuntu-latest
-    if: false
+    if: startsWith(github.ref, 'refs/tags/v')
     permissions:
-      contents: read
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
+      contents: write
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          path: manifests
-      - name: Assemble updater manifest
+      - name: Download per-target manifests from the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
         run: |
-          bash scripts/build-updater-manifest.sh "${GITHUB_REF_NAME#v}" manifests dist-manifest
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist-manifest
-      - uses: actions/deploy-pages@v4
+          mkdir -p _release
+          # The build job uploads one `latest-<label>.json` per runner;
+          # gather them and merge into a single manifest the updater
+          # plugin can consume from one endpoint.
+          gh release download "$TAG" --pattern 'latest-*.json' --dir _release || true
+          ls -la _release || true
+      - name: Merge per-target latest.json files
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PYEOF'
+          import glob, json, os, pathlib, sys
+
+          # Hard allowlist of platform keys the Tauri updater plugin
+          # recognizes; an attacker who controls a release-asset filename
+          # could otherwise inject an arbitrary platforms[<key>] entry.
+          ALLOWED_PLATFORMS = {
+              "linux-x86_64",
+              "darwin-x86_64", "darwin-aarch64",
+              "windows-x86_64",
+          }
+
+          tag = os.environ["TAG"]
+          version = tag.lstrip("v")
+          out = {
+              "version": version,
+              "notes": f"Copy That {tag}. See CHANGELOG.md for details.",
+              "pub_date": "",
+              "platforms": {},
+          }
+          sources = sorted(glob.glob("_release/latest-*.json"))
+          if not sources:
+              # Fail loud rather than publish an empty manifest that would
+              # make every installed client treat the release as "no
+              # platforms available" and silently skip the update.
+              print("FATAL: no `latest-*.json` artifacts found in _release/", file=sys.stderr)
+              sys.exit(1)
+          for src in sources:
+              try:
+                  data = json.loads(pathlib.Path(src).read_text())
+              except Exception as e:
+                  print(f"skip {src}: {e}", file=sys.stderr)
+                  continue
+              if not out["pub_date"]:
+                  out["pub_date"] = data.get("pub_date", "")
+              for platform_key, payload in data.get("platforms", {}).items():
+                  if platform_key not in ALLOWED_PLATFORMS:
+                      print(f"skip platform key not in allowlist: {platform_key!r}", file=sys.stderr)
+                      continue
+                  out["platforms"][platform_key] = payload
+          if not out["platforms"]:
+              print("FATAL: no allowed platforms after merge", file=sys.stderr)
+              sys.exit(1)
+          pathlib.Path("_release/latest.json").write_text(json.dumps(out, indent=2))
+          print(json.dumps(out, indent=2))
+          PYEOF
+      - name: Upload merged latest.json to the GH Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release upload "$TAG" _release/latest.json --clobber
 
   # ------------------------------------------------------------------
   # Paid-signing upgrade hooks. Keep commented until revenue justifies

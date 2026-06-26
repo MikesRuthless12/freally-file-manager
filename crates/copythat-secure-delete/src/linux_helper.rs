@@ -19,8 +19,8 @@
 //! - [`SsdSanitizeMode::NvmeSanitizeBlock`]  → `nvme sanitize -a 1 <dev>`
 //! - [`SsdSanitizeMode::NvmeSanitizeCrypto`] → `nvme sanitize -a 2 <dev>`
 //! - [`SsdSanitizeMode::AtaSecureErase`]
-//!     → `hdparm --user-master u --security-set-pass NULL <dev>`
-//!       then `hdparm --user-master u --security-erase NULL <dev>`
+//!   → `hdparm --user-master u --security-set-pass NULL <dev>`
+//!   then `hdparm --user-master u --security-erase NULL <dev>`
 //! - [`SsdSanitizeMode::OpalCryptoErase`] → returns
 //!   `not supported` (TCG OPAL via sedutil is a separate Phase
 //!   44.2 wiring; the binary isn't part of every distro's stock
@@ -45,7 +45,7 @@ use std::time::Duration;
 use crate::sanitize::{SanitizeCapabilities, SanitizeHelper, SsdSanitizeMode};
 
 /// Phase 44.1d — Linux `SanitizeHelper` shelling out to `nvme-cli`
-/// + `hdparm`. Construct one per process; cheap to keep around (no
+/// and `hdparm`. Construct one per process; cheap to keep around (no
 /// state).
 #[derive(Debug, Default, Clone)]
 pub struct LinuxSanitizeHelper;

@@ -30,7 +30,7 @@
   "bundle": {
     "active": true,
     "targets": ["msi", "nsis", "app", "dmg", "appimage", "deb", "rpm"],
-    "createUpdaterArtifacts": false,
+    "createUpdaterArtifacts": true,
     "category": "Utility",
     "shortDescription": "Byte-exact cross-platform file copier.",
     "longDescription": "Copy That v1.0.0 is a lightweight, cross-platform, async, byte-exact file and folder copier. Matches every TeraCopy feature while staying as fast as — or faster than — Explorer, Finder, cp, and rsync for typical desktop workloads.",
@@ -66,5 +66,16 @@
       }
     }
   },
-  "plugins": {}
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/MikesRuthless12/CopyThat2026/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDU5MDE4NTMxMTFEQkM1RTAKUldUZ3hkc1JNWVVCV1NHQU5IUEppbnVsNDFZakVDOUpGUmpidGhYMWViblpIUUhmekxUTFpVV0YK",
+      "dangerousInsecureTransportProtocol": false,
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
 }

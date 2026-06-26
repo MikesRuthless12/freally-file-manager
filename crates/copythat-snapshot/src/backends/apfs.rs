@@ -223,7 +223,7 @@ fn detect_device_for(path: &Path) -> Option<String> {
     // Last non-header line; first whitespace-delimited field.
     text.lines()
         .filter(|l| !l.starts_with("Filesystem"))
-        .last()
+        .next_back()
         .and_then(|l| l.split_whitespace().next())
         .map(|s| s.to_string())
 }

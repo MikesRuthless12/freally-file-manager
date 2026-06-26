@@ -87,6 +87,10 @@ const WORKSPACE_CRATES: &[&str] = &[
     "copythat-cli",
     "copythat-helper",
     "copythat-mobile",
+    "copythat-recovery",
+    "copythat-perceptual",
+    "copythat-provenance",
+    "copythat-plugin",
     "xtask",
     "copythat-ui",
 ];

@@ -12,9 +12,12 @@
 #        GitHub Pages layout the updater endpoint serves).
 #
 # The script is intentionally dumb: it copies each per-target
-# fragment into the channel/target path the updater expects. The
-# `publish-updater-manifest` job in release.yml stays gated off
-# (`if: false`) until a MiniSign key pair is added — see
+# fragment into the channel/target path a GitHub Pages updater
+# endpoint would expect. NOTE: the shipped updater endpoint is the
+# GitHub Release asset `…/releases/latest/download/latest.json`, so
+# the live `publish-updater-manifest` job in release.yml merges +
+# uploads `latest.json` to the release directly and does NOT call
+# this script. Kept for the optional Pages-hosted layout — see
 # docs/SIGNING_UPGRADE.md for the full wiring.
 set -euo pipefail
 

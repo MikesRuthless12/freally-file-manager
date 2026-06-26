@@ -166,12 +166,15 @@ fn tauri_conf_uses_ad_hoc_codesign() {
         content.contains("\"signingIdentity\": \"-\""),
         "tauri.conf.json must set bundle.macOS.signingIdentity to \"-\" (ad-hoc); got:\n{content}"
     );
-    // The pubkey for the updater plugin stays a placeholder until
-    // the release pipeline grows a MiniSign key; this guard makes
-    // the placeholder explicit so nobody ships a real key half-wired.
+    // Phase 16 — the updater plugin is wired with the real ed25519
+    // (minisign) public key. This guard pins the exact configured
+    // pubkey so a stray edit (or a regression back to a placeholder /
+    // a foreign key) fails the build rather than shipping a mismatched
+    // updater that silently refuses every signed download.
+    const UPDATER_PUBKEY: &str = "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDU5MDE4NTMxMTFEQkM1RTAKUldUZ3hkc1JNWVVCV1NHQU5IUEppbnVsNDFZakVDOUpGUmpidGhYMWViblpIUUhmekxUTFpVV0YK";
     assert!(
-        content.contains("REPLACE_ME_WITH_RELEASE_PUBKEY") || !content.contains("\"pubkey\""),
-        "tauri.conf.json must use the placeholder pubkey (or omit it) until Phase 16 MiniSign key-pair wiring lands"
+        content.contains(UPDATER_PUBKEY),
+        "tauri.conf.json must carry the configured updater pubkey ({UPDATER_PUBKEY}); got:\n{content}"
     );
 }
 
