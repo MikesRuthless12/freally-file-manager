@@ -225,20 +225,15 @@ jobs:
       - name: Tauri build (debug — Linux subset)
         if: matrix.os == 'ubuntu-latest'
         working-directory: apps/copythat-ui
-        # With `bundle.createUpdaterArtifacts: true`, `tauri build`
-        # emits a signed updater artifact and aborts if the signing
-        # key is absent. Provide the same ed25519/minisign secrets
-        # release.yml uses so the debug build can sign its bundle.
-        env:
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-        run: pnpm tauri build --debug --bundles deb,appimage
+        # Compile-only check with `--no-bundle`: this verifies the Rust
+        # + frontend build without producing a signed updater artifact,
+        # so no TAURI_SIGNING_* key is required, and the deb/appimage
+        # bundling that exhausts runner disk is skipped. Full bundling
+        # and signing stay verified at release time by release.yml.
+        run: pnpm tauri build --debug --no-bundle
       - name: Tauri build (debug)
         if: matrix.os != 'ubuntu-latest'
         working-directory: apps/copythat-ui
-        # See the Linux subset step above — createUpdaterArtifacts
-        # requires the signing key on every OS or `tauri build` fails.
-        env:
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-        run: pnpm tauri build --debug
+        # See the Linux subset step above — `--no-bundle` keeps this a
+        # compile-only check, so no signing key is needed here.
+        run: pnpm tauri build --debug --no-bundle

@@ -222,8 +222,7 @@ fn detect_device_for(path: &Path) -> Option<String> {
     let text = String::from_utf8(out.stdout).ok()?;
     // Last non-header line; first whitespace-delimited field.
     text.lines()
-        .filter(|l| !l.starts_with("Filesystem"))
-        .next_back()
+        .rfind(|l| !l.starts_with("Filesystem"))
         .and_then(|l| l.split_whitespace().next())
         .map(|s| s.to_string())
 }

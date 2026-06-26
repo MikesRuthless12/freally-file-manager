@@ -119,8 +119,10 @@ async fn copy_file_rejects_post_check_symlink_swap_unix() {
     // guard still passes (no `..`), the metadata check classifies
     // the resolved file as a regular file, the open runs with
     // O_NOFOLLOW — the kernel returns ELOOP at open time.
-    let mut opts = CopyOptions::default();
-    opts.follow_symlinks = true;
+    let opts = CopyOptions {
+        follow_symlinks: true,
+        ..CopyOptions::default()
+    };
 
     let (tx, _rx) = mpsc::channel(8);
     let result = copy_file(&src, &dst, opts, CopyControl::new(), tx).await;
