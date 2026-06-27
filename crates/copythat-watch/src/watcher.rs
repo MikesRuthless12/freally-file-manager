@@ -413,9 +413,24 @@ fn handle_rename(
             }
         }
         RenameMode::Other | RenameMode::Any => {
-            // Treat as modify on each path.
+            // FSEvents (macOS) and some backends deliver a rename as ambiguous
+            // single-path events instead of a stitched From/To pair. Handle each
+            // path the way the dedicated branches would: a KnownTemp path is the
+            // staging side of an atomic save — record its removal and suppress it
+            // so we never surface a raw `Modified(*.tmp)`; a non-temp path may be
+            // the paired canonical target, so claim it into `Modified(canonical)`
+            // when a temp removal is pending, else emit a plain Modified.
             for p in paths {
-                if default_filter(p).is_dropped(opts.filter_editor_backups) {
+                let class = default_filter(p);
+                if class.is_dropped(opts.filter_editor_backups) {
+                    continue;
+                }
+                if matches!(class, PathFilter::KnownTemp) {
+                    atomic.note_temp_removed(p, now);
+                    continue;
+                }
+                if let Some(rewritten) = atomic.try_claim_create(p, now) {
+                    queue.push(rewritten, now);
                     continue;
                 }
                 queue.push(FsEvent::Modified(p.clone()), now);
