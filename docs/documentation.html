@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Copy That — Documentation</title>
+    <meta
+      name="description"
+      content="Step-by-step help guide for Copy That 2026 — how to copy, move, securely delete, verify, and more."
+    />
+    <link rel="icon" type="image/png" href="icon.png" />
+    <link rel="apple-touch-icon" href="icon.png" />
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      /* Supplement: code, table, note-box, warn-box — not in shared sheet */
+      .doc-body code {
+        font-family: "SFMono-Regular", ui-monospace, "Cascadia Code", Consolas, monospace;
+        font-size: 0.88em;
+        background: rgba(255,255,255,0.07);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 1px 5px;
+      }
+      .doc-body p {
+        color: #c7d1e0;
+        font-size: 0.97rem;
+        line-height: 1.65;
+        margin: 0.85rem 0 0;
+      }
+      .doc-body table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 0.85rem;
+        font-size: 0.9rem;
+      }
+      .doc-body th {
+        text-align: left;
+        font-weight: 600;
+        color: var(--muted);
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        padding: 0.45rem 0.75rem;
+        border-bottom: 1px solid var(--border);
+      }
+      .doc-body td {
+        padding: 0.5rem 0.75rem;
+        color: #c7d1e0;
+        border-bottom: 1px solid rgba(40, 54, 80, 0.5);
+        vertical-align: top;
+      }
+      .doc-body tr:last-child td { border-bottom: none; }
+      .doc-body .note-box {
+        margin-top: 1rem;
+        padding: 0.75rem 1rem;
+        background: rgba(110, 168, 254, 0.07);
+        border: 1px solid rgba(110, 168, 254, 0.22);
+        border-radius: 8px;
+        color: #b8cbe8;
+        font-size: 0.9rem;
+        line-height: 1.55;
+      }
+      .doc-body .warn-box {
+        margin-top: 1rem;
+        padding: 0.75rem 1rem;
+        background: rgba(254, 180, 110, 0.07);
+        border: 1px solid rgba(254, 180, 110, 0.25);
+        border-radius: 8px;
+        color: #d4b890;
+        font-size: 0.9rem;
+        line-height: 1.55;
+      }
+      .shortcuts-table td:first-child {
+        font-family: "SFMono-Regular", ui-monospace, "Cascadia Code", Consolas, monospace;
+        font-size: 0.85rem;
+        white-space: nowrap;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="hero">
+      <img class="logo" src="icon.png" alt="Copy That icon" width="96" height="96" />
+      <h1>Documentation</h1>
+      <p class="sub">Step-by-step guides for everything in Copy That 2026.</p>
+    </header>
+
+    <div class="doc-layout">
+
+      <!-- ===================== SIDEBAR TOC ===================== -->
+      <aside class="doc-toc">
+        <nav aria-label="Page sections">
+          <span class="toc-label">On this page</span>
+          <a href="#install">Install Copy That</a>
+          <a href="#copy">Copy files</a>
+          <a href="#move">Move files</a>
+          <a href="#secure-delete">Securely delete files</a>
+          <a href="#batch">Organize &amp; batch operations</a>
+          <a href="#verify">Verify a transfer</a>
+          <a href="#shell">Shell &amp; right-click menu</a>
+          <a href="#paste-hotkey">The global paste hotkey</a>
+          <a href="#history">History &amp; totals</a>
+          <a href="#settings">Change settings</a>
+          <a href="#shortcuts">Keyboard shortcuts</a>
+          <a href="#troubleshooting">Tips &amp; troubleshooting</a>
+          <a href="#privacy">Privacy</a>
+        </nav>
+      </aside>
+
+      <!-- ===================== MAIN CONTENT =================== -->
+      <div class="doc-body">
+
+        <!-- INSTALL -->
+        <section id="install">
+          <h2>Install Copy That</h2>
+          <ol>
+            <li>Choose your platform's recommended installer from the table below.</li>
+            <li>Run the one-liner in a terminal, or download the installer from the
+              <a href="https://github.com/MikesRuthless12/CopyThat2026/releases" style="color:var(--accent);text-decoration:none">Releases page</a>.
+            </li>
+            <li>
+              <strong>Windows only — SmartScreen warning:</strong> the first time you launch, Windows
+              may show a "Windows protected your PC" dialog. Click <strong>More info → Run anyway</strong>.
+              This clears after roughly 100 downloads as Microsoft builds reputation for the binary.
+            </li>
+            <li>
+              <strong>macOS only — Gatekeeper:</strong> double-clicking the app the first time will be
+              refused. Instead <strong>right-click → Open → Open</strong> to whitelist the bundle.
+              If you installed via Homebrew (<code>brew install --cask copythat</code>), the quarantine
+              flag is cleared automatically — no extra step needed.
+            </li>
+            <li>
+              <strong>Linux — AppImage:</strong> after downloading, mark the file executable with
+              <code>chmod +x copythat-*.AppImage</code> then run it. On SELinux-enforcing systems
+              this step is required before the file will launch.
+            </li>
+            <li>Launch Copy That. The main window opens at 1120 × 640 by default (minimum 960 × 420).</li>
+          </ol>
+          <table>
+            <thead>
+              <tr><th>Platform</th><th>Channel</th><th>Command</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Windows</td><td>winget</td><td><code>winget install CopyThat.CopyThat</code></td></tr>
+              <tr><td>macOS</td><td>Homebrew</td><td><code>brew tap copythat/copythat &amp;&amp; brew install --cask copythat</code></td></tr>
+              <tr><td>Ubuntu / Debian</td><td>deb</td><td><code>sudo apt install ./copythat-ui_&lt;ver&gt;_amd64.deb</code></td></tr>
+              <tr><td>Fedora / openSUSE</td><td>rpm</td><td><code>sudo dnf install ./copythat-ui-&lt;ver&gt;.x86_64.rpm</code></td></tr>
+              <tr><td>Arch Linux</td><td>AUR</td><td><code>yay -S copythat-bin</code></td></tr>
+              <tr><td>Any Linux</td><td>AppImage</td><td>Download from Releases, then <code>chmod +x</code></td></tr>
+              <tr><td>Any Linux</td><td>Flatpak</td><td><code>flatpak install flathub com.copythat.desktop</code></td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <!-- COPY FILES -->
+        <section id="copy">
+          <h2>Copy files</h2>
+          <ol>
+            <li>Launch Copy That 2026.</li>
+            <li>
+              <strong>Add your source files</strong> — drag and drop one or more files or folders
+              onto the window, <em>or</em> click <strong>Add files</strong> / <strong>Add folders</strong>
+              in the header toolbar.
+            </li>
+            <li>
+              The <strong>drop-staging dialog</strong> opens. Set:
+              <ul>
+                <li><strong>Destination</strong> — choose the target folder via the native file picker.</li>
+                <li><strong>Operation</strong> — select <em>Copy</em> (this is the default).</li>
+                <li><strong>Collision policy</strong> — what to do if a file already exists at the destination:
+                  <em>Keep both</em>, <em>Skip</em>, <em>Overwrite</em>, <em>Overwrite if newer</em>, or <em>Ask every time</em>.</li>
+                <li><strong>Order</strong> — rearrange the source list by name or size, or drag rows manually.
+                  Files are always grouped before folders.</li>
+              </ul>
+            </li>
+            <li>Click <strong>Start copying</strong>.</li>
+            <li>
+              Watch progress in the queue view — each file gets its own row showing a circular progress
+              ring, live speed (MiB/s), bytes copied vs. total, and an ETA. The header strip shows
+              aggregate speed and overall ETA across all running jobs.
+            </li>
+            <li>
+              To <strong>pause</strong> a job, press <kbd>Space</kbd> with that row focused, or use
+              the right-click context menu. Click <strong>Resume</strong> (or press <kbd>Space</kbd>
+              again) to continue.
+            </li>
+            <li>When all jobs finish, the state pill shows <strong>Idle</strong> and the completed rows
+              show the <em>Done</em> badge. A verified copy also confirms byte-exact integrity
+              (see <a href="#verify" style="color:var(--accent);text-decoration:none">Verify a transfer</a>).</li>
+          </ol>
+        </section>
+
+        <!-- MOVE FILES -->
+        <section id="move">
+          <h2>Move files</h2>
+          <ol>
+            <li>Launch Copy That 2026.</li>
+            <li>Drag and drop files or folders onto the window, or use <strong>Add files</strong> /
+              <strong>Add folders</strong> in the toolbar.</li>
+            <li>In the drop-staging dialog, set <strong>Operation → Move</strong>.</li>
+            <li>Choose your <strong>Destination</strong> folder and set a <strong>Collision policy</strong>.</li>
+            <li>Click <strong>Start moving</strong>.</li>
+            <li>
+              Copy That copies each file to the destination first, then deletes the source only after
+              the destination write succeeds. If a failure occurs mid-move, the source file is
+              preserved and the row is marked <em>Failed</em> — no data is lost.
+            </li>
+            <li>Completed rows show the <em>Done</em> badge. Check the <strong>History</strong> tab
+              to confirm all files transferred successfully.</li>
+          </ol>
+          <div class="note-box">
+            You can also trigger a move from Windows Explorer, macOS Finder, or your Linux file manager
+            using the right-click "Move with Copy That" entry — see
+            <a href="#shell" style="color:var(--accent);text-decoration:none">Shell &amp; right-click menu</a>.
+          </div>
+        </section>
+
+        <!-- SECURE DELETE -->
+        <section id="secure-delete">
+          <h2>Securely delete files</h2>
+          <ol>
+            <li>
+              <strong>From your file manager (Windows / macOS / Linux):</strong> right-click the file
+              or folder and choose <strong>Secure delete with Copy That</strong>.
+              <br /><strong>From inside the app:</strong> right-click any completed job row in the queue
+              and choose <strong>Secure delete source</strong>.
+            </li>
+            <li>A confirmation dialog shows the file path(s) and the currently configured shred method.</li>
+            <li>
+              To change the shred method for this deletion, click the method name to open the picker.
+              For the default method across all future deletions, go to
+              <strong>Settings → Secure delete</strong>.
+            </li>
+            <li>Click <strong>Shred</strong> (you may be asked to confirm a second time if
+              <em>Require double confirmation</em> is enabled in Settings).</li>
+            <li>Copy That overwrites the file data according to the chosen method, then deletes it.
+              The row shows <em>Done</em> when shredding is complete.</li>
+          </ol>
+          <table>
+            <thead>
+              <tr><th>Method</th><th>Passes</th><th>When to use</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Zero</td><td>1</td><td>Quick disposal of non-sensitive data</td></tr>
+              <tr><td>Random (CSPRNG)</td><td>1</td><td>Fast cryptographically random overwrite</td></tr>
+              <tr><td>DoD 5220.22-M</td><td>3</td><td>Standard compliance requirement</td></tr>
+              <tr><td>DoD 7-pass (ECE)</td><td>7</td><td>Higher-assurance compliance</td></tr>
+              <tr><td>Schneier</td><td>7</td><td>Practical strong deletion</td></tr>
+              <tr><td>VSITR (German BSI)</td><td>7</td><td>European regulatory environments</td></tr>
+              <tr><td>Gutmann</td><td>35</td><td>Historical; rarely needed on modern drives</td></tr>
+              <tr><td>NIST 800-88 Clear</td><td>1</td><td>Modern magnetic-media standard</td></tr>
+            </tbody>
+          </table>
+          <div class="warn-box">
+            <strong>SSD warning:</strong> multi-pass overwrite does <em>not</em> reliably sanitize flash
+            storage due to wear-leveling and over-provisioning. Copy That detects SSDs and shows an
+            advisory toast. For true SSD sanitization, use ATA SECURE ERASE via your drive vendor's
+            tool, or rely on full-disk encryption with key rotation.
+          </div>
+        </section>
+
+        <!-- BATCH / ORGANIZE -->
+        <section id="batch">
+          <h2>Organize &amp; batch operations</h2>
+          <ol>
+            <li>Add multiple files and folders to Copy That in a single drag — or click
+              <strong>Add files</strong> / <strong>Add folders</strong> multiple times to build up a
+              larger source list.</li>
+            <li>
+              In the drop-staging dialog, use <strong>Order</strong> to sort the source list by name
+              or size (ascending or descending), or drag rows manually to prioritize. Files always
+              appear before folders regardless of sort order.
+            </li>
+            <li>
+              To skip certain files, open <strong>Settings → Filters</strong> before starting. Add
+              include or exclude globs (e.g., <code>**/*.log</code> to exclude all log files, or
+              <code>**/*.txt</code> to include only text files). You can also set size bounds or
+              modification-time bounds to filter by age or file size.
+            </li>
+            <li>
+              Choose your <strong>Collision policy</strong> in the staging dialog — <em>Skip</em>
+              is useful for batch syncs where you want to add only new files; <em>Overwrite if newer</em>
+              handles incremental updates.
+            </li>
+            <li>Click <strong>Start copying</strong> or <strong>Start moving</strong>.</li>
+            <li>
+              The <strong>Activity panel</strong> (lower half of the main window) shows one row per file
+              the engine touches as it enumerates the source tree. Rows display status badges:
+              <em>Pending</em>, <em>Running</em>, <em>Done</em>, <em>Skipped</em>, or <em>Failed</em>.
+              On trees over 250,000 files the panel stops adding rows to stay responsive, but the
+              queue progress bar continues counting all files.
+            </li>
+            <li>
+              Use the <strong>When done</strong> selector (top-right of the Activity panel) to
+              automatically close the app, log off, shut down, or sleep the machine when the entire
+              queue finishes.
+            </li>
+            <li>
+              To re-run a batch later, go to the <strong>History</strong> tab, find the job, and click
+              <strong>Re-run</strong> — it queues the same sources and destination with one click.
+            </li>
+          </ol>
+        </section>
+
+        <!-- VERIFY -->
+        <section id="verify">
+          <h2>Verify a transfer</h2>
+          <ol>
+            <li>Open <strong>Settings → Transfer</strong> and find the <strong>Verify</strong> drop-down.</li>
+            <li>
+              Choose a verification algorithm. Recommended choices:
+              <ul>
+                <li><strong>xxHash3</strong> — fastest option, ideal for day-to-day copies.</li>
+                <li><strong>BLAKE3</strong> — cryptographically strong and still very fast; use for
+                  important data.</li>
+                <li><strong>SHA-256</strong> — maximum compatibility with external tools and
+                  TeraCopy-format sidecar files.</li>
+              </ul>
+            </li>
+            <li>Close Settings. The next copy job will automatically verify.</li>
+            <li>
+              During a copy, Copy That hashes the source <em>during</em> the read pass — no second
+              read of the source needed. After all bytes land at the destination, a dedicated post-pass
+              hashes the destination file.
+            </li>
+            <li>
+              If the hashes match, the row badge shows <em>Done</em>. If they differ, the row shows
+              <em>Failed</em> with a <em>VerifyFailed</em> error — click the row to open the details
+              drawer with the expected vs. actual hash values.
+            </li>
+            <li>
+              To export a hash sidecar (TeraCopy-compatible format), click the export icon in the
+              queue header or right-click a completed row and choose <strong>Export checksums</strong>.
+              Each line is <code>&lt;hex&gt;  &lt;relative path&gt;</code>.
+            </li>
+          </ol>
+          <div class="note-box">
+            If a copy appears to stall at 100%, check the state pill in the header. If it reads
+            <strong>Verifying</strong>, the post-copy hash pass is still running — this is normal
+            for large files or slower algorithms like SHA-256.
+          </div>
+        </section>
+
+        <!-- SHELL INTEGRATION -->
+        <section id="shell">
+          <h2>Shell integration &amp; right-click menu</h2>
+          <ol>
+            <li>Shell integration is installed automatically alongside the app on all platforms —
+              no separate step is needed.</li>
+            <li>
+              <strong>Windows:</strong> in File Explorer, right-click any file or folder. You will see
+              <strong>Copy with Copy That</strong> and <strong>Move with Copy That</strong> in the
+              context menu. These entries are provided by an <code>IExplorerCommand</code> shell
+              extension registered during install.
+            </li>
+            <li>
+              <strong>macOS:</strong> in Finder, right-click (or Control-click) a file or folder and
+              look under <strong>Quick Actions</strong> or <strong>Services</strong> for
+              <strong>Copy with Copy That</strong>. The integration uses a Finder Sync extension plus
+              a macOS Services menu entry visible from any app that supports NSServices.
+            </li>
+            <li>
+              <strong>Linux (GNOME):</strong> right-click in Nautilus. The Copy That actions appear
+              via a Nautilus Python extension installed to your user extensions folder.
+            </li>
+            <li>
+              <strong>Linux (KDE):</strong> right-click in Dolphin. The actions appear via a KDE
+              ServiceMenu (<code>.desktop</code> file) placed in the KDE services directory during install.
+            </li>
+            <li>
+              <strong>Linux (XFCE / Thunar):</strong> right-click in Thunar. The actions appear via
+              a Thunar Custom Action registered at install time.
+            </li>
+            <li>
+              Selecting any of these actions passes the selected paths to the running Copy That instance
+              (or launches it first if it isn't already open) and immediately opens the
+              drop-staging dialog with those paths pre-filled.
+            </li>
+            <li>
+              To enable or disable the shell entries, or to opt in to intercepting the default
+              Windows copy handler, go to <strong>Settings → Shell</strong>.
+            </li>
+          </ol>
+        </section>
+
+        <!-- PASTE HOTKEY -->
+        <section id="paste-hotkey">
+          <h2>The global paste hotkey</h2>
+          <ol>
+            <li>
+              In your file manager (Explorer, Finder, Files, Nautilus, Dolphin, etc.), copy one or
+              more files normally — <kbd>Ctrl+C</kbd> on Windows/Linux or <kbd>Cmd+C</kbd> on macOS.
+            </li>
+            <li>
+              Switch to any other app or stay where you are — you don't need to go back to Copy That.
+            </li>
+            <li>
+              Press <strong>Ctrl + Shift + V</strong> (Windows / Linux) or
+              <strong>Cmd + Shift + V</strong> (macOS) anywhere on your system.
+            </li>
+            <li>
+              Copy That reads the file paths from the OS clipboard and opens the
+              <strong>drop-staging dialog</strong> with those sources already filled in.
+            </li>
+            <li>Choose a destination, confirm the operation, and click <strong>Start copying</strong>
+              or <strong>Start moving</strong>.</li>
+          </ol>
+          <p>
+            To <strong>change the hotkey combo</strong>, go to <strong>Settings → General →
+            Global paste shortcut</strong> and enter a new combination. To
+            <strong>disable the hotkey entirely</strong>, toggle it off in the same setting.
+          </p>
+          <div class="note-box">
+            The optional <strong>Clipboard watcher</strong> (Settings → General → Watch clipboard
+            for copied files) polls every 500 ms and shows a small toast notification when file
+            paths appear on the clipboard — handy as a reminder to use the hotkey. Disable it if
+            you prefer a quiet clipboard.
+          </div>
+        </section>
+
+        <!-- HISTORY & TOTALS -->
+        <section id="history">
+          <h2>History &amp; totals</h2>
+          <ol>
+            <li>Click the <strong>History</strong> link in the app footer to open the History tab.</li>
+            <li>
+              Every completed or failed job is listed with columns for: Date, Kind (Copy / Move /
+              Secure delete), Source, Destination, Files transferred, Total size, Status, and Duration.
+            </li>
+            <li>
+              <strong>Filter the list</strong> using the controls at the top: filter by date range,
+              job kind, status, or a text search across paths.
+            </li>
+            <li>To <strong>re-run any past job</strong>, click the row to select it, then click
+              <strong>Re-run</strong> — Copy That queues the same source paths and destination
+              immediately, no dialog needed.</li>
+            <li>To <strong>export the filtered list as a CSV</strong>, click <strong>Export CSV</strong>.
+              The file follows RFC 4180 format (double-quoted fields, embedded-quote doubling,
+              newline-safe).</li>
+            <li>
+              Click the <strong>Totals</strong> tab (also in the footer) to see lifetime aggregate
+              statistics: total bytes copied, total files, total jobs, and average throughput. A
+              30-day activity sparkline and a breakdown by job kind are shown below the headline numbers.
+            </li>
+            <li>
+              To <strong>clear all history and statistics</strong>, go to <strong>Totals → Reset
+              statistics</strong>. This is a two-step action — you must confirm twice to prevent
+              accidental deletion.
+            </li>
+            <li>
+              To limit how long history is retained, go to <strong>Settings → Advanced → History
+              retention days</strong> and enter a number of days. Leave it blank to keep history
+              forever.
+            </li>
+          </ol>
+        </section>
+
+        <!-- SETTINGS -->
+        <section id="settings">
+          <h2>Change settings</h2>
+          <ol>
+            <li>Click the <strong>gear icon</strong> in the app footer to open the Settings modal.</li>
+            <li>
+              Use the tabs to navigate between setting groups:
+              <ul>
+                <li><strong>General</strong> — language, theme (auto / light / dark), launch at startup,
+                  minimize to tray, error prompt style, global paste hotkey combo, clipboard watcher.</li>
+                <li><strong>Transfer</strong> — buffer size (64 KiB–16 MiB), verify algorithm,
+                  concurrency (1–16 threads or auto), reflink preference, fsync on close, preserve
+                  timestamps / permissions / ACLs.</li>
+                <li><strong>Filters</strong> — include/exclude glob patterns (e.g., <code>**/*.log</code>),
+                  file size bounds, modification-time bounds, skip hidden / system / read-only files.</li>
+                <li><strong>Shell</strong> — enable/disable context-menu entries, opt in to intercepting
+                  the default Windows copy handler, show job-completion notifications.</li>
+                <li><strong>Secure delete</strong> — default shred method, require double confirmation.</li>
+                <li><strong>Advanced</strong> — log level, error policy (Ask / Skip / Retry / Abort),
+                  history retention, database file path.</li>
+                <li><strong>Updates</strong> — auto-check on launch, release channel (stable / beta),
+                  skip-this-version.</li>
+                <li><strong>Profiles</strong> — save the current settings as a named profile, load a
+                  saved profile, or import/export profiles as JSON files for sharing across machines.</li>
+              </ul>
+            </li>
+            <li>
+              All settings take effect immediately — no restart required. Changes hot-reload:
+              if you change the buffer size and then start a new job, that job uses the new value.
+            </li>
+            <li>Close the Settings modal when done.</li>
+          </ol>
+        </section>
+
+        <!-- KEYBOARD SHORTCUTS -->
+        <section id="shortcuts">
+          <h2>Keyboard shortcuts</h2>
+          <ol>
+            <li>These shortcuts work anywhere in the main window:</li>
+          </ol>
+          <table class="shortcuts-table">
+            <thead>
+              <tr><th>Shortcut</th><th>Action</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Ctrl / Cmd + O</td><td>Add files</td></tr>
+              <tr><td>Ctrl / Cmd + Shift + O</td><td>Add folders</td></tr>
+              <tr><td>Space (row focused)</td><td>Pause or resume the focused job</td></tr>
+              <tr><td>Enter</td><td>Open the details drawer for the focused row</td></tr>
+              <tr><td>Home / End</td><td>Jump to the first or last row in the queue</td></tr>
+              <tr><td>Ctrl + ↑ / Ctrl + ↓</td><td>Move focused row to the top or bottom of the list</td></tr>
+              <tr><td>Shift + ↑ / Shift + ↓</td><td>Reorder rows one step up or down in the source list</td></tr>
+              <tr><td>Ctrl / Cmd + Shift + V</td><td>Paste files via Copy That (global hotkey — works system-wide)</td></tr>
+              <tr><td>Esc</td><td>Close the topmost modal or details drawer</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <!-- TROUBLESHOOTING -->
+        <section id="troubleshooting">
+          <h2>Tips &amp; troubleshooting</h2>
+          <ol>
+            <li>
+              <strong>"Path rejected — contains parent-directory (..) segments"</strong><br />
+              A relative path containing <code>..</code> was passed to Copy That. Retry the operation
+              from your file manager using the shell integration. If you believe the path was valid,
+              please
+              <a href="https://github.com/MikesRuthless12/CopyThat2026/issues" style="color:var(--accent);text-decoration:none">file an issue</a>.
+            </li>
+            <li>
+              <strong>Copy stalls at 100%</strong><br />
+              Check the state pill in the header. If it shows <strong>Verifying</strong>, the
+              post-copy hash pass is running in the background — this is normal, especially for large
+              files or slower algorithms like SHA-256. Wait for it to finish, or disable verify in
+              Settings → Transfer if you don't need it.
+            </li>
+            <li>
+              <strong>"Low space on the destination" modal</strong><br />
+              Copy That detected that the source files won't fit at the destination. Click
+              <strong>Pick which to copy…</strong> to open the subset picker, then uncheck items
+              until the size fits the available space.
+            </li>
+            <li>
+              <strong>Windows: "File in use" error</strong><br />
+              Copy That opens source files with shared read access and retries automatically with
+              exponential backoff on sharing-violation errors. If the retry loop is exhausted, the
+              holding process is refusing all coexistence — close the application that has the file
+              open and try again.
+            </li>
+            <li>
+              <strong>Linux: AppImage won't launch</strong><br />
+              Run <code>chmod +x copythat-*.AppImage</code> to make the file executable. On older
+              glibc systems, use the <code>.deb</code> or <code>.rpm</code> package instead — the
+              AppImage is built against Ubuntu 22.04's glibc.
+            </li>
+            <li>
+              <strong>History tab is empty</strong><br />
+              Check Settings → Advanced → Database path. The default locations are:
+              <ul>
+                <li>Windows: <code>%LOCALAPPDATA%\CopyThat2026\history.db</code></li>
+                <li>macOS: <code>~/Library/Application Support/CopyThat2026/history.db</code></li>
+                <li>Linux: <code>$XDG_DATA_HOME/CopyThat2026/history.db</code></li>
+              </ul>
+              If the path has been changed to a location that doesn't exist, point it back to the
+              correct folder and restart the app.
+            </li>
+            <li>
+              <strong>Getting more help</strong><br />
+              <a href="https://github.com/MikesRuthless12/CopyThat2026/issues" style="color:var(--accent);text-decoration:none">Open an issue on GitHub</a>
+              with your OS version, Copy That version, and the text of any error message.
+            </li>
+          </ol>
+        </section>
+
+        <!-- PRIVACY -->
+        <section id="privacy">
+          <h2>Privacy</h2>
+          <ol>
+            <li>
+              <strong>No telemetry.</strong> Copy That never phones home. The telemetry field in
+              settings is permanently disabled — it cannot be re-enabled by editing the settings file
+              because the field is marked <code>#[serde(skip_deserializing)]</code> in the source code.
+            </li>
+            <li>
+              <strong>No network calls during file operations.</strong> While copying, moving,
+              verifying, or securely deleting files, Copy That makes zero network requests.
+            </li>
+            <li>
+              <strong>Update checks are opt-in.</strong> The launch update check can be turned off in
+              Settings → Updates. When enabled, it fetches only the update manifest — not your file
+              paths or any usage data — and is throttled to once every 24 hours.
+            </li>
+            <li>
+              <strong>Logs never contain file contents.</strong> Debug logs may include file paths and
+              hash values for diagnosing failures, but never include the contents of any file. Hash
+              sidecar exports use job-root-relative paths only.
+            </li>
+          </ol>
+        </section>
+
+      </div><!-- /doc-body -->
+    </div><!-- /doc-layout -->
+
+    <footer>
+      <p>© 2026 Mike Weaver — All Rights Reserved · free · local-first · privacy-respecting</p>
+      <p>
+        <a href="https://github.com/MikesRuthless12/CopyThat2026">GitHub</a> ·
+        <a href="https://github.com/MikesRuthless12/CopyThat2026/releases">All releases</a> ·
+        <a href="https://github.com/MikesRuthless12/CopyThat2026/blob/main/LICENSE">License</a> ·
+        <a href="documentation.html">Documentation</a>
+      </p>
+    </footer>
+
+    <script>
+  (function () {
+    var links = document.querySelectorAll('.doc-toc a');
+    var sections = [];
+    links.forEach(function (a) {
+      var id = a.getAttribute('href').replace('#', '');
+      var el = document.getElementById(id);
+      if (el) sections.push({ id: id, el: el, a: a });
+    });
+    function onScroll() {
+      var active = sections[0];
+      for (var i = 0; i < sections.length; i++) {
+        if (sections[i].el.getBoundingClientRect().top <= 120) { active = sections[i]; }
+      }
+      links.forEach(function (a) { a.classList.remove('active'); });
+      if (active) active.a.classList.add('active');
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  })();
+</script>
+  </body>
+</html>

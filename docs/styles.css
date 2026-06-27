@@ -282,3 +282,23 @@ footer a {
 footer a:hover {
   text-decoration: underline;
 }
+
+/* ---- Documentation (two-column guide) ---- */
+.doc-layout{display:flex;gap:32px;align-items:flex-start;max-width:1100px;margin:0 auto;padding:16px 20px 56px;}
+.doc-toc{position:sticky;top:90px;flex:0 0 230px;align-self:flex-start;}
+.doc-toc nav{background:linear-gradient(180deg,var(--panel-2),var(--panel));border:1px solid var(--border);border-radius:14px;padding:18px 10px;}
+.doc-toc .toc-label{display:block;padding:.25rem .6rem .6rem;font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
+.doc-toc a{display:block;padding:.35rem .6rem;text-decoration:none;border-left:2px solid transparent;color:#c7d1e0;font-size:.92rem;border-radius:0 6px 6px 0;transition:color .12s,border-left-color .12s,background .12s;}
+.doc-toc a:hover,.doc-toc a.active{border-left-color:var(--accent);color:var(--accent);background:rgba(110,168,254,0.07);}
+.doc-body{flex:1;min-width:0;}
+.doc-body section{background:linear-gradient(180deg,var(--panel-2),var(--panel));border:1px solid var(--border);border-radius:18px;padding:24px 28px;margin:0 0 22px;box-shadow:0 12px 50px rgba(0,0,0,.35);}
+.doc-body h2{margin:0 0 14px;font-size:1.5rem;}
+.doc-body ol,.doc-body ul{padding-left:22px;} .doc-body li{margin:8px 0;color:#d4dcea;}
+@media(max-width:820px){
+  .doc-layout{flex-direction:column;}
+  .doc-toc{position:static;flex:none;width:100%;}
+  .doc-toc nav{display:flex;flex-wrap:wrap;gap:0 4px;padding:12px 10px;}
+  .doc-toc .toc-label{width:100%;padding-bottom:.35rem;}
+  .doc-toc a{border-left:none;border-bottom:2px solid transparent;border-radius:6px;padding:.3rem .55rem;font-size:.85rem;}
+  .doc-toc a:hover,.doc-toc a.active{border-left-color:transparent;border-bottom-color:var(--accent);}
+}
