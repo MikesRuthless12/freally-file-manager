@@ -146,24 +146,31 @@ jobs:
         shell: bash
         run: |
           mkdir -p release-staging
-          find "target/${{ matrix.target.rust-target }}/release/bundle" \
-            -type f \( -name "*.dmg" -o -name "*.app.tar.gz" -o -name "*.sig" -o -name "latest.json" \) \
-            -exec cp {} release-staging/ \; || true
-          # Per-target manifest name so the four runners don't collide on
-          # the release; publish-updater-manifest merges them into one.
-          [ -f release-staging/latest.json ] && mv -f release-staging/latest.json "release-staging/latest-${{ matrix.target.label }}.json" || true
+          BUNDLE="target/${{ matrix.target.rust-target }}/release/bundle"
+          # DMG is already arch-named (…_aarch64.dmg / …_x64.dmg) — copy as-is.
+          find "$BUNDLE" -type f -name "*.dmg" -exec cp {} release-staging/ \; || true
+          # The updater bundle (*.app.tar.gz) + its .sig share an arch-agnostic
+          # name across the two mac legs, so they'd collide on upload and only
+          # one arch's updater artifact would survive. Rename both to include the
+          # runner label so each arch is preserved; the manifest job points
+          # darwin-aarch64 / darwin-x86_64 at the matching file.
+          find "$BUNDLE" -type f -name "*.app.tar.gz" | while read -r f; do
+            base="$(basename "$f" .app.tar.gz)"
+            cp "$f" "release-staging/${base}.${{ matrix.target.label }}.app.tar.gz"
+            [ -f "$f.sig" ] && cp "$f.sig" "release-staging/${base}.${{ matrix.target.label }}.app.tar.gz.sig"
+          done
 
       - name: Collect Linux artifacts
         if: matrix.target.os == 'ubuntu-latest'
         shell: bash
         run: |
           mkdir -p release-staging
+          # NOTE: no bare *.tar.gz — the .deb build leaves control.tar.gz /
+          # data.tar.gz internals in the bundle tree that a broad glob scoops up
+          # as junk. The Linux updater artifact is the .AppImage (+ .sig).
           find "target/${{ matrix.target.rust-target }}/release/bundle" \
-            -type f \( -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" -o -name "*.tar.gz" -o -name "*.sig" -o -name "latest.json" \) \
+            -type f \( -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" -o -name "*.sig" \) \
             -exec cp {} release-staging/ \; || true
-          # Per-target manifest name so the four runners don't collide on
-          # the release; publish-updater-manifest merges them into one.
-          [ -f release-staging/latest.json ] && mv -f release-staging/latest.json "release-staging/latest-${{ matrix.target.label }}.json" || true
 
       - name: Linux GPG sign (optional, skipped if no key)
         if: matrix.target.os == 'ubuntu-latest'
@@ -213,75 +220,85 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
-      - name: Download per-target manifests from the release
+      - name: Generate latest.json from the signed release assets
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ github.ref_name }}
-        run: |
-          mkdir -p _release
-          # The build job uploads one `latest-<label>.json` per runner;
-          # gather them and merge into a single manifest the updater
-          # plugin can consume from one endpoint.
-          gh release download "$TAG" --pattern 'latest-*.json' --dir _release || true
-          ls -la _release || true
-      - name: Merge per-target latest.json files
-        env:
-          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
+          # `tauri build` (unlike tauri-action) emits the updater bundle + a
+          # detached `.sig` per target but NOT a latest.json. Generate one here
+          # from the signed assets already on the release: pull every `.sig`,
+          # then for each platform pick the artifact the Tauri updater downloads,
+          # read its signature, and record the asset's real GitHub download URL.
+          mkdir -p _sig
+          gh release download "$TAG" -R "$REPO" --pattern '*.sig' --dir _sig --clobber
+          ls -la _sig
           python3 - <<'PYEOF'
-          import glob, json, os, pathlib, sys
+          import json, os, pathlib, subprocess, sys
 
-          # Hard allowlist of platform keys the Tauri updater plugin
-          # recognizes; an attacker who controls a release-asset filename
-          # could otherwise inject an arbitrary platforms[<key>] entry.
-          ALLOWED_PLATFORMS = {
-              "linux-x86_64",
-              "darwin-x86_64", "darwin-aarch64",
-              "windows-x86_64",
+          tag = os.environ["TAG"]; repo = os.environ["REPO"]
+          version = tag.lstrip("v")
+
+          # Real browser download URLs for every asset on the release.
+          assets = json.loads(subprocess.check_output(
+              ["gh", "release", "view", tag, "-R", repo, "--json", "assets"]))["assets"]
+          url_by_name = {a["name"]: a["url"] for a in assets}
+
+          # The Tauri-updater download target per platform, matched by the tail of
+          # the uploaded asset name (GitHub turns spaces into dots). Windows uses
+          # the NSIS setup.exe; Linux the AppImage; macOS the per-arch app.tar.gz
+          # the Collect step renamed with the runner label.
+          wanted = {
+              "windows-x86_64": "-setup.exe",
+              "linux-x86_64":   ".AppImage",
+              "darwin-aarch64": "macos-aarch64.app.tar.gz",
+              "darwin-x86_64":  "macos-x86_64.app.tar.gz",
           }
 
-          tag = os.environ["TAG"]
-          version = tag.lstrip("v")
+          def resolve(suffix):
+              names = sorted(n for n in url_by_name
+                             if n.endswith(suffix) and not n.endswith(".sig"))
+              if not names:
+                  return None
+              name = names[0]
+              sig = pathlib.Path("_sig") / (name + ".sig")
+              if not sig.exists():
+                  return None
+              return {"signature": sig.read_text().strip(), "url": url_by_name[name]}
+
+          platforms = {}
+          for key, suffix in wanted.items():
+              entry = resolve(suffix)
+              if entry:
+                  platforms[key] = entry
+              else:
+                  print(f"WARN: no signed updater artifact for {key} ({suffix})",
+                        file=sys.stderr)
+
+          # Fail loud rather than ship a manifest missing platforms — an installed
+          # client on a missing platform would treat the release as "no update".
+          if len(platforms) != len(wanted):
+              print(f"FATAL: resolved {len(platforms)}/{len(wanted)} platforms: "
+                    f"{sorted(platforms)}", file=sys.stderr)
+              sys.exit(1)
+
           out = {
               "version": version,
               "notes": f"Copy That {tag}. See CHANGELOG.md for details.",
               "pub_date": "",
-              "platforms": {},
+              "platforms": platforms,
           }
-          sources = sorted(glob.glob("_release/latest-*.json"))
-          if not sources:
-              # Fail loud rather than publish an empty manifest that would
-              # make every installed client treat the release as "no
-              # platforms available" and silently skip the update.
-              print("FATAL: no `latest-*.json` artifacts found in _release/", file=sys.stderr)
-              sys.exit(1)
-          for src in sources:
-              try:
-                  data = json.loads(pathlib.Path(src).read_text())
-              except Exception as e:
-                  print(f"skip {src}: {e}", file=sys.stderr)
-                  continue
-              if not out["pub_date"]:
-                  out["pub_date"] = data.get("pub_date", "")
-              for platform_key, payload in data.get("platforms", {}).items():
-                  if platform_key not in ALLOWED_PLATFORMS:
-                      print(f"skip platform key not in allowlist: {platform_key!r}", file=sys.stderr)
-                      continue
-                  out["platforms"][platform_key] = payload
-          if not out["platforms"]:
-              print("FATAL: no allowed platforms after merge", file=sys.stderr)
-              sys.exit(1)
-          pathlib.Path("_release/latest.json").write_text(json.dumps(out, indent=2))
+          pathlib.Path("latest.json").write_text(json.dumps(out, indent=2))
           print(json.dumps(out, indent=2))
           PYEOF
-      - name: Upload merged latest.json to the GH Release
+      - name: Upload latest.json to the GH Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ github.ref_name }}
-        run: |
-          gh release upload "$TAG" _release/latest.json --clobber
+          REPO: ${{ github.repository }}
+        run: gh release upload "$TAG" latest.json --clobber -R "$REPO"
 
   # ------------------------------------------------------------------
   # Paid-signing upgrade hooks. Keep commented until revenue justifies
