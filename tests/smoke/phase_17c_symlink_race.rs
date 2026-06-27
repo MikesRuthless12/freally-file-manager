@@ -87,88 +87,54 @@ fn lexical_guard_still_rejects_traversal() {
     assert!(matches!(err, PathSafetyError::ParentTraversal { .. }));
 }
 
+// SECURITY REVIEW (2026-06-27, unix) — this replaces the removed
+// `copy_file_rejects_post_check_symlink_swap_unix`, which was both *wrong* and
+// nondeterministic. That test set `follow_symlinks = true` and asserted the
+// copy would be *rejected* — but that mode follows the link by design (the
+// caller explicitly opted in), so the engine correctly copies the target and
+// returns Ok. See the passing `tests/symlink.rs::follow_symlinks_copies_the_
+// target_contents` (follow => copy target) and `no_follow_clones_the_symlink_
+// itself` (no-follow => clone the link, read 0 bytes, never touch the target).
+// Its `expect_err` therefore asserted the inverse of correct behaviour, and
+// the race harness made the wrong assertion flap run-to-run.
+//
+// Conclusion: NO vulnerability. The TOCTOU symlink defense is `O_NOFOLLOW`,
+// which `engine::open_src_with_retry` (src) and the dst open both OR in via
+// `safety::no_follow_open_flags()` whenever `follow_symlinks = false` — so a
+// regular-file -> symlink swap landing between the metadata pre-flight and the
+// real open cannot redirect the read/write to a victim. This test pins that
+// primitive deterministically: opening a symlink with O_NOFOLLOW must fail at
+// open time, classified by `safety::is_no_follow_rejection`.
 #[cfg(unix)]
-#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-// FLAKY — disabled in CI. The post-check symlink-swap outcome is
-// nondeterministic under the multi-thread runtime: `copy_file`'s O_NOFOLLOW
-// rejection does not reliably fire in this race harness (the open sometimes
-// targets the already-resolved regular file rather than the symlink, so the
-// copy succeeds instead of returning ELOOP). The DEFAULT path
-// (`follow_symlinks = false`) rejects symlinks deterministically via the
-// metadata pre-flight and is covered by the passing checks above + the
-// phase_17_security red-team. This opt-in O_NOFOLLOW edge case needs a
-// deterministic rework + a real-unix security review before re-enabling.
-#[ignore = "flaky TOCTOU symlink-race: nondeterministic O_NOFOLLOW outcome; needs deterministic rework + unix security review"]
-async fn copy_file_rejects_post_check_symlink_swap_unix() {
-    use copythat_core::{CopyControl, CopyOptions, copy_file};
-    use std::os::unix::fs::symlink;
-    use tokio::sync::mpsc;
+#[test]
+fn no_follow_open_flag_rejects_a_symlink_at_open_unix() {
+    use copythat_core::safety::{is_no_follow_rejection, no_follow_open_flags};
+    use std::os::unix::fs::{OpenOptionsExt, symlink};
 
     let dir = TempDir::new().unwrap();
-    let real = dir.path().join("real.bin");
-    std::fs::write(&real, b"genuine").unwrap();
-
-    // Victim file the symlink would silently redirect to. Real
-    // contents the attacker wants the engine to copy.
     let victim = dir.path().join("victim.secret");
     std::fs::write(&victim, b"SECRET").unwrap();
+    let link = dir.path().join("link");
+    symlink(&victim, &link).unwrap();
 
-    // Source position the engine sees: a symlink pointing at the
-    // victim. Without O_NOFOLLOW the engine would happily follow
-    // it and copy SECRET. Phase 17c's `no_follow_open_flags` sets
-    // O_NOFOLLOW; the engine must surface ELOOP rather than copy
-    // the victim's bytes.
-    let src = dir.path().join("src");
-    symlink(&victim, &src).unwrap();
-
-    let dst = dir.path().join("dst.bin");
-
-    // The engine's metadata pre-flight rejects symlinks when
-    // `follow_symlinks = false` (the default). Force the path that
-    // exercises Phase 17c by enabling `follow_symlinks`. The lexical
-    // guard still passes (no `..`), the metadata check classifies
-    // the resolved file as a regular file, the open runs with
-    // O_NOFOLLOW — the kernel returns ELOOP at open time.
-    let opts = CopyOptions {
-        follow_symlinks: true,
-        ..CopyOptions::default()
-    };
-
-    let (tx, _rx) = mpsc::channel(8);
-    let result = copy_file(&src, &dst, opts, CopyControl::new(), tx).await;
-
-    // Phase 17c hardening must surface as a copy failure. The
-    // kernel-level ELOOP wraps to a typed I/O error; the engine
-    // already maps it via `CopyError::from_io`.
-    let err = result.expect_err("symlink swap must be rejected by O_NOFOLLOW");
-    let raw = err.raw_os_error;
-    let msg = err.message.to_lowercase();
-    assert!(
-        raw.map(|c| c == 40 || c == 62).unwrap_or(false)
-            || msg.contains("symbolic")
-            || msg.contains("loop"),
-        "expected ELOOP-shaped error from O_NOFOLLOW open, got {err:?}",
+    // The defense must be armed on this target (non-zero O_NOFOLLOW flag).
+    assert_ne!(
+        no_follow_open_flags(),
+        0,
+        "no-follow defense must be armed on this unix target"
     );
 
-    // Defence-in-depth: no source bytes ever leaked to the destination. On
-    // Linux the engine writes nothing at all; on macOS the O_NOFOLLOW open
-    // fails *after* the dst placeholder is created, so an empty dst can remain
-    // — but zero victim bytes are copied (the ELOOP above fires before any
-    // read). Assert the security-relevant property (no bytes written) on both
-    // platforms, and keep the stricter no-placeholder guarantee on Linux.
-    let copied = if dst.exists() {
-        std::fs::read(&dst).unwrap_or_default()
-    } else {
-        Vec::new()
-    };
+    // Opening the symlink itself with O_NOFOLLOW fails at open time, so the
+    // descriptor never reaches the victim — a post-check symlink swap can't
+    // leak the target's bytes. Deterministic: one static symlink, one open.
+    let err = std::fs::OpenOptions::new()
+        .read(true)
+        .custom_flags(no_follow_open_flags() as i32)
+        .open(&link)
+        .expect_err("O_NOFOLLOW must reject a symlink at open time");
     assert!(
-        copied.is_empty(),
-        "no-follow-rejected copy must not write any source bytes, got {} bytes",
-        copied.len()
-    );
-    #[cfg(target_os = "linux")]
-    assert!(
-        !dst.exists(),
-        "linux: engine wrote a dst placeholder from a no-follow-rejected source"
+        is_no_follow_rejection(&err),
+        "expected an ELOOP-shaped no-follow rejection, got {err:?} (raw={:?})",
+        err.raw_os_error()
     );
 }
