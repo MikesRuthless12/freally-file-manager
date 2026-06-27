@@ -71,7 +71,7 @@
       "endpoints": [
         "https://github.com/MikesRuthless12/CopyThat2026/releases/latest/download/latest.json"
       ],
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDU5MDE4NTMxMTFEQkM1RTAKUldUZ3hkc1JNWVVCV1NHQU5IUEppbnVsNDFZakVDOUpGUmpidGhYMWViblpIUUhmekxUTFpVV0YK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEMwNUExOTc5MzUzMzI3RUQKUldUdEp6TTFlUmxhd0dHUURMSGxEcmcwdnV6N2dhQm4wT2xaOFdNcThKTmcxTWpLM2c4OHRyUjgK",
       "dangerousInsecureTransportProtocol": false,
       "windows": {
         "installMode": "passive"
