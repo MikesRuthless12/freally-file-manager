@@ -751,6 +751,15 @@ mod tests {
         assert_eq!(out, already);
     }
 
+    // Windows-host only: the `Win32LongPath` branch in `translate_path`
+    // guards with `composed.is_absolute()`, which is evaluated with the
+    // *host* `std::path` rules. A Windows drive path like `C:\out\…` is
+    // only absolute on a Windows host; on a Unix host it parses as a
+    // relative path (backslashes are ordinary filename bytes), so the
+    // call returns `RelativeDstRoot` instead of the `\\?\` prefix. The
+    // `\\?\`-prefix string mechanics themselves stay covered on every
+    // host by `apply_long_path_prefix_{drive,unc,idempotent}` above.
+    #[cfg(target_os = "windows")]
     #[test]
     fn translate_path_long_path_prefix_applied() {
         // Compose a >260-char destination path on Windows.
