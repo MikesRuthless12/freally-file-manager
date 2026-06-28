@@ -82,6 +82,7 @@
 pub mod capability;
 pub mod handler;
 pub mod rpc;
+pub mod spawn;
 pub mod transport;
 
 pub use capability::{Capability, CapabilityError};
@@ -89,4 +90,5 @@ pub use handler::handle_request;
 pub use rpc::{
     HelperError, Request, Response, ShellExtensionKind, generate_pipe_name, parse_pipe_name,
 };
+pub use spawn::{build_spawn_command, should_escalate};
 pub use transport::TransportError;
