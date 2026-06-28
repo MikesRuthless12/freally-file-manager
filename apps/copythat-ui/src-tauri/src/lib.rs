@@ -518,6 +518,8 @@ pub fn run() {
             // Phase 32c — local <-> backend transfer.
             cloud_commands::copy_local_to_backend,
             cloud_commands::copy_backend_to_local,
+            cloud_commands::cancel_cloud_transfer,
+            cloud_commands::active_cloud_transfer_count,
             // Phase 33 — mount-as-filesystem CRUD.
             mount_commands::list_mounts,
             mount_commands::mount_snapshot,

@@ -165,6 +165,13 @@ pub struct AppState {
     /// `PlatformVolumeProbe` so `route()` can discriminate by
     /// `volume_id` + label tabs with the Windows drive letter.
     pub queues: QueueRegistry,
+    /// Phase 31b — registry of in-flight cloud transfers (S3 / SFTP /
+    /// WebDAV via `cloud_commands`). Holds each transfer's tokio abort
+    /// handle so the power policy can *cancel* them on a metered /
+    /// cellular connection (cloud streams can't pause, only cancel), and
+    /// the UI can disable the pause button + offer cancel while a cloud
+    /// transfer is active. See [`crate::cloud_commands::CloudTransfers`].
+    pub cloud_transfers: Arc<crate::cloud_commands::CloudTransfers>,
 }
 
 impl AppState {
@@ -273,6 +280,9 @@ impl AppState {
             // shared job-id counter can flow into the legacy default
             // queue, keeping JobIds unique across both surfaces.
             queues,
+            // Phase 31b — empty cloud-transfer registry; cloud commands
+            // register/deregister their abort handles as transfers run.
+            cloud_transfers: Arc::new(crate::cloud_commands::CloudTransfers::default()),
         }
     }
 

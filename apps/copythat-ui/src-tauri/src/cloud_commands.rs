@@ -12,7 +12,8 @@
 //! name + kind + config only and prompts for the secret on re-edit
 //! if the user needs to rotate it.
 
-use std::sync::Arc;
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
 use copythat_cloud::{
     AzureBlobConfig, Backend, BackendConfig, BackendKind, BackendRegistry, CopyTarget, Credentials,
@@ -25,9 +26,105 @@ use copythat_settings::{
     WebdavBackendConfig,
 };
 use serde::{Deserialize, Serialize};
+use tauri::{AppHandle, Emitter};
+use tokio::task::AbortHandle;
 
 use crate::ipc_safety::{err_string, validate_ipc_path};
 use crate::state::AppState;
+
+/// Tauri event fired whenever the count of in-flight cloud transfers
+/// changes. The frontend listens and disables the pause button while
+/// the count is > 0 (cloud transfers can't pause — only cancel).
+pub const EVENT_CLOUD_TRANSFERS_CHANGED: &str = "cloud-transfers-changed";
+
+/// Command-error message when a cloud transfer is refused at start
+/// because the metered/cellular power rule is active.
+pub const CLOUD_METERED_PAUSE_MSG: &str = "cloud transfers are paused on a metered or cellular connection — switch to an unmetered network, or turn off the metered/cellular rule in Settings → Power";
+
+/// Command-error message when an in-flight cloud transfer is aborted
+/// (metered/cellular pause, or a manual cancel).
+pub const CLOUD_CANCELLED_MSG: &str = "cloud transfer cancelled";
+
+/// Registry of in-flight cloud transfers, held by [`AppState`]. Each
+/// running transfer registers its tokio [`AbortHandle`] so the power
+/// policy can *cancel* it on a metered/cellular connection — a cloud
+/// stream can't pause, only cancel, so cancel is the cloud equivalent
+/// of pausing a local job — the UI can offer a cancel button, and the
+/// pause button is disabled while any cloud transfer is active.
+#[derive(Default)]
+pub struct CloudTransfers {
+    inner: Mutex<CloudTransfersInner>,
+}
+
+#[derive(Default)]
+struct CloudTransfersInner {
+    next_id: u64,
+    active: HashMap<u64, AbortHandle>,
+    /// `true` while the metered/cellular rule is pausing network
+    /// transfers; the start-gate refuses new cloud transfers.
+    paused: bool,
+}
+
+impl CloudTransfers {
+    /// Register an in-flight transfer's abort handle; returns its id.
+    pub fn register(&self, abort: AbortHandle) -> u64 {
+        let mut g = self.inner.lock().expect("cloud_transfers lock");
+        g.next_id += 1;
+        let id = g.next_id;
+        g.active.insert(id, abort);
+        id
+    }
+
+    /// Drop a finished transfer from the registry.
+    pub fn deregister(&self, id: u64) {
+        if let Ok(mut g) = self.inner.lock() {
+            g.active.remove(&id);
+        }
+    }
+
+    /// Cancel one transfer by id (manual UI cancel). Returns `true`
+    /// when a matching active transfer was aborted.
+    pub fn cancel(&self, id: u64) -> bool {
+        let mut g = self.inner.lock().expect("cloud_transfers lock");
+        match g.active.remove(&id) {
+            Some(h) => {
+                h.abort();
+                true
+            }
+            None => false,
+        }
+    }
+
+    /// Cancel every active transfer (metered/cellular pause). Returns
+    /// the number aborted.
+    pub fn cancel_all(&self) -> usize {
+        let mut g = self.inner.lock().expect("cloud_transfers lock");
+        let n = g.active.len();
+        for (_, h) in g.active.drain() {
+            h.abort();
+        }
+        n
+    }
+
+    /// Set the start-gate (driven by the power runner): `true` while a
+    /// metered/cellular pause rule is active.
+    pub fn set_paused(&self, paused: bool) {
+        if let Ok(mut g) = self.inner.lock() {
+            g.paused = paused;
+        }
+    }
+
+    /// `true` when new cloud transfers should be refused.
+    pub fn is_paused(&self) -> bool {
+        self.inner.lock().map(|g| g.paused).unwrap_or(false)
+    }
+
+    /// Count of cloud transfers in flight. The UI disables the pause
+    /// button while this is > 0.
+    pub fn active_count(&self) -> usize {
+        self.inner.lock().map(|g| g.active.len()).unwrap_or(0)
+    }
+}
 
 /// Wire-form for a single backend. Round-trips directly from the
 /// Svelte `BackendDto` type; the kind-specific `config` sub-object
@@ -320,6 +417,7 @@ pub async fn copy_local_to_backend(
     backend_name: String,
     src_path: String,
     dst_key: String,
+    app: AppHandle,
     state: tauri::State<'_, AppState>,
 ) -> Result<u64, String> {
     // Phase 17e — gate src_path through the same lexical + encoding
@@ -327,6 +425,12 @@ pub async fn copy_local_to_backend(
     // attacker-controlled IPC payload could exfiltrate files via
     // `..` traversal (the LocalFs path the engine ultimately opens).
     let src = validate_ipc_path(&src_path).map_err(err_string)?;
+    // Phase 31b — a cloud upload is always network-bound, so refuse to
+    // start one while the metered/cellular power rule is active (it
+    // would burn metered/cellular data).
+    if state.cloud_transfers.is_paused() {
+        return Err(CLOUD_METERED_PAUSE_MSG.to_string());
+    }
     let backend = state
         .cloud_backends
         .get(&backend_name)
@@ -334,9 +438,10 @@ pub async fn copy_local_to_backend(
     let secret = Credentials.load(&backend.name).map_err(|e| e.to_string())?;
     let operator = make_operator(&backend, secret.as_deref()).map_err(|e| e.to_string())?;
     let target: Arc<dyn CopyTarget> = Arc::new(OperatorTarget::new(backend.name.clone(), operator));
-    copy_to_target(&src, &target, &dst_key)
-        .await
-        .map_err(|e| e.to_string())
+    run_cloud_transfer(&app, state.inner(), async move {
+        copy_to_target(&src, &target, &dst_key).await
+    })
+    .await
 }
 
 /// Phase 32c — pull a remote object onto the local filesystem. The
@@ -346,12 +451,18 @@ pub async fn copy_backend_to_local(
     backend_name: String,
     src_key: String,
     dst_path: String,
+    app: AppHandle,
     state: tauri::State<'_, AppState>,
 ) -> Result<u64, String> {
     // Phase 17e — same gate the local→cloud direction uses: a forged
     // IPC payload with `..` segments would otherwise let the download
     // land outside the user's chosen destination.
     let dst = validate_ipc_path(&dst_path).map_err(err_string)?;
+    // Phase 31b — a cloud download consumes the connection too; refuse
+    // to start one while the metered/cellular power rule is active.
+    if state.cloud_transfers.is_paused() {
+        return Err(CLOUD_METERED_PAUSE_MSG.to_string());
+    }
     let backend = state
         .cloud_backends
         .get(&backend_name)
@@ -359,9 +470,55 @@ pub async fn copy_backend_to_local(
     let secret = Credentials.load(&backend.name).map_err(|e| e.to_string())?;
     let operator = make_operator(&backend, secret.as_deref()).map_err(|e| e.to_string())?;
     let target: Arc<dyn CopyTarget> = Arc::new(OperatorTarget::new(backend.name.clone(), operator));
-    copy_from_target(&target, &src_key, &dst)
-        .await
-        .map_err(|e| e.to_string())
+    run_cloud_transfer(&app, state.inner(), async move {
+        copy_from_target(&target, &src_key, &dst).await
+    })
+    .await
+}
+
+/// Run a cloud transfer future as an abortable tokio task, tracked in
+/// the [`CloudTransfers`] registry so the power policy (metered/cellular)
+/// or a manual UI cancel can abort it mid-flight. Emits the active-count
+/// event on start + finish so the front-end can disable the pause button
+/// while a cloud transfer is running.
+async fn run_cloud_transfer<F>(app: &AppHandle, state: &AppState, fut: F) -> Result<u64, String>
+where
+    F: std::future::Future<Output = Result<u64, copythat_cloud::BackendError>> + Send + 'static,
+{
+    let handle = tokio::spawn(fut);
+    let id = state.cloud_transfers.register(handle.abort_handle());
+    let _ = app.emit(
+        EVENT_CLOUD_TRANSFERS_CHANGED,
+        state.cloud_transfers.active_count(),
+    );
+    let outcome = handle.await;
+    state.cloud_transfers.deregister(id);
+    let _ = app.emit(
+        EVENT_CLOUD_TRANSFERS_CHANGED,
+        state.cloud_transfers.active_count(),
+    );
+    match outcome {
+        Ok(Ok(bytes)) => Ok(bytes),
+        Ok(Err(e)) => Err(e.to_string()),
+        // Aborted by the power policy (metered/cellular) or a manual cancel.
+        Err(join) if join.is_cancelled() => Err(CLOUD_CANCELLED_MSG.to_string()),
+        Err(join) => Err(format!("cloud transfer task failed: {join}")),
+    }
+}
+
+/// Cancel an in-flight cloud transfer by its registry id (the UI cancel
+/// button). Returns `true` if a matching active transfer was aborted.
+#[tauri::command]
+pub fn cancel_cloud_transfer(id: u64, state: tauri::State<'_, AppState>) -> bool {
+    state.cloud_transfers.cancel(id)
+}
+
+/// Number of cloud transfers currently in flight. The front-end reads
+/// this (and listens for `cloud-transfers-changed`) to disable the
+/// pause button while a cloud transfer is active.
+#[tauri::command]
+pub fn active_cloud_transfer_count(state: tauri::State<'_, AppState>) -> usize {
+    state.cloud_transfers.active_count()
 }
 
 /// Seed the in-memory registry from persisted settings. Called by
@@ -729,6 +886,49 @@ fn oauth_to_cloud(c: Option<&OAuthBackendConfig>) -> OAuthConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn cloud_transfers_track_and_cancel() {
+        let reg = CloudTransfers::default();
+        assert_eq!(reg.active_count(), 0);
+        assert!(!reg.is_paused());
+
+        // A never-ending task stands in for an in-flight cloud transfer.
+        let handle = tokio::spawn(std::future::pending::<()>());
+        let id = reg.register(handle.abort_handle());
+        assert_eq!(reg.active_count(), 1);
+
+        // Cancel by id aborts the task and clears the registry entry.
+        assert!(reg.cancel(id));
+        assert_eq!(reg.active_count(), 0);
+        assert!(handle.await.unwrap_err().is_cancelled());
+        // Cancelling an unknown id is a no-op.
+        assert!(!reg.cancel(id));
+    }
+
+    #[tokio::test]
+    async fn cancel_all_aborts_every_active_transfer() {
+        let reg = CloudTransfers::default();
+        let h1 = tokio::spawn(std::future::pending::<()>());
+        let h2 = tokio::spawn(std::future::pending::<()>());
+        reg.register(h1.abort_handle());
+        reg.register(h2.abort_handle());
+        assert_eq!(reg.active_count(), 2);
+        assert_eq!(reg.cancel_all(), 2);
+        assert_eq!(reg.active_count(), 0);
+        assert!(h1.await.unwrap_err().is_cancelled());
+        assert!(h2.await.unwrap_err().is_cancelled());
+    }
+
+    #[test]
+    fn metered_pause_gate_round_trips() {
+        let reg = CloudTransfers::default();
+        assert!(!reg.is_paused());
+        reg.set_paused(true);
+        assert!(reg.is_paused());
+        reg.set_paused(false);
+        assert!(!reg.is_paused());
+    }
 
     #[test]
     fn dto_round_trip_preserves_s3_fields() {

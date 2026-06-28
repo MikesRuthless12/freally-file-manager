@@ -303,6 +303,17 @@ fn apply_scoped(
     }
     drop(b);
 
+    // Cloud transfers can't pause mid-stream — they cancel. Mirror the
+    // network rule onto the cloud registry: while metered/cellular
+    // pauses, the start-gate refuses new cloud transfers and any already
+    // in flight are aborted (cancel is the cloud equivalent of pausing a
+    // local job).
+    let cloud_paused = scoped.network.is_pause();
+    state.cloud_transfers.set_paused(cloud_paused);
+    if cloud_paused {
+        state.cloud_transfers.cancel_all();
+    }
+
     // UI badge: the single most-restrictive action across both scopes.
     let badge = scoped.global.stricter(scoped.network);
     let dto = PowerActionDto::from(&badge);
@@ -373,6 +384,8 @@ fn release_power_owned(
         crate::state::apply_network_settings_to_shape(&state.shape, &snap.network);
     }
     drop(b);
+    // Power policy disabled — let cloud transfers run again.
+    state.cloud_transfers.set_paused(false);
     *last_scoped = ScopedActions {
         global: PowerAction::Continue,
         network: PowerAction::Continue,
