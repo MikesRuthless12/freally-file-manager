@@ -1116,3 +1116,18 @@ plugin-url-manifest = عنوان URL للبيان
 plugin-url-hash = تجزئة BLAKE3
 plugin-url-preview = معاينة
 plugin-url-confirm = تأكيد التثبيت
+
+# Phase 31b — power-policy settings (Power tab).
+settings-tab-power = الطاقة
+settings-power-hint = تقييد أو إيقاف النسخ حسب حالة الطاقة: البطارية، الشبكات محدودة الاستهلاك/الخلوية، أثناء العرض/ملء الشاشة، أو عند خفض تردد المعالج حرارياً.
+settings-power-enabled = تفعيل التقييد حسب الطاقة
+settings-power-battery = على البطارية
+settings-power-metered = على شبكة محدودة الاستهلاك
+settings-power-cellular = على الشبكة الخلوية
+settings-power-presentation = أثناء العرض التقديمي
+settings-power-fullscreen = في وضع ملء الشاشة
+settings-power-thermal = عند الخفض الحراري
+settings-power-continue = متابعة
+settings-power-pause = إيقاف مؤقت
+settings-power-cap = تحديد السرعة
+settings-power-thermal-cap = تحديد السرعة

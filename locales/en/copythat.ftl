@@ -1116,3 +1116,18 @@ plugin-url-manifest = Manifest URL
 plugin-url-hash = BLAKE3 hash
 plugin-url-preview = Preview
 plugin-url-confirm = Confirm install
+
+# Phase 31b — power-policy settings (Power tab).
+settings-tab-power = Power
+settings-power-hint = Throttle or pause copies based on power state — battery, metered/cellular network, presentation/fullscreen, or CPU thermal-throttling.
+settings-power-enabled = Enable power-aware throttling
+settings-power-battery = On battery
+settings-power-metered = On a metered network
+settings-power-cellular = On cellular
+settings-power-presentation = While presenting
+settings-power-fullscreen = While fullscreen
+settings-power-thermal = When thermal-throttling
+settings-power-continue = Continue
+settings-power-pause = Pause
+settings-power-cap = Cap speed
+settings-power-thermal-cap = Cap speed

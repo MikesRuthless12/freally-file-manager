@@ -1116,3 +1116,18 @@ plugin-url-manifest = मैनिफ़ेस्ट URL
 plugin-url-hash = BLAKE3 हैश
 plugin-url-preview = पूर्वावलोकन
 plugin-url-confirm = इंस्टॉल की पुष्टि करें
+
+# Phase 31b — power-policy settings (Power tab).
+settings-tab-power = पावर
+settings-power-hint = पावर स्थिति के अनुसार कॉपी को सीमित या रोकें — बैटरी, मीटर्ड/सेल्युलर नेटवर्क, प्रेज़ेंटेशन/फ़ुलस्क्रीन, या CPU थर्मल-थ्रॉटलिंग।
+settings-power-enabled = पावर-आधारित थ्रॉटलिंग सक्षम करें
+settings-power-battery = बैटरी पर
+settings-power-metered = मीटर्ड नेटवर्क पर
+settings-power-cellular = सेल्युलर पर
+settings-power-presentation = प्रेज़ेंट करते समय
+settings-power-fullscreen = फ़ुलस्क्रीन में
+settings-power-thermal = थर्मल-थ्रॉटलिंग के समय
+settings-power-continue = जारी रखें
+settings-power-pause = रोकें
+settings-power-cap = गति सीमित करें
+settings-power-thermal-cap = गति सीमित करें

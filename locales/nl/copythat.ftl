@@ -1116,3 +1116,18 @@ plugin-url-manifest = Manifest-URL
 plugin-url-hash = BLAKE3-hash
 plugin-url-preview = Voorbeeld
 plugin-url-confirm = Installatie bevestigen
+
+# Phase 31b — power-policy settings (Power tab).
+settings-tab-power = Energie
+settings-power-hint = Beperk of pauzeer kopieën op basis van energiestatus: accu, gedoseerd/mobiel netwerk, presentatie/volledig scherm of thermische CPU-throttling.
+settings-power-enabled = Energiebewuste beperking inschakelen
+settings-power-battery = Op accu
+settings-power-metered = Op een gedoseerd netwerk
+settings-power-cellular = Op mobiel netwerk
+settings-power-presentation = Tijdens presenteren
+settings-power-fullscreen = In volledig scherm
+settings-power-thermal = Bij thermische throttling
+settings-power-continue = Doorgaan
+settings-power-pause = Pauzeren
+settings-power-cap = Snelheid beperken
+settings-power-thermal-cap = Snelheid beperken

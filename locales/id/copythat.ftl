@@ -1116,3 +1116,18 @@ plugin-url-manifest = URL manifes
 plugin-url-hash = Hash BLAKE3
 plugin-url-preview = Pratinjau
 plugin-url-confirm = Konfirmasi pemasangan
+
+# Phase 31b — power-policy settings (Power tab).
+settings-tab-power = Daya
+settings-power-hint = Batasi atau jeda penyalinan berdasarkan status daya: baterai, jaringan berkuota/seluler, saat presentasi/layar penuh, atau saat CPU throttling termal.
+settings-power-enabled = Aktifkan pembatasan berbasis daya
+settings-power-battery = Saat memakai baterai
+settings-power-metered = Di jaringan berkuota
+settings-power-cellular = Di jaringan seluler
+settings-power-presentation = Saat presentasi
+settings-power-fullscreen = Saat layar penuh
+settings-power-thermal = Saat throttling termal
+settings-power-continue = Lanjutkan
+settings-power-pause = Jeda
+settings-power-cap = Batasi kecepatan
+settings-power-thermal-cap = Batasi kecepatan

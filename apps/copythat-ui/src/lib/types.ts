@@ -589,6 +589,29 @@ export interface UpdaterSettingsDto {
   checkIntervalSecs: number;
 }
 
+/** Phase 31 — power-policy rule: continue / pause / cap to a byte/s rate. */
+export type PowerRuleDto =
+  | { kind: "continue" }
+  | { kind: "pause" }
+  | { kind: "cap"; bytesPerSecond: number };
+
+/** Phase 31 — thermal rule: continue / pause / cap to a percent of rate. */
+export type ThermalRuleDto =
+  | { kind: "continue" }
+  | { kind: "pause" }
+  | { kind: "capPercent"; percent: number };
+
+/** Phase 31 — power-aware throttling policy (mirrors PowerPoliciesDto). */
+export interface PowerPoliciesDto {
+  enabled: boolean;
+  battery: PowerRuleDto;
+  metered: PowerRuleDto;
+  cellular: PowerRuleDto;
+  presentation: PowerRuleDto;
+  fullscreen: PowerRuleDto;
+  thermal: ThermalRuleDto;
+}
+
 export interface SettingsDto {
   general: GeneralSettingsDto;
   transfer: TransferSettingsDto;
@@ -603,6 +626,9 @@ export interface SettingsDto {
   scan?: ScanSettingsDto;
   /// Phase 21 — bandwidth shaping (global cap + schedule + auto-throttle).
   network: NetworkSettingsDto;
+  /// Phase 31 — power-aware throttling (battery / metered / presentation /
+  /// fullscreen / thermal). Always present on the wire (non-Option field).
+  power: PowerPoliciesDto;
   /// Phase 29 — drag-and-drop polish (spring-load, drag thumbnails,
   /// invalid-target highlight). Optional on the wire so older
   /// frontends opening a newer settings.toml don't explode.

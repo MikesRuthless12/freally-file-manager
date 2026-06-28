@@ -1116,3 +1116,18 @@ plugin-url-manifest = 매니페스트 URL
 plugin-url-hash = BLAKE3 해시
 plugin-url-preview = 미리 보기
 plugin-url-confirm = 설치 확인
+
+# Phase 31b — power-policy settings (Power tab).
+settings-tab-power = 전원
+settings-power-hint = 전원 상태에 따라 복사를 제한하거나 일시중지합니다: 배터리, 종량제/셀룰러 네트워크, 프레젠테이션/전체 화면 또는 CPU 열 스로틀링.
+settings-power-enabled = 전원 기반 제한 사용
+settings-power-battery = 배터리 사용 시
+settings-power-metered = 종량제 네트워크에서
+settings-power-cellular = 셀룰러에서
+settings-power-presentation = 프레젠테이션 중
+settings-power-fullscreen = 전체 화면일 때
+settings-power-thermal = 열 스로틀링 시
+settings-power-continue = 계속
+settings-power-pause = 일시중지
+settings-power-cap = 속도 제한
+settings-power-thermal-cap = 속도 제한

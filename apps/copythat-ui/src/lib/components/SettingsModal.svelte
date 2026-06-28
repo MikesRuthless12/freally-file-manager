@@ -71,6 +71,7 @@
     | "advanced"
     | "updater"
     | "network"
+    | "power"
     | "remotes"
     | "mobile"
     | "provenance"
@@ -498,7 +499,7 @@
       {:else}
         <div class="body">
           <div class="tabs" role="tablist" aria-label={t("settings-title")}>
-            {#each [["general", "settings-tab-general"], ["transfer", "settings-tab-transfer"], ["filters", "settings-tab-filters"], ["shell", "settings-tab-shell"], ["secure-delete", "settings-tab-secure-delete"], ["advanced", "settings-tab-advanced"], ["updater", "settings-tab-updater"], ["network", "settings-tab-network"], ["remotes", "settings-tab-remotes"], ["mobile", "settings-tab-mobile"], ["provenance", "provenance-settings-heading"], ["sanitize", "sanitize-heading"], ["plugins", "settings-tab-plugins"], ["profiles", "settings-tab-profiles"]] as const as [id, key] (id)}
+            {#each [["general", "settings-tab-general"], ["transfer", "settings-tab-transfer"], ["filters", "settings-tab-filters"], ["shell", "settings-tab-shell"], ["secure-delete", "settings-tab-secure-delete"], ["advanced", "settings-tab-advanced"], ["updater", "settings-tab-updater"], ["network", "settings-tab-network"], ["power", "settings-tab-power"], ["remotes", "settings-tab-remotes"], ["mobile", "settings-tab-mobile"], ["provenance", "provenance-settings-heading"], ["sanitize", "sanitize-heading"], ["plugins", "settings-tab-plugins"], ["profiles", "settings-tab-profiles"]] as const as [id, key] (id)}
               <button
                 type="button"
                 role="tab"
@@ -1513,6 +1514,73 @@
                   </select>
                 </label>
               {/each}
+            {:else if activeTab === "power"}
+              <p class="hint">{t("settings-power-hint")}</p>
+
+              <label class="row">
+                <span class="label">{t("settings-power-enabled")}</span>
+                <input
+                  type="checkbox"
+                  bind:checked={settings.power.enabled}
+                  onchange={pushSettings}
+                />
+              </label>
+
+              {#each [["battery", "settings-power-battery"], ["metered", "settings-power-metered"], ["cellular", "settings-power-cellular"], ["presentation", "settings-power-presentation"], ["fullscreen", "settings-power-fullscreen"]] as const as [field, key] (field)}
+                <label class="row">
+                  <span class="label">{t(key)}</span>
+                  <select
+                    value={settings.power[field].kind}
+                    disabled={!settings.power.enabled}
+                    onchange={(e) => {
+                      if (!settings) return;
+                      const kind = (e.currentTarget as HTMLSelectElement).value as
+                        | "continue"
+                        | "pause"
+                        | "cap";
+                      const next = kind === "cap"
+                        ? { kind: "cap" as const, bytesPerSecond: 10 * 1024 * 1024 }
+                        : ({ kind } as { kind: "continue" | "pause" });
+                      settings = {
+                        ...settings,
+                        power: { ...settings.power, [field]: next },
+                      };
+                      void pushSettings();
+                    }}
+                  >
+                    <option value="continue">{t("settings-power-continue")}</option>
+                    <option value="pause">{t("settings-power-pause")}</option>
+                    <option value="cap">{t("settings-power-cap")}</option>
+                  </select>
+                </label>
+              {/each}
+
+              <label class="row">
+                <span class="label">{t("settings-power-thermal")}</span>
+                <select
+                  value={settings.power.thermal.kind}
+                  disabled={!settings.power.enabled}
+                  onchange={(e) => {
+                    if (!settings) return;
+                    const kind = (e.currentTarget as HTMLSelectElement).value as
+                      | "continue"
+                      | "pause"
+                      | "capPercent";
+                    const next = kind === "capPercent"
+                      ? { kind: "capPercent" as const, percent: 50 }
+                      : ({ kind } as { kind: "continue" | "pause" });
+                    settings = {
+                      ...settings,
+                      power: { ...settings.power, thermal: next },
+                    };
+                    void pushSettings();
+                  }}
+                >
+                  <option value="continue">{t("settings-power-continue")}</option>
+                  <option value="pause">{t("settings-power-pause")}</option>
+                  <option value="capPercent">{t("settings-power-thermal-cap")}</option>
+                </select>
+              </label>
             {:else if activeTab === "remotes"}
               <RemotesTab />
             {:else if activeTab === "mobile"}

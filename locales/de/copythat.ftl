@@ -1116,3 +1116,18 @@ plugin-url-manifest = Manifest-URL
 plugin-url-hash = BLAKE3-Hash
 plugin-url-preview = Vorschau
 plugin-url-confirm = Installation bestätigen
+
+# Phase 31b — power-policy settings (Power tab).
+settings-tab-power = Energie
+settings-power-hint = Kopien je nach Energiezustand drosseln oder pausieren: Akku, getaktetes/Mobilfunknetz, Präsentation/Vollbild oder thermische CPU-Drosselung.
+settings-power-enabled = Energieabhängige Drosselung aktivieren
+settings-power-battery = Im Akkubetrieb
+settings-power-metered = In getaktetem Netzwerk
+settings-power-cellular = Im Mobilfunknetz
+settings-power-presentation = Während einer Präsentation
+settings-power-fullscreen = Im Vollbild
+settings-power-thermal = Bei thermischer Drosselung
+settings-power-continue = Fortsetzen
+settings-power-pause = Pausieren
+settings-power-cap = Tempo begrenzen
+settings-power-thermal-cap = Tempo begrenzen

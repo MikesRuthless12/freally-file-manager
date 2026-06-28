@@ -1116,3 +1116,18 @@ plugin-url-manifest = 清单 URL
 plugin-url-hash = BLAKE3 哈希
 plugin-url-preview = 预览
 plugin-url-confirm = 确认安装
+
+# Phase 31b — power-policy settings (Power tab).
+settings-tab-power = 电源
+settings-power-hint = 根据电源状态限速或暂停复制：电池、按流量计费/蜂窝网络、演示/全屏，或 CPU 热降频时。
+settings-power-enabled = 启用电源感知限速
+settings-power-battery = 使用电池时
+settings-power-metered = 在按流量计费的网络上
+settings-power-cellular = 使用蜂窝网络时
+settings-power-presentation = 演示时
+settings-power-fullscreen = 全屏时
+settings-power-thermal = 热降频时
+settings-power-continue = 继续
+settings-power-pause = 暂停
+settings-power-cap = 限制速度
+settings-power-thermal-cap = 限制速度

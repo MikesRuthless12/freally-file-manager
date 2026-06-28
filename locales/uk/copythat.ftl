@@ -1116,3 +1116,18 @@ plugin-url-manifest = URL маніфесту
 plugin-url-hash = Хеш BLAKE3
 plugin-url-preview = Попередній перегляд
 plugin-url-confirm = Підтвердити встановлення
+
+# Phase 31b — power-policy settings (Power tab).
+settings-tab-power = Живлення
+settings-power-hint = Обмежувати або призупиняти копіювання залежно від живлення: батарея, лімітна/мобільна мережа, презентація/повний екран або тепловий тротлінг ЦП.
+settings-power-enabled = Увімкнути обмеження за живленням
+settings-power-battery = Від батареї
+settings-power-metered = У лімітній мережі
+settings-power-cellular = У мобільній мережі
+settings-power-presentation = Під час презентації
+settings-power-fullscreen = У повноекранному режимі
+settings-power-thermal = При тепловому тротлінгу
+settings-power-continue = Продовжити
+settings-power-pause = Пауза
+settings-power-cap = Обмежити швидкість
+settings-power-thermal-cap = Обмежити швидкість

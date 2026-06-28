@@ -1116,3 +1116,18 @@ plugin-url-manifest = URL manifest
 plugin-url-hash = Băm BLAKE3
 plugin-url-preview = Xem trước
 plugin-url-confirm = Xác nhận cài đặt
+
+# Phase 31b — power-policy settings (Power tab).
+settings-tab-power = Nguồn điện
+settings-power-hint = Giới hạn hoặc tạm dừng sao chép theo trạng thái nguồn: pin, mạng tính theo dung lượng/di động, khi trình chiếu/toàn màn hình, hoặc khi CPU bị giảm tốc do nhiệt.
+settings-power-enabled = Bật điều tiết theo nguồn điện
+settings-power-battery = Khi dùng pin
+settings-power-metered = Trên mạng tính theo dung lượng
+settings-power-cellular = Trên mạng di động
+settings-power-presentation = Khi đang trình chiếu
+settings-power-fullscreen = Khi toàn màn hình
+settings-power-thermal = Khi giảm tốc do nhiệt
+settings-power-continue = Tiếp tục
+settings-power-pause = Tạm dừng
+settings-power-cap = Giới hạn tốc độ
+settings-power-thermal-cap = Giới hạn tốc độ

@@ -1116,3 +1116,18 @@ plugin-url-manifest = Bildirim URL'si
 plugin-url-hash = BLAKE3 karması
 plugin-url-preview = Önizleme
 plugin-url-confirm = Yüklemeyi onayla
+
+# Phase 31b — power-policy settings (Power tab).
+settings-tab-power = Güç
+settings-power-hint = Kopyalamayı güç durumuna göre kısıtla veya duraklat: pil, sayaçlı/hücresel ağ, sunum/tam ekran veya CPU termal kısıtlaması.
+settings-power-enabled = Güce duyarlı kısıtlamayı etkinleştir
+settings-power-battery = Pildeyken
+settings-power-metered = Sayaçlı ağda
+settings-power-cellular = Hücresel ağda
+settings-power-presentation = Sunum sırasında
+settings-power-fullscreen = Tam ekranda
+settings-power-thermal = Termal kısıtlamada
+settings-power-continue = Devam et
+settings-power-pause = Duraklat
+settings-power-cap = Hızı sınırla
+settings-power-thermal-cap = Hızı sınırla

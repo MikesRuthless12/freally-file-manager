@@ -1116,3 +1116,18 @@ plugin-url-manifest = マニフェスト URL
 plugin-url-hash = BLAKE3 ハッシュ
 plugin-url-preview = プレビュー
 plugin-url-confirm = インストールを確定
+
+# Phase 31b — power-policy settings (Power tab).
+settings-tab-power = 電源
+settings-power-hint = 電源状態に応じてコピーを制限/一時停止します：バッテリー、従量制/モバイル回線、プレゼン/全画面、または CPU のサーマルスロットリング時。
+settings-power-enabled = 電源に応じた制限を有効化
+settings-power-battery = バッテリー駆動時
+settings-power-metered = 従量制ネットワーク時
+settings-power-cellular = モバイル回線時
+settings-power-presentation = プレゼン中
+settings-power-fullscreen = 全画面時
+settings-power-thermal = サーマルスロットリング時
+settings-power-continue = 続行
+settings-power-pause = 一時停止
+settings-power-cap = 速度を制限
+settings-power-thermal-cap = 速度を制限
