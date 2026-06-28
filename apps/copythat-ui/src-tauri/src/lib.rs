@@ -42,6 +42,10 @@ pub mod collisions;
 pub mod commands;
 pub mod crypt_commands;
 pub mod dropstack;
+// Phase 17d — live UAC/pkexec/osascript privilege escalation: the
+// caller-side spawner + JSON-RPC handshake to the elevated
+// copythat-helper, used by commands::retry_elevated.
+pub mod elevate;
 pub mod errors;
 pub mod global_paste;
 pub mod i18n;
