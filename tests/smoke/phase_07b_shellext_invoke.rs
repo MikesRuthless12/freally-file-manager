@@ -57,10 +57,15 @@ fn collect_paths_extracts_filesystem_path_from_a_real_shell_item_array() {
     };
 
     assert_eq!(paths.len(), 1, "expected exactly one filesystem path");
-    // Windows paths are case-insensitive; SIGDN_FILESYSPATH may re-case.
+    // Compare via canonicalize: a CI runner hands back the long-form path
+    // (e.g. `runneradmin`) while tempfile's path can carry an 8.3 short
+    // component (`RUNNER~1`) — and casing can differ too. Canonicalizing
+    // both sides resolves short names + case so the check is host-stable.
+    let got = std::fs::canonicalize(std::path::Path::new(&paths[0])).unwrap();
+    let want = std::fs::canonicalize(&file).unwrap();
     assert_eq!(
-        paths[0].to_string_lossy().to_lowercase(),
-        file.as_os_str().to_string_lossy().to_lowercase(),
+        got, want,
+        "extracted path should resolve to the source file"
     );
 
     unsafe { CoUninitialize() };
