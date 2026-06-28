@@ -1,0 +1,27 @@
+[package]
+name = "copythat-server"
+description = "Phase 48 — server mode + observability (scaffold). Ships the stable public surface for serving CopyThat over WebDAV / SFTP / HTTP / S3 plus a Prometheus `/metrics` endpoint, OpenTelemetry export, and webhook sinks (Slack / Discord / ntfy / Pushover) — with the pure, network-free first-slice logic (webhook payload formatting + Prometheus text exposition) real now and the protocol listeners + delivery deferred behind `ServerError::NotImplemented` until the heavy deps land."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+# The public config/notification types cross the IPC + on-disk boundary as
+# JSON, and `format_webhook_payload` returns a `serde_json::Value`; both
+# match every other workspace member's single-version pins.
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+
+# Phase 48 scaffold smoke lives at the workspace root (mirrors the
+# convention set by the other phase smoke tests).
+[[test]]
+name = "phase_48_server"
+path = "../../tests/smoke/phase_48_server.rs"
