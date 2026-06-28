@@ -176,6 +176,14 @@ jobs:
       # release artifacts per docs/RELEASE_CHECKLIST.md, not here.
       - name: Test
         run: cargo test --workspace
+      # Phase 17d — the elevated-handshake smoke is behind the
+      # `spawn-tests` feature (it spawns the real copythat-helper binary
+      # NON-elevated over the DACL pipe / Unix socket and drives the full
+      # handshake), so `cargo test --workspace` above doesn't run it.
+      # Run it explicitly on every OS. The actual UAC/polkit/osascript
+      # consent prompt is still manual — this covers the wire path only.
+      - name: Test (Phase 17d elevated-handshake smoke)
+        run: cargo test -p copythat-helper --features spawn-tests --test phase_17d_spawn
 
   tauri-build:
     name: Tauri debug build (${{ matrix.os }})
