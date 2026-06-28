@@ -1,10 +1,12 @@
 //! `copythat-helper` binary entry point.
 //!
-//! Spawned by the main `copythat-ui` process via the OS-native
-//! elevation flow. Reads JSON-RPC requests from stdin and writes
-//! responses to stdout — pipe / socket plumbing happens on the
-//! caller side, the helper just speaks line-delimited JSON over
-//! the standard streams.
+//! Spawned by the main process via the OS-native elevation flow.
+//! Speaks newline-delimited JSON-RPC over either (a) a
+//! `--pipe=`/`--socket=` endpoint the caller created with a
+//! restrictive DACL / 0700 dir (Phase 17d — required when UAC's
+//! `Start-Process -Verb RunAs` severs std-handle inheritance so the
+//! elevated child can't be driven over stdio), or (b) stdin/stdout
+//! when neither arg is given (back-compat + in-process tests).
 //!
 //! This binary is **never user-facing** — running it directly is
 //! a no-op that reads from a tty and exits as soon as stdin
@@ -18,7 +20,7 @@ use std::io::{BufWriter, stdin, stdout};
 
 use copythat_helper::capability::{Capability, parse_capability_list};
 use copythat_helper::handler::handle_request;
-use copythat_helper::rpc::{Request, Response};
+use copythat_helper::rpc::{Request, Response, parse_pipe_name};
 use copythat_helper::transport::{TransportError, buf_reader, read_line, write_line};
 
 fn main() {
@@ -31,17 +33,81 @@ fn main() {
         }
     };
 
-    let mut reader = buf_reader(stdin().lock());
-    let mut writer = BufWriter::new(stdout().lock());
+    // Phase 17d — when the caller passes `--pipe=` (Windows named pipe)
+    // or `--socket=` (Unix socket), dial that endpoint instead of
+    // stdin/stdout. The elevated child can't inherit the parent's std
+    // handles through UAC, so it connects back over the per-launch
+    // random pipe/socket the parent created + named on the argv.
+    let endpoint = args.iter().find_map(|a| {
+        a.strip_prefix("--pipe=")
+            .or_else(|| a.strip_prefix("--socket="))
+            .map(|s| s.to_string())
+    });
 
-    let exit_code = match run_loop(&mut reader, &mut writer, &argv_requested) {
-        Ok(()) => 0,
-        Err(e) => {
-            eprintln!("copythat-helper: transport error: {e}");
-            3
+    let exit_code = match endpoint {
+        Some(ep) => match run_over_endpoint(&ep, &argv_requested) {
+            Ok(code) => code,
+            Err(e) => {
+                eprintln!("copythat-helper: endpoint error: {e}");
+                4
+            }
+        },
+        None => {
+            let mut reader = buf_reader(stdin().lock());
+            let mut writer = BufWriter::new(stdout().lock());
+            match run_loop(&mut reader, &mut writer, &argv_requested) {
+                Ok(()) => 0,
+                Err(e) => {
+                    eprintln!("copythat-helper: transport error: {e}");
+                    3
+                }
+            }
         }
     };
     std::process::exit(exit_code);
+}
+
+/// Defence-in-depth: the endpoint's final path component must match the
+/// `copythat-helper-<64 hex>` shape `rpc::generate_pipe_name` produces,
+/// so a tampered argv can't point the helper at an arbitrary pipe /
+/// socket (e.g. a system pipe). The parent additionally restricts the
+/// pipe DACL / socket-dir perms; this is the helper-side check.
+fn endpoint_name_ok(endpoint: &str) -> bool {
+    let basename = endpoint.rsplit(['/', '\\']).next().unwrap_or(endpoint);
+    parse_pipe_name("copythat-helper-", basename).is_some()
+}
+
+/// Connect to the caller-created pipe / socket and drive the run-loop
+/// over it; returns the process exit code. No unsafe, no tokio — the
+/// client handle is a plain blocking `File` (Windows pipe) /
+/// `UnixStream` (Unix), `try_clone`d to split read + write halves.
+fn run_over_endpoint(endpoint: &str, argv_requested: &[Capability]) -> std::io::Result<i32> {
+    if !endpoint_name_ok(endpoint) {
+        eprintln!("copythat-helper: refusing endpoint with unexpected name shape");
+        return Ok(2);
+    }
+
+    #[cfg(windows)]
+    let (mut reader, mut writer) = {
+        let pipe = std::fs::OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(endpoint)?;
+        (buf_reader(pipe.try_clone()?), pipe)
+    };
+    #[cfg(unix)]
+    let (mut reader, mut writer) = {
+        let sock = std::os::unix::net::UnixStream::connect(endpoint)?;
+        (buf_reader(sock.try_clone()?), sock)
+    };
+
+    match run_loop(&mut reader, &mut writer, argv_requested) {
+        Ok(()) => Ok(0),
+        Err(e) => {
+            eprintln!("copythat-helper: transport error: {e}");
+            Ok(3)
+        }
+    }
 }
 
 fn resolve_capabilities(args: &[String]) -> Result<Vec<Capability>, String> {
@@ -267,5 +333,24 @@ mod tests {
         let pipe = vec![Capability::ElevatedRetry, Capability::HardwareErase];
         let eff = effective_capabilities(&argv, &pipe);
         assert_eq!(eff, vec![Capability::ElevatedRetry]);
+    }
+
+    /// Phase 17d — the endpoint guard accepts only the
+    /// `copythat-helper-<64 hex>` basename shape, on either a Windows
+    /// pipe path or a Unix socket path, and rejects arbitrary targets.
+    #[test]
+    fn endpoint_name_ok_accepts_generated_shape_rejects_others() {
+        let win = format!(r"\\.\pipe\copythat-helper-{}", "a".repeat(64));
+        let unix = format!("/run/user/1000/copythat-helper-{}", "b".repeat(64));
+        assert!(endpoint_name_ok(&win));
+        assert!(endpoint_name_ok(&unix));
+        // System pipe, arbitrary file, wrong-length suffix:
+        assert!(!endpoint_name_ok(r"\\.\pipe\lsass"));
+        assert!(!endpoint_name_ok("/etc/passwd"));
+        assert!(!endpoint_name_ok("copythat-helper-tooshort"));
+        assert!(!endpoint_name_ok(&format!(
+            "copythat-helper-{}",
+            "z".repeat(64)
+        )));
     }
 }
