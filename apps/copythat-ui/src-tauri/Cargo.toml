@@ -400,3 +400,18 @@ path = "../../../tests/smoke/phase_17e_ipc_audit.rs"
 [[test]]
 name = "phase_46_plugin_ui"
 path = "../../../tests/smoke/phase_46_plugin_ui.rs"
+
+# Phase 17d — manual UAC-probe (dev-only; NOT shipped). Gated behind the
+# `elevate-probe` feature via required-features, so `cargo build`,
+# `cargo test --workspace`, and the app/release bundles never build it.
+# It calls the real `elevate::elevated_retry`, firing the genuine UAC /
+# pkexec / osascript consent prompt. See docs/MANUAL-UAC-TEST.md. (The
+# binary name deliberately avoids the install/setup/update/patch
+# substrings that trip Windows installer-detection auto-elevation.)
+[features]
+elevate-probe = []
+
+[[bin]]
+name = "ct_elevate_probe"
+path = "src/bin/ct_elevate_probe.rs"
+required-features = ["elevate-probe"]
