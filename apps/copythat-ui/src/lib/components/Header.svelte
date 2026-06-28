@@ -24,6 +24,7 @@
     pauseAll,
     resumeAll,
     cancelAll,
+    activeCloudTransferCount,
     currentShapeRate,
     onEvent,
     pickFiles,
@@ -37,6 +38,12 @@
   let hasWork = $derived(
     g.state !== "idle" && g.activeJobs + g.queuedJobs + g.pausedJobs > 0,
   );
+
+  // Phase 31b — cloud transfers can't pause (only cancel), so while any
+  // cloud transfer is in flight BOTH Pause-all and Resume-all are
+  // disabled (you can't have a resume control with no pausable work).
+  // Count is pulled on mount + kept live via `cloud-transfers-changed`.
+  let cloudActive = $state(0);
 
   // Phase 21 — bandwidth shape badge. `null` rate = unlimited (no
   // badge); 0 = paused; positive = active cap. Initial value pulled
@@ -94,6 +101,32 @@
       } catch {
         // Listener registration is best-effort; the badge stays on the
         // last-known value if the event bus rejects us.
+      }
+    })();
+    return () => {
+      if (unlistenFn) unlistenFn();
+    };
+  });
+
+  // Phase 31b — track in-flight cloud transfers so Pause-all / Resume-all
+  // disable while one runs (cloud streams cancel, they don't pause).
+  $effect(() => {
+    let unlistenFn: (() => void) | undefined;
+    void (async () => {
+      try {
+        cloudActive = await activeCloudTransferCount();
+      } catch {
+        cloudActive = 0;
+      }
+      try {
+        unlistenFn = await onEvent<number>(
+          "cloud-transfers-changed",
+          (count) => {
+            cloudActive = count;
+          },
+        );
+      } catch {
+        // Best-effort; the buttons fall back to the last-known count.
       }
     })();
     return () => {
@@ -231,7 +264,7 @@
         class="icon-btn"
         aria-label={t("action-pause-all")}
         title={t("action-pause-all")}
-        disabled={!hasWork}
+        disabled={!hasWork || cloudActive > 0}
         onclick={() => pauseAll()}
       >
         <Icon name="pause" size={18} />
@@ -241,7 +274,7 @@
         class="icon-btn"
         aria-label={t("action-resume-all")}
         title={t("action-resume-all")}
-        disabled={g.pausedJobs === 0}
+        disabled={g.pausedJobs === 0 || cloudActive > 0}
         onclick={() => resumeAll()}
       >
         <Icon name="play" size={18} />

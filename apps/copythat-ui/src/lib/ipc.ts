@@ -77,6 +77,19 @@ export async function cancelAll(): Promise<void> {
   await invoke("cancel_all");
 }
 
+// Phase 31b — count of in-flight cloud transfers (S3 / SFTP / WebDAV).
+// The header disables the Pause-all button while this is > 0, since a
+// cloud transfer can't pause (only cancel). Pairs with the
+// `cloud-transfers-changed` event for live updates.
+export async function activeCloudTransferCount(): Promise<number> {
+  return invoke<number>("active_cloud_transfer_count");
+}
+
+// Phase 31b — cancel one in-flight cloud transfer by its registry id.
+export async function cancelCloudTransfer(id: number): Promise<boolean> {
+  return invoke<boolean>("cancel_cloud_transfer", { id });
+}
+
 export async function listJobs(): Promise<JobDto[]> {
   return invoke<JobDto[]>("list_jobs");
 }
