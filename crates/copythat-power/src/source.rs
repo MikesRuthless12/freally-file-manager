@@ -264,8 +264,12 @@ impl ThermalProbe for StubThermalProbe {
 }
 
 /// Network probe stub — reports `NetworkClass::Unmetered`. Wraps the
-/// Phase 21 stub (`copythat_shape::current_network_class`) so the
-/// power bus doesn't need its own metered probe until Phase 31b.
+/// Phase 21 stub (`copythat_shape::current_network_class`). The real
+/// per-OS metering bridges — `INetworkCostManager` (Windows),
+/// `NWPathMonitor` (macOS), NetworkManager DBus (Linux) — are the
+/// remaining Phase 31b work (deferred: each is a sizeable per-OS
+/// FFI / DBus effort); until then the metered/cellular power rules
+/// simply never fire.
 pub struct StubNetworkProbe;
 
 impl NetworkProbe for StubNetworkProbe {
@@ -352,13 +356,19 @@ pub struct ProbeSet {
 
 impl ProbeSet {
     /// Default production probe set: real `battery` + `raw-cpuid`
-    /// thermal (on x86) + stubs for the per-OS FFI probes that land
-    /// in Phase 31b.
+    /// thermal (on x86) + the real per-OS presentation/fullscreen
+    /// probes (Phase 31b — Windows `SHQueryUserNotificationState` FFI,
+    /// Linux GNOME `IsInhibited` DBus; macOS / other targets fall
+    /// through to the stub via the `RealPresentationProbe` /
+    /// `RealFullscreenProbe` type aliases, so this is safe everywhere).
+    /// Network metering stays stubbed (`Unmetered`) until the per-OS
+    /// bridges (`INetworkCostManager` / `NWPathMonitor` / NetworkManager
+    /// DBus) land — the remaining Phase 31b work.
     pub fn production() -> Self {
         Self {
             battery: Arc::new(RealBatteryProbe),
-            presentation: Arc::new(StubPresentationProbe),
-            fullscreen: Arc::new(StubFullscreenProbe),
+            presentation: Arc::new(RealPresentationProbe),
+            fullscreen: Arc::new(RealFullscreenProbe),
             thermal: Arc::new(RealThermalProbe),
             network: Arc::new(StubNetworkProbe),
         }
