@@ -19,6 +19,13 @@ name = "copythat_helper"
 name = "copythat-helper"
 path = "src/bin/helper.rs"
 
+[features]
+# Phase 17d — gates the binary-spawning handshake smoke
+# (tests/smoke/phase_17d_spawn.rs) so default `cargo test` stays fast +
+# deterministic; the elevated path is exercised NON-elevated under this
+# feature. Run: `cargo test -p copythat-helper --features spawn-tests`.
+spawn-tests = []
+
 [dependencies]
 # Phase 17d shares the lexical safety bar with the main app — every
 # IPC argument that names a path passes through Phase 17a's
@@ -40,6 +47,12 @@ tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros", "io-util
 # Phase 8 follow-up smoke uses copythat-hash for the SHA-256 round-trip.
 copythat-hash = { path = "../copythat-hash", version = "0.19" }
 
+# Phase 17d spawn smoke needs the DACL-restricted pipe server (Windows
+# only) to stand in for the caller; the unsafe FFI lives in
+# copythat-platform so this crate stays #![forbid(unsafe_code)].
+[target.'cfg(windows)'.dev-dependencies]
+copythat-platform = { path = "../copythat-platform", version = "0.19" }
+
 [[test]]
 name = "phase_17d_helper"
 path = "../../tests/smoke/phase_17d_helper.rs"
@@ -50,3 +63,10 @@ path = "../../tests/smoke/phase_17d_helper.rs"
 [[test]]
 name = "phase_08_partials"
 path = "../../tests/smoke/phase_08_partials.rs"
+
+# Phase 17d — non-elevated handshake smoke: spawns the real helper
+# binary over a pipe/socket + drives the full RPC handshake end-to-end.
+# Behind the `spawn-tests` feature (binary-spawning + named-pipe I/O).
+[[test]]
+name = "phase_17d_spawn"
+path = "../../tests/smoke/phase_17d_spawn.rs"
