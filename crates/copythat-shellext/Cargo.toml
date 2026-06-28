@@ -67,3 +67,11 @@ path = "../../tests/smoke/phase_07b_shellext.rs"
 [[test]]
 name = "phase_07_partials"
 path = "../../tests/smoke/phase_07_partials.rs"
+
+# Phase 7 follow-up — in-process IExplorerCommand::Invoke coverage
+# (Windows-only; #![cfg(windows)] makes it a no-op elsewhere). Drives
+# the real COM vtable + IShellItemArray->paths extraction without a
+# live Explorer session.
+[[test]]
+name = "phase_07b_shellext_invoke"
+path = "../../tests/smoke/phase_07b_shellext_invoke.rs"

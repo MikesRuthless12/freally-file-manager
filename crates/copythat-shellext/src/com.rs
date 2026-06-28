@@ -152,7 +152,12 @@ fn invoke_with_verb(verb: Verb, array: Ref<'_, IShellItemArray>) -> WinResult<()
 /// (zip entries, virtual shell namespaces) are silently skipped
 /// rather than failing the whole `Invoke` — the shell menu should
 /// still queue whatever is queueable.
-fn collect_paths(array: &IShellItemArray) -> WinResult<Vec<OsString>> {
+///
+/// `pub` so the Phase 7 in-process Invoke smoke
+/// (`tests/smoke/phase_07b_shellext_invoke.rs`) can drive the real
+/// `IShellItemArray` -> paths extraction without a live Explorer
+/// session; production callers reach it only through `Invoke`.
+pub fn collect_paths(array: &IShellItemArray) -> WinResult<Vec<OsString>> {
     // SAFETY: `array` is a live COM pointer owned by Explorer for
     // the duration of the `Invoke` call.
     let count = unsafe { array.GetCount() }?;
