@@ -78,6 +78,7 @@ pub mod attrs;
 #[cfg(feature = "compio-experimental")]
 pub mod compio_overlapped;
 pub mod dedup;
+pub mod disk;
 mod dispatcher;
 pub mod hardlink_set;
 mod helpers;
@@ -103,6 +104,7 @@ pub mod volume;
 pub mod wake_lock;
 
 pub use dedup::{DedupMode, DedupOptions, DedupOutcome, DedupStrategy, HardlinkPolicy, try_dedup};
+pub use disk::DiskBusySampler;
 pub use dispatcher::fast_copy;
 pub use helpers::{
     DEFAULT_HDD_CONCURRENCY, filesystem_name, free_space_bytes, is_cow_filesystem, is_ssd,

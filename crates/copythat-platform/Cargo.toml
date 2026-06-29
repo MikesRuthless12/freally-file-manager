@@ -94,6 +94,9 @@ windows-sys = { version = "0.59", features = [
     # adaptive NO_BUFFERING threshold (GlobalMemoryStatusEx), and
     # storage-topology probe (IOCTL_STORAGE_QUERY_PROPERTY).
     "Win32_System_SystemInformation",
+    # Phase 47 polish — PDH `\LogicalDisk(*)\% Disk Time` for the
+    # diagnostics disk-busy sampler (`disk.rs`).
+    "Win32_System_Performance",
     "Win32_System_LibraryLoader",
     "Win32_System_Ioctl",
     # Phase 17d — secure named-pipe server for the elevated-helper

@@ -32,7 +32,7 @@ use std::fmt;
 use serde::{Deserialize, Serialize};
 
 pub mod sampler;
-pub use sampler::SystemSampler;
+pub use sampler::{DiskBusy, SystemSampler};
 
 /// What was holding a copy back during a measurement window.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

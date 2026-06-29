@@ -763,6 +763,11 @@ pub fn run() {
             if let Some(state) = app.handle().try_state::<AppState>() {
                 let app_state: AppState = state.inner().clone();
                 let probes = copythat_power::ProbeSet::production();
+                // Share the thermal probe with the diagnostics sampler so it
+                // reports the same Phase 31 throttle signal the poller acts on
+                // (cheap CPUID read on x86; stub elsewhere). Cloned before
+                // `probes` moves into the poller below.
+                let diag_thermal = probes.thermal.clone();
                 // `spawn_poller` calls bare `tokio::spawn` inside; we
                 // need to enter Tauri's tokio context first. See the
                 // shell.rs:89 comment about the setup-hook path.
@@ -781,8 +786,11 @@ pub fn run() {
                 // Phase 47 — diagnostics sampler: 1 Hz system + throughput
                 // sampling -> classified bottleneck -> EVENT_JOB_DIAG while a
                 // copy runs, feeding the live speed-graph annotations.
-                let _diag =
-                    diag_sampler::spawn_diag_sampler(app_state.clone(), app.handle().clone());
+                let _diag = diag_sampler::spawn_diag_sampler(
+                    app_state.clone(),
+                    app.handle().clone(),
+                    diag_thermal,
+                );
                 let _subscriber = power::spawn_power_subscriber(app_state, app.handle().clone());
             }
 

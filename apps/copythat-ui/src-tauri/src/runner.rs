@@ -1161,6 +1161,19 @@ pub fn build_globals_for_state(state: &AppState) -> GlobalsDto {
     build_globals_from_jobs(&jobs)
 }
 
+/// Source + destination of the first running job across all queues, for
+/// the Phase 47 diagnostics sampler's per-volume disk attribution.
+/// `None` when nothing is running.
+pub fn first_running_job_paths(state: &AppState) -> Option<(PathBuf, Option<PathBuf>)> {
+    let mut jobs = state.queue.snapshot();
+    for q in state.queues.queues() {
+        jobs.extend(q.snapshot());
+    }
+    jobs.into_iter()
+        .find(|j| j.state == JobState::Running)
+        .map(|j| (j.src, j.dst))
+}
+
 fn build_globals_from_jobs(jobs: &[Job]) -> GlobalsDto {
     let mut active = 0u64;
     let mut queued = 0u64;

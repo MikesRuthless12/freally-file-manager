@@ -13,13 +13,16 @@
 //! those for the global figure), so the delta is the cheapest server-side
 //! throughput signal.
 
+use std::sync::Arc;
 use std::time::Duration;
 
-use copythat_diag::{Bottleneck, DiagSnapshot, SystemSampler, classify_snapshot};
+use copythat_diag::{Bottleneck, DiagSnapshot, DiskBusy, SystemSampler, classify_snapshot};
+use copythat_platform::DiskBusySampler;
+use copythat_power::ThermalProbe;
 use serde::Serialize;
 use tauri::{AppHandle, Emitter};
 
-use crate::runner::build_globals_for_state;
+use crate::runner::{build_globals_for_state, first_running_job_paths};
 use crate::state::AppState;
 
 /// Tauri event carrying one diagnostics sample. The front-end listens to
@@ -57,9 +60,17 @@ fn throughput_from_delta(prev: Option<u64>, now: u64, secs: f64) -> f64 {
 /// Spawn the diagnostics sampler. The returned handle is kept by the
 /// caller so the Tauri runtime keeps the task alive for the app's
 /// lifetime (the same pattern as the power poller / subscriber).
-pub fn spawn_diag_sampler(state: AppState, app: AppHandle) -> tauri::async_runtime::JoinHandle<()> {
+pub fn spawn_diag_sampler(
+    state: AppState,
+    app: AppHandle,
+    thermal: Arc<dyn ThermalProbe>,
+) -> tauri::async_runtime::JoinHandle<()> {
     tauri::async_runtime::spawn(async move {
         let mut sampler = SystemSampler::new();
+        // Per-OS disk-busy sampler (`None` on unsupported targets / when the
+        // perf source can't open — the disk fields then stay unset and the
+        // classifier falls back to CPU / thermal / network signals).
+        let mut disk_sampler = DiskBusySampler::new();
         let mut prev_bytes: Option<u64> = None;
         let mut peak_rate: f64 = 0.0;
         loop {
@@ -78,9 +89,29 @@ pub fn spawn_diag_sampler(state: AppState, app: AppHandle) -> tauri::async_runti
             if throughput > peak_rate {
                 peak_rate = throughput;
             }
-            // `thermal_throttling` wires to the Phase 31 probe in a later
-            // refinement; `false` here keeps the snapshot honest.
-            let snapshot = sampler.snapshot(throughput, false);
+            // Live thermal signal from the shared Phase 31 probe (the same
+            // `Arc<dyn ThermalProbe>` the power poller reads). Sampling it
+            // here means a thermal throttle is attributed as the bottleneck
+            // even when the power *policy* is disabled — the diagnostic is
+            // independent of whether we act on it.
+            let throttling = thermal.is_throttling().0;
+            // Per-volume disk-busy %, attributed to the running job's
+            // source / destination volumes. UNC / network paths return
+            // `None` (the classifier treats those via its network signal).
+            let disks = match disk_sampler.as_mut() {
+                Some(ds) => {
+                    ds.tick();
+                    match first_running_job_paths(&state) {
+                        Some((src, dst)) => DiskBusy {
+                            src_pct: ds.busy_pct_for_path(&src),
+                            dst_pct: dst.as_deref().and_then(|d| ds.busy_pct_for_path(d)),
+                        },
+                        None => DiskBusy::default(),
+                    }
+                }
+                None => DiskBusy::default(),
+            };
+            let snapshot = sampler.snapshot(throughput, throttling, disks);
             let bottleneck = classify_snapshot(&snapshot, peak_rate);
             let dto = DiagDto {
                 snapshot,
