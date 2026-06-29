@@ -17,6 +17,11 @@ workspace = true
 # JSON (speed-graph annotations), so they derive serde. `serde` matches
 # every other workspace member's single-version pin.
 serde = { version = "1", features = ["derive"] }
+# Phase 47 increment 2 — cross-platform CPU sampling for the live
+# `SystemSampler` -> `DiagSnapshot`. MIT. Already resolved in the tree
+# (0.32.x), so no new version enters the graph. Only the `system` feature
+# (CPU); per-OS disk/network sampling lands in a later increment.
+sysinfo = { version = "0.32", default-features = false, features = ["system"] }
 
 [dev-dependencies]
 # Scaffold smoke round-trips the public types through JSON.

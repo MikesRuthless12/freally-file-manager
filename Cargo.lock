@@ -1761,6 +1761,7 @@ version = "0.19.84"
 dependencies = [
  "serde",
  "serde_json",
+ "sysinfo",
 ]
 
 [[package]]
