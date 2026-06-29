@@ -294,6 +294,14 @@ fn canned_args(key: &str) -> HashMap<&'static str, String> {
         "tray-target-active-pill" | "tray-target-armed-toast" => {
             m.insert("label", "Backup Drive".to_string());
         }
+        // Phase 47 — diagnostics bottleneck badge placeables.
+        "diag-aria" => {
+            m.insert("cause", "Source I/O".to_string());
+        }
+        "diag-tooltip" => {
+            m.insert("cause", "Source I/O".to_string());
+            m.insert("rate", "184 MB/s".to_string());
+        }
         _ => {}
     }
     m
