@@ -30,6 +30,7 @@ use thiserror::Error;
 use tokio::sync::oneshot;
 
 mod http;
+mod s3;
 mod sftp;
 pub mod webhook;
 
@@ -56,10 +57,12 @@ impl Protocol {
         }
     }
 
-    /// Whether this protocol is served over the shared axum/hyper listener.
-    /// WebDAV and plain HTTP map onto the same file handler; SFTP runs on its
-    /// own SSH transport (so it is *not* HTTP-family) and S3 (a distinct
-    /// REST/XML API) is not yet implemented and is rejected by [`serve`].
+    /// Whether this protocol is served over the shared WebDAV/HTTP file
+    /// handler on the axum/hyper listener. WebDAV and plain HTTP map onto the
+    /// same handler; SFTP runs on its own SSH transport and S3 (a distinct
+    /// REST/XML API) runs on its own axum router — both are served by
+    /// [`serve`], but neither shares the WebDAV/HTTP handler, so both are
+    /// *not* HTTP-family.
     pub fn is_http_family(self) -> bool {
         matches!(self, Self::WebDav | Self::Http)
     }
@@ -234,33 +237,47 @@ pub fn exposes_unauthenticated(addr: &SocketAddr, auth: &AuthMode) -> bool {
 ///
 /// SFTP ([`Protocol::Sftp`]) is served over its own SSH transport (russh +
 /// russh-sftp) on the same bound socket; a config with *only* SFTP spawns
-/// that server instead of the axum stack. SFTP can't share one listener
-/// with HTTP-family protocols, so mixing them yields [`ServerError::Bind`].
-/// S3 still yields [`ServerError::NotImplemented`].
+/// that server instead of the axum stack. S3 ([`Protocol::S3`]) is served
+/// over its own axum router (path-style, single implicit bucket = the served
+/// root). Neither SFTP nor S3 can share one listener with the WebDAV/HTTP
+/// handler (or with each other), so any mixed config yields
+/// [`ServerError::Bind`]. S3 has no bearer concept, so an S3 +
+/// [`AuthMode::Bearer`] config is likewise rejected with [`ServerError::Bind`].
 pub async fn serve(config: ServerConfig) -> Result<ServerHandle, ServerError> {
     if config.protocols.is_empty() {
         return Err(ServerError::NoProtocols);
     }
-    // S3 (a distinct REST/XML API) isn't served yet — reject rather than
-    // silently ignore an advertised protocol. WebDAV/HTTP ride the axum
-    // listener; SFTP runs its own SSH transport (below).
-    if let Some(&protocol) = config
-        .protocols
-        .iter()
-        .find(|p| !matches!(p, Protocol::WebDav | Protocol::Http | Protocol::Sftp))
-    {
-        return Err(ServerError::NotImplemented { protocol });
-    }
 
-    // SFTP speaks SSH, not HTTP, so it can't share the single bound listener
-    // with the axum stack — keep it one transport per `serve` for now.
+    // SFTP speaks SSH and S3 has its own REST/XML semantics, so neither can
+    // share the single bound listener with the WebDAV/HTTP handler — keep
+    // each exclusive to one transport per `serve`.
     let wants_sftp = config.protocols.contains(&Protocol::Sftp);
+    let wants_s3 = config.protocols.contains(&Protocol::S3);
     let wants_http = config.protocols.iter().any(|p| p.is_http_family());
     if wants_sftp && wants_http {
         return Err(ServerError::Bind {
             addr: config.bind_addr.clone(),
             message: "SFTP and HTTP-family protocols cannot share one bind address; \
                       run them as separate servers"
+                .to_string(),
+        });
+    }
+    if wants_s3 && (wants_http || wants_sftp) {
+        return Err(ServerError::Bind {
+            addr: config.bind_addr.clone(),
+            message: "S3 is a distinct transport and cannot share one bind address with \
+                      WebDAV/HTTP or SFTP; run it as a separate server"
+                .to_string(),
+        });
+    }
+    // S3 authenticates via AWS SigV4 (access-key-id / secret = Basic's
+    // user / password); a bearer token has no place in the S3 request
+    // signing model, so reject the combination rather than serve it open.
+    if wants_s3 && matches!(config.auth, AuthMode::Bearer { .. }) {
+        return Err(ServerError::Bind {
+            addr: config.bind_addr.clone(),
+            message: "S3 does not support bearer auth; use basic auth (access-key-id / \
+                      secret) for SigV4, or no auth"
                 .to_string(),
         });
     }
@@ -309,7 +326,13 @@ pub async fn serve(config: ServerConfig) -> Result<ServerHandle, ServerError> {
         // surface on an SSH listener anyway.
         sftp::spawn(&config, listener, shutdown_rx)?
     } else {
-        let router = http::build_router(&config, metrics.clone());
+        // S3 and WebDAV/HTTP both ride the axum stack but build different
+        // routers; S3 is a distinct REST/XML surface with its own path jail.
+        let router = if wants_s3 {
+            s3::build_router(&config, metrics.clone())?
+        } else {
+            http::build_router(&config, metrics.clone())
+        };
         tokio::spawn(async move {
             let server = axum::serve(listener, router.into_make_service()).with_graceful_shutdown(
                 async move {

@@ -58,6 +58,16 @@ subtle = "2"
 # `http_body::Body` for the byte-counting request-body wrapper; already
 # resolved transitively via hyper/axum. MIT.
 http-body = "1"
+# Phase 48 follow-up — S3 API. AWS SigV4 request authentication is a chain
+# of HMAC-SHA256 derivations plus SHA-256 payload/canonical-request digests;
+# `percent-encoding` URL-decodes the object key before the path jail. All
+# four are the exact versions copythat-cloud / -hash / -audit already pin
+# (digest 0.10 family), so they add no new resolution. No aws-sdk / aws-sigv4
+# crate — the SigV4 maths is a few dozen lines. MIT / Apache-2.0.
+hmac = "0.12"
+sha2 = "0.10"
+hex = "0.4"
+percent-encoding = "2"
 # Webhook delivery (Slack / Discord / ntfy / Pushover are HTTPS endpoints).
 # rustls-tls reuses the workspace's existing rustls stack — no OpenSSL, no
 # new TLS backend. Already resolved in-tree (Phase 32/42 cloud + mobile).
@@ -99,6 +109,12 @@ tokio = { version = "1", features = [
 ] }
 reqwest = { version = "0.12", default-features = false }
 tempfile = "3"
+# Phase 48 follow-up — the S3 SigV4 smoke computes a valid signature with the
+# same HMAC-SHA256 chain the server verifies. Same in-tree versions as the
+# library deps.
+hmac = "0.12"
+sha2 = "0.10"
+hex = "0.4"
 # Phase 48 follow-up — the SFTP round-trip drives a real russh client +
 # russh-sftp client session against the in-process server. Same `ring`
 # backend as the library dep so the test build resolves one russh (and stays
