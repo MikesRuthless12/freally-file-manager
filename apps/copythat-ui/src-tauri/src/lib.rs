@@ -394,9 +394,19 @@ pub fn run() {
                     if let Some(state) = handle.try_state::<AppState>() {
                         let minimize = state.settings_snapshot().general.minimize_to_tray;
                         if minimize {
+                            // "Minimize to tray" on — the X hides the
+                            // window instead of exiting; no jobs touched.
                             api.prevent_close();
                             let _ = window.hide();
+                        } else if has_jobs_in_progress(state.inner()) {
+                            // Exiting for real with work in flight — hold
+                            // the close and confirm first. On Yes we cancel
+                            // everything + exit; on No the window stays.
+                            // (No prompt when nothing is running.)
+                            api.prevent_close();
+                            confirm_cancel_and_exit(handle.clone());
                         }
+                        // else: exiting with nothing running — let it close.
                     }
                 }
                 _ => {}
@@ -629,7 +639,16 @@ pub fn run() {
                             });
                         }
                         "tray-quit" => {
-                            app.exit(0);
+                            // Same confirm-and-cancel as the window close:
+                            // if a job is in progress, ask before quitting
+                            // (Yes cancels all + exits, No stays); quit
+                            // immediately when nothing is running.
+                            match app.try_state::<AppState>() {
+                                Some(state) if has_jobs_in_progress(state.inner()) => {
+                                    confirm_cancel_and_exit(app.clone());
+                                }
+                                _ => app.exit(0),
+                            }
                         }
                         _ if id.starts_with(TRAY_TARGET_ID_PREFIX) => {
                             // Phase 45.6 — clicking a pinned
@@ -847,6 +866,69 @@ fn init_tracing_subscriber() {
         .with_writer(std::io::stderr)
         .with_target(true)
         .try_init();
+}
+
+/// `true` when any copy/move job is in progress — pending, running, or
+/// paused — across the default queue and every registry queue, or a
+/// cloud transfer is in flight. Drives the "cancel running jobs?" exit
+/// prompt: we only ask when there's actually work to lose.
+fn has_jobs_in_progress(state: &AppState) -> bool {
+    use copythat_core::JobState;
+    fn any_active(q: &copythat_core::Queue) -> bool {
+        q.snapshot().iter().any(|j| {
+            matches!(
+                j.state,
+                JobState::Pending | JobState::Running | JobState::Paused
+            )
+        })
+    }
+    if any_active(&state.queue) {
+        return true;
+    }
+    for q in state.queues.queues() {
+        if any_active(&q) {
+            return true;
+        }
+    }
+    state.cloud_transfers.active_count() > 0
+}
+
+/// Cancel every in-flight job (default + registry queues) and abort
+/// every cloud transfer. Invoked when the user confirms exit while work
+/// is running.
+fn cancel_all_jobs(state: &AppState) {
+    for job in state.queue.snapshot() {
+        state.queue.cancel_job(job.id);
+    }
+    for q in state.queues.queues() {
+        for job in q.snapshot() {
+            q.cancel_job(job.id);
+        }
+    }
+    state.cloud_transfers.cancel_all();
+}
+
+/// Show a Yes/No "cancel running jobs?" dialog; on **Yes**, cancel all
+/// jobs and exit; on **No**, do nothing (the caller has already held the
+/// close, so the window stays open). Used by the window-close path (when
+/// "Minimize to tray" is off) and the tray Quit item when a job is in
+/// progress. Non-blocking — the callback fires when the user answers, so
+/// it's safe to call from the window-event / menu-event handlers.
+fn confirm_cancel_and_exit(app: AppHandle) {
+    use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
+    app.dialog()
+        .message("Jobs are still in progress. Exiting will cancel them.\n\nExit and cancel the running jobs?")
+        .title("Cancel running jobs?")
+        .kind(MessageDialogKind::Warning)
+        .buttons(MessageDialogButtons::YesNo)
+        .show(move |confirmed| {
+            if confirmed {
+                if let Some(state) = app.try_state::<AppState>() {
+                    cancel_all_jobs(state.inner());
+                }
+                app.exit(0);
+            }
+        });
 }
 
 /// Phase 16 — restore the main window from the tray. `show` +
