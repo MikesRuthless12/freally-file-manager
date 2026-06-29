@@ -72,28 +72,44 @@
             <span class="soon">Shipped · 0.19.84</span>
           </li>
           <li>
-            <span class="badge upcoming">Next</span>
+            <span class="badge">Shipped</span>
             <div>
               <strong>Server mode &amp; observability</strong>
               <p>Run Copy That headless as a WebDAV / HTTP / S3 / SFTP file server over any folder — read-only mode, bearer or HTTP-Basic auth, AWS SigV4 on the S3 API, a Prometheus /metrics endpoint, OpenTelemetry trace export, and Slack / Discord / ntfy.sh / Pushover webhooks. Launch it with the copythat serve command, or set it up in the new Settings → Server panel.</p>
             </div>
-            <span class="soon">Next release</span>
+            <span class="soon">Shipped · 0.19.84</span>
           </li>
           <li>
-            <span class="badge upcoming">Next</span>
+            <span class="badge">Shipped</span>
             <div>
-              <strong>WASI plugin capabilities</strong>
-              <p>Sandboxed post-copy plugins gain WASI preview1 imports so third-party scripts can run safely after a transfer.</p>
+              <strong>Mount-as-filesystem, enterprise audit log, encryption &amp; compression</strong>
+              <p>Mount any cloud backend or snapshot as a local drive (FUSE / WinFsp), export a tamper-evident WORM audit log in Syslog / CEF / LEEF / CSV / JSON formats, and encrypt (age) or compress (zstd) on the fly.</p>
             </div>
-            <span class="soon">Planned</span>
+            <span class="soon">Shipped · 0.19.84</span>
           </li>
           <li>
-            <span class="badge upcoming">Next</span>
+            <span class="badge">Shipped</span>
             <div>
-              <strong>Drag-merge between windows</strong>
-              <p>Drag a copy job from one Copy That window into another to merge their queues into a single operation.</p>
+              <strong>Sandboxed post-copy plugins</strong>
+              <p>Run third-party WebAssembly plugins after a copy, move, or job — fuel- and memory-capped, wall-clock-bounded, and gated by explicit per-plugin capabilities. Install from a file or hash-pinned URL in Settings → Plugins, with sample plugins for EXIF-based organizing and Discord / ntfy notifications.</p>
             </div>
-            <span class="soon">Planned</span>
+            <span class="soon">Shipped · 0.19.84</span>
+          </li>
+          <li>
+            <span class="badge">Shipped</span>
+            <div>
+              <strong>Named queues &amp; drag-merge</strong>
+              <p>Group transfers into named queues per drive, drag one queue's tab onto another to merge their progress into a single operation, press F2 to auto-enqueue the next job, and pin tray destinations for one-drop copies.</p>
+            </div>
+            <span class="soon">Shipped · 0.19.84</span>
+          </li>
+          <li>
+            <span class="badge">Shipped</span>
+            <div>
+              <strong>Live copy diagnostics</strong>
+              <p>When a transfer slows down, a header badge names the bottleneck — source disk, destination disk, network, antivirus, CPU, or thermal throttling — with a live throughput sparkline, backed by a real per-OS disk-busy sampler.</p>
+            </div>
+            <span class="soon">Shipped · 0.19.84</span>
           </li>
           <li>
             <span class="badge upcoming">Next</span>
@@ -106,8 +122,8 @@
           <li>
             <span class="badge upcoming">Beyond</span>
             <div>
-              <strong>Mount-as-filesystem, enterprise audit log, encryption &amp; compression</strong>
-              <p>Mount any cloud backend as a local drive, forensic chain-of-custody log, AES-256 at-rest encryption, and zstd / LZ4 transparent compression.</p>
+              <strong>Three-way merge &amp; richer plugin APIs</strong>
+              <p>Interactive three-way merge for sync conflicts, plus expanded WASI host APIs so plugins can read and write files directly under their granted capabilities.</p>
             </div>
             <span class="soon">Exploring</span>
           </li>
