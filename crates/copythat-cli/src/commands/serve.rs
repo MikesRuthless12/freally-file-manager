@@ -55,15 +55,24 @@ pub(crate) async fn run(
     let config = build_config(args);
     let protocols: Vec<&str> = config.protocols.iter().map(|p| p.label()).collect();
     let readonly = config.readonly;
+    // SFTP speaks SSH (no HTTP `/metrics`); everything else is HTTP-served.
+    let is_sftp = config.protocols.contains(&Protocol::Sftp);
 
     match copythat_server::serve(config).await {
         Ok(handle) => {
             let addr = handle.local_addr();
             let ro = if readonly { " (read-only)" } else { "" };
-            let _ = writer.human(&format!(
-                "CopyThat serving [{}]{ro} on http://{addr}  (metrics: http://{addr}/metrics)",
-                protocols.join(", ")
-            ));
+            if is_sftp {
+                let _ = writer.human(&format!(
+                    "CopyThat serving [{}]{ro} on sftp://{addr}",
+                    protocols.join(", ")
+                ));
+            } else {
+                let _ = writer.human(&format!(
+                    "CopyThat serving [{}]{ro} on http://{addr}  (metrics: http://{addr}/metrics)",
+                    protocols.join(", ")
+                ));
+            }
             // Loud warning if exposed to the network with no auth.
             if copythat_server::exposes_unauthenticated(&addr, &handle.config().auth) {
                 let access = if readonly { "read-only" } else { "read/write" };
