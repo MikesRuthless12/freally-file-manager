@@ -99,6 +99,7 @@
           <a href="#shell">Shell &amp; right-click menu</a>
           <a href="#paste-hotkey">The global paste hotkey</a>
           <a href="#history">History &amp; totals</a>
+          <a href="#server">Run as a server</a>
           <a href="#settings">Change settings</a>
           <a href="#shortcuts">Keyboard shortcuts</a>
           <a href="#troubleshooting">Tips &amp; troubleshooting</a>
@@ -452,6 +453,119 @@
               forever.
             </li>
           </ol>
+        </section>
+
+        <!-- SERVER MODE -->
+        <section id="server">
+          <h2>Run Copy That as a server</h2>
+          <p>
+            Copy That can run as a headless file server that exposes a folder over the network —
+            via <strong>WebDAV</strong>, plain <strong>HTTP</strong>, an <strong>S3</strong>-compatible
+            API, or <strong>SFTP</strong> — with optional authentication and a Prometheus
+            <code>/metrics</code> endpoint. You can drive it two ways: the
+            <strong>Settings &rarr; Server</strong> panel in the app, or the <code>copythat serve</code>
+            command for headless machines and scripts.
+          </p>
+
+          <p><strong>From the app (Settings &rarr; Server)</strong></p>
+          <ol>
+            <li>Click the <strong>gear icon</strong> in the footer to open Settings, then select the
+              <strong>Server</strong> tab.</li>
+            <li>
+              Under <strong>Protocols</strong>, tick the access methods to expose:
+              <strong>WebDAV</strong>, <strong>HTTP</strong>, <strong>S3</strong>, or
+              <strong>SFTP</strong>. WebDAV and HTTP can be enabled together; S3 and SFTP each need a
+              server of their own (see the note below).
+            </li>
+            <li>
+              Set the <strong>Bind address</strong>. The default <code>127.0.0.1:8080</code> serves
+              only to this computer. To reach the server from other machines, use
+              <code>0.0.0.0:8080</code> (or your LAN IP) and open that port in your firewall.
+            </li>
+            <li>
+              Set the <strong>Served folder</strong> — type a path or click <strong>…</strong> to pick
+              one. Leaving it blank serves the app's working directory.
+            </li>
+            <li>
+              Optionally tick <strong>Read-only</strong> to refuse all uploads and deletions — clients
+              can browse and download, but never change anything on disk.
+            </li>
+            <li>
+              Choose an <strong>Authentication</strong> mode — <em>None</em>, <em>Bearer token</em>, or
+              <em>Basic (username + password)</em> — and fill in the credential fields that appear.
+            </li>
+            <li>
+              Click <strong>Start server</strong>. The status line shows
+              <strong>Running on &lt;address&gt;</strong>, and when WebDAV or HTTP is enabled a
+              <strong>Metrics</strong> URL appears (a Prometheus <code>/metrics</code> endpoint). Click
+              <strong>Stop server</strong> to shut it down — the server also stops when you quit Copy That.
+            </li>
+          </ol>
+          <table>
+            <thead>
+              <tr><th>Protocol</th><th>Best for</th><th>Connect with</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>WebDAV</td><td>Mounting the folder as a network drive</td><td>Windows "Map network drive", macOS Finder → Connect to Server (<kbd>Cmd+K</kbd>), GNOME Files, or davfs2</td></tr>
+              <tr><td>HTTP</td><td>Simple file download / upload (GET / PUT)</td><td>A web browser, <code>curl</code>, or <code>wget</code></td></tr>
+              <tr><td>S3</td><td>S3-compatible object access</td><td><code>aws</code> CLI, rclone, or any S3 SDK — use <em>Basic</em> auth, where the username / password are the access-key-id / secret (AWS SigV4)</td></tr>
+              <tr><td>SFTP</td><td>File transfer over SSH</td><td><code>sftp</code>, <code>scp</code>, FileZilla, WinSCP, or rclone</td></tr>
+            </tbody>
+          </table>
+          <div class="note-box">
+            <strong>Protocol combinations:</strong> WebDAV and HTTP share one address and can be on at
+            the same time. S3 and SFTP each use their own transport, so enable only one of them at a
+            time on its own server — Copy That refuses to start if you combine S3 or SFTP with another
+            protocol on the same address. S3 also requires <em>Basic</em> or <em>None</em> auth (not
+            Bearer), because it signs requests with AWS SigV4.
+          </div>
+          <div class="warn-box">
+            <strong>Security:</strong> a server bound to anything other than <code>127.0.0.1</code> with
+            authentication set to <em>None</em> is reachable — read/write unless <em>Read-only</em> — by
+            every device that can reach the address, and Copy That logs a loud warning. For anything
+            beyond your own machine, set <em>Bearer</em> or <em>Basic</em> auth, or put the server
+            behind a reverse proxy that handles authentication.
+          </div>
+
+          <p><strong>From the command line</strong></p>
+          <p>
+            Copy That also ships a command-line binary, <code>copythat</code>, for running a server on a
+            headless machine or from a script. The flags mirror the panel:
+          </p>
+          <ol>
+            <li>
+              Open a terminal and run, for example:
+              <br /><code>copythat serve --webdav --root /data --bind 0.0.0.0:8080 --token s3cr3t</code>
+            </li>
+            <li>
+              With no protocol flag it serves <strong>WebDAV</strong>; with no <code>--bind</code> it
+              listens on <code>127.0.0.1:8080</code>.
+            </li>
+            <li>
+              The terminal prints the bound address and the <code>/metrics</code> URL. Press
+              <strong>Ctrl-C</strong> to stop the server.
+            </li>
+          </ol>
+          <table>
+            <thead>
+              <tr><th>Flag</th><th>Effect</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>--webdav</code> / <code>--http</code> / <code>--s3</code> / <code>--sftp</code></td><td>Choose the protocol(s) to expose. Defaults to <code>--webdav</code>.</td></tr>
+              <tr><td><code>--bind &lt;addr&gt;</code></td><td>Address to listen on (default <code>127.0.0.1:8080</code>; use <code>0.0.0.0:&lt;port&gt;</code> to expose on the network).</td></tr>
+              <tr><td><code>--root &lt;path&gt;</code></td><td>Folder to serve (default: the current directory).</td></tr>
+              <tr><td><code>--readonly</code></td><td>Refuse uploads and deletions.</td></tr>
+              <tr><td><code>--token &lt;token&gt;</code></td><td>Require this bearer token on every request.</td></tr>
+              <tr><td><code>--user &lt;name&gt; --password &lt;pw&gt;</code></td><td>Require HTTP Basic credentials (also the S3 access-key-id / secret).</td></tr>
+              <tr><td><code>--otel-endpoint &lt;url&gt;</code></td><td>Export traces to an OpenTelemetry OTLP/HTTP collector, e.g. <code>http://localhost:4318/v1/traces</code>.</td></tr>
+            </tbody>
+          </table>
+          <div class="note-box">
+            The Settings &rarr; Server panel also stores an <strong>OpenTelemetry endpoint</strong> and
+            <strong>webhook destinations</strong> (Slack, Discord, ntfy.sh, Pushover) alongside the rest
+            of your settings. OpenTelemetry trace export is activated when you launch the server from the
+            command line with <code>--otel-endpoint</code>.
+          </div>
         </section>
 
         <!-- SETTINGS -->
