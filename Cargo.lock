@@ -1648,12 +1648,14 @@ name = "copythat-chunk"
 version = "0.19.84"
 dependencies = [
  "blake3",
+ "ciborium",
  "copythat-core",
  "directories",
  "fastcdc",
  "rand 0.9.4",
  "redb",
  "serde",
+ "serde_bytes",
  "serde_json",
  "tempfile",
  "thiserror 2.0.18",

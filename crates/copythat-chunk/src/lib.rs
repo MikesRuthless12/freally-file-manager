@@ -27,7 +27,8 @@
 //!   of a single file.
 //! - **Moonshot Phases 49–51:** the store becomes the unified
 //!   repository for sync + backup + versioning + encrypted
-//!   collaboration.
+//!   collaboration. Phase 49 lands [`Repository`] — the snapshot
+//!   timeline + reference-counted GC built on top of this store.
 //!
 //! # Minimal example
 //!
@@ -51,16 +52,23 @@
 
 #![forbid(unsafe_code)]
 
+pub mod cdr;
 pub mod chunker;
 pub mod error;
 pub mod manifest;
+pub mod repository;
 pub mod sink;
 pub mod store;
 pub mod types;
 
+pub use cdr::{CDR_ALGO, CDR_SPEC_VERSION, CdrChunkRef, CdrError, CdrManifest, ensure_readable};
 pub use chunker::{Chunker, DEFAULT_AVG, DEFAULT_MAX, DEFAULT_MIN};
 pub use error::{ChunkStoreError, Result};
 pub use manifest::{IngestStats, delta_plan, ingest_bytes, ingest_file, materialise_file};
+pub use repository::{
+    FileEntry, FileSnapshot, GcReport, RepoStats, Repository, Snapshot, SnapshotId, SnapshotKind,
+    UnifiedSnapshot,
+};
 pub use sink::CopyThatChunkSink;
 pub use store::{ChunkLocator, ChunkStore, PACK_ROLLOVER_BYTES, default_chunk_store_path};
 pub use types::{Blake3Hash, Chunk, ChunkRef, Manifest, hex_of};

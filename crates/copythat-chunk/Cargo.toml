@@ -29,6 +29,13 @@ redb = "2"
 directories = "6"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+# Phase 50 (CDR-0) — canonical CBOR for the cross-tool portability
+# format. Both crates are already in the workspace tree + deny.toml
+# allowlist via Phase 43 (`copythat-provenance`), so this adds no new
+# third-party crate. `serde_bytes` makes 32-byte digests encode as CBOR
+# byte strings instead of arrays of integers.
+ciborium = "0.2"
+serde_bytes = "0.11"
 thiserror = "2"
 tracing = { version = "0.1", default-features = false, features = ["std"] }
 # Pack-id generation. `uuid` is already workspace-direct from Phase 25.
@@ -43,3 +50,14 @@ tempfile = "3"
 [[test]]
 name = "phase_27_chunk"
 path = "../../tests/smoke/phase_27_chunk.rs"
+
+# Phase 49 smoke — the unified Repository (snapshots + refcount GC).
+[[test]]
+name = "phase_49_repo"
+path = "../../tests/smoke/phase_49_repo.rs"
+
+# Phase 50 smoke — CDR-0 manifest portability (canonical CBOR round-trip
+# + validation + spec-version refusal).
+[[test]]
+name = "phase_50_portability"
+path = "../../tests/smoke/phase_50_portability.rs"

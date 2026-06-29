@@ -49,7 +49,7 @@ use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
-use redb::{Database, ReadableTableMetadata, TableDefinition};
+use redb::{Database, ReadableTable, ReadableTableMetadata, TableDefinition};
 use uuid::Uuid;
 
 use crate::error::{ChunkStoreError, Result};
@@ -366,6 +366,103 @@ impl ChunkStore {
         };
         let manifest: Manifest = serde_json::from_slice(v.value())?;
         Ok(Some(manifest))
+    }
+
+    // ===== Phase 49 — Repository garbage-collection support =====
+    //
+    // These helpers are crate-private: only `Repository` (the Phase 49
+    // unified store that owns a `ChunkStore` as a sub-component) calls
+    // them, and only from its `gc()` mark-and-sweep. They are kept off
+    // the public surface so the Phase 27 contract stays "put / get /
+    // never lose a chunk" — deletion is a Repository-level decision
+    // driven by reference counting, never an ad-hoc store operation.
+
+    /// Snapshot every `(hash, locator)` currently in the chunk index.
+    ///
+    /// Used by `Repository::gc` to enumerate the live set so it can
+    /// diff it against the set reachable from all snapshots. Reads a
+    /// single redb transaction; the returned vector is a point-in-time
+    /// copy, so a concurrent `put` after this call simply isn't seen by
+    /// this GC pass (it will be on the next one).
+    pub(crate) fn all_locators(&self) -> Result<Vec<(Blake3Hash, ChunkLocator)>> {
+        let txn = self.db.begin_read()?;
+        let tbl = txn.open_table(CHUNKS)?;
+        let mut out = Vec::with_capacity(tbl.len()? as usize);
+        for row in tbl.iter()? {
+            let (k, v) = row?;
+            let key = k.value();
+            // Every key we ever insert is a 32-byte BLAKE3 digest
+            // (`hash.as_slice()`); skip anything else defensively
+            // rather than panicking on a corrupt index.
+            if key.len() != 32 {
+                continue;
+            }
+            let mut hash = [0u8; 32];
+            hash.copy_from_slice(key);
+            out.push((hash, decode_locator(v.value())));
+        }
+        Ok(out)
+    }
+
+    /// Drop the index rows for `hashes`. The chunk *bytes* remain in
+    /// their pack file until the whole pack is reclaimed by
+    /// [`Self::remove_pack_file`]; this only makes the chunks
+    /// unreachable via `get` / `has`. No-op for hashes that are absent.
+    pub(crate) fn remove_chunk_index_entries(&self, hashes: &[Blake3Hash]) -> Result<()> {
+        if hashes.is_empty() {
+            return Ok(());
+        }
+        let txn = self.db.begin_write()?;
+        {
+            let mut tbl = txn.open_table(CHUNKS)?;
+            for h in hashes {
+                tbl.remove(h.as_slice())?;
+            }
+        }
+        txn.commit()?;
+        Ok(())
+    }
+
+    /// The id of the pack currently being appended to. GC must never
+    /// delete this pack — the active writer holds it open and future
+    /// `put`s land in it.
+    pub(crate) fn active_pack_id(&self) -> Result<Uuid> {
+        let active = self
+            .active
+            .lock()
+            .map_err(|_| ChunkStoreError::Redb("active pack mutex poisoned".into()))?;
+        Ok(active.id)
+    }
+
+    /// Delete the pack file for `id` and return the number of bytes
+    /// freed. Caller guarantees no live index row still points into it
+    /// (and that it is not the active pack). A missing file is treated
+    /// as already-reclaimed (`Ok(0)`), so GC is idempotent across a
+    /// crash mid-sweep.
+    pub(crate) fn remove_pack_file(&self, id: Uuid) -> Result<u64> {
+        let path = self.packs_dir.join(format!("pack-{id}.pack"));
+        let freed = std::fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
+        match std::fs::remove_file(&path) {
+            Ok(()) => Ok(freed),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(0),
+            Err(e) => Err(ChunkStoreError::Io { path, source: e }),
+        }
+    }
+
+    /// Every Phase 27 manifest currently persisted in the `manifests`
+    /// table. The Repository's GC treats these as additional reachability
+    /// roots: the chunk store is shared, so a chunk referenced only by a
+    /// delta-resume / mount / recovery manifest (never by a Repository
+    /// snapshot) must not be swept.
+    pub(crate) fn all_manifests(&self) -> Result<Vec<Manifest>> {
+        let txn = self.db.begin_read()?;
+        let tbl = txn.open_table(MANIFESTS)?;
+        let mut out = Vec::with_capacity(tbl.len()? as usize);
+        for row in tbl.iter()? {
+            let (_k, v) = row?;
+            out.push(serde_json::from_slice::<Manifest>(v.value())?);
+        }
+        Ok(out)
     }
 }
 

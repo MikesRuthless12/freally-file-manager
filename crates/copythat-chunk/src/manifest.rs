@@ -77,6 +77,23 @@ pub fn ingest_bytes(
     bytes: &[u8],
     manifest_key: &str,
 ) -> Result<(IngestStats, Manifest)> {
+    let (stats, manifest) = chunk_into_store(store, chunker, bytes)?;
+    store.put_manifest(manifest_key, &manifest)?;
+    Ok((stats, manifest))
+}
+
+/// The shared chunk-slice-and-`put` loop: split `bytes`, store each
+/// chunk (dedup-aware), and build the [`Manifest`] — but **without**
+/// writing the Phase 27 `manifests` table. [`ingest_bytes`] wraps this
+/// and adds the manifest write; the Phase 49 [`crate::Repository`] calls
+/// it directly because it records manifests in its own snapshot catalog
+/// instead. Keeping the loop in one place stops the slice/offset math
+/// from drifting between the two callers.
+pub(crate) fn chunk_into_store(
+    store: &ChunkStore,
+    chunker: &Chunker,
+    bytes: &[u8],
+) -> Result<(IngestStats, Manifest)> {
     let file_hash: Blake3Hash = *blake3::hash(bytes).as_bytes();
     let cuts = chunker.chunk_bytes(bytes);
     let mut stats = IngestStats {
@@ -105,7 +122,6 @@ pub fn ingest_bytes(
         size: bytes.len() as u64,
         chunks,
     };
-    store.put_manifest(manifest_key, &manifest)?;
     Ok((stats, manifest))
 }
 
