@@ -606,6 +606,22 @@ export interface PowerPoliciesDto {
   thermal: ThermalRuleDto;
 }
 
+/** Phase 47 — one diagnostics sample, the `job-diag` event payload. The
+ * outer fields are camelCase (DiagDto's serde); the inner `snapshot`
+ * (DiagSnapshot) keeps snake_case field names. */
+export interface DiagDto {
+  snapshot: {
+    instant_throughput: number;
+    cpu_pct: number;
+    thermal_throttling: boolean;
+  };
+  /** snake_case kind: source_io / dest_io / network / antivirus / cpu /
+   * thermal / unknown. */
+  bottleneck: string;
+  causeEmoji: string;
+  causeLabel: string;
+}
+
 export interface SettingsDto {
   general: GeneralSettingsDto;
   transfer: TransferSettingsDto;

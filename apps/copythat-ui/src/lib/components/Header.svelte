@@ -31,7 +31,7 @@
     pickFolders,
   } from "../ipc";
   import { formatEta, formatRate } from "../format";
-  import type { ShapeRateDto } from "../types";
+  import type { DiagDto, ShapeRateDto } from "../types";
 
   let g = $derived($globals);
   let rate = $derived($liveRateBps);
@@ -176,6 +176,59 @@
   let etaDisplay = $derived(hasWork ? formatEta(g.etaSeconds, t) : "");
   let rateDisplay = $derived(hasWork ? formatRate(rate) : "");
 
+  // Phase 47 — live diagnostics. The runner's 1 Hz diag sampler emits
+  // `job-diag` while a copy runs; hold the latest sample + a rolling
+  // throughput history for the inline sparkline. Cleared when idle.
+  let diag = $state<DiagDto | null>(null);
+  const DIAG_HISTORY = 60;
+  let diagHistory = $state<number[]>([]);
+
+  $effect(() => {
+    let unlistenFn: (() => void) | undefined;
+    void (async () => {
+      try {
+        unlistenFn = await onEvent<DiagDto>("job-diag", (payload) => {
+          diag = payload;
+          diagHistory = [
+            ...diagHistory,
+            payload.snapshot.instant_throughput,
+          ].slice(-DIAG_HISTORY);
+        });
+      } catch {
+        // Best-effort — same pattern as the other header listeners.
+      }
+    })();
+    return () => {
+      if (unlistenFn) unlistenFn();
+    };
+  });
+
+  // Clear the diagnostics readout when the queue goes idle.
+  $effect(() => {
+    if (g.state === "idle") {
+      diag = null;
+      diagHistory = [];
+    }
+  });
+
+  // Only surface a cause when one is actually identified (not "unknown").
+  let diagCause = $derived(diag && diag.bottleneck !== "unknown" ? diag : null);
+
+  // Compact sparkline path over the recent throughput history.
+  let sparkPath = $derived.by(() => {
+    if (diagHistory.length < 2) return "";
+    const w = 48;
+    const h = 14;
+    const max = Math.max(...diagHistory, 1);
+    const step = w / (diagHistory.length - 1);
+    return diagHistory
+      .map(
+        (v, i) =>
+          `${i === 0 ? "M" : "L"}${(i * step).toFixed(1)},${(h - (v / max) * h).toFixed(1)}`,
+      )
+      .join(" ");
+  });
+
   async function onAddFiles() {
     try {
       const paths = await pickFiles();
@@ -205,6 +258,33 @@
       <div class="metrics">
         {#if rateDisplay}
           <span class="metric rate">{rateDisplay}</span>
+        {/if}
+        {#if diagCause}
+          <span
+            class="metric diag"
+            title={`${diagCause.causeLabel} — ${formatRate(
+              diagCause.snapshot.instant_throughput,
+            )}`}
+            aria-label={`Bottleneck: ${diagCause.causeLabel}`}
+          >
+            <span class="diag-emoji" aria-hidden="true">{diagCause.causeEmoji}</span>
+            {#if sparkPath}
+              <svg
+                class="diag-spark"
+                viewBox="0 0 48 14"
+                width="48"
+                height="14"
+                aria-hidden="true"
+              >
+                <path
+                  d={sparkPath}
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.2"
+                />
+              </svg>
+            {/if}
+          </span>
         {/if}
         {#if etaDisplay}
           <span class="metric eta" aria-label={t("header-eta-label")}>
@@ -341,6 +421,18 @@
 
   .metric.eta {
     color: var(--fg-dim, #5f5f5f);
+  }
+
+  /* Phase 47 — live bottleneck indicator: cause emoji + throughput sparkline. */
+  .metric.diag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--fg-dim, #5f5f5f);
+  }
+
+  .diag-spark {
+    display: block;
   }
 
   .actions {
