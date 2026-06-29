@@ -1175,3 +1175,27 @@ server-status-stopped = Зупинено
 server-metrics-url = Метрики
 err-server-no-protocols = Виберіть принаймні один протокол перед запуском сервера.
 err-server-bind = Не вдалося прив'язати адресу сервера. Можливо, вона вже використовується.
+
+# Library drawer (Phase 49) — unified content-addressed repository view.
+footer-library = Бібліотека
+library-title = Бібліотека
+library-loading = Завантаження репозиторію…
+library-unavailable = Репозиторій недоступний
+library-tab-live = Наживо
+library-tab-snapshots = Знімки
+library-tab-versions = Версії
+library-hero-savings = надано { $effective } ефективних даних · { $pct } заощаджено
+library-hero-empty = { $chunks } фрагментів збережено — ще немає знімків
+library-stat-stored = Збережено на диску
+library-stat-effective = Ефективні дані
+library-stat-snapshots = Знімки
+library-stat-chunks = Унікальні фрагменти
+library-snapshot-empty = Ще немає знімків
+library-snapshot-files = { $n } файлів
+library-version-path-ph = Шлях призначення…
+library-version-load = Показати версії
+library-version-empty = Немає версій для цього шляху
+repo-kind-copy = Копія
+repo-kind-sync = Синхронізація
+repo-kind-version = Версія
+repo-kind-backup = Резервна копія

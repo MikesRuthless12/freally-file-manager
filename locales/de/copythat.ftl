@@ -1175,3 +1175,27 @@ server-status-stopped = Gestoppt
 server-metrics-url = Metriken
 err-server-no-protocols = Wählen Sie mindestens ein Protokoll, bevor Sie den Server starten.
 err-server-bind = Die Serveradresse konnte nicht gebunden werden. Sie ist möglicherweise bereits belegt.
+
+# Library drawer (Phase 49) — unified content-addressed repository view.
+footer-library = Bibliothek
+library-title = Bibliothek
+library-loading = Repository wird geladen…
+library-unavailable = Repository nicht verfügbar
+library-tab-live = Live
+library-tab-snapshots = Snapshots
+library-tab-versions = Versionen
+library-hero-savings = { $effective } effektive Daten bereitgestellt · { $pct } gespart
+library-hero-empty = { $chunks } Chunks gespeichert — noch keine Snapshots
+library-stat-stored = Auf Datenträger gespeichert
+library-stat-effective = Effektive Daten
+library-stat-snapshots = Snapshots
+library-stat-chunks = Eindeutige Chunks
+library-snapshot-empty = Noch keine Snapshots
+library-snapshot-files = { $n } Dateien
+library-version-path-ph = Zielpfad…
+library-version-load = Versionen anzeigen
+library-version-empty = Keine Versionen für diesen Pfad
+repo-kind-copy = Kopie
+repo-kind-sync = Sync
+repo-kind-version = Version
+repo-kind-backup = Backup

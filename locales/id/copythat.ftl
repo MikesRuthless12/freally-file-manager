@@ -1175,3 +1175,27 @@ server-status-stopped = Dihentikan
 server-metrics-url = Metrik
 err-server-no-protocols = Pilih setidaknya satu protokol sebelum memulai server.
 err-server-bind = Tidak dapat mengikat alamat server. Mungkin sudah digunakan.
+
+# Laci Pustaka (Phase 49) — tampilan repositori beralamat konten terpadu.
+footer-library = Pustaka
+library-title = Pustaka
+library-loading = Memuat repositori…
+library-unavailable = Repositori tidak tersedia
+library-tab-live = Langsung
+library-tab-snapshots = Snapshot
+library-tab-versions = Versi
+library-hero-savings = Menyajikan { $effective } efektif · { $pct } dihemat
+library-hero-empty = { $chunks } chunk tersimpan — belum ada snapshot
+library-stat-stored = Tersimpan di disk
+library-stat-effective = Data efektif
+library-stat-snapshots = Snapshot
+library-stat-chunks = Chunk unik
+library-snapshot-empty = Belum ada snapshot
+library-snapshot-files = { $n } berkas
+library-version-path-ph = Jalur tujuan…
+library-version-load = Tampilkan versi
+library-version-empty = Tidak ada versi untuk jalur ini
+repo-kind-copy = Salin
+repo-kind-sync = Sinkron
+repo-kind-version = Versi
+repo-kind-backup = Cadangan

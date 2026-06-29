@@ -29,6 +29,7 @@
   import SettingsModal from "./lib/components/SettingsModal.svelte";
   import ResumePromptModal from "./lib/components/ResumePromptModal.svelte";
   import SyncDrawer from "./lib/components/SyncDrawer.svelte";
+  import LibraryDrawer from "./lib/components/LibraryDrawer.svelte";
   import Toast from "./lib/components/Toast.svelte";
 
   import { invoke } from "@tauri-apps/api/core";
@@ -298,6 +299,9 @@
   {#if $syncDrawerOpen}
     <SyncDrawer onClose={closeSyncDrawer} />
   {/if}
+
+  <!-- Phase 49: unified Library drawer (gates itself internally) -->
+  <LibraryDrawer />
 
   <Toast />
 </main>

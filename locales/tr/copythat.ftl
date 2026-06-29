@@ -1175,3 +1175,27 @@ server-status-stopped = Durduruldu
 server-metrics-url = Metrikler
 err-server-no-protocols = Sunucuyu başlatmadan önce en az bir protokol seçin.
 err-server-bind = Sunucu adresi bağlanamadı. Zaten kullanımda olabilir.
+
+# Kitaplık çekmecesi (Phase 49) — birleşik içerik adresli depo görünümü.
+footer-library = Kitaplık
+library-title = Kitaplık
+library-loading = Depo yükleniyor…
+library-unavailable = Depo kullanılamıyor
+library-tab-live = Canlı
+library-tab-snapshots = Anlık görüntüler
+library-tab-versions = Sürümler
+library-hero-savings = { $effective } etkin veri sunuluyor · { $pct } tasarruf
+library-hero-empty = { $chunks } yığın depolandı — henüz anlık görüntü yok
+library-stat-stored = Diskte saklanan
+library-stat-effective = Etkin veri
+library-stat-snapshots = Anlık görüntüler
+library-stat-chunks = Benzersiz yığınlar
+library-snapshot-empty = Henüz anlık görüntü yok
+library-snapshot-files = { $n } dosya
+library-version-path-ph = Hedef yol…
+library-version-load = Sürümleri göster
+library-version-empty = Bu yol için sürüm yok
+repo-kind-copy = Kopya
+repo-kind-sync = Eşitleme
+repo-kind-version = Sürüm
+repo-kind-backup = Yedek

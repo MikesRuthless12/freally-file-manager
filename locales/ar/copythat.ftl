@@ -1175,3 +1175,27 @@ server-status-stopped = متوقف
 server-metrics-url = المقاييس
 err-server-no-protocols = اختر بروتوكولًا واحدًا على الأقل قبل بدء الخادم.
 err-server-bind = تعذّر ربط عنوان الخادم. قد يكون قيد الاستخدام بالفعل.
+
+# درج المكتبة (Phase 49) — عرض موحَّد للمستودع المعنون بالمحتوى.
+footer-library = المكتبة
+library-title = المكتبة
+library-loading = جارٍ تحميل المستودع…
+library-unavailable = المستودع غير متوفر
+library-tab-live = مباشر
+library-tab-snapshots = اللقطات
+library-tab-versions = الإصدارات
+library-hero-savings = يقدّم { $effective } فعلية · تم توفير { $pct }
+library-hero-empty = تم تخزين { $chunks } جزء — لا توجد لقطات بعد
+library-stat-stored = مُخزَّن على القرص
+library-stat-effective = البيانات الفعلية
+library-stat-snapshots = اللقطات
+library-stat-chunks = أجزاء فريدة
+library-snapshot-empty = لا توجد لقطات بعد
+library-snapshot-files = { $n } ملف
+library-version-path-ph = مسار الوجهة…
+library-version-load = عرض الإصدارات
+library-version-empty = لا توجد إصدارات لهذا المسار
+repo-kind-copy = نسخ
+repo-kind-sync = مزامنة
+repo-kind-version = إصدار
+repo-kind-backup = نسخ احتياطي

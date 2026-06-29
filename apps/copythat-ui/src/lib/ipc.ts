@@ -937,3 +937,53 @@ export async function pluginInstallFromUrl(args: {
 }): Promise<PluginInstallPreviewDto> {
   return invoke<PluginInstallPreviewDto>("plugin_install_from_url", { args });
 }
+
+// ---------- Phase 49 — content-addressed Library / Repository ----------
+
+/** Dedup stats for the Library "hero" readout. Mirrors `RepoStatsDto`. */
+export type RepositoryStatsDto = {
+  storedBytes: number;
+  uniqueBytes: number;
+  effectiveBytes: number;
+  snapshotCount: number;
+  chunkCount: number;
+  savedRatio: number;
+};
+
+/** One row of the unified snapshot timeline. Mirrors `RepoSnapshotDto`. */
+export type RepositorySnapshotDto = {
+  id: number;
+  kind: string;
+  createdAtMs: number;
+  label: string;
+  fileCount: number;
+  totalSize: number;
+};
+
+/** One Phase 42 per-file version. Mirrors `version_commands::VersionRecordDto`. */
+export type VersionRecordDto = {
+  rowId: number;
+  dstPath: string;
+  tsMs: number;
+  manifestBlake3Hex: string;
+  size: number;
+  retainedUntilMs: number | null;
+  triggeredByJobId: number | null;
+};
+
+/** Repository dedup stats for the Library "hero" readout. */
+export async function repositoryStats(): Promise<RepositoryStatsDto> {
+  return invoke<RepositoryStatsDto>("repository_stats");
+}
+
+/** The unified snapshot timeline (oldest first). */
+export async function repositorySnapshots(): Promise<RepositorySnapshotDto[]> {
+  return invoke<RepositorySnapshotDto[]>("repository_snapshots");
+}
+
+/** Per-file rolling versions (Phase 42) for a destination path. */
+export async function listVersions(
+  dstPath: string,
+): Promise<VersionRecordDto[]> {
+  return invoke<VersionRecordDto[]>("list_versions", { dstPath });
+}

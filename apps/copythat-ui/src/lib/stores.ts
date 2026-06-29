@@ -118,6 +118,8 @@ const totalsDrawerOpenStore = writable<boolean>(false);
 const settingsOpenStore = writable<boolean>(false);
 // Phase 25: Sync drawer open flag.
 const syncDrawerOpenStore = writable<boolean>(false);
+// Phase 49: Library drawer open flag.
+const libraryDrawerOpenStore = writable<boolean>(false);
 // How error prompts render — mirrors
 // `general.error_display_mode` from the settings crate. Seeded by
 // `initStores` via `getSettings()`; re-written whenever the user
@@ -280,6 +282,17 @@ export function openSyncDrawer(): void {
 }
 export function closeSyncDrawer(): void {
   syncDrawerOpenStore.set(false);
+}
+
+// Phase 49 — Library drawer.
+export const libraryDrawerOpen: Readable<boolean> = {
+  subscribe: libraryDrawerOpenStore.subscribe,
+};
+export function openLibraryDrawer(): void {
+  libraryDrawerOpenStore.set(true);
+}
+export function closeLibraryDrawer(): void {
+  libraryDrawerOpenStore.set(false);
 }
 
 // Error display mode — readable + write-through setter. SettingsModal

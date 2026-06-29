@@ -1175,3 +1175,27 @@ server-status-stopped = Đã dừng
 server-metrics-url = Số liệu
 err-server-no-protocols = Chọn ít nhất một giao thức trước khi khởi động máy chủ.
 err-server-bind = Không thể liên kết địa chỉ máy chủ. Địa chỉ này có thể đang được sử dụng.
+
+# Ngăn Thư viện (Phase 49) — chế độ xem kho lưu trữ định địa chỉ theo nội dung hợp nhất.
+footer-library = Thư viện
+library-title = Thư viện
+library-loading = Đang tải kho lưu trữ…
+library-unavailable = Kho lưu trữ không khả dụng
+library-tab-live = Trực tiếp
+library-tab-snapshots = Ảnh chụp
+library-tab-versions = Phiên bản
+library-hero-savings = Cung cấp { $effective } hiệu dụng · tiết kiệm { $pct }
+library-hero-empty = Đã lưu { $chunks } khối — chưa có ảnh chụp
+library-stat-stored = Lưu trên đĩa
+library-stat-effective = Dữ liệu hiệu dụng
+library-stat-snapshots = Ảnh chụp
+library-stat-chunks = Khối riêng biệt
+library-snapshot-empty = Chưa có ảnh chụp
+library-snapshot-files = { $n } tệp
+library-version-path-ph = Đường dẫn đích…
+library-version-load = Hiển thị phiên bản
+library-version-empty = Không có phiên bản cho đường dẫn này
+repo-kind-copy = Sao chép
+repo-kind-sync = Đồng bộ
+repo-kind-version = Phiên bản
+repo-kind-backup = Sao lưu

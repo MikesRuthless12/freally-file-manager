@@ -1175,3 +1175,27 @@ server-status-stopped = Zatrzymany
 server-metrics-url = Metryki
 err-server-no-protocols = Wybierz co najmniej jeden protokół przed uruchomieniem serwera.
 err-server-bind = Nie można powiązać adresu serwera. Może być już używany.
+
+# Library drawer (Phase 49) — unified content-addressed repository view.
+footer-library = Biblioteka
+library-title = Biblioteka
+library-loading = Ładowanie repozytorium…
+library-unavailable = Repozytorium niedostępne
+library-tab-live = Na żywo
+library-tab-snapshots = Migawki
+library-tab-versions = Wersje
+library-hero-savings = udostępniono { $effective } efektywnych danych · { $pct } zaoszczędzono
+library-hero-empty = { $chunks } fragmentów zapisanych — brak migawek
+library-stat-stored = Zapisano na dysku
+library-stat-effective = Efektywne dane
+library-stat-snapshots = Migawki
+library-stat-chunks = Unikalne fragmenty
+library-snapshot-empty = Brak migawek
+library-snapshot-files = { $n } plików
+library-version-path-ph = Ścieżka docelowa…
+library-version-load = Pokaż wersje
+library-version-empty = Brak wersji dla tej ścieżki
+repo-kind-copy = Kopia
+repo-kind-sync = Synchronizacja
+repo-kind-version = Wersja
+repo-kind-backup = Kopia zapasowa

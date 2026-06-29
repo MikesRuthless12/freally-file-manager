@@ -1175,3 +1175,27 @@ server-status-stopped = Gestopt
 server-metrics-url = Statistieken
 err-server-no-protocols = Selecteer ten minste één protocol voordat u de server start.
 err-server-bind = Kan het serveradres niet binden. Mogelijk is het al in gebruik.
+
+# Library drawer (Phase 49) — unified content-addressed repository view.
+footer-library = Bibliotheek
+library-title = Bibliotheek
+library-loading = Repository laden…
+library-unavailable = Repository niet beschikbaar
+library-tab-live = Live
+library-tab-snapshots = Snapshots
+library-tab-versions = Versies
+library-hero-savings = { $effective } effectieve gegevens geleverd · { $pct } bespaard
+library-hero-empty = { $chunks } chunks opgeslagen — nog geen snapshots
+library-stat-stored = Op schijf opgeslagen
+library-stat-effective = Effectieve gegevens
+library-stat-snapshots = Snapshots
+library-stat-chunks = Unieke chunks
+library-snapshot-empty = Nog geen snapshots
+library-snapshot-files = { $n } bestanden
+library-version-path-ph = Bestemmingspad…
+library-version-load = Versies tonen
+library-version-empty = Geen versies voor dit pad
+repo-kind-copy = Kopie
+repo-kind-sync = Synchronisatie
+repo-kind-version = Versie
+repo-kind-backup = Back-up

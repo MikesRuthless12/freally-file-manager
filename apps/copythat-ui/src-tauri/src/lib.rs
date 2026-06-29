@@ -65,6 +65,7 @@ pub mod preview_commands;
 pub mod progress_channel;
 pub mod queue_commands;
 pub mod recovery_commands;
+pub mod repository_commands;
 pub mod reveal;
 pub mod runner;
 pub mod sanitize_commands;
@@ -330,6 +331,19 @@ pub fn run() {
         }
     };
 
+    // Phase 49 — open the unified chunk repository at the default
+    // chunk-store path. Non-fatal: on failure the Library tab renders
+    // its "unavailable" state. Safe to open here — the app holds no
+    // persistent chunk-store handle (recovery + mount open transient
+    // stores on demand), so there is no redb lock contention at boot.
+    let app_state = match copythat_chunk::Repository::open_default() {
+        Ok(r) => app_state.with_repository(Some(std::sync::Arc::new(r))),
+        Err(e) => {
+            eprintln!("copythat: repository open failed: {e}");
+            app_state
+        }
+    };
+
     // Post-Phase-12 — system-wide paste hotkey. The plugin registers
     // no combos at build time; `global_paste::register_paste_shortcut`
     // does that from the setup hook based on live settings. Handler
@@ -573,6 +587,9 @@ pub fn run() {
             version_commands::list_versions,
             version_commands::select_versions_to_prune,
             version_commands::prune_versions,
+            // Phase 49 — unified chunk repository (Library tab).
+            repository_commands::repository_stats,
+            repository_commands::repository_snapshots,
             // Phase 44.2 — SSD-aware whole-drive sanitize IPC.
             sanitize_commands::sanitize_list_devices,
             sanitize_commands::sanitize_capabilities_cmd,

@@ -11,6 +11,7 @@
     globals,
     openErrorLogDrawer,
     openHistoryDrawer,
+    openLibraryDrawer,
     openSettings,
     openSyncDrawer,
     openTotalsDrawer,
@@ -167,6 +168,16 @@
     >
       <Icon name="refresh" size={14} />
       {t("footer-sync")}
+    </button>
+    <!-- Phase 49 — Library: unified content-addressed repository view. -->
+    <button
+      class="history"
+      type="button"
+      onclick={openLibraryDrawer}
+      aria-label={t("footer-library")}
+    >
+      <Icon name="archive" size={14} />
+      {t("footer-library")}
     </button>
     <!--
       Phase 11b — Settings entry point. Icon-only button; the Footer

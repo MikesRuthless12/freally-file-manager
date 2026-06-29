@@ -1094,6 +1094,30 @@ err-pinned-destination-label-invalid = Метка назначения в тре
 err-pinned-destination-path-invalid = Путь назначения в трее содержит недопустимые символы (перевод строки, возврат каретки или NUL).
 err-pinned-destination-too-many = Достигнут предел в 50 назначений в трее. Удалите одно, чтобы добавить другое.
 
+# Панель библиотеки (этап 49) — единое представление репозитория с адресацией по содержимому.
+footer-library = Библиотека
+library-title = Библиотека
+library-loading = Загрузка репозитория…
+library-unavailable = Репозиторий недоступен
+library-tab-live = Текущие
+library-tab-snapshots = Снимки
+library-tab-versions = Версии
+library-hero-savings = доступно { $effective } полезных данных · сэкономлено { $pct }
+library-hero-empty = сохранено { $chunks } фрагментов — снимков пока нет
+library-stat-stored = Занято на диске
+library-stat-effective = Полезные данные
+library-stat-snapshots = Снимки
+library-stat-chunks = Уникальные фрагменты
+library-snapshot-empty = Снимков пока нет
+library-snapshot-files = { $n } файлов
+library-version-path-ph = Путь назначения…
+library-version-load = Показать версии
+library-version-empty = Для этого пути нет версий
+repo-kind-copy = Копирование
+repo-kind-sync = Синхронизация
+repo-kind-version = Версионирование
+repo-kind-backup = Резервное копирование
+
 # Phase 46.6 — Settings → Plugins tab. The IPC layer in
 # `apps/copythat-ui/src-tauri/src/plugin_commands.rs` enumerates the
 # per-user plugin store under `<config_dir>/plugins/`; the

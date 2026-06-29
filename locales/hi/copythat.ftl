@@ -1175,3 +1175,27 @@ server-status-stopped = रुका हुआ
 server-metrics-url = मेट्रिक्स
 err-server-no-protocols = सर्वर शुरू करने से पहले कम से कम एक प्रोटोकॉल चुनें।
 err-server-bind = सर्वर पता बाइंड नहीं किया जा सका। यह पहले से उपयोग में हो सकता है।
+
+# लाइब्रेरी ड्रॉअर (Phase 49) — एकीकृत कंटेंट-एड्रेस्ड रिपॉज़िटरी दृश्य।
+footer-library = लाइब्रेरी
+library-title = लाइब्रेरी
+library-loading = रिपॉज़िटरी लोड हो रही है…
+library-unavailable = रिपॉज़िटरी अनुपलब्ध
+library-tab-live = लाइव
+library-tab-snapshots = स्नैपशॉट
+library-tab-versions = संस्करण
+library-hero-savings = { $effective } प्रभावी डेटा · { $pct } की बचत
+library-hero-empty = { $chunks } चंक्स संग्रहीत — अभी कोई स्नैपशॉट नहीं
+library-stat-stored = डिस्क पर संग्रहीत
+library-stat-effective = प्रभावी डेटा
+library-stat-snapshots = स्नैपशॉट
+library-stat-chunks = विशिष्ट चंक्स
+library-snapshot-empty = अभी कोई स्नैपशॉट नहीं
+library-snapshot-files = { $n } फ़ाइलें
+library-version-path-ph = गंतव्य पथ…
+library-version-load = संस्करण दिखाएँ
+library-version-empty = इस पथ के लिए कोई संस्करण नहीं
+repo-kind-copy = कॉपी
+repo-kind-sync = सिंक
+repo-kind-version = संस्करण
+repo-kind-backup = बैकअप
