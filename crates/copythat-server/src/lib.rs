@@ -30,6 +30,7 @@ use thiserror::Error;
 use tokio::sync::oneshot;
 
 mod http;
+mod sftp;
 pub mod webhook;
 
 pub use webhook::{PushoverCreds, WebhookSink, send_webhook};
@@ -55,10 +56,10 @@ impl Protocol {
         }
     }
 
-    /// Whether this protocol is served today over the shared axum/hyper
-    /// listener. WebDAV and plain HTTP map onto the same file handler; S3
-    /// (a distinct REST/XML API) and SFTP (its own SSH transport) are not
-    /// yet implemented and are rejected by [`serve`].
+    /// Whether this protocol is served over the shared axum/hyper listener.
+    /// WebDAV and plain HTTP map onto the same file handler; SFTP runs on its
+    /// own SSH transport (so it is *not* HTTP-family) and S3 (a distinct
+    /// REST/XML API) is not yet implemented and is rejected by [`serve`].
     pub fn is_http_family(self) -> bool {
         matches!(self, Self::WebDav | Self::Http)
     }
@@ -231,17 +232,37 @@ pub fn exposes_unauthenticated(addr: &SocketAddr, auth: &AuthMode) -> bool {
 /// Returns a [`ServerHandle`] whose [`local_addr`](ServerHandle::local_addr)
 /// reflects the OS-assigned port when the config used `:0`.
 ///
-/// SFTP ([`Protocol::Sftp`]) is served over its own SSH transport in a
-/// later increment; a config with *only* SFTP currently yields
-/// [`ServerError::NotImplemented`].
+/// SFTP ([`Protocol::Sftp`]) is served over its own SSH transport (russh +
+/// russh-sftp) on the same bound socket; a config with *only* SFTP spawns
+/// that server instead of the axum stack. SFTP can't share one listener
+/// with HTTP-family protocols, so mixing them yields [`ServerError::Bind`].
+/// S3 still yields [`ServerError::NotImplemented`].
 pub async fn serve(config: ServerConfig) -> Result<ServerHandle, ServerError> {
     if config.protocols.is_empty() {
         return Err(ServerError::NoProtocols);
     }
-    // S3 (a distinct REST/XML API) and SFTP (its own SSH transport) aren't
-    // served yet — reject rather than silently ignore an advertised protocol.
-    if let Some(&protocol) = config.protocols.iter().find(|p| !p.is_http_family()) {
+    // S3 (a distinct REST/XML API) isn't served yet — reject rather than
+    // silently ignore an advertised protocol. WebDAV/HTTP ride the axum
+    // listener; SFTP runs its own SSH transport (below).
+    if let Some(&protocol) = config
+        .protocols
+        .iter()
+        .find(|p| !matches!(p, Protocol::WebDav | Protocol::Http | Protocol::Sftp))
+    {
         return Err(ServerError::NotImplemented { protocol });
+    }
+
+    // SFTP speaks SSH, not HTTP, so it can't share the single bound listener
+    // with the axum stack — keep it one transport per `serve` for now.
+    let wants_sftp = config.protocols.contains(&Protocol::Sftp);
+    let wants_http = config.protocols.iter().any(|p| p.is_http_family());
+    if wants_sftp && wants_http {
+        return Err(ServerError::Bind {
+            addr: config.bind_addr.clone(),
+            message: "SFTP and HTTP-family protocols cannot share one bind address; \
+                      run them as separate servers"
+                .to_string(),
+        });
     }
 
     let addr: SocketAddr = config.bind_addr.parse().map_err(|e| ServerError::Bind {
@@ -279,18 +300,27 @@ pub async fn serve(config: ServerConfig) -> Result<ServerHandle, ServerError> {
     }
 
     let metrics = Arc::new(MetricsRegistry::default());
-    let router = http::build_router(&config, metrics.clone());
-
     let (shutdown_tx, shutdown_rx) = oneshot::channel::<()>();
-    let task = tokio::spawn(async move {
-        let server =
-            axum::serve(listener, router.into_make_service()).with_graceful_shutdown(async move {
-                let _ = shutdown_rx.await;
-            });
-        if let Err(e) = server.await {
-            tracing::warn!(error = ?e, "copythat server task ended with error");
-        }
-    });
+
+    let task = if wants_sftp {
+        // SFTP over its own SSH transport on the same bound socket. The
+        // metrics registry isn't wired into the SFTP handler in this
+        // increment, so `/metrics` would read zero — there's no scrape
+        // surface on an SSH listener anyway.
+        sftp::spawn(&config, listener, shutdown_rx)?
+    } else {
+        let router = http::build_router(&config, metrics.clone());
+        tokio::spawn(async move {
+            let server = axum::serve(listener, router.into_make_service()).with_graceful_shutdown(
+                async move {
+                    let _ = shutdown_rx.await;
+                },
+            );
+            if let Err(e) = server.await {
+                tracing::warn!(error = ?e, "copythat server task ended with error");
+            }
+        })
+    };
 
     Ok(ServerHandle {
         config,

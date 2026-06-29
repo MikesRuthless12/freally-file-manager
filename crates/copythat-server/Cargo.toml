@@ -65,15 +65,49 @@ reqwest = { version = "0.12", default-features = false, features = [
     "rustls-tls",
     "json",
 ] }
+# Phase 48 follow-up — SFTP transport. russh (SSH) + russh-sftp (SFTP
+# subsystem) are the same pure-Rust, Windows-clean stack copythat-cloud
+# already uses for its SFTP *client*; here they back the *server*. Drop the
+# default `rsa` (we mint an ed25519 host key). Crypto backend is `ring`, not
+# cloud's `aws-lc-rs`: aws-lc-sys needs NASM to assemble on Windows MSVC,
+# which isn't part of this toolchain, so building `-p copythat-server` alone
+# would fail; `ring` builds clean here. russh prefers aws-lc-rs whenever it's
+# enabled (server/mod.rs cfg), so a full-workspace build (where cloud turns
+# aws-lc-rs on) still unifies onto aws-lc-rs — this only changes the
+# server-crate-only build. `ring` 0.17 is already resolved in-tree. MIT.
+russh = { version = "0.60", default-features = false, features = [
+    "flate2",
+    "ring",
+] }
+russh-sftp = "2"
+# Ephemeral ed25519 host-key generation. `rand::rng()` is the version-correct
+# RNG for russh 0.60's ssh-key (rand 0.10 is already resolved in-tree via
+# russh). MIT / Apache-2.0.
+rand = "0.10"
 
 [dev-dependencies]
 # Smoke round-trips the public types through JSON.
 serde_json = "1"
 # Phase 48 smoke — drive a real WebDAV PUT/GET + scrape /metrics over a
 # loopback HTTP client. All already resolved in the workspace tree.
-tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
+# `io-util` adds the AsyncRead/Write ext traits the SFTP round-trip needs.
+tokio = { version = "1", features = [
+    "macros",
+    "rt-multi-thread",
+    "time",
+    "io-util",
+] }
 reqwest = { version = "0.12", default-features = false }
 tempfile = "3"
+# Phase 48 follow-up — the SFTP round-trip drives a real russh client +
+# russh-sftp client session against the in-process server. Same `ring`
+# backend as the library dep so the test build resolves one russh (and stays
+# NASM-free on Windows).
+russh = { version = "0.60", default-features = false, features = [
+    "flate2",
+    "ring",
+] }
+russh-sftp = "2"
 
 # Phase 48 scaffold smoke lives at the workspace root (mirrors the
 # convention set by the other phase smoke tests).

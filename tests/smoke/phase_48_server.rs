@@ -92,22 +92,23 @@ fn prometheus_exposition_is_well_formed() {
     }
 }
 
-/// SFTP (own SSH transport) and S3 (a distinct REST/XML API) aren't served
-/// yet, so `serve` reports them as not-yet-implemented rather than silently
-/// downgrading an advertised protocol to the WebDAV subset.
+/// S3 (a distinct REST/XML API) isn't served yet, so `serve` reports it as
+/// not-yet-implemented rather than silently downgrading it to the WebDAV
+/// subset. (SFTP *is* served now — see `sftp_put_get_roundtrip`.)
 #[tokio::test]
 async fn unsupported_protocols_are_deferred() {
-    for proto in [Protocol::Sftp, Protocol::S3] {
-        let cfg = ServerConfig {
-            bind_addr: "127.0.0.1:0".into(),
-            protocols: vec![proto],
-            ..Default::default()
-        };
-        match serve(cfg).await {
-            Err(ServerError::NotImplemented { protocol }) => assert_eq!(protocol, proto),
-            other => panic!("expected NotImplemented for {proto}, got {other:?}"),
-        }
+    let cfg = ServerConfig {
+        bind_addr: "127.0.0.1:0".into(),
+        protocols: vec![Protocol::S3],
+        ..Default::default()
+    };
+    match serve(cfg).await {
+        Err(ServerError::NotImplemented {
+            protocol: Protocol::S3,
+        }) => {}
+        other => panic!("expected NotImplemented for S3, got {other:?}"),
     }
+
     // A mix advertising an unsupported protocol is rejected, not silently
     // downgraded to the served subset.
     let mixed = ServerConfig {
@@ -249,6 +250,117 @@ async fn bearer_auth_is_enforced() {
     // `/metrics` stays open for scrapers even with auth on.
     let metrics = client.get(format!("{base}/metrics")).send().await.unwrap();
     assert!(metrics.status().is_success(), "metrics open for scraping");
+
+    handle.shutdown().await;
+}
+
+/// Minimal SFTP client SSH handler: the server's host key is ephemeral
+/// (freshly generated each `serve`), so accept it unconditionally.
+struct AcceptAnyHostKey;
+
+impl russh::client::Handler for AcceptAnyHostKey {
+    type Error = russh::Error;
+
+    async fn check_server_key(
+        &mut self,
+        _server_public_key: &russh::keys::ssh_key::PublicKey,
+    ) -> Result<bool, Self::Error> {
+        Ok(true)
+    }
+}
+
+/// The SFTP acceptance test: stand up an SFTP-only server (Bearer auth),
+/// connect a real russh + russh-sftp client, PUT a 64 KiB file, GET it back
+/// byte-equal, and confirm the path jail rejects a `..` escape.
+#[tokio::test]
+async fn sftp_put_get_roundtrip() {
+    use std::sync::Arc;
+
+    use russh_sftp::client::SftpSession;
+    use russh_sftp::protocol::OpenFlags;
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+    let dir = tempfile::tempdir().unwrap();
+    let cfg = ServerConfig {
+        bind_addr: "127.0.0.1:0".into(),
+        protocols: vec![Protocol::Sftp],
+        auth: AuthMode::Bearer {
+            token: "secret".into(),
+        },
+        root: dir.path().to_path_buf(),
+        readonly: false,
+    };
+    let handle = serve(cfg).await.expect("serve should bind SFTP");
+    let addr = handle.local_addr();
+
+    // Connect + authenticate. Bearer auth maps onto SSH password auth: any
+    // username, password == token.
+    let mut ssh = russh::client::connect(
+        Arc::new(russh::client::Config::default()),
+        addr,
+        AcceptAnyHostKey,
+    )
+    .await
+    .expect("ssh connect");
+    let authed = ssh
+        .authenticate_password("anyuser", "secret")
+        .await
+        .expect("auth call")
+        .success();
+    assert!(authed, "bearer token must authenticate over SFTP");
+
+    // Open the SFTP subsystem.
+    let channel = ssh.channel_open_session().await.unwrap();
+    channel.request_subsystem(true, "sftp").await.unwrap();
+    let sftp = SftpSession::new(channel.into_stream())
+        .await
+        .expect("sftp handshake");
+
+    // Deterministic 64 KiB payload.
+    let payload: Vec<u8> = (0..64 * 1024usize).map(|i| (i % 251) as u8).collect();
+
+    // PUT.
+    {
+        let mut file = sftp
+            .open_with_flags(
+                "file.bin",
+                OpenFlags::CREATE | OpenFlags::TRUNCATE | OpenFlags::WRITE,
+            )
+            .await
+            .expect("open for write");
+        file.write_all(&payload).await.expect("write");
+        file.shutdown().await.expect("close write handle");
+    }
+    // The file really landed under the served root.
+    assert!(dir.path().join("file.bin").is_file());
+
+    // GET it back, byte-for-byte.
+    let got = {
+        let mut file = sftp.open("file.bin").await.expect("open for read");
+        let mut buf = Vec::new();
+        file.read_to_end(&mut buf).await.expect("read");
+        buf
+    };
+    assert_eq!(
+        got, payload,
+        "SFTP GET body must byte-match the PUT payload"
+    );
+
+    // Path jail: a `..` escape is refused (and never written to disk).
+    let escape = sftp
+        .open_with_flags(
+            "../escape.bin",
+            OpenFlags::CREATE | OpenFlags::TRUNCATE | OpenFlags::WRITE,
+        )
+        .await;
+    assert!(
+        escape.is_err(),
+        "`..` traversal must be rejected by the jail"
+    );
+    assert!(
+        !dir.path().join("..").join("escape.bin").exists(),
+        "traversal target must not be created outside the root"
+    );
 
     handle.shutdown().await;
 }
