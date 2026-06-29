@@ -290,13 +290,18 @@ for the other tools are gated on the constraints below.
   from their on-disk markers — no decryption, no new dependencies.
 - `copythat migrate cdr <src> <cdr-repo>` — copy / re-home a CDR-0 repository
   (the reference path; exercises the whole pipeline end to end).
-- `copythat migrate <restic|borg|kopia> …` — returns a typed, actionable error
-  naming exactly what a full importer needs. It does **not** silently emit a
-  wrong migration.
+- **`copythat migrate restic <repo> <cdr> --password <pw>`** — a real
+  **restic v1/v2** importer (scrypt → AES-256-CTR + Poly1305-AES → zstd;
+  reconstructs file bytes and re-ingests them, since restic chunk IDs aren't
+  portable). Validated against a committed fixture (`tests/fixtures/restic-repo`).
+- `copythat migrate <borg|kopia> …` — returns a typed, actionable error naming
+  exactly what each still needs. It does **not** silently emit a wrong migration.
 - `copythat export <cdr-repo> <tool> <dst>` — the inverse entry point; writing a
   foreign tool's on-disk format is not yet implemented.
 
-**Why the foreign importers are blocked.** Enumerating even `path → (chunkID,
+**restic is implemented** (its crypto crates — scrypt / aes / ctr / poly1305 /
+zstd — were already in the workspace lockfile, so it needed no new third-party
+crate). **Borg and Kopia remain blocked.** Enumerating even `path → (chunkID,
 length)` from another tool's repository is not a plaintext parse:
 
 | Tool | Passphrase required to enumerate? | Crypto / codec needed |

@@ -99,7 +99,9 @@
           <a href="#shell">Shell &amp; right-click menu</a>
           <a href="#paste-hotkey">The global paste hotkey</a>
           <a href="#history">History &amp; totals</a>
+          <a href="#library">Library (snapshots)</a>
           <a href="#server">Run as a server</a>
+          <a href="#migrate">Migrate from other tools</a>
           <a href="#settings">Change settings</a>
           <a href="#shortcuts">Keyboard shortcuts</a>
           <a href="#troubleshooting">Tips &amp; troubleshooting</a>
@@ -455,6 +457,37 @@
           </ol>
         </section>
 
+        <!-- LIBRARY (Phase 49) -->
+        <section id="library">
+          <h2>Library &mdash; your snapshot timeline</h2>
+          <p>
+            The <strong>Library</strong> drawer is a unified view of Copy That's content-addressed
+            repository: every copy, sync, and version checkpoint is stored once (deduplicated into
+            content-defined chunks) and surfaced on a single timeline.
+          </p>
+          <ol>
+            <li>Click the <strong>Library</strong> link in the app footer to open the drawer.</li>
+            <li>
+              The header shows a dedup <strong>&ldquo;hero&rdquo; number</strong> &mdash; how much is
+              physically stored on disk versus the effective (logical) size, and the percentage saved
+              by deduplication.
+            </li>
+            <li>
+              Switch between three sub-views:
+              <ul>
+                <li><strong>Live</strong> &mdash; the repository at a glance: bytes stored, distinct
+                  chunks, snapshot count.</li>
+                <li><strong>Snapshots</strong> &mdash; the unified timeline of every recorded snapshot
+                  (copy / sync / version / backup), newest first.</li>
+                <li><strong>Versions</strong> &mdash; per-file rolling versions: enter a destination
+                  path to list its captured versions.</li>
+              </ul>
+            </li>
+            <li>The existing <strong>History</strong>, <strong>Sync</strong>, and <strong>Totals</strong>
+              drawers remain available &mdash; the Library is additive.</li>
+          </ol>
+        </section>
+
         <!-- SERVER MODE -->
         <section id="server">
           <h2>Run Copy That as a server</h2>
@@ -566,6 +599,36 @@
             of your settings. OpenTelemetry trace export is activated when you launch the server from the
             command line with <code>--otel-endpoint</code>.
           </div>
+        </section>
+
+        <!-- MIGRATE (Phase 50) -->
+        <section id="migrate">
+          <h2>Migrate from another backup tool</h2>
+          <p>
+            Copy That's repository format is <strong>CDR-0</strong> (Common Dedup Repository v0), an
+            open, public-domain specification so any compliant tool can read any compliant repository.
+            The <code>copythat migrate</code> command imports another tool's repository into a CDR-0 repo.
+          </p>
+          <ol>
+            <li>
+              <strong>restic</strong> repositories are supported today. Copy That decrypts the repo,
+              reconstructs every file, and re-ingests it into a fresh CDR-0 repository &mdash;
+              deduplicated with Copy That's own chunking:
+              <pre><code>copythat migrate restic /path/to/restic-repo /path/to/cdr-repo --password &lt;passphrase&gt;</code></pre>
+              (or set the <code>RESTIC_PASSWORD</code> environment variable instead of
+              <code>--password</code>).
+            </li>
+            <li>
+              <strong>Detection</strong>: point <code>copythat migrate</code> at any repository and it
+              identifies whether it is restic, Borg, Kopia, or CDR-0 from its on-disk layout.
+            </li>
+            <li>
+              <strong>Borg</strong> and <strong>Kopia</strong> importers are in progress &mdash;
+              running them today prints exactly what each still needs. See the
+              <a href="https://github.com/MikesRuthless12/CopyThat2026/blob/main/docs/spec/CDR-0.md">CDR-0
+              specification</a> for the format details and migration status.
+            </li>
+          </ol>
         </section>
 
         <!-- SETTINGS -->
