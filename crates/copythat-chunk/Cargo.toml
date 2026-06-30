@@ -56,6 +56,12 @@ zstd = "0.13"
 # migrate/borg.rs, so Borg adds NO genuinely-new crate.
 flate2 = "1"
 hmac = "0.12"
+# Kopia importer (in-tree): AES-256-GCM (format blob + content), BLAKE2b
+# keyed content IDs, HKDF content-key derivation. The v2 index binary
+# format is hand-rolled in migrate/kopia.rs — no genuinely-new crate.
+aes-gcm = "0.10"
+blake2 = "0.10"
+hkdf = "0.12"
 # RFC 3339 snapshot timestamps from restic / kopia metadata. In-tree
 # via history / sync / audit; parsing only (no clock feature).
 chrono = { version = "0.4", default-features = false, features = ["std"] }
@@ -96,3 +102,9 @@ path = "../../tests/smoke/phase_50b_restic.rs"
 [[test]]
 name = "phase_50c_borg"
 path = "../../tests/smoke/phase_50c_borg.rs"
+
+# Phase 50 smoke — Kopia importer against a committed filesystem fixture
+# (format scrypt/AES-GCM + v2 index + HMAC-keyed content GCM + objects).
+[[test]]
+name = "phase_50d_kopia"
+path = "../../tests/smoke/phase_50d_kopia.rs"

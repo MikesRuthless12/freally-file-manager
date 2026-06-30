@@ -1648,7 +1648,9 @@ name = "copythat-chunk"
 version = "0.19.84"
 dependencies = [
  "aes 0.8.4",
+ "aes-gcm 0.10.3",
  "base64 0.21.7",
+ "blake2",
  "blake3",
  "chrono",
  "ciborium",
@@ -1658,6 +1660,7 @@ dependencies = [
  "directories",
  "fastcdc",
  "flate2",
+ "hkdf 0.12.4",
  "hmac 0.12.1",
  "poly1305",
  "rand 0.9.4",

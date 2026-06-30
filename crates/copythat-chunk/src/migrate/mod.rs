@@ -7,21 +7,25 @@
 //!
 //! # Status
 //!
-//! - **CDR-0 → CDR-0** ([`RepoFormat::Cdr`]) and **restic → CDR-0**
-//!   ([`RepoFormat::Restic`]) are implemented + tested (restic against a
-//!   real `restic 0.17.3` v2 fixture). restic chunk IDs aren't portable
-//!   (per-repo polynomial + SHA-256 of plaintext), so the importer
-//!   reconstructs file bytes and lets the CDR store re-chunk with its own
-//!   FastCDC + BLAKE3 — a faithful content migration.
-//! - **[`RepoFormat::detect`]** recognises restic / Borg / Kopia / CDR-0
-//!   from on-disk markers (no decryption).
-//! - **Borg / Kopia → CDR-0** return a typed
-//!   [`MigrateError::SourceUnsupported`]. Kopia's crypto is in-tree but
-//!   its keyed-hash index + object format is a separate build-out; Borg
-//!   additionally needs a MessagePack codec (the one genuinely-new
-//!   dependency). See `docs/spec/CDR-0.md §11`.
+//! All four sources are implemented + smoke-tested against committed,
+//! PII-free fixtures (byte-identical restore), and add **no new crate**
+//! (every cipher + codec was already in the workspace lockfile):
+//! - **CDR-0 → CDR-0** ([`RepoFormat::Cdr`]).
+//! - **restic → CDR-0** ([`RepoFormat::Restic`]) — scrypt + AES-256-CTR +
+//!   Poly1305-AES + zstd (restic v1/v2).
+//! - **Borg → CDR-0** ([`RepoFormat::Borg`]) — repokey mode: PBKDF2 +
+//!   AES-256-CTR + HMAC-SHA256, hand-rolled MessagePack + LZ4.
+//! - **Kopia → CDR-0** ([`RepoFormat::Kopia`]) — filesystem repo: scrypt
+//!   format blob + v2 index + HMAC-keyed AES-256-GCM contents + object /
+//!   directory resolution.
+//!
+//! Source chunk IDs aren't portable, so each importer reconstructs file
+//! bytes and lets the CDR store re-chunk (FastCDC + BLAKE3) — a faithful
+//! content migration. [`RepoFormat::detect`] recognises all four from
+//! on-disk markers (no decryption).
 
 mod borg;
+mod kopia;
 mod restic;
 
 use std::path::{Path, PathBuf};
@@ -77,7 +81,8 @@ impl RepoFormat {
         if root.join("cdr.toml").is_file() || root.join("repository.redb").is_file() {
             return Self::Cdr;
         }
-        if root.join("kopia.repository").is_file() {
+        // Kopia's filesystem backend suffixes every blob with `.f`.
+        if root.join("kopia.repository").is_file() || root.join("kopia.repository.f").is_file() {
             return Self::Kopia;
         }
         if root.join("config").is_file()
@@ -216,12 +221,10 @@ pub fn migrate(
             let pw = passphrase.ok_or(MigrateError::NeedsPassphrase { tool: "borg" })?;
             borg::import_borg(src, pw, dst_root)
         }
-        RepoFormat::Kopia => Err(MigrateError::SourceUnsupported {
-            tool: "kopia",
-            reason: "Kopia's crypto is in-tree, but its keyed-hash index (v1/v2 binary) + \
-                     object/indirect format is a separate build-out. See docs/spec/CDR-0.md §11."
-                .to_string(),
-        }),
+        RepoFormat::Kopia => {
+            let pw = passphrase.ok_or(MigrateError::NeedsPassphrase { tool: "kopia" })?;
+            kopia::import_kopia(src, pw, dst_root)
+        }
         RepoFormat::Unknown => Err(MigrateError::Unrecognized(src.to_path_buf())),
     }
 }
