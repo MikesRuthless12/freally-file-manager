@@ -10,7 +10,7 @@
 
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex, RwLock};
 use std::time::Instant;
 
 use copythat_settings::SyncPairConfig;
@@ -216,10 +216,20 @@ pub async fn start_sync(
         copythat_settings::SyncModeChoice::ContributeLeftToRight => SyncMode::ContributeLeftToRight,
     };
 
+    // Phase 49b — accumulate the relpaths the round actually writes (Copy
+    // / KeepConflict actions) so the run task can record a `Sync` snapshot
+    // of just those files into the unified Repository.
+    let changed: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
+
     let (tx, rx) = mpsc::channel::<SyncEvent>(256);
     let app_for_events = app.clone();
     let pair_id_for_events = pair_id.clone();
-    tokio::spawn(forward_sync_events(app_for_events, pair_id_for_events, rx));
+    let forwarder = tokio::spawn(forward_sync_events(
+        app_for_events,
+        pair_id_for_events,
+        rx,
+        changed.clone(),
+    ));
 
     let _ = app.emit(
         EVENT_SYNC_STARTED,
@@ -238,10 +248,21 @@ pub async fn start_sync(
     let pair_id_for_run = pair_id.clone();
     let settings_handle = state.settings.clone();
     let settings_path = state.settings_path.clone();
+    // Phase 49b — captures for the post-run `Sync` snapshot.
+    let repository = state.repository.clone();
+    let snapshot_on_sync = state.settings_snapshot().chunk_store.snapshot_on_sync;
+    let sync_right = cfg.right.clone();
+    let sync_label = cfg.label.clone();
+    let changed_for_run = changed;
 
     tokio::spawn(async move {
         let opts = SyncOptions::default();
         let result = sync(&pair, mode, opts, ctrl, tx).await;
+        // Drain the event forwarder before reading `changed`: `sync` drops
+        // `tx` on return, closing the channel, so this await completes once
+        // the forwarder has processed every `ActionCompleted` event —
+        // otherwise the Sync snapshot below could miss trailing files.
+        let _ = forwarder.await;
         registry.remove(&pair_id_for_run);
         match result {
             Ok(report) => {
@@ -259,6 +280,48 @@ pub async fn start_sync(
                         duration_ms: started_at.elapsed().as_millis() as u64,
                     },
                 );
+
+                // Phase 49b — record a `Sync` snapshot of the files this
+                // round wrote, when enabled. Each changed relpath is
+                // resolved against the right root; only files present are
+                // snapshotted (dedup makes the re-read nearly free).
+                if snapshot_on_sync && let Some(repo) = repository.clone() {
+                    let rels = changed_for_run
+                        .lock()
+                        .map(|mut g| std::mem::take(&mut *g))
+                        .unwrap_or_default();
+                    if !rels.is_empty() {
+                        let now = chrono::Utc::now().timestamp_millis();
+                        let _ = tokio::task::spawn_blocking(move || {
+                            let abs: Vec<PathBuf> = rels
+                                .iter()
+                                .map(|r| PathBuf::from(&sync_right).join(r))
+                                .filter(|p| p.exists())
+                                .collect();
+                            if abs.is_empty() {
+                                return;
+                            }
+                            let keys: Vec<String> = abs
+                                .iter()
+                                .map(|p| p.to_string_lossy().into_owned())
+                                .collect();
+                            let pairs: Vec<(&str, &std::path::Path)> = keys
+                                .iter()
+                                .zip(abs.iter())
+                                .map(|(k, p)| (k.as_str(), p.as_path()))
+                                .collect();
+                            if let Err(e) = repo.snapshot_files(
+                                copythat_chunk::SnapshotKind::Sync,
+                                &sync_label,
+                                now,
+                                &pairs,
+                            ) {
+                                tracing::warn!(error = %e, "Phase 49b sync snapshot failed");
+                            }
+                        })
+                        .await;
+                    }
+                }
             }
             Err(err) => {
                 if matches!(err, copythat_sync::SyncError::Cancelled) {
@@ -314,7 +377,12 @@ pub fn cancel_sync(pair_id: String, state: tauri::State<'_, AppState>) -> Result
 // Event forwarding
 // ---------------------------------------------------------------------
 
-async fn forward_sync_events(app: AppHandle, pair_id: String, mut rx: mpsc::Receiver<SyncEvent>) {
+async fn forward_sync_events(
+    app: AppHandle,
+    pair_id: String,
+    mut rx: mpsc::Receiver<SyncEvent>,
+    changed: Arc<Mutex<Vec<String>>>,
+) {
     while let Some(evt) = rx.recv().await {
         match evt {
             SyncEvent::WalkStarted { side } => {
@@ -338,6 +406,17 @@ async fn forward_sync_events(app: AppHandle, pair_id: String, mut rx: mpsc::Rece
                 );
             }
             SyncEvent::ActionCompleted { action } => {
+                // Phase 49b — remember the files this round actually wrote
+                // (Copy / KeepConflict) so the run task can snapshot just
+                // those into the unified Repository.
+                if matches!(
+                    action,
+                    copythat_sync::SyncAction::Copy { .. }
+                        | copythat_sync::SyncAction::KeepConflict { .. }
+                ) && let Ok(mut g) = changed.lock()
+                {
+                    g.push(action.relpath().to_string());
+                }
                 let _ = app.emit(
                     EVENT_SYNC_ACTION,
                     SyncActionDto {

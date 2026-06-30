@@ -59,6 +59,11 @@ pub enum ChunkStoreError {
     /// Phase 9 / Phase 20.
     #[error("could not locate user data directory for default chunk store path")]
     NoDataDir,
+
+    /// A restore referenced a snapshot id that isn't in the catalog
+    /// (forgotten, or never existed).
+    #[error("snapshot not found: {0}")]
+    SnapshotNotFound(u64),
 }
 
 // redb's public error types are split across `DatabaseError`,

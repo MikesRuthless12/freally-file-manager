@@ -15,10 +15,14 @@
 -->
 <script lang="ts">
   import Icon from "../icons/Icon.svelte";
+  import BackupSourcesView from "./BackupSourcesView.svelte";
+  import RestoreModal from "./RestoreModal.svelte";
   import { i18nVersion, t } from "../i18n";
   import { formatBytes } from "../format";
   import {
     listVersions,
+    repositoryForget,
+    repositoryGc,
     repositorySnapshots,
     repositoryStats,
     type RepositorySnapshotDto,
@@ -27,8 +31,8 @@
   } from "../ipc";
   import { closeLibraryDrawer, libraryDrawerOpen, pushToast } from "../stores";
 
-  type SubView = "live" | "snapshots" | "versions";
-  const SUB_VIEWS: SubView[] = ["live", "snapshots", "versions"];
+  type SubView = "live" | "snapshots" | "versions" | "sources";
+  const SUB_VIEWS: SubView[] = ["live", "snapshots", "versions", "sources"];
 
   let subView = $state<SubView>("live");
   let stats = $state<RepositoryStatsDto | null>(null);
@@ -36,6 +40,7 @@
   let versions = $state<VersionRecordDto[]>([]);
   let versionPath = $state("");
   let unavailable = $state(false);
+  let restoreSnapshotId = $state<number | null>(null);
 
   // Refresh stats + snapshots whenever the drawer opens.
   $effect(() => {
@@ -83,6 +88,32 @@
 
   function savedPct(ratio: number): string {
     return `${Math.round(ratio * 100)}%`;
+  }
+
+  async function forget(id: number) {
+    try {
+      await repositoryForget(id);
+      pushToast("info", t("snapshot-forget-toast"));
+      await refresh();
+    } catch (e) {
+      pushToast("error", e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  async function reclaimSpace() {
+    try {
+      const r = await repositoryGc();
+      pushToast(
+        "success",
+        t("repo-gc-done", {
+          chunks: r.chunksSwept,
+          bytes: formatBytes(r.bytesReclaimed),
+        }),
+      );
+      await refresh();
+    } catch (e) {
+      pushToast("error", e instanceof Error ? e.message : String(e));
+    }
   }
 </script>
 
@@ -155,6 +186,11 @@
                 <dd>{stats.chunkCount}</dd>
               </div>
             </dl>
+            <div class="reclaim">
+              <button type="button" onclick={reclaimSpace}>
+                {t("library-reclaim")}
+              </button>
+            </div>
           {:else}
             <p class="empty">{t("library-loading")}</p>
           {/if}
@@ -172,10 +208,20 @@
                     {t("library-snapshot-files", { n: s.fileCount })} ·
                     {formatBytes(s.totalSize)}
                   </span>
+                  <span class="snap-actions">
+                    <button type="button" onclick={() => (restoreSnapshotId = s.id)}>
+                      {t("restore-browse")}
+                    </button>
+                    <button type="button" class="danger" onclick={() => forget(s.id)}>
+                      {t("snapshot-forget")}
+                    </button>
+                  </span>
                 </li>
               {/each}
             </ul>
           {/if}
+        {:else if subView === "sources"}
+          <BackupSourcesView {refresh} />
         {:else}
           <div class="version-bar">
             <input
@@ -201,6 +247,14 @@
             </ul>
           {/if}
         {/if}
+      {/if}
+
+      {#if restoreSnapshotId !== null}
+        <RestoreModal
+          snapshotId={restoreSnapshotId}
+          onClose={() => (restoreSnapshotId = null)}
+          {refresh}
+        />
       {/if}
     {/key}
   </aside>
@@ -323,5 +377,25 @@
   .version-bar input {
     flex: 1;
     padding: 6px 8px;
+  }
+  .snap-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 4px;
+  }
+  .snap-actions button {
+    font-size: 0.8rem;
+    padding: 2px 8px;
+    cursor: pointer;
+  }
+  .danger {
+    color: var(--danger, #dc2626);
+  }
+  .reclaim {
+    padding: 0 16px 12px;
+  }
+  .reclaim button {
+    cursor: pointer;
+    padding: 6px 12px;
   }
 </style>

@@ -1199,3 +1199,37 @@ repo-kind-copy = Copie
 repo-kind-sync = Synchronisation
 repo-kind-version = Version
 repo-kind-backup = Sauvegarde
+
+# Phase 49c — sources de sauvegarde.
+library-tab-sources = Sources
+backup-add-source = Ajouter une source…
+backup-source-path-ph = Dossier à sauvegarder…
+backup-exclude-ph = Motifs d'exclusion (séparés par des virgules)
+backup-now = Sauvegarder maintenant
+backup-remove = Retirer
+backup-empty = Aucune source de sauvegarde pour l'instant
+backup-never-run = Jamais sauvegardé
+backup-last-run = Dernière sauvegarde { $when }
+backup-running = Sauvegarde… { $files } fichiers
+backup-toast-started = Sauvegarde de { $label }…
+backup-toast-completed = { $label } sauvegardé : { $files } fichiers
+backup-toast-failed = Échec de la sauvegarde de { $label } : { $reason }
+
+# Phase 49d — explorateur de restauration.
+restore-browse = Restaurer…
+restore-title = Restaurer depuis l'instantané
+restore-select-all = Tout sélectionner
+restore-dest = Restaurer vers
+restore-confirm = Restaurer { $n } fichiers
+restore-empty = Cet instantané ne contient aucun fichier
+restore-conflict-body = { $count } fichiers sélectionnés existent déjà à destination.
+restore-conflict-overwrite = Écraser
+restore-conflict-skip = Ignorer les existants
+restore-conflict-keep-both = Garder les deux
+restore-toast-done = { $restored } restaurés, { $skipped } ignorés
+restore-toast-failed = Échec de la restauration : { $reason }
+snapshot-forget = Oublier
+snapshot-forget-toast = Instantané oublié — lancez « Récupérer de l'espace » pour le libérer
+library-reclaim = Récupérer de l'espace
+repo-gc-done = { $bytes } récupérés ({ $chunks } blocs)
+restore-toast-partial = { $restored } restaurés, { $skipped } ignorés, { $failed } en échec

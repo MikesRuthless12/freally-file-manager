@@ -1199,3 +1199,37 @@ repo-kind-copy = Kopie
 repo-kind-sync = Synchronisatie
 repo-kind-version = Versie
 repo-kind-backup = Back-up
+
+# Phase 49c — back-upbronnen.
+library-tab-sources = Bronnen
+backup-add-source = Bron toevoegen…
+backup-source-path-ph = Map om te back-uppen…
+backup-exclude-ph = Uitsluitingspatronen (komma-gescheiden)
+backup-now = Nu back-uppen
+backup-remove = Verwijderen
+backup-empty = Nog geen back-upbronnen
+backup-never-run = Nooit geback-upt
+backup-last-run = Laatste back-up { $when }
+backup-running = Back-uppen… { $files } bestanden
+backup-toast-started = { $label } back-uppen…
+backup-toast-completed = { $label } geback-upt: { $files } bestanden
+backup-toast-failed = Back-up van { $label } mislukt: { $reason }
+
+# Phase 49d — herstelbrowser.
+restore-browse = Herstellen…
+restore-title = Herstellen vanuit momentopname
+restore-select-all = Alles selecteren
+restore-dest = Herstellen naar
+restore-confirm = { $n } bestanden herstellen
+restore-empty = Deze momentopname bevat geen bestanden
+restore-conflict-body = { $count } geselecteerde bestanden bestaan al op de bestemming.
+restore-conflict-overwrite = Overschrijven
+restore-conflict-skip = Bestaande overslaan
+restore-conflict-keep-both = Beide behouden
+restore-toast-done = { $restored } hersteld, { $skipped } overgeslagen
+restore-toast-failed = Herstellen mislukt: { $reason }
+snapshot-forget = Vergeten
+snapshot-forget-toast = Momentopname vergeten — voer Ruimte vrijmaken uit om deze vrij te geven
+library-reclaim = Ruimte vrijmaken
+repo-gc-done = { $bytes } vrijgemaakt ({ $chunks } blokken)
+restore-toast-partial = { $restored } hersteld, { $skipped } overgeslagen, { $failed } mislukt

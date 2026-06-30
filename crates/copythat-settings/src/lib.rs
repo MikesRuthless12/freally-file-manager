@@ -81,6 +81,10 @@ pub struct Settings {
     /// same-job dedup + the moonshot phases that layer on top. See
     /// [`ChunkStoreSettings`].
     pub chunk_store: ChunkStoreSettings,
+    /// Phase 49c — backup sources: folders the user has designated for
+    /// on-demand snapshotting into the unified repository. See
+    /// [`BackupSettings`].
+    pub backup: BackupSettings,
     /// Phase 28 — tray-resident Drop Stack. See
     /// [`DropStackSettings`].
     pub drop_stack: DropStackSettings,
@@ -1220,6 +1224,23 @@ pub struct ChunkStoreSettings {
     /// Prune chunks that haven't been referenced for this many days.
     /// `0` disables pruning. Default 60 days.
     pub prune_older_than_days: u32,
+    /// Phase 49b — record a `Copy` snapshot in the unified
+    /// [`Repository`](copythat_chunk::Repository) timeline after every
+    /// successful copy/move job, so the Library tab's Snapshots view and
+    /// the dedup hero include copies (not just versions/backups). Default
+    /// `false`: recording re-reads the destination to compute manifests,
+    /// a cost the user opts into.
+    pub snapshot_on_copy: bool,
+    /// Phase 49b — record a `Sync` snapshot of just the files a sync
+    /// round actually changed (cheap — only touched files are re-read).
+    /// Default `false`.
+    pub snapshot_on_sync: bool,
+    /// Phase 49b — before the copy engine overwrites an existing
+    /// destination file, capture its current contents as a `Version`
+    /// snapshot in the unified timeline (the previously-deferred Phase 42
+    /// snapshot-on-overwrite hook). Default `false`: this re-reads + chunks
+    /// the old file on the copy hot path, a cost the user opts into.
+    pub snapshot_on_overwrite: bool,
 }
 
 impl Default for ChunkStoreSettings {
@@ -1230,8 +1251,44 @@ impl Default for ChunkStoreSettings {
             // 20 GiB.
             max_size_bytes: 20 * 1024 * 1024 * 1024,
             prune_older_than_days: 60,
+            snapshot_on_copy: false,
+            snapshot_on_sync: false,
+            snapshot_on_overwrite: false,
         }
     }
+}
+
+// ---------------------------------------------------------------------
+// Phase 49c — backup sources
+// ---------------------------------------------------------------------
+
+/// Backup sources: the folders the user has designated for on-demand
+/// snapshotting into the unified repository. Mirrors [`SyncSettings`] —
+/// a flat list keyed by stable UUID so a label edit never loses the
+/// timeline association.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default, rename_all = "kebab-case")]
+pub struct BackupSettings {
+    /// All configured backup sources.
+    pub sources: Vec<SourceConfig>,
+}
+
+/// One configured backup source.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default, rename_all = "kebab-case")]
+pub struct SourceConfig {
+    /// Stable UUID-v4 id (the IPC key; survives label edits).
+    pub id: String,
+    /// User-visible label ("Documents", "Photos 2025").
+    pub label: String,
+    /// Absolute path of the folder to back up.
+    pub path: String,
+    /// Exclude globs (gitignore-ish), matched against the relpath.
+    pub exclude_globs: Vec<String>,
+    /// ISO-8601 last successful run (UTC). Empty = never.
+    pub last_run_at: String,
+    /// Snapshot id of the last successful run, for "view in timeline".
+    pub last_snapshot_id: Option<u64>,
 }
 
 // ---------------------------------------------------------------------
@@ -2625,6 +2682,31 @@ log-level = "debug"
         s.save_to(&path).unwrap();
         let back = Settings::load_from(&path).unwrap();
         assert_eq!(back.filters, s.filters);
+    }
+
+    #[test]
+    fn backup_sources_round_trip_via_toml() {
+        let d = tempdir().unwrap();
+        let path = d.path().join("settings.toml");
+        let s = Settings {
+            backup: BackupSettings {
+                sources: vec![
+                    SourceConfig {
+                        id: "11111111-2222-3333-4444-555555555555".into(),
+                        label: "Documents".into(),
+                        path: "/home/me/Documents".into(),
+                        exclude_globs: vec!["**/*.tmp".into(), "node_modules/**".into()],
+                        last_run_at: "2026-06-30T14:03:00Z".into(),
+                        last_snapshot_id: Some(42),
+                    },
+                    SourceConfig::default(),
+                ],
+            },
+            ..Settings::default()
+        };
+        s.save_to(&path).unwrap();
+        let back = Settings::load_from(&path).unwrap();
+        assert_eq!(back.backup, s.backup);
     }
 
     #[test]

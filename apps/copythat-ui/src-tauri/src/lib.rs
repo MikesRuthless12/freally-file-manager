@@ -46,6 +46,7 @@ pub mod dropstack;
 // Phase 17d — live UAC/pkexec/osascript privilege escalation: the
 // caller-side spawner + JSON-RPC handshake to the elevated
 // copythat-helper, used by commands::retry_elevated.
+pub mod backup_commands;
 pub mod elevate;
 pub mod errors;
 pub mod global_paste;
@@ -201,6 +202,67 @@ fn pinned_target_for_menu_id<R: Runtime>(
         .find(|p| tray_target_menu_id(p) == menu_id)
 }
 
+/// Phase 49b — resolve the chunk-store root from settings
+/// (`location_override`, else [`copythat_chunk::default_chunk_store_path`]),
+/// open it **once**, and build the unified [`copythat_chunk::Repository`]
+/// over that *same* shared handle. Returns `None` on any failure — the
+/// Library tab then surfaces "repository-unavailable", exactly as the old
+/// per-call transient open did.
+///
+/// Opening is independent of `ChunkStoreSettings::enabled`: an
+/// already-populated store stays readable in the Library even when the
+/// user has turned *recording* off, and the recovery web UI (which shares
+/// this handle) can start regardless of the chunk-store toggle. An empty
+/// store is cheap — the GB-scale cost is the chunk bytes themselves, which
+/// only accumulate when recording is on.
+fn open_repository_blocking(
+    settings: &copythat_settings::Settings,
+) -> Option<(
+    std::sync::Arc<copythat_chunk::ChunkStore>,
+    Option<std::sync::Arc<copythat_chunk::Repository>>,
+)> {
+    let cs = &settings.chunk_store;
+    let root = if cs.location_override.is_empty() {
+        match copythat_chunk::default_chunk_store_path() {
+            Ok(p) => p,
+            Err(e) => {
+                tracing::warn!(error = %e, "cannot resolve chunk store path; Library unavailable");
+                return None;
+            }
+        }
+    } else {
+        std::path::PathBuf::from(&cs.location_override)
+    };
+    // Open ONLY when the store is enabled or already exists on disk. A
+    // brand-new user who never enabled it then pays nothing — no directory,
+    // no redb file, and no process-lifetime exclusive `index.redb` lock that
+    // would block the CLI (`copythat migrate`/`export`) against the same
+    // default store. An existing store is opened regardless so the Library
+    // still shows prior data when recording is off.
+    if !cs.enabled && !root.join("index.redb").exists() {
+        return None;
+    }
+    let store = match copythat_chunk::ChunkStore::open(&root) {
+        Ok(s) => std::sync::Arc::new(s),
+        Err(e) => {
+            tracing::warn!(error = %e, path = %root.display(), "chunk store open failed; Library + recovery unavailable");
+            return None;
+        }
+    };
+    // A broken/unwritable catalog (`repository.redb`) must NOT discard the
+    // good chunk store: recovery + mount only need the store, so they stay
+    // available while the Library (which needs the snapshot catalog) degrades
+    // to "repository-unavailable".
+    let repository = match copythat_chunk::Repository::with_store(store.clone()) {
+        Ok(r) => Some(std::sync::Arc::new(r)),
+        Err(e) => {
+            tracing::warn!(error = %e, "repository catalog open failed; Library unavailable (chunk store still serves recovery/mount)");
+            None
+        }
+    };
+    Some((store, repository))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // Wave-2 observability — install a default tracing subscriber so
@@ -331,12 +393,21 @@ pub fn run() {
         }
     };
 
-    // Phase 49 — the Library tab's `repository_*` commands open the
-    // unified chunk repository transiently per call (see
-    // `repository_commands.rs`). We deliberately do NOT hold a
-    // process-lifetime handle here: redb takes an exclusive file lock,
-    // and the recovery web UI + mount features open the same default
-    // store on demand — a persistent handle would block them.
+    // Phase 49b — open the unified chunk repository ONCE and share the
+    // single handle with every consumer (Library IPC, the recovery web
+    // UI, the mount backend, the delta-resume sink). This replaces the
+    // old per-call transient open: redb takes an exclusive file lock on
+    // `index.redb`, so a second concurrent `ChunkStore::open` would block
+    // — holding one shared handle is what makes a process-lifetime open
+    // safe. Opening is unconditional, like history + the journal above;
+    // whether copy/sync actually records into it is gated separately in
+    // the runner by `ChunkStoreSettings::enabled` + the `snapshot_on_*`
+    // toggles. A `None` here is non-fatal — the Library tab surfaces
+    // "repository-unavailable", exactly as the transient-open path did.
+    let app_state = match open_repository_blocking(&app_state.settings_snapshot()) {
+        Some((store, repo)) => app_state.with_repository(store, repo),
+        None => app_state,
+    };
 
     // Post-Phase-12 — system-wide paste hotkey. The plugin registers
     // no combos at build time; `global_paste::register_paste_shortcut`
@@ -584,6 +655,18 @@ pub fn run() {
             // Phase 49 — unified chunk repository (Library tab).
             repository_commands::repository_stats,
             repository_commands::repository_snapshots,
+            // Phase 49c — backup sources ("Back up now").
+            backup_commands::sources_list,
+            backup_commands::sources_add,
+            backup_commands::sources_update,
+            backup_commands::sources_remove,
+            backup_commands::backup_now,
+            // Phase 49d — restore browser.
+            repository_commands::snapshot_tree,
+            repository_commands::restore_preview,
+            repository_commands::restore_paths,
+            repository_commands::repository_forget,
+            repository_commands::repository_gc,
             // Phase 44.2 — SSD-aware whole-drive sanitize IPC.
             sanitize_commands::sanitize_list_devices,
             sanitize_commands::sanitize_capabilities_cmd,

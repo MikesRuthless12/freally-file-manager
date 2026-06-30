@@ -1199,3 +1199,37 @@ server-status-stopped = 已停止
 server-metrics-url = 指标
 err-server-no-protocols = 启动服务器前请至少选择一个协议。
 err-server-bind = 无法绑定服务器地址，它可能已被占用。
+
+# Phase 49c — 备份源。
+library-tab-sources = 源
+backup-add-source = 添加源…
+backup-source-path-ph = 要备份的文件夹…
+backup-exclude-ph = 排除通配符（逗号分隔）
+backup-now = 立即备份
+backup-remove = 移除
+backup-empty = 尚无备份源
+backup-never-run = 从未备份
+backup-last-run = 上次备份 { $when }
+backup-running = 正在备份… { $files } 个文件
+backup-toast-started = 正在备份 { $label }…
+backup-toast-completed = 已备份 { $label }：{ $files } 个文件
+backup-toast-failed = 备份 { $label } 失败：{ $reason }
+
+# Phase 49d — 还原浏览器。
+restore-browse = 还原…
+restore-title = 从快照还原
+restore-select-all = 全选
+restore-dest = 还原到
+restore-confirm = 还原 { $n } 个文件
+restore-empty = 此快照没有文件
+restore-conflict-body = 所选的 { $count } 个文件在目标位置已存在。
+restore-conflict-overwrite = 覆盖
+restore-conflict-skip = 跳过已存在
+restore-conflict-keep-both = 两者都保留
+restore-toast-done = 已还原 { $restored } 个，跳过 { $skipped } 个
+restore-toast-failed = 还原失败：{ $reason }
+snapshot-forget = 忘记
+snapshot-forget-toast = 已忘记快照 — 运行“回收空间”以释放
+library-reclaim = 回收空间
+repo-gc-done = 已回收 { $bytes }（{ $chunks } 个块）
+restore-toast-partial = 已还原 { $restored } 个，跳过 { $skipped } 个，失败 { $failed } 个

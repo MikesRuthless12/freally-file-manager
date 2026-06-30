@@ -1199,3 +1199,37 @@ repo-kind-copy = Copia
 repo-kind-sync = Sincronizzazione
 repo-kind-version = Versione
 repo-kind-backup = Backup
+
+# Phase 49c — origini di backup.
+library-tab-sources = Origini
+backup-add-source = Aggiungi origine…
+backup-source-path-ph = Cartella da salvare…
+backup-exclude-ph = Glob di esclusione (separati da virgole)
+backup-now = Esegui backup ora
+backup-remove = Rimuovi
+backup-empty = Ancora nessuna origine di backup
+backup-never-run = Mai eseguito il backup
+backup-last-run = Ultimo backup { $when }
+backup-running = Backup in corso… { $files } file
+backup-toast-started = Backup di { $label }…
+backup-toast-completed = Backup di { $label } completato: { $files } file
+backup-toast-failed = Backup di { $label } non riuscito: { $reason }
+
+# Phase 49d — browser di ripristino.
+restore-browse = Ripristina…
+restore-title = Ripristina da istantanea
+restore-select-all = Seleziona tutto
+restore-dest = Ripristina in
+restore-confirm = Ripristina { $n } file
+restore-empty = Questa istantanea non ha file
+restore-conflict-body = { $count } file selezionati esistono già nella destinazione.
+restore-conflict-overwrite = Sovrascrivi
+restore-conflict-skip = Salta esistenti
+restore-conflict-keep-both = Mantieni entrambi
+restore-toast-done = Ripristinati { $restored }, saltati { $skipped }
+restore-toast-failed = Ripristino non riuscito: { $reason }
+snapshot-forget = Dimentica
+snapshot-forget-toast = Istantanea dimenticata — esegui Recupera spazio per liberarla
+library-reclaim = Recupera spazio
+repo-gc-done = Recuperati { $bytes } ({ $chunks } blocchi)
+restore-toast-partial = Ripristinati { $restored }, saltati { $skipped }, falliti { $failed }

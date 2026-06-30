@@ -1199,3 +1199,37 @@ repo-kind-copy = Salin
 repo-kind-sync = Sinkron
 repo-kind-version = Versi
 repo-kind-backup = Cadangan
+
+# Phase 49c — sumber cadangan.
+library-tab-sources = Sumber
+backup-add-source = Tambah sumber…
+backup-source-path-ph = Folder untuk dicadangkan…
+backup-exclude-ph = Glob pengecualian (dipisahkan koma)
+backup-now = Cadangkan sekarang
+backup-remove = Hapus
+backup-empty = Belum ada sumber cadangan
+backup-never-run = Belum pernah dicadangkan
+backup-last-run = Pencadangan terakhir { $when }
+backup-running = Mencadangkan… { $files } berkas
+backup-toast-started = Mencadangkan { $label }…
+backup-toast-completed = { $label } dicadangkan: { $files } berkas
+backup-toast-failed = Pencadangan { $label } gagal: { $reason }
+
+# Phase 49d — penjelajah pemulihan.
+restore-browse = Pulihkan…
+restore-title = Pulihkan dari snapshot
+restore-select-all = Pilih semua
+restore-dest = Pulihkan ke
+restore-confirm = Pulihkan { $n } berkas
+restore-empty = Snapshot ini tidak memiliki berkas
+restore-conflict-body = { $count } berkas terpilih sudah ada di tujuan.
+restore-conflict-overwrite = Timpa
+restore-conflict-skip = Lewati yang ada
+restore-conflict-keep-both = Simpan keduanya
+restore-toast-done = { $restored } dipulihkan, { $skipped } dilewati
+restore-toast-failed = Pemulihan gagal: { $reason }
+snapshot-forget = Lupakan
+snapshot-forget-toast = Snapshot dilupakan — jalankan Klaim ulang ruang untuk membebaskannya
+library-reclaim = Klaim ulang ruang
+repo-gc-done = { $bytes } diklaim ulang ({ $chunks } potongan)
+restore-toast-partial = { $restored } dipulihkan, { $skipped } dilewati, { $failed } gagal

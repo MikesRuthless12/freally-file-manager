@@ -85,6 +85,22 @@ path = "../../tests/smoke/phase_27_chunk.rs"
 name = "phase_49_repo"
 path = "../../tests/smoke/phase_49_repo.rs"
 
+# Phase 49b smoke — the shared-store invariant (with_store + store_arc;
+# one redb open backs the repo, the delta-resume sink, and gc roots).
+[[test]]
+name = "phase_49b_shared_store"
+path = "../../tests/smoke/phase_49b_shared_store.rs"
+
+# Phase 49c smoke — backup-source snapshots (record + restore + dedup).
+[[test]]
+name = "phase_49c_backup"
+path = "../../tests/smoke/phase_49c_backup.rs"
+
+# Phase 49d smoke — restore browser (tree listing + conflict policies + guard).
+[[test]]
+name = "phase_49d_restore"
+path = "../../tests/smoke/phase_49d_restore.rs"
+
 # Phase 50 smoke — CDR-0 manifest portability (canonical CBOR round-trip
 # + validation + spec-version refusal).
 [[test]]

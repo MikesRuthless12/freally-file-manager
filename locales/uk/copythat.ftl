@@ -1199,3 +1199,37 @@ repo-kind-copy = Копія
 repo-kind-sync = Синхронізація
 repo-kind-version = Версія
 repo-kind-backup = Резервна копія
+
+# Phase 49c — джерела резервних копій.
+library-tab-sources = Джерела
+backup-add-source = Додати джерело…
+backup-source-path-ph = Папка для резервної копії…
+backup-exclude-ph = Шаблони виключення (через кому)
+backup-now = Створити копію зараз
+backup-remove = Вилучити
+backup-empty = Ще немає джерел резервних копій
+backup-never-run = Резервну копію не створювали
+backup-last-run = Остання копія { $when }
+backup-running = Створення копії… { $files } файлів
+backup-toast-started = Створення копії { $label }…
+backup-toast-completed = { $label } скопійовано: { $files } файлів
+backup-toast-failed = Не вдалося створити копію { $label }: { $reason }
+
+# Phase 49d — браузер відновлення.
+restore-browse = Відновити…
+restore-title = Відновити зі знімка
+restore-select-all = Вибрати все
+restore-dest = Відновити до
+restore-confirm = Відновити { $n } файлів
+restore-empty = Цей знімок не містить файлів
+restore-conflict-body = { $count } вибраних файлів уже існують у місці призначення.
+restore-conflict-overwrite = Перезаписати
+restore-conflict-skip = Пропустити наявні
+restore-conflict-keep-both = Зберегти обидва
+restore-toast-done = Відновлено { $restored }, пропущено { $skipped }
+restore-toast-failed = Помилка відновлення: { $reason }
+snapshot-forget = Забути
+snapshot-forget-toast = Знімок забуто — запустіть «Звільнити місце», щоб очистити
+library-reclaim = Звільнити місце
+repo-gc-done = Звільнено { $bytes } ({ $chunks } блоків)
+restore-toast-partial = Відновлено { $restored }, пропущено { $skipped }, не вдалося { $failed }

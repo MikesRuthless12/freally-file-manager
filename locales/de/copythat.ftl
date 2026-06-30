@@ -1199,3 +1199,37 @@ repo-kind-copy = Kopie
 repo-kind-sync = Sync
 repo-kind-version = Version
 repo-kind-backup = Backup
+
+# Phase 49c — Sicherungsquellen.
+library-tab-sources = Quellen
+backup-add-source = Quelle hinzufügen…
+backup-source-path-ph = Zu sichernder Ordner…
+backup-exclude-ph = Ausschluss-Globs (kommagetrennt)
+backup-now = Jetzt sichern
+backup-remove = Entfernen
+backup-empty = Noch keine Sicherungsquellen
+backup-never-run = Nie gesichert
+backup-last-run = Letzte Sicherung { $when }
+backup-running = Sicherung läuft… { $files } Dateien
+backup-toast-started = { $label } wird gesichert…
+backup-toast-completed = { $label } gesichert: { $files } Dateien
+backup-toast-failed = Sicherung von { $label } fehlgeschlagen: { $reason }
+
+# Phase 49d — Wiederherstellungs-Browser.
+restore-browse = Wiederherstellen…
+restore-title = Aus Snapshot wiederherstellen
+restore-select-all = Alle auswählen
+restore-dest = Wiederherstellen nach
+restore-confirm = { $n } Dateien wiederherstellen
+restore-empty = Dieser Snapshot enthält keine Dateien
+restore-conflict-body = { $count } ausgewählte Dateien sind am Ziel bereits vorhanden.
+restore-conflict-overwrite = Überschreiben
+restore-conflict-skip = Vorhandene überspringen
+restore-conflict-keep-both = Beide behalten
+restore-toast-done = { $restored } wiederhergestellt, { $skipped } übersprungen
+restore-toast-failed = Wiederherstellung fehlgeschlagen: { $reason }
+snapshot-forget = Vergessen
+snapshot-forget-toast = Snapshot vergessen — „Speicher freigeben“ ausführen, um ihn freizugeben
+library-reclaim = Speicher freigeben
+repo-gc-done = { $bytes } freigegeben ({ $chunks } Blöcke)
+restore-toast-partial = { $restored } wiederhergestellt, { $skipped } übersprungen, { $failed } fehlgeschlagen

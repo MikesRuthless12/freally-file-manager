@@ -1206,3 +1206,37 @@ repo-kind-copy = Copy
 repo-kind-sync = Sync
 repo-kind-version = Version
 repo-kind-backup = Backup
+
+# Phase 49c — backup sources.
+library-tab-sources = Sources
+backup-add-source = Add source…
+backup-source-path-ph = Folder to back up…
+backup-exclude-ph = Exclude globs (comma-separated)
+backup-now = Back up now
+backup-remove = Remove
+backup-empty = No backup sources yet
+backup-never-run = Never backed up
+backup-last-run = Last backup { $when }
+backup-running = Backing up… { $files } files
+backup-toast-started = Backing up { $label }…
+backup-toast-completed = Backed up { $label }: { $files } files
+backup-toast-failed = Backup of { $label } failed: { $reason }
+
+# Phase 49d — restore browser.
+restore-browse = Restore…
+restore-title = Restore from snapshot
+restore-select-all = Select all
+restore-dest = Restore to
+restore-confirm = Restore { $n } files
+restore-empty = This snapshot has no files
+restore-conflict-body = { $count } selected files already exist at the destination.
+restore-conflict-overwrite = Overwrite
+restore-conflict-skip = Skip existing
+restore-conflict-keep-both = Keep both
+restore-toast-done = Restored { $restored }, skipped { $skipped }
+restore-toast-failed = Restore failed: { $reason }
+snapshot-forget = Forget
+snapshot-forget-toast = Snapshot forgotten — run Reclaim space to free it
+library-reclaim = Reclaim space
+repo-gc-done = Reclaimed { $bytes } ({ $chunks } chunks)
+restore-toast-partial = Restored { $restored }, skipped { $skipped }, failed { $failed }

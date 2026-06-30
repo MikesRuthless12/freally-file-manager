@@ -1199,3 +1199,37 @@ repo-kind-copy = Sao chép
 repo-kind-sync = Đồng bộ
 repo-kind-version = Phiên bản
 repo-kind-backup = Sao lưu
+
+# Phase 49c — nguồn sao lưu.
+library-tab-sources = Nguồn
+backup-add-source = Thêm nguồn…
+backup-source-path-ph = Thư mục cần sao lưu…
+backup-exclude-ph = Mẫu loại trừ (phân tách bằng dấu phẩy)
+backup-now = Sao lưu ngay
+backup-remove = Xóa
+backup-empty = Chưa có nguồn sao lưu
+backup-never-run = Chưa từng sao lưu
+backup-last-run = Sao lưu lần cuối { $when }
+backup-running = Đang sao lưu… { $files } tệp
+backup-toast-started = Đang sao lưu { $label }…
+backup-toast-completed = Đã sao lưu { $label }: { $files } tệp
+backup-toast-failed = Sao lưu { $label } thất bại: { $reason }
+
+# Phase 49d — trình duyệt khôi phục.
+restore-browse = Khôi phục…
+restore-title = Khôi phục từ ảnh chụp
+restore-select-all = Chọn tất cả
+restore-dest = Khôi phục vào
+restore-confirm = Khôi phục { $n } tệp
+restore-empty = Ảnh chụp này không có tệp nào
+restore-conflict-body = { $count } tệp đã chọn đã tồn tại ở đích.
+restore-conflict-overwrite = Ghi đè
+restore-conflict-skip = Bỏ qua tệp hiện có
+restore-conflict-keep-both = Giữ cả hai
+restore-toast-done = Đã khôi phục { $restored }, bỏ qua { $skipped }
+restore-toast-failed = Khôi phục thất bại: { $reason }
+snapshot-forget = Quên
+snapshot-forget-toast = Đã quên ảnh chụp — chạy Thu hồi dung lượng để giải phóng
+library-reclaim = Thu hồi dung lượng
+repo-gc-done = Đã thu hồi { $bytes } ({ $chunks } khối)
+restore-toast-partial = Đã khôi phục { $restored }, bỏ qua { $skipped }, thất bại { $failed }

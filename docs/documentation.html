@@ -473,12 +473,21 @@
               by deduplication.
             </li>
             <li>
-              Switch between three sub-views:
+              Switch between four sub-views:
               <ul>
                 <li><strong>Live</strong> &mdash; the repository at a glance: bytes stored, distinct
-                  chunks, snapshot count.</li>
+                  chunks, snapshot count, plus a <strong>Reclaim space</strong> button that runs
+                  garbage collection to drop chunks no snapshot still references.</li>
                 <li><strong>Snapshots</strong> &mdash; the unified timeline of every recorded snapshot
-                  (copy / sync / version / backup), newest first.</li>
+                  (copy / sync / version / backup), newest first. Each row offers
+                  <strong>Restore&hellip;</strong> (browse the snapshot's files, pick a destination, and
+                  restore &mdash; with an overwrite / skip / keep-both choice when a file already exists)
+                  and <strong>Forget</strong> (drop the snapshot from the timeline; run Reclaim space to
+                  free its bytes).</li>
+                <li><strong>Sources</strong> &mdash; designate folders for backup, then
+                  <strong>Back up now</strong> to capture an on-demand snapshot (honouring exclude globs).
+                  Repeat backups of an unchanged tree are nearly free &mdash; identical chunks are stored
+                  once.</li>
                 <li><strong>Versions</strong> &mdash; per-file rolling versions: enter a destination
                   path to list its captured versions.</li>
               </ul>

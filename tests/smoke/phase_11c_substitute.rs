@@ -317,6 +317,47 @@ fn canned_args(key: &str) -> HashMap<&'static str, String> {
         "library-snapshot-files" => {
             m.insert("n", "248".to_string());
         }
+        // Phase 49c — backup-source placeables.
+        "backup-last-run" => {
+            m.insert("when", "2026-06-30 14:03".to_string());
+        }
+        "backup-running" => {
+            m.insert("files", "1 204".to_string());
+        }
+        "backup-toast-started" => {
+            m.insert("label", "Documents".to_string());
+        }
+        "backup-toast-completed" => {
+            m.insert("label", "Documents".to_string());
+            m.insert("files", "1 204".to_string());
+        }
+        "backup-toast-failed" => {
+            m.insert("label", "Documents".to_string());
+            m.insert("reason", "permission denied".to_string());
+        }
+        // Phase 49d — restore browser placeables.
+        "restore-confirm" => {
+            m.insert("n", "248".to_string());
+        }
+        "restore-conflict-body" => {
+            m.insert("count", "12".to_string());
+        }
+        "restore-toast-done" => {
+            m.insert("restored", "240".to_string());
+            m.insert("skipped", "8".to_string());
+        }
+        "restore-toast-partial" => {
+            m.insert("restored", "240".to_string());
+            m.insert("skipped", "8".to_string());
+            m.insert("failed", "2".to_string());
+        }
+        "restore-toast-failed" => {
+            m.insert("reason", "destination not writable".to_string());
+        }
+        "repo-gc-done" => {
+            m.insert("bytes", "1.2 GiB".to_string());
+            m.insert("chunks", "1 024".to_string());
+        }
         _ => {}
     }
     m

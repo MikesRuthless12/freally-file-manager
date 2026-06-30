@@ -161,10 +161,16 @@ async fn apply_recovery_settings(state: &AppState) -> Result<RecoveryStatusDto, 
         .ok_or_else(|| "history database not open".to_string())?
         .clone();
 
-    let chunk_path = copythat_chunk::default_chunk_store_path()
-        .map_err(|e| format!("resolve chunk store path: {e}"))?;
-    let chunk = copythat_chunk::ChunkStore::open(&chunk_path)
-        .map_err(|e| format!("open chunk store: {e}"))?;
+    // Phase 49b — serve from the one process-wide chunk store opened at
+    // startup instead of opening a second handle here. redb's exclusive
+    // `index.redb` lock makes a concurrent open fail, so the recovery web
+    // UI now shares the same `Arc<ChunkStore>` the Library tab + the
+    // delta-resume sink use. `None` only when the startup open itself
+    // failed — in which case there is nothing to serve.
+    let chunk = state
+        .chunk_store
+        .clone()
+        .ok_or_else(|| "chunk store unavailable".to_string())?;
 
     // Force loopback when the user hasn't acknowledged the warning.
     let bind_address = if recovery.allow_non_loopback {
@@ -178,8 +184,8 @@ async fn apply_recovery_settings(state: &AppState) -> Result<RecoveryStatusDto, 
         .map_err(|e| format!("parse `{addr_str}`: {e}"))?;
 
     let token: SecretString = recovery.token.clone().into();
-    let handle = serve(addr, Arc::new(history), Arc::new(chunk), token)
-        .map_err(|e| format!("recovery serve: {e}"))?;
+    let handle =
+        serve(addr, Arc::new(history), chunk, token).map_err(|e| format!("recovery serve: {e}"))?;
 
     let bound_port = handle.local_addr().port();
     // Phase 40 review-fix — only persist the OS-assigned port back to

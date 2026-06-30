@@ -1199,3 +1199,37 @@ server-status-stopped = 停止中
 server-metrics-url = メトリクス
 err-server-no-protocols = サーバーを開始する前に、少なくとも 1 つのプロトコルを選択してください。
 err-server-bind = サーバーアドレスをバインドできませんでした。すでに使用中の可能性があります。
+
+# Phase 49c — バックアップソース。
+library-tab-sources = ソース
+backup-add-source = ソースを追加…
+backup-source-path-ph = バックアップするフォルダー…
+backup-exclude-ph = 除外グロブ（カンマ区切り）
+backup-now = 今すぐバックアップ
+backup-remove = 削除
+backup-empty = バックアップソースはまだありません
+backup-never-run = 未バックアップ
+backup-last-run = 前回のバックアップ { $when }
+backup-running = バックアップ中… { $files } 個のファイル
+backup-toast-started = { $label } をバックアップ中…
+backup-toast-completed = { $label } をバックアップしました: { $files } 個のファイル
+backup-toast-failed = { $label } のバックアップに失敗: { $reason }
+
+# Phase 49d — 復元ブラウザー。
+restore-browse = 復元…
+restore-title = スナップショットから復元
+restore-select-all = すべて選択
+restore-dest = 復元先
+restore-confirm = { $n } 個のファイルを復元
+restore-empty = このスナップショットにはファイルがありません
+restore-conflict-body = 選択した { $count } 個のファイルが復元先に既に存在します。
+restore-conflict-overwrite = 上書き
+restore-conflict-skip = 既存をスキップ
+restore-conflict-keep-both = 両方を保持
+restore-toast-done = { $restored } 個を復元、{ $skipped } 個をスキップ
+restore-toast-failed = 復元に失敗: { $reason }
+snapshot-forget = 削除
+snapshot-forget-toast = スナップショットを削除しました — 「容量を回収」で解放できます
+library-reclaim = 容量を回収
+repo-gc-done = { $bytes } を回収（{ $chunks } チャンク）
+restore-toast-partial = { $restored } 個を復元、{ $skipped } 個をスキップ、{ $failed } 個が失敗

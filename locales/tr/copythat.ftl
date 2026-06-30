@@ -1199,3 +1199,37 @@ repo-kind-copy = Kopya
 repo-kind-sync = Eşitleme
 repo-kind-version = Sürüm
 repo-kind-backup = Yedek
+
+# Phase 49c — yedekleme kaynakları.
+library-tab-sources = Kaynaklar
+backup-add-source = Kaynak ekle…
+backup-source-path-ph = Yedeklenecek klasör…
+backup-exclude-ph = Hariç tutma kalıpları (virgülle ayrılmış)
+backup-now = Şimdi yedekle
+backup-remove = Kaldır
+backup-empty = Henüz yedekleme kaynağı yok
+backup-never-run = Hiç yedeklenmedi
+backup-last-run = Son yedekleme { $when }
+backup-running = Yedekleniyor… { $files } dosya
+backup-toast-started = { $label } yedekleniyor…
+backup-toast-completed = { $label } yedeklendi: { $files } dosya
+backup-toast-failed = { $label } yedeklemesi başarısız: { $reason }
+
+# Phase 49d — geri yükleme tarayıcısı.
+restore-browse = Geri yükle…
+restore-title = Anlık görüntüden geri yükle
+restore-select-all = Tümünü seç
+restore-dest = Şuraya geri yükle
+restore-confirm = { $n } dosyayı geri yükle
+restore-empty = Bu anlık görüntüde dosya yok
+restore-conflict-body = Seçilen { $count } dosya hedefte zaten var.
+restore-conflict-overwrite = Üzerine yaz
+restore-conflict-skip = Var olanları atla
+restore-conflict-keep-both = İkisini de tut
+restore-toast-done = { $restored } geri yüklendi, { $skipped } atlandı
+restore-toast-failed = Geri yükleme başarısız: { $reason }
+snapshot-forget = Unut
+snapshot-forget-toast = Anlık görüntü unutuldu — boşaltmak için Alanı geri kazan'ı çalıştırın
+library-reclaim = Alanı geri kazan
+repo-gc-done = { $bytes } geri kazanıldı ({ $chunks } yığın)
+restore-toast-partial = { $restored } geri yüklendi, { $skipped } atlandı, { $failed } başarısız

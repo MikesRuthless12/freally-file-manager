@@ -68,8 +68,8 @@ pub use error::{ChunkStoreError, Result};
 pub use manifest::{IngestStats, delta_plan, ingest_bytes, ingest_file, materialise_file};
 pub use migrate::{MigrateError, MigrateReport, RepoFormat, migrate, write_cdr_descriptor};
 pub use repository::{
-    FileEntry, FileSnapshot, GcReport, RepoStats, Repository, Snapshot, SnapshotId, SnapshotKind,
-    UnifiedSnapshot,
+    FileEntry, FileSnapshot, GcReport, RepoStats, Repository, RestoreConflict, RestoreReport,
+    Snapshot, SnapshotFileEntry, SnapshotId, SnapshotKind, UnifiedSnapshot,
 };
 pub use sink::CopyThatChunkSink;
 pub use store::{ChunkLocator, ChunkStore, PACK_ROLLOVER_BYTES, default_chunk_store_path};

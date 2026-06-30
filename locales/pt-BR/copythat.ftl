@@ -1199,3 +1199,37 @@ repo-kind-copy = Cópia
 repo-kind-sync = Sincronização
 repo-kind-version = Versão
 repo-kind-backup = Backup
+
+# Phase 49c — fontes de backup.
+library-tab-sources = Fontes
+backup-add-source = Adicionar fonte…
+backup-source-path-ph = Pasta para backup…
+backup-exclude-ph = Globs de exclusão (separados por vírgula)
+backup-now = Fazer backup agora
+backup-remove = Remover
+backup-empty = Ainda não há fontes de backup
+backup-never-run = Nunca teve backup
+backup-last-run = Último backup { $when }
+backup-running = Fazendo backup… { $files } arquivos
+backup-toast-started = Fazendo backup de { $label }…
+backup-toast-completed = Backup de { $label } concluído: { $files } arquivos
+backup-toast-failed = Falha no backup de { $label }: { $reason }
+
+# Phase 49d — navegador de restauração.
+restore-browse = Restaurar…
+restore-title = Restaurar do instantâneo
+restore-select-all = Selecionar tudo
+restore-dest = Restaurar em
+restore-confirm = Restaurar { $n } arquivos
+restore-empty = Este instantâneo não tem arquivos
+restore-conflict-body = { $count } arquivos selecionados já existem no destino.
+restore-conflict-overwrite = Sobrescrever
+restore-conflict-skip = Ignorar existentes
+restore-conflict-keep-both = Manter ambos
+restore-toast-done = Restaurados { $restored }, ignorados { $skipped }
+restore-toast-failed = Falha na restauração: { $reason }
+snapshot-forget = Esquecer
+snapshot-forget-toast = Instantâneo esquecido — use Recuperar espaço para liberá-lo
+library-reclaim = Recuperar espaço
+repo-gc-done = Recuperado { $bytes } ({ $chunks } blocos)
+restore-toast-partial = Restaurados { $restored }, ignorados { $skipped }, falharam { $failed }

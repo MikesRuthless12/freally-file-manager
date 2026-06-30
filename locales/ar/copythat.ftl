@@ -1199,3 +1199,37 @@ repo-kind-copy = نسخ
 repo-kind-sync = مزامنة
 repo-kind-version = إصدار
 repo-kind-backup = نسخ احتياطي
+
+# Phase 49c — مصادر النسخ الاحتياطي.
+library-tab-sources = المصادر
+backup-add-source = إضافة مصدر…
+backup-source-path-ph = مجلد للنسخ الاحتياطي…
+backup-exclude-ph = أنماط الاستبعاد (مفصولة بفواصل)
+backup-now = انسخ احتياطيًا الآن
+backup-remove = إزالة
+backup-empty = لا توجد مصادر نسخ احتياطي بعد
+backup-never-run = لم يُنسخ احتياطيًا قط
+backup-last-run = آخر نسخة احتياطية { $when }
+backup-running = جارٍ النسخ الاحتياطي… { $files } ملفات
+backup-toast-started = جارٍ نسخ { $label } احتياطيًا…
+backup-toast-completed = تم نسخ { $label } احتياطيًا: { $files } ملفات
+backup-toast-failed = فشل النسخ الاحتياطي لـ { $label }: { $reason }
+
+# Phase 49d — متصفح الاستعادة.
+restore-browse = استعادة…
+restore-title = الاستعادة من لقطة
+restore-select-all = تحديد الكل
+restore-dest = الاستعادة إلى
+restore-confirm = استعادة { $n } ملفات
+restore-empty = لا توجد ملفات في هذه اللقطة
+restore-conflict-body = توجد { $count } ملفات محددة بالفعل في الوجهة.
+restore-conflict-overwrite = الكتابة فوقها
+restore-conflict-skip = تخطّي الموجود
+restore-conflict-keep-both = الاحتفاظ بكليهما
+restore-toast-done = تمت استعادة { $restored }، وتخطّي { $skipped }
+restore-toast-failed = فشلت الاستعادة: { $reason }
+snapshot-forget = نسيان
+snapshot-forget-toast = تم نسيان اللقطة — شغّل "استرجاع المساحة" لتحريرها
+library-reclaim = استرجاع المساحة
+repo-gc-done = تم استرجاع { $bytes } ({ $chunks } كتلة)
+restore-toast-partial = تمت استعادة { $restored }، وتخطّي { $skipped }، وفشل { $failed }

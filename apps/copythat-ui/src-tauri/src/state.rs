@@ -178,6 +178,22 @@ pub struct AppState {
     /// the UI can disable the pause button + offer cancel while a cloud
     /// transfer is active. See [`crate::cloud_commands::CloudTransfers`].
     pub cloud_transfers: Arc<crate::cloud_commands::CloudTransfers>,
+    /// Phase 49b — the unified content-addressed
+    /// [`Repository`](copythat_chunk::Repository) plus its underlying
+    /// [`ChunkStore`](copythat_chunk::ChunkStore), opened **once** at
+    /// startup and shared by every consumer (Library IPC, the recovery
+    /// web UI, the mount backend, the delta-resume sink). `None` when the
+    /// chunk store is unavailable (open failed / disabled) — the Library
+    /// tab then surfaces "repository-unavailable", mirroring the
+    /// `history` / `journal` optional-feature idiom. Holding ONE handle
+    /// is what makes a process-lifetime open safe: a second
+    /// `ChunkStore::open` of the same `index.redb` would deadlock on
+    /// redb's exclusive file lock.
+    pub chunk_store: Option<Arc<copythat_chunk::ChunkStore>>,
+    /// Phase 49b — see [`AppState::chunk_store`]. Built on the same
+    /// shared store handle via `Repository::with_store`, so the
+    /// snapshot catalog and the chunk store share one redb open.
+    pub repository: Option<Arc<copythat_chunk::Repository>>,
 }
 
 impl AppState {
@@ -292,6 +308,12 @@ impl AppState {
             // Phase 31b — empty cloud-transfer registry; cloud commands
             // register/deregister their abort handles as transfers run.
             cloud_transfers: Arc::new(crate::cloud_commands::CloudTransfers::default()),
+            // Phase 49b — opened once in `lib.rs::run` via
+            // `with_repository`; `None` here (and in every test
+            // constructor) so the Library tab degrades cleanly to
+            // "repository-unavailable".
+            chunk_store: None,
+            repository: None,
         }
     }
 
@@ -308,6 +330,24 @@ impl AppState {
     pub fn with_journal(mut self, journal: Journal, unfinished: Vec<UnfinishedJob>) -> Self {
         self.journal = Some(journal);
         self.startup_unfinished = Arc::new(Mutex::new(unfinished));
+        self
+    }
+
+    /// Phase 49b — attach the shared chunk store + unified repository,
+    /// opened once in `lib.rs::run` from the **same** `Arc<ChunkStore>`
+    /// (via `Repository::with_store`). The repository is `Option` because a
+    /// broken/unwritable snapshot catalog (`repository.redb`) must NOT take
+    /// the good chunk store down with it — recovery + mount only need the
+    /// store, so they stay available while just the Library degrades.
+    /// Builder-shaped so `run` can chain it after `new_with`, like
+    /// [`AppState::with_journal`].
+    pub fn with_repository(
+        mut self,
+        store: Arc<copythat_chunk::ChunkStore>,
+        repository: Option<Arc<copythat_chunk::Repository>>,
+    ) -> Self {
+        self.chunk_store = Some(store);
+        self.repository = repository;
         self
     }
 

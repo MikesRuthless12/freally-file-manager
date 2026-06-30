@@ -1199,3 +1199,37 @@ repo-kind-copy = कॉपी
 repo-kind-sync = सिंक
 repo-kind-version = संस्करण
 repo-kind-backup = बैकअप
+
+# Phase 49c — बैकअप स्रोत।
+library-tab-sources = स्रोत
+backup-add-source = स्रोत जोड़ें…
+backup-source-path-ph = बैकअप के लिए फ़ोल्डर…
+backup-exclude-ph = बहिष्करण ग्लोब (अल्पविराम से अलग)
+backup-now = अभी बैकअप लें
+backup-remove = हटाएँ
+backup-empty = अभी तक कोई बैकअप स्रोत नहीं
+backup-never-run = कभी बैकअप नहीं लिया
+backup-last-run = अंतिम बैकअप { $when }
+backup-running = बैकअप ले रहे हैं… { $files } फ़ाइलें
+backup-toast-started = { $label } का बैकअप ले रहे हैं…
+backup-toast-completed = { $label } का बैकअप लिया: { $files } फ़ाइलें
+backup-toast-failed = { $label } का बैकअप विफल: { $reason }
+
+# Phase 49d — पुनर्स्थापना ब्राउज़र।
+restore-browse = पुनर्स्थापित करें…
+restore-title = स्नैपशॉट से पुनर्स्थापित करें
+restore-select-all = सभी चुनें
+restore-dest = यहाँ पुनर्स्थापित करें
+restore-confirm = { $n } फ़ाइलें पुनर्स्थापित करें
+restore-empty = इस स्नैपशॉट में कोई फ़ाइल नहीं
+restore-conflict-body = चुनी गई { $count } फ़ाइलें गंतव्य पर पहले से मौजूद हैं।
+restore-conflict-overwrite = अधिलेखित करें
+restore-conflict-skip = मौजूदा छोड़ें
+restore-conflict-keep-both = दोनों रखें
+restore-toast-done = { $restored } पुनर्स्थापित, { $skipped } छोड़े गए
+restore-toast-failed = पुनर्स्थापना विफल: { $reason }
+snapshot-forget = भूल जाएँ
+snapshot-forget-toast = स्नैपशॉट भुला दिया — स्थान खाली करने के लिए “स्थान पुनः प्राप्त करें” चलाएँ
+library-reclaim = स्थान पुनः प्राप्त करें
+repo-gc-done = { $bytes } पुनः प्राप्त ({ $chunks } खंड)
+restore-toast-partial = { $restored } पुनर्स्थापित, { $skipped } छोड़े गए, { $failed } विफल

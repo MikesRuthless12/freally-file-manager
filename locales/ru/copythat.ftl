@@ -1199,3 +1199,37 @@ server-status-stopped = Остановлен
 server-metrics-url = Метрики
 err-server-no-protocols = Выберите хотя бы один протокол перед запуском сервера.
 err-server-bind = Не удалось привязать адрес сервера. Возможно, он уже используется.
+
+# Phase 49c — источники резервного копирования.
+library-tab-sources = Источники
+backup-add-source = Добавить источник…
+backup-source-path-ph = Папка для резервного копирования…
+backup-exclude-ph = Шаблоны исключения (через запятую)
+backup-now = Создать резервную копию
+backup-remove = Удалить
+backup-empty = Источников резервного копирования пока нет
+backup-never-run = Резервная копия не создавалась
+backup-last-run = Последняя копия { $when }
+backup-running = Резервное копирование… { $files } файлов
+backup-toast-started = Резервное копирование { $label }…
+backup-toast-completed = { $label } скопировано: { $files } файлов
+backup-toast-failed = Сбой резервного копирования { $label }: { $reason }
+
+# Phase 49d — обозреватель восстановления.
+restore-browse = Восстановить…
+restore-title = Восстановить из снимка
+restore-select-all = Выбрать все
+restore-dest = Восстановить в
+restore-confirm = Восстановить { $n } файлов
+restore-empty = В этом снимке нет файлов
+restore-conflict-body = { $count } выбранных файлов уже существуют в месте назначения.
+restore-conflict-overwrite = Перезаписать
+restore-conflict-skip = Пропустить существующие
+restore-conflict-keep-both = Сохранить оба
+restore-toast-done = Восстановлено { $restored }, пропущено { $skipped }
+restore-toast-failed = Сбой восстановления: { $reason }
+snapshot-forget = Забыть
+snapshot-forget-toast = Снимок забыт — запустите «Освободить место», чтобы очистить
+library-reclaim = Освободить место
+repo-gc-done = Освобождено { $bytes } ({ $chunks } блоков)
+restore-toast-partial = Восстановлено { $restored }, пропущено { $skipped }, не удалось { $failed }

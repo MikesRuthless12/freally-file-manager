@@ -239,6 +239,35 @@ pub(crate) async fn run_job(job: RunJob) {
         }
     }
 
+    // Phase 49b — feed the unified content-addressed Repository. Two
+    // independent, default-off hooks gated by ChunkStoreSettings:
+    //   * the dedup / delta-resume sink writes chunks *during* the copy so
+    //     a later `snapshot_files` dedups to no-ops — only when the chunk
+    //     store's master `enabled` toggle is on;
+    //   * the versioning sink captures the about-to-be-overwritten
+    //     destination as a `Version` snapshot before the engine truncates
+    //     it (the previously-deferred Phase 42 hook), gated on
+    //     `snapshot_on_overwrite`. Both share the one `Arc` opened at
+    //     startup; both no-op when the startup open failed.
+    {
+        let cs = state.settings_snapshot().chunk_store;
+        if cs.enabled
+            && let Some(store) = state.chunk_store.clone()
+        {
+            copy_opts_with_verify.chunk_store = Some(std::sync::Arc::new(
+                copythat_chunk::CopyThatChunkSink::new(store),
+            ));
+        }
+        if cs.snapshot_on_overwrite
+            && let Some(repo) = state.repository.clone()
+        {
+            copy_opts_with_verify.versioning.enabled = true;
+            copy_opts_with_verify.versioning_sink = Some(std::sync::Arc::new(
+                crate::repository_commands::RepositoryVersioningSink::new(repo),
+            ));
+        }
+    }
+
     let result: Result<(), CopyError> = match kind {
         JobKind::Copy => {
             let Some(dst_path) = dst.clone() else {
@@ -484,6 +513,45 @@ pub(crate) async fn run_job(job: RunJob) {
         total_bytes,
         job_started_at.elapsed().as_millis() as u64,
     );
+
+    // Phase 49b — record a `Copy` snapshot of the destination into the
+    // unified timeline when the job succeeded and `snapshot_on_copy` is on.
+    // The dedup / delta-resume sink already wrote the chunks during the
+    // copy, so `snapshot_files` re-reads only to build the manifest —
+    // chunks dedup to no-ops. Off by default precisely because of that
+    // re-read pass. Best-effort in `spawn_blocking` (chunk I/O is
+    // blocking); a snapshot failure never fails the already-finished job.
+    if terminal_status == "succeeded"
+        && matches!(kind, JobKind::Copy | JobKind::Move)
+        && let Some(dst_root) = dst.clone()
+        && let Some(repo) = state.repository.clone()
+        && state.settings_snapshot().chunk_store.snapshot_on_copy
+    {
+        let src_label = src.clone();
+        let now = now_ms() as i64;
+        let _ = tokio::task::spawn_blocking(move || {
+            let files = collect_dst_files(&dst_root);
+            if files.is_empty() {
+                return;
+            }
+            let keys: Vec<String> = files
+                .iter()
+                .map(|p| p.to_string_lossy().into_owned())
+                .collect();
+            let pairs: Vec<(&str, &std::path::Path)> = keys
+                .iter()
+                .zip(files.iter())
+                .map(|(k, p)| (k.as_str(), p.as_path()))
+                .collect();
+            let label = format!("{} → {}", src_label.display(), dst_root.display());
+            if let Err(e) =
+                repo.snapshot_files(copythat_chunk::SnapshotKind::Copy, &label, now, &pairs)
+            {
+                tracing::warn!(error = %e, "Phase 49b copy snapshot failed");
+            }
+        })
+        .await;
+    }
 
     emit_globals(&app, &state);
 }
@@ -1273,6 +1341,43 @@ async fn peek_meta(path: &std::path::Path) -> (Option<u64>, Option<u64>) {
         .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
         .map(|d| d.as_millis() as u64);
     (size, mtime)
+}
+
+/// Phase 49b — collect every regular file under `root` (or just `root`
+/// itself when it is a file) for snapshotting into the Repository.
+/// Symlinks + special files are skipped; unreadable directories are
+/// stepped over silently (best-effort, like the snapshot it feeds).
+/// Iterative — a deep tree can't blow the stack.
+fn collect_dst_files(root: &std::path::Path) -> Vec<PathBuf> {
+    let mut out = Vec::new();
+    let Ok(meta) = std::fs::symlink_metadata(root) else {
+        return out;
+    };
+    if meta.is_file() {
+        out.push(root.to_path_buf());
+        return out;
+    }
+    if !meta.is_dir() {
+        return out;
+    }
+    let mut stack = vec![root.to_path_buf()];
+    while let Some(dir) = stack.pop() {
+        let Ok(entries) = std::fs::read_dir(&dir) else {
+            continue;
+        };
+        for entry in entries.flatten() {
+            let Ok(ft) = entry.file_type() else {
+                continue;
+            };
+            if ft.is_dir() {
+                stack.push(entry.path());
+            } else if ft.is_file() {
+                out.push(entry.path());
+            }
+            // symlinks + specials are intentionally skipped.
+        }
+    }
+    out
 }
 
 fn now_ms() -> u64 {

@@ -1199,3 +1199,37 @@ server-status-stopped = 중지됨
 server-metrics-url = 메트릭
 err-server-no-protocols = 서버를 시작하기 전에 프로토콜을 하나 이상 선택하세요.
 err-server-bind = 서버 주소를 바인드할 수 없습니다. 이미 사용 중일 수 있습니다.
+
+# Phase 49c — 백업 소스.
+library-tab-sources = 소스
+backup-add-source = 소스 추가…
+backup-source-path-ph = 백업할 폴더…
+backup-exclude-ph = 제외 글로브(쉼표로 구분)
+backup-now = 지금 백업
+backup-remove = 제거
+backup-empty = 아직 백업 소스가 없습니다
+backup-never-run = 백업한 적 없음
+backup-last-run = 마지막 백업 { $when }
+backup-running = 백업 중… { $files }개 파일
+backup-toast-started = { $label } 백업 중…
+backup-toast-completed = { $label } 백업 완료: { $files }개 파일
+backup-toast-failed = { $label } 백업 실패: { $reason }
+
+# Phase 49d — 복원 브라우저.
+restore-browse = 복원…
+restore-title = 스냅샷에서 복원
+restore-select-all = 모두 선택
+restore-dest = 복원 위치
+restore-confirm = { $n }개 파일 복원
+restore-empty = 이 스냅샷에 파일이 없습니다
+restore-conflict-body = 선택한 { $count }개 파일이 대상에 이미 있습니다.
+restore-conflict-overwrite = 덮어쓰기
+restore-conflict-skip = 기존 건너뛰기
+restore-conflict-keep-both = 둘 다 유지
+restore-toast-done = { $restored }개 복원, { $skipped }개 건너뜀
+restore-toast-failed = 복원 실패: { $reason }
+snapshot-forget = 잊기
+snapshot-forget-toast = 스냅샷을 잊었습니다 — “공간 회수”를 실행하여 비우세요
+library-reclaim = 공간 회수
+repo-gc-done = { $bytes } 회수됨 ({ $chunks } 청크)
+restore-toast-partial = { $restored }개 복원, { $skipped }개 건너뜀, { $failed }개 실패

@@ -133,6 +133,14 @@ pub const EVENT_LIVE_MIRROR_STARTED: &str = "live-mirror-started";
 pub const EVENT_LIVE_MIRROR_STOPPED: &str = "live-mirror-stopped";
 pub const EVENT_LIVE_MIRROR_EVENT: &str = "live-mirror-event";
 
+// ---------------------------------------------------------------------
+// Phase 49c — backup-source lifecycle events.
+// ---------------------------------------------------------------------
+pub const EVENT_BACKUP_STARTED: &str = "backup-started";
+pub const EVENT_BACKUP_PROGRESS: &str = "backup-progress";
+pub const EVENT_BACKUP_COMPLETED: &str = "backup-completed";
+pub const EVENT_BACKUP_FAILED: &str = "backup-failed";
+
 /// Single entry in the live activity list.
 ///
 /// `phase`:

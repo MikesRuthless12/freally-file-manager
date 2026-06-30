@@ -1199,3 +1199,37 @@ repo-kind-copy = Kopia
 repo-kind-sync = Synchronizacja
 repo-kind-version = Wersja
 repo-kind-backup = Kopia zapasowa
+
+# Phase 49c — źródła kopii zapasowych.
+library-tab-sources = Źródła
+backup-add-source = Dodaj źródło…
+backup-source-path-ph = Folder do utworzenia kopii…
+backup-exclude-ph = Wzorce wykluczeń (oddzielone przecinkami)
+backup-now = Utwórz kopię teraz
+backup-remove = Usuń
+backup-empty = Brak źródeł kopii zapasowych
+backup-never-run = Nigdy nie utworzono kopii
+backup-last-run = Ostatnia kopia { $when }
+backup-running = Tworzenie kopii… { $files } plików
+backup-toast-started = Tworzenie kopii { $label }…
+backup-toast-completed = Utworzono kopię { $label }: { $files } plików
+backup-toast-failed = Tworzenie kopii { $label } nie powiodło się: { $reason }
+
+# Phase 49d — przeglądarka przywracania.
+restore-browse = Przywróć…
+restore-title = Przywróć z migawki
+restore-select-all = Zaznacz wszystko
+restore-dest = Przywróć do
+restore-confirm = Przywróć { $n } plików
+restore-empty = Ta migawka nie zawiera plików
+restore-conflict-body = { $count } wybranych plików już istnieje w miejscu docelowym.
+restore-conflict-overwrite = Zastąp
+restore-conflict-skip = Pomiń istniejące
+restore-conflict-keep-both = Zachowaj oba
+restore-toast-done = Przywrócono { $restored }, pominięto { $skipped }
+restore-toast-failed = Przywracanie nie powiodło się: { $reason }
+snapshot-forget = Zapomnij
+snapshot-forget-toast = Migawka zapomniana — uruchom Odzyskaj miejsce, aby ją zwolnić
+library-reclaim = Odzyskaj miejsce
+repo-gc-done = Odzyskano { $bytes } ({ $chunks } fragmentów)
+restore-toast-partial = Przywrócono { $restored }, pominięto { $skipped }, nieudane { $failed }

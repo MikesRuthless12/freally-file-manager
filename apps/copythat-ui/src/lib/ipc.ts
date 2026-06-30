@@ -987,3 +987,110 @@ export async function listVersions(
 ): Promise<VersionRecordDto[]> {
   return invoke<VersionRecordDto[]>("list_versions", { dstPath });
 }
+
+/** One configured backup source. Mirrors `backup_commands::SourceConfigDto`. */
+export type SourceConfigDto = {
+  id: string;
+  label: string;
+  path: string;
+  excludeGlobs: string[];
+  lastRunAt: string;
+  lastSnapshotId: number | null;
+};
+
+/** List the configured backup sources (Phase 49c). */
+export async function sourcesList(): Promise<SourceConfigDto[]> {
+  return invoke<SourceConfigDto[]>("sources_list");
+}
+
+/** Add a backup source. */
+export async function sourcesAdd(
+  label: string,
+  path: string,
+  excludeGlobs: string[],
+): Promise<SourceConfigDto> {
+  return invoke<SourceConfigDto>("sources_add", { label, path, excludeGlobs });
+}
+
+/** Edit an existing backup source. */
+export async function sourcesUpdate(
+  id: string,
+  label: string,
+  path: string,
+  excludeGlobs: string[],
+): Promise<SourceConfigDto> {
+  return invoke<SourceConfigDto>("sources_update", {
+    id,
+    label,
+    path,
+    excludeGlobs,
+  });
+}
+
+/** Remove a backup source by id. */
+export async function sourcesRemove(id: string): Promise<void> {
+  return invoke<void>("sources_remove", { id });
+}
+
+/** Snapshot a source into the repository as a Backup; returns the new id. */
+export async function backupNow(id: string): Promise<number> {
+  return invoke<number>("backup_now", { id });
+}
+
+/** One file in a snapshot's flat tree. Mirrors `SnapshotFileDto`. */
+export type SnapshotFileDto = { path: string; size: number };
+/** Tally of a restore run. Mirrors `RestoreReportDto`. */
+export type RestoreReportDto = {
+  restored: number;
+  skipped: number;
+  failed: number;
+};
+/** Per-file existence check for the restore conflict step. */
+export type RestoreConflictDto = { path: string; exists: boolean };
+/** Outcome of a repository GC pass. Mirrors `GcReportDto`. */
+export type GcReportDto = {
+  chunksSwept: number;
+  packsRemoved: number;
+  bytesReclaimed: number;
+};
+
+/** Flat file listing of a snapshot (Phase 49d restore browser). */
+export async function snapshotTree(
+  snapshotId: number,
+): Promise<SnapshotFileDto[]> {
+  return invoke<SnapshotFileDto[]>("snapshot_tree", { snapshotId });
+}
+/** Dry-run: which selected paths already exist under the destination. */
+export async function restorePreview(
+  snapshotId: number,
+  paths: string[],
+  dstRoot: string,
+): Promise<RestoreConflictDto[]> {
+  return invoke<RestoreConflictDto[]>("restore_preview", {
+    snapshotId,
+    paths,
+    dstRoot,
+  });
+}
+/** Restore selected files under `dstRoot` with the given conflict policy. */
+export async function restorePaths(
+  snapshotId: number,
+  paths: string[],
+  dstRoot: string,
+  conflict: "overwrite" | "skip" | "keep-both",
+): Promise<RestoreReportDto> {
+  return invoke<RestoreReportDto>("restore_paths", {
+    snapshotId,
+    paths,
+    dstRoot,
+    conflict,
+  });
+}
+/** Drop a snapshot from the catalog (run GC to reclaim its chunks). */
+export async function repositoryForget(snapshotId: number): Promise<boolean> {
+  return invoke<boolean>("repository_forget", { snapshotId });
+}
+/** Mark-and-sweep unreferenced chunks; reclaim space. */
+export async function repositoryGc(): Promise<GcReportDto> {
+  return invoke<GcReportDto>("repository_gc");
+}

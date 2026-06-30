@@ -86,7 +86,7 @@ use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{BufReader, Read};
 use std::path::{Path, PathBuf};
-use std::sync::RwLock;
+use std::sync::{Arc, RwLock};
 
 use redb::{Database, ReadableTable, ReadableTableMetadata, TableDefinition};
 use serde::{Deserialize, Serialize};
@@ -313,10 +313,46 @@ pub struct GcReport {
     pub bytes_reclaimed: u64,
 }
 
+/// One file in a snapshot's flat tree listing — logical path + size, no
+/// chunk manifest (the UI assembles the tree; manifests never cross the
+/// IPC boundary). Returned by [`Repository::snapshot_tree`].
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SnapshotFileEntry {
+    /// Logical path the file was captured under.
+    pub path: String,
+    /// Logical (uncompressed) size in bytes.
+    pub size: u64,
+}
+
+/// How [`Repository::restore_paths`] resolves a destination file that
+/// already exists. Same vocabulary as the engine's collision UI.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RestoreConflict {
+    /// Replace the existing file.
+    Overwrite,
+    /// Leave the existing file; don't restore this one.
+    Skip,
+    /// Restore alongside under a ` (1)` / ` (2)` … suffixed name.
+    KeepBoth,
+}
+
+/// Tally returned by [`Repository::restore_paths`].
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RestoreReport {
+    /// Files written to the destination.
+    pub restored: u64,
+    /// Files skipped (existing + [`RestoreConflict::Skip`], or not present
+    /// in the snapshot).
+    pub skipped: u64,
+    /// Files that errored (missing chunk, unwritable destination, or an
+    /// unsafe logical path that would escape the restore root).
+    pub failed: u64,
+}
+
 /// The Phase 49 unified repository: a [`ChunkStore`] plus a snapshot
 /// catalog and reference-counted garbage collection.
 pub struct Repository {
-    store: ChunkStore,
+    store: Arc<ChunkStore>,
     db: Database,
     chunker: Chunker,
     root: PathBuf,
@@ -341,7 +377,20 @@ impl Repository {
     /// snapshot catalog). Both redb files are independent and each takes
     /// its own file lock.
     pub fn open(root: &Path) -> Result<Self> {
-        let store = ChunkStore::open(root)?;
+        Self::with_store(Arc::new(ChunkStore::open(root)?))
+    }
+
+    /// Build a repository over an **already-open** [`ChunkStore`], opening
+    /// only the sibling `<root>/repository.redb` snapshot catalog.
+    ///
+    /// This is the constructor the application uses so the chunk store's
+    /// single redb file lock (`index.redb`) is taken **once** and shared:
+    /// the same `Arc<ChunkStore>` backs the delta-resume
+    /// [`CopyThatChunkSink`](crate::CopyThatChunkSink), the recovery web
+    /// UI, the mount backend, and this repository's snapshot catalog.
+    /// [`Self::open`] delegates here after opening the store itself.
+    pub fn with_store(store: Arc<ChunkStore>) -> Result<Self> {
+        let root = store.root().to_path_buf();
         let db_path = root.join("repository.redb");
         let db = Database::create(&db_path)?;
         // Materialise the catalog tables on first open.
@@ -356,7 +405,7 @@ impl Repository {
             store,
             db,
             chunker: Chunker::default(),
-            root: root.to_path_buf(),
+            root,
             gc_lock: RwLock::new(()),
         })
     }
@@ -387,7 +436,17 @@ impl Repository {
     /// engine's delta-resume path, disk-usage readouts, and tests.
     #[must_use]
     pub fn store(&self) -> &ChunkStore {
-        &self.store
+        self.store.as_ref()
+    }
+
+    /// Hand out a clone of the shared [`ChunkStore`] handle, so the same
+    /// open store can back the delta-resume
+    /// [`CopyThatChunkSink`](crate::CopyThatChunkSink), the recovery
+    /// server, and disk-usage readouts without a second redb `open`
+    /// (which would deadlock on the exclusive `index.redb` lock).
+    #[must_use]
+    pub fn store_arc(&self) -> Arc<ChunkStore> {
+        Arc::clone(&self.store)
     }
 
     // ----- recording -------------------------------------------------
@@ -592,6 +651,104 @@ impl Repository {
         materialise_file(&self.store, &snapshot.manifest, dst)
     }
 
+    /// Flat file listing of a snapshot — `(path, logical size)` per file,
+    /// no chunk manifests. The front end assembles the tree from this.
+    pub fn snapshot_tree(&self, id: SnapshotId) -> Result<Vec<SnapshotFileEntry>> {
+        Ok(self
+            .snapshot(id)?
+            .map(|s| {
+                s.files
+                    .iter()
+                    .map(|f| SnapshotFileEntry {
+                        path: f.path.clone(),
+                        size: f.manifest.size,
+                    })
+                    .collect()
+            })
+            .unwrap_or_default())
+    }
+
+    /// Restore the chosen logical `paths` from snapshot `id` under
+    /// `dst_root`. `strip_prefix`, when set, is removed from each logical
+    /// path to preserve subtree shape; otherwise the path is sanitised to
+    /// a safe relative form so a rooted / `..` snapshot path can never
+    /// escape `dst_root`. Per-file existing-target handling follows
+    /// `conflict`. Best-effort: a single file's failure is tallied and the
+    /// rest still restore.
+    pub fn restore_paths(
+        &self,
+        id: SnapshotId,
+        paths: &[&str],
+        dst_root: &Path,
+        strip_prefix: Option<&str>,
+        conflict: RestoreConflict,
+    ) -> Result<RestoreReport> {
+        let snap = self
+            .snapshot(id)?
+            .ok_or(ChunkStoreError::SnapshotNotFound(id.0))?;
+        let mut rep = RestoreReport::default();
+        for want in paths {
+            let Some(entry) = snap.files.iter().find(|f| f.path == *want) else {
+                rep.failed += 1;
+                continue;
+            };
+            let Some(rel) = rel_dst(&entry.path, strip_prefix) else {
+                rep.failed += 1; // unsafe path — never write outside dst_root
+                continue;
+            };
+            let mut target = dst_root.join(&rel);
+            if target.exists() {
+                match conflict {
+                    RestoreConflict::Skip => {
+                        rep.skipped += 1;
+                        continue;
+                    }
+                    RestoreConflict::KeepBoth => target = next_free_name(&target),
+                    RestoreConflict::Overwrite => {}
+                }
+            }
+            if let Some(parent) = target.parent()
+                && std::fs::create_dir_all(parent).is_err()
+            {
+                rep.failed += 1;
+                continue;
+            }
+            match materialise_file(&self.store, &entry.manifest, &target) {
+                Ok(()) => rep.restored += 1,
+                Err(_) => rep.failed += 1,
+            }
+        }
+        Ok(rep)
+    }
+
+    /// Dry-run companion to [`Self::restore_paths`]: for each requested
+    /// logical path present in the snapshot, whether its resolved target
+    /// already exists under `dst_root`. Drives the UI's conflict step
+    /// before any bytes are written, using the *same* path resolution as
+    /// the real restore so the preview never disagrees with it.
+    pub fn restore_preview(
+        &self,
+        id: SnapshotId,
+        paths: &[&str],
+        dst_root: &Path,
+        strip_prefix: Option<&str>,
+    ) -> Result<Vec<(String, bool)>> {
+        let snap = self
+            .snapshot(id)?
+            .ok_or(ChunkStoreError::SnapshotNotFound(id.0))?;
+        let mut out = Vec::with_capacity(paths.len());
+        for want in paths {
+            if !snap.files.iter().any(|f| f.path == *want) {
+                continue;
+            }
+            let exists = rel_dst(want, strip_prefix)
+                .map(|rel| dst_root.join(rel).exists())
+                .unwrap_or(false);
+            out.push(((*want).to_string(), exists));
+        }
+        Ok(out)
+    }
+
     /// Aggregate stats for the hero readout.
     pub fn stats(&self) -> Result<RepoStats> {
         let snaps = self.load_all_snapshots()?;
@@ -742,6 +899,72 @@ impl Repository {
         }
         Ok(out)
     }
+}
+
+/// Map a snapshot's logical `path` to a SAFE relative path under the
+/// restore root. With `strip_prefix`, the prefix is removed (to preserve
+/// subtree shape); the result keeps only `Normal` components, so a rooted
+/// or drive-prefixed path is de-rooted and a `..` traversal is refused
+/// (`None`). Returns `None` for NUL bytes, or when nothing safe remains —
+/// the caller counts those as failures and never writes outside the root.
+fn rel_dst(path: &str, strip_prefix: Option<&str>) -> Option<PathBuf> {
+    if path.contains('\0') {
+        return None;
+    }
+    let stripped: &str = match strip_prefix {
+        Some(prefix) if !prefix.is_empty() => match path.strip_prefix(prefix) {
+            // Only strip on a path-component boundary, so a prefix that is a
+            // partial segment of a sibling (prefix `photos`, path
+            // `photos2024/x`) is never mis-stripped into `2024/x`.
+            Some(rest) => match rest.as_bytes().first() {
+                None => rest,
+                Some(b'/') | Some(b'\\') => &rest[1..],
+                _ => path,
+            },
+            None => path,
+        },
+        _ => path,
+    };
+    let norm = stripped.replace('\\', "/");
+    let mut rel = PathBuf::new();
+    for comp in Path::new(&norm).components() {
+        match comp {
+            std::path::Component::Normal(c) => rel.push(c),
+            std::path::Component::CurDir => {}
+            std::path::Component::ParentDir => return None, // traversal — refuse
+            std::path::Component::RootDir | std::path::Component::Prefix(_) => {} // de-root
+        }
+    }
+    if rel.as_os_str().is_empty() {
+        rel.push(Path::new(&norm).file_name()?);
+    }
+    Some(rel)
+}
+
+/// First non-existent ` (n)`-suffixed sibling of `target`, for
+/// [`RestoreConflict::KeepBoth`]. Mirrors the sync engine's
+/// conflict-path suffixing.
+fn next_free_name(target: &Path) -> PathBuf {
+    if !target.exists() {
+        return target.to_path_buf();
+    }
+    let parent = target.parent().unwrap_or_else(|| Path::new(""));
+    let stem = target
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("restored");
+    let ext = target.extension().and_then(|s| s.to_str());
+    for n in 1..10_000u32 {
+        let name = match ext {
+            Some(e) => format!("{stem} ({n}).{e}"),
+            None => format!("{stem} ({n})"),
+        };
+        let cand = parent.join(name);
+        if !cand.exists() {
+            return cand;
+        }
+    }
+    target.to_path_buf()
 }
 
 #[cfg(test)]
