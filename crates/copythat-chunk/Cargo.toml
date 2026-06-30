@@ -50,6 +50,12 @@ poly1305 = "0.8"
 scrypt = "0.11"
 sha2 = "0.10"
 zstd = "0.13"
+# Borg importer (in-tree): HMAC-SHA256 (key unwrap MAC + chunk MAC; the
+# PBKDF2 outer loop is hand-rolled — borg's 32-byte key is one HMAC
+# block) + zlib (flate2). MessagePack + LZ4-block are also hand-rolled in
+# migrate/borg.rs, so Borg adds NO genuinely-new crate.
+flate2 = "1"
+hmac = "0.12"
 # RFC 3339 snapshot timestamps from restic / kopia metadata. In-tree
 # via history / sync / audit; parsing only (no clock feature).
 chrono = { version = "0.4", default-features = false, features = ["std"] }
@@ -84,3 +90,9 @@ path = "../../tests/smoke/phase_50_portability.rs"
 [[test]]
 name = "phase_50b_restic"
 path = "../../tests/smoke/phase_50b_restic.rs"
+
+# Phase 50 smoke — Borg importer against a committed repokey fixture
+# (PBKDF2 + AES-CTR + HMAC + msgpack/LZ4; byte-identical restore). No borg.
+[[test]]
+name = "phase_50c_borg"
+path = "../../tests/smoke/phase_50c_borg.rs"

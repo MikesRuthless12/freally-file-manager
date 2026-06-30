@@ -21,6 +21,7 @@
 //!   additionally needs a MessagePack codec (the one genuinely-new
 //!   dependency). See `docs/spec/CDR-0.md §11`.
 
+mod borg;
 mod restic;
 
 use std::path::{Path, PathBuf};
@@ -211,13 +212,10 @@ pub fn migrate(
             let pw = passphrase.ok_or(MigrateError::NeedsPassphrase { tool: "restic" })?;
             restic::import_restic(src, pw, dst_root)
         }
-        RepoFormat::Borg => Err(MigrateError::SourceUnsupported {
-            tool: "borg",
-            reason: "Borg needs a MessagePack parser for its archive/item streams (new \
-                     dep), and default repokey/keyfile modes are encrypted (AES-256-CTR + \
-                     HMAC + PBKDF2, or 2.0 AEAD + Argon2). See docs/spec/CDR-0.md §11."
-                .to_string(),
-        }),
+        RepoFormat::Borg => {
+            let pw = passphrase.ok_or(MigrateError::NeedsPassphrase { tool: "borg" })?;
+            borg::import_borg(src, pw, dst_root)
+        }
         RepoFormat::Kopia => Err(MigrateError::SourceUnsupported {
             tool: "kopia",
             reason: "Kopia's crypto is in-tree, but its keyed-hash index (v1/v2 binary) + \
@@ -376,7 +374,7 @@ mod tests {
             MigrateError::NeedsPassphrase { tool: "restic" }
         ));
 
-        // borg layout still unsupported.
+        // borg layout, no passphrase → NeedsPassphrase.
         let borg = tmp.path().join("borg");
         std::fs::create_dir_all(borg.join("data")).unwrap();
         std::fs::write(borg.join("README"), b"borg").unwrap();
@@ -384,7 +382,7 @@ mod tests {
         let err = migrate(RepoFormat::Borg, &borg, &tmp.path().join("o2"), None).unwrap_err();
         assert!(matches!(
             err,
-            MigrateError::SourceUnsupported { tool: "borg", .. }
+            MigrateError::NeedsPassphrase { tool: "borg" }
         ));
 
         // Format mismatch: ask for borg, point at restic.
