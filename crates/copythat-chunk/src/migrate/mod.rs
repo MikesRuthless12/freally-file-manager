@@ -191,6 +191,38 @@ pub fn write_cdr_descriptor(root: &Path) -> std::result::Result<(), MigrateError
     std::fs::write(&path, body).map_err(|e| MigrateError::Io { path, source: e })
 }
 
+/// Constant-time byte-slice equality for MAC verification (shared by the
+/// restic + Borg importers so the security-sensitive compare lives once).
+pub(super) fn ct_eq(a: &[u8], b: &[u8]) -> bool {
+    if a.len() != b.len() {
+        return false;
+    }
+    let mut diff = 0u8;
+    for (x, y) in a.iter().zip(b) {
+        diff |= x ^ y;
+    }
+    diff == 0
+}
+
+/// Sanitise a reconstructed source path into a safe `/`-rooted catalog
+/// label: drop `.` / `..` / empty / absolute components so a malicious
+/// source entry name can never embed a path traversal into the stored
+/// `FileEntry.path` (defense-in-depth for any future export-to-tree).
+pub(super) fn safe_path(raw: &str) -> String {
+    let mut out = String::new();
+    for comp in raw.split(['/', '\\']) {
+        if comp.is_empty() || comp == "." || comp == ".." {
+            continue;
+        }
+        out.push('/');
+        out.push_str(comp);
+    }
+    if out.is_empty() {
+        out.push('/');
+    }
+    out
+}
+
 /// Migrate a source repository at `src` into a CDR-0 repository at
 /// `dst_root` (created if absent). `from` must match the format detected
 /// at `src`. `passphrase` is required for encrypted sources (restic).

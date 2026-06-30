@@ -135,13 +135,25 @@ fn rd_be(b: &[u8], p: &mut usize, n: usize) -> Result<u64, MigrateError> {
     Ok(v)
 }
 
+/// Maximum msgpack nesting depth — guards the hand-rolled reader against
+/// a malicious (even pre-authentication) blob of deeply nested containers
+/// that would otherwise overflow the stack.
+const MAX_MP_DEPTH: u32 = 100;
+
 fn read_mp(b: &[u8], p: &mut usize) -> Result<Mp, MigrateError> {
+    read_mp_d(b, p, 0)
+}
+
+fn read_mp_d(b: &[u8], p: &mut usize, depth: u32) -> Result<Mp, MigrateError> {
+    if depth > MAX_MP_DEPTH {
+        return Err(mp_err("nesting too deep"));
+    }
     let t = rd_u8(b, p)?;
     Ok(match t {
         0x00..=0x7f => Mp::Uint(u64::from(t)),
         0xe0..=0xff => Mp::Int(i64::from(t as i8)),
-        0x80..=0x8f => read_map(b, p, (t & 0x0f) as usize)?,
-        0x90..=0x9f => read_arr(b, p, (t & 0x0f) as usize)?,
+        0x80..=0x8f => read_map(b, p, (t & 0x0f) as usize, depth)?,
+        0x90..=0x9f => read_arr(b, p, (t & 0x0f) as usize, depth)?,
         0xa0..=0xbf => Mp::Bytes(rd_n(b, p, (t & 0x1f) as usize)?),
         0xc0 => Mp::Nil,
         0xc2 => Mp::Bool(false),
@@ -170,37 +182,37 @@ fn read_mp(b: &[u8], p: &mut usize) -> Result<Mp, MigrateError> {
         0xd3 => Mp::Int(rd_be(b, p, 8)? as i64),
         0xdc => {
             let n = rd_be(b, p, 2)? as usize;
-            read_arr(b, p, n)?
+            read_arr(b, p, n, depth)?
         }
         0xdd => {
             let n = rd_be(b, p, 4)? as usize;
-            read_arr(b, p, n)?
+            read_arr(b, p, n, depth)?
         }
         0xde => {
             let n = rd_be(b, p, 2)? as usize;
-            read_map(b, p, n)?
+            read_map(b, p, n, depth)?
         }
         0xdf => {
             let n = rd_be(b, p, 4)? as usize;
-            read_map(b, p, n)?
+            read_map(b, p, n, depth)?
         }
         other => return Err(mp_err(format!("unsupported tag {other:#04x}"))),
     })
 }
 
-fn read_arr(b: &[u8], p: &mut usize, n: usize) -> Result<Mp, MigrateError> {
+fn read_arr(b: &[u8], p: &mut usize, n: usize, depth: u32) -> Result<Mp, MigrateError> {
     let mut v = Vec::with_capacity(n.min(4096));
     for _ in 0..n {
-        v.push(read_mp(b, p)?);
+        v.push(read_mp_d(b, p, depth + 1)?);
     }
     Ok(Mp::Array(v))
 }
 
-fn read_map(b: &[u8], p: &mut usize, n: usize) -> Result<Mp, MigrateError> {
+fn read_map(b: &[u8], p: &mut usize, n: usize, depth: u32) -> Result<Mp, MigrateError> {
     let mut v = Vec::with_capacity(n.min(4096));
     for _ in 0..n {
-        let k = read_mp(b, p)?;
-        let val = read_mp(b, p)?;
+        let k = read_mp_d(b, p, depth + 1)?;
+        let val = read_mp_d(b, p, depth + 1)?;
         v.push((k, val));
     }
     Ok(Mp::Map(v))
@@ -272,17 +284,6 @@ fn lz4_block_decompress(src: &[u8]) -> Result<Vec<u8>, MigrateError> {
 struct BorgKey {
     enc_key: [u8; 32],
     mac_key: [u8; 32],
-}
-
-fn ct_eq(a: &[u8], b: &[u8]) -> bool {
-    if a.len() != b.len() {
-        return false;
-    }
-    let mut diff = 0u8;
-    for (x, y) in a.iter().zip(b) {
-        diff |= x ^ y;
-    }
-    diff == 0
 }
 
 fn hmac_sha256(key: &[u8], msg: &[u8]) -> [u8; 32] {
@@ -392,7 +393,7 @@ fn load_borg_key(repo: &Path, password: &str) -> Result<BorgKey, MigrateError> {
 
     let derived = pbkdf2_sha256_32(password.as_bytes(), &salt, iterations);
     let plain = aes_ctr(&derived, &[0u8; 16], &data);
-    if !ct_eq(&hmac_sha256(&derived, &plain), &hash) {
+    if !super::ct_eq(&hmac_sha256(&derived, &plain), &hash) {
         return Err(MigrateError::Decrypt(
             "borg passphrase incorrect (key HMAC mismatch)".into(),
         ));
@@ -431,7 +432,7 @@ fn decrypt_chunk(key: &BorgKey, raw: &[u8]) -> Result<Vec<u8>, MigrateError> {
     // type byte and the MAC itself).
     let mut h = <HmacSha256 as Mac>::new_from_slice(&key.mac_key).expect("HMAC key");
     h.update(&raw[33..]);
-    if !ct_eq(&h.finalize().into_bytes(), mac) {
+    if !super::ct_eq(&h.finalize().into_bytes(), mac) {
         return Err(MigrateError::Decrypt(
             "borg chunk HMAC mismatch (corrupt repo or wrong key)".into(),
         ));
@@ -482,15 +483,31 @@ fn inflate_zlib(data: &[u8]) -> Result<Vec<u8>, MigrateError> {
 // segment log
 // ----------------------------------------------------------------------
 
-/// Scan every segment, returning the live `chunk-id → on-disk encrypted
-/// chunk` map (last PUT of a key wins; DELETE removes it).
-fn scan_segments(repo: &Path) -> Result<HashMap<[u8; 32], Vec<u8>>, MigrateError> {
+/// A live chunk's on-disk location: which segment file + the byte range
+/// of its (still-encrypted) data.
+struct ChunkLoc {
+    seg: usize,
+    offset: u64,
+    len: usize,
+}
+
+/// The repository's live chunks as segment files + `chunk-id → location`,
+/// so chunk data is read on demand (seek) rather than held in memory.
+struct Segments {
+    paths: Vec<std::path::PathBuf>,
+    locs: HashMap<[u8; 32], ChunkLoc>,
+}
+
+/// Scan every segment, recording each live chunk's LOCATION (last PUT of
+/// a key wins; DELETE removes it). Chunk bytes are read later on demand,
+/// so a multi-GB Borg repo never loads wholesale into RAM.
+fn scan_segments(repo: &Path) -> Result<Segments, MigrateError> {
     let data_dir = repo.join("data");
     let io = |path: &Path, e| MigrateError::Io {
         path: path.to_path_buf(),
         source: e,
     };
-    let mut segs: Vec<(u64, std::path::PathBuf)> = Vec::new();
+    let mut files: Vec<(u64, std::path::PathBuf)> = Vec::new();
     for d in std::fs::read_dir(&data_dir).map_err(|e| io(&data_dir, e))? {
         let dp = d.map_err(|e| io(&data_dir, e))?.path();
         if !dp.is_dir() {
@@ -503,21 +520,28 @@ fn scan_segments(repo: &Path) -> Result<HashMap<[u8; 32], Vec<u8>>, MigrateError
                 .and_then(|s| s.to_str())
                 .and_then(|s| s.parse::<u64>().ok())
             {
-                segs.push((n, fp));
+                files.push((n, fp));
             }
         }
     }
-    segs.sort_by_key(|(n, _)| *n);
+    files.sort_by_key(|(n, _)| *n);
 
-    let mut map: HashMap<[u8; 32], Vec<u8>> = HashMap::new();
-    for (_, path) in segs {
+    let mut paths = Vec::with_capacity(files.len());
+    let mut locs: HashMap<[u8; 32], ChunkLoc> = HashMap::new();
+    for (_, path) in files {
         let bytes = std::fs::read(&path).map_err(|e| io(&path, e))?;
-        parse_segment(&bytes, &mut map)?;
+        let seg = paths.len();
+        parse_segment(seg, &bytes, &mut locs)?;
+        paths.push(path);
     }
-    Ok(map)
+    Ok(Segments { paths, locs })
 }
 
-fn parse_segment(b: &[u8], map: &mut HashMap<[u8; 32], Vec<u8>>) -> Result<(), MigrateError> {
+fn parse_segment(
+    seg: usize,
+    b: &[u8],
+    locs: &mut HashMap<[u8; 32], ChunkLoc>,
+) -> Result<(), MigrateError> {
     const MAGIC: &[u8; 8] = b"BORG_SEG";
     if b.len() < 8 || &b[..8] != MAGIC {
         return Err(MigrateError::Format("bad borg segment magic".into()));
@@ -540,21 +564,30 @@ fn parse_segment(b: &[u8], map: &mut HashMap<[u8; 32], Vec<u8>>) -> Result<(), M
             return Err(MigrateError::Format("borg segment entry past end".into()));
         }
         match tag {
+            // PUT (0): key(32) || data.  PUT2 (3): xxh64(8) || key(32) || data.
             0 | 3 => {
-                // PUT / PUT2 — both lead with the 32-byte key then data.
-                if payload < 32 {
-                    return Err(MigrateError::Format("borg PUT entry < 32 bytes".into()));
+                let key_at = if tag == 3 { p + 8 } else { p };
+                if entry_end < key_at + 32 {
+                    return Err(MigrateError::Format("borg PUT entry too small".into()));
                 }
                 let mut key = [0u8; 32];
-                key.copy_from_slice(&b[p..p + 32]);
-                map.insert(key, b[p + 32..entry_end].to_vec());
+                key.copy_from_slice(&b[key_at..key_at + 32]);
+                let data_at = key_at + 32;
+                locs.insert(
+                    key,
+                    ChunkLoc {
+                        seg,
+                        offset: data_at as u64,
+                        len: entry_end - data_at,
+                    },
+                );
             }
             1 => {
                 // DELETE
                 if payload >= 32 {
                     let mut key = [0u8; 32];
                     key.copy_from_slice(&b[p..p + 32]);
-                    map.remove(&key);
+                    locs.remove(&key);
                 }
             }
             2 => {} // COMMIT
@@ -567,6 +600,31 @@ fn parse_segment(b: &[u8], map: &mut HashMap<[u8; 32], Vec<u8>>) -> Result<(), M
         p = entry_end;
     }
     Ok(())
+}
+
+/// Read + decrypt one chunk by id, reading only its slice from the
+/// segment file (memory-bounded).
+fn read_chunk(key: &BorgKey, segs: &Segments, id: &[u8; 32]) -> Result<Vec<u8>, MigrateError> {
+    use std::io::{Read as _, Seek as _, SeekFrom};
+    let loc = segs.locs.get(id).ok_or_else(|| {
+        MigrateError::Format(format!("borg chunk {} not found", crate::types::hex_of(id)))
+    })?;
+    let path = &segs.paths[loc.seg];
+    let mut f = std::fs::File::open(path).map_err(|e| MigrateError::Io {
+        path: path.clone(),
+        source: e,
+    })?;
+    f.seek(SeekFrom::Start(loc.offset))
+        .map_err(|e| MigrateError::Io {
+            path: path.clone(),
+            source: e,
+        })?;
+    let mut buf = vec![0u8; loc.len];
+    f.read_exact(&mut buf).map_err(|e| MigrateError::Io {
+        path: path.clone(),
+        source: e,
+    })?;
+    decrypt_chunk(key, &buf)
 }
 
 // ----------------------------------------------------------------------
@@ -587,16 +645,13 @@ pub(super) fn import_borg(
     dst_root: &Path,
 ) -> Result<MigrateReport, MigrateError> {
     let key = load_borg_key(repo, password)?;
-    let chunks = scan_segments(repo)?;
+    let segs = scan_segments(repo)?;
 
     let dest = Repository::open(dst_root)?;
     super::write_cdr_descriptor(dst_root)?;
     let chunker = Chunker::default();
 
-    let manifest_raw = chunks
-        .get(&MANIFEST_ID)
-        .ok_or_else(|| MigrateError::Format("borg manifest chunk (id 0) not found".into()))?;
-    let manifest_bytes = decrypt_chunk(&key, manifest_raw)?;
+    let manifest_bytes = read_chunk(&key, &segs, &MANIFEST_ID)?;
     let mut p = 0;
     let manifest = read_mp(&manifest_bytes, &mut p)?;
     let archives = manifest
@@ -615,7 +670,7 @@ pub(super) fn import_borg(
             .ok_or_else(|| mp_err("archive id not 32 bytes"))?;
         import_archive(
             &key,
-            &chunks,
+            &segs,
             &dest,
             &chunker,
             &name,
@@ -628,20 +683,14 @@ pub(super) fn import_borg(
 
 fn import_archive(
     key: &BorgKey,
-    chunks: &HashMap<[u8; 32], Vec<u8>>,
+    segs: &Segments,
     dest: &Repository,
     chunker: &Chunker,
     name: &str,
     archive_id: &[u8; 32],
     report: &mut MigrateReport,
 ) -> Result<(), MigrateError> {
-    let arch_raw = chunks.get(archive_id).ok_or_else(|| {
-        MigrateError::Format(format!(
-            "borg archive metadata chunk {} not found",
-            crate::types::hex_of(archive_id)
-        ))
-    })?;
-    let arch_bytes = decrypt_chunk(key, arch_raw)?;
+    let arch_bytes = read_chunk(key, segs, archive_id)?;
     let mut p = 0;
     let arch = read_mp(&arch_bytes, &mut p)?;
 
@@ -653,10 +702,7 @@ fn import_archive(
     let mut stream = Vec::new();
     for id_v in item_ids {
         let id = id_v.id32().ok_or_else(|| mp_err("item-stream chunk id"))?;
-        let raw = chunks
-            .get(&id)
-            .ok_or_else(|| MigrateError::Format("borg item-stream chunk not found".into()))?;
-        stream.extend_from_slice(&decrypt_chunk(key, raw)?);
+        stream.extend_from_slice(&read_chunk(key, segs, &id)?);
     }
 
     let created_at_ms = arch
@@ -684,14 +730,11 @@ fn import_archive(
                         .and_then(<[Mp]>::first)
                         .and_then(Mp::id32)
                         .ok_or_else(|| mp_err("file chunk id"))?;
-                    let raw = chunks.get(&id).ok_or_else(|| {
-                        MigrateError::Format("borg file content chunk not found".into())
-                    })?;
-                    bytes.extend_from_slice(&decrypt_chunk(key, raw)?);
+                    bytes.extend_from_slice(&read_chunk(key, segs, &id)?);
                 }
                 let manifest = crate::manifest::chunk_into_store(dest.store(), chunker, &bytes)?.1;
                 entries.push(FileEntry {
-                    path: format!("/{}", path.trim_start_matches('/')),
+                    path: super::safe_path(&path),
                     manifest,
                 });
             }

@@ -63,13 +63,23 @@ fn hex_encode(b: &[u8]) -> String {
     s
 }
 
-fn hexdec(s: &str) -> Result<Vec<u8>, MigrateError> {
+/// Decode an ASCII-hex byte slice. Operates on bytes (never `&str`
+/// slicing) so a non-hex / non-ASCII / multibyte input errors cleanly
+/// instead of panicking on a char boundary.
+fn hexdec(s: &[u8]) -> Result<Vec<u8>, MigrateError> {
     if s.len() % 2 != 0 {
         return Err(dec("hex", "odd length"));
     }
-    (0..s.len())
-        .step_by(2)
-        .map(|i| u8::from_str_radix(&s[i..i + 2], 16).map_err(|e| dec("hex", e)))
+    s.chunks_exact(2)
+        .map(|pair| {
+            match (
+                (pair[0] as char).to_digit(16),
+                (pair[1] as char).to_digit(16),
+            ) {
+                (Some(h), Some(l)) => Ok((h * 16 + l) as u8),
+                _ => Err(dec("hex", "non-hex digit")),
+            }
+        })
         .collect()
 }
 
@@ -328,9 +338,19 @@ fn parse_v2(data: &[u8]) -> Result<Vec<(Vec<u8>, ContentInfo)>, MigrateError> {
     }
     let stride = key_size + entry_size;
     let entries_off = 17usize;
-    let packs_off = entries_off + entry_count * stride;
-    let formats_off = packs_off + pack_count * 5;
-    let extra_off = formats_off + format_count * 6;
+    let overflow = || MigrateError::Format("kopia index size overflow".into());
+    let packs_off = entry_count
+        .checked_mul(stride)
+        .and_then(|x| x.checked_add(entries_off))
+        .ok_or_else(overflow)?;
+    let formats_off = pack_count
+        .checked_mul(5)
+        .and_then(|x| x.checked_add(packs_off))
+        .ok_or_else(overflow)?;
+    let extra_off = format_count
+        .checked_mul(6)
+        .and_then(|x| x.checked_add(formats_off))
+        .ok_or_else(overflow)?;
     if data.len() < extra_off {
         return Err(MigrateError::Format("kopia index truncated".into()));
     }
@@ -371,7 +391,18 @@ fn parse_v2(data: &[u8]) -> Result<Vec<(Vec<u8>, ContentInfo)>, MigrateError> {
         if entry_size > 18 {
             packed_length |= u32::from(v[18] & 0x0f) << 24;
         }
-        let (compression_header_id, enc_key_id) = formats.get(fid).copied().unwrap_or((0, 0));
+        let (compression_header_id, enc_key_id) = match formats.get(fid) {
+            Some(f) => *f,
+            // formatID 0 with no format table = uncompressed (valid);
+            // any other out-of-range id is a corrupt index, not a guess.
+            None if fid == 0 => (0, 0),
+            None => {
+                return Err(MigrateError::Format(format!(
+                    "kopia index formatID {fid} out of range ({} formats)",
+                    formats.len()
+                )));
+            }
+        };
         if enc_key_id != 0 {
             return Err(MigrateError::Format(format!(
                 "unsupported kopia encryptionKeyID {enc_key_id}"
@@ -399,7 +430,7 @@ fn parse_v2(data: &[u8]) -> Result<Vec<(Vec<u8>, ContentInfo)>, MigrateError> {
 /// The salt used to derive the GCM AAD/key for an index blob: the 32 hex
 /// chars immediately before the first `-` in the blob name, hex-decoded.
 fn index_blob_salt(name: &str) -> Result<Vec<u8>, MigrateError> {
-    let head = name.split('-').next().unwrap_or(name);
+    let head = name.split('-').next().unwrap_or(name).as_bytes();
     if head.len() < 32 {
         return Err(MigrateError::Format(format!(
             "kopia index name {name} too short"
@@ -418,6 +449,8 @@ fn load_index(
     let mut names = store.names_with_prefix("xn");
     names.extend(store.names_with_prefix("xs"));
     names.extend(store.names_with_prefix("xr"));
+    // Legacy (non-epoch) single-index layout uses bare `n…` index blobs.
+    names.extend(store.names_with_prefix("n"));
     for name in names {
         let salt = index_blob_salt(&name)?;
         let raw = store.read(&name)?;
@@ -449,10 +482,11 @@ fn load_index(
 /// Index lookup key for a content-ID string: `[prefix byte][hash]`
 /// (prefix `0x00` when the id is pure hex).
 fn content_key(id: &str) -> Result<Vec<u8>, MigrateError> {
-    let (prefix, hex) = if id.len() % 2 == 1 {
-        (id.as_bytes()[0], &id[1..])
+    let bytes = id.as_bytes();
+    let (prefix, hex) = if bytes.len() % 2 == 1 {
+        (bytes[0], &bytes[1..])
     } else {
-        (0u8, id)
+        (0u8, bytes)
     };
     let mut key = Vec::with_capacity(1 + hex.len() / 2);
     key.push(prefix);
@@ -611,6 +645,16 @@ fn gunzip(data: &[u8]) -> Result<Vec<u8>, MigrateError> {
     Ok(out)
 }
 
+/// Parse a manifest entry's RFC3339 `modified` into nanoseconds for
+/// correct chronological dedup — a plain string compare misorders the
+/// variable fractional-second precision Kopia/Go emit.
+fn manifest_ts(s: &str) -> i64 {
+    chrono::DateTime::parse_from_rfc3339(s.trim())
+        .ok()
+        .and_then(|d| d.timestamp_nanos_opt())
+        .unwrap_or(i64::MIN)
+}
+
 fn load_snapshots(
     store: &BlobStore,
     index: &HashMap<Vec<u8>, ContentInfo>,
@@ -627,7 +671,7 @@ fn load_snapshots(
             serde_json::from_slice(&json).map_err(|e| dec("manifest json", e))?;
         for e in env.entries {
             match entries.get(&e.id) {
-                Some(prev) if prev.modified >= e.modified => {}
+                Some(prev) if manifest_ts(&prev.modified) >= manifest_ts(&e.modified) => {}
                 _ => {
                     entries.insert(e.id.clone(), e);
                 }
@@ -697,7 +741,10 @@ fn walk_dir(
                 let bytes = resolve_object(ctx.store, ctx.index, ctx.kds, &entry.obj, 0)?;
                 let manifest =
                     crate::manifest::chunk_into_store(ctx.dest.store(), &ctx.chunker, &bytes)?.1;
-                out.push(FileEntry { path, manifest });
+                out.push(FileEntry {
+                    path: super::safe_path(&path),
+                    manifest,
+                });
             }
             // symlinks / unknown carry no chunk content.
             _ => *skipped += 1,

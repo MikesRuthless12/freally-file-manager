@@ -2,10 +2,9 @@
 //! migration entry points.
 //!
 //! `migrate <from-tool> <src> <dst>` imports another tool's repository
-//! INTO a CDR-0 repository. `cdr` and `restic` are implemented; `borg` /
-//! `kopia` print exactly what a full importer still needs (see
-//! `docs/spec/CDR-0.md §11`) and exit non-zero rather than guessing —
-//! a wrong-but-successful import would corrupt the migration.
+//! INTO a CDR-0 repository. `cdr`, `restic`, `borg`, and `kopia` are all
+//! implemented (each validated byte-identical against a committed fixture;
+//! see `docs/spec/CDR-0.md §11`).
 //!
 //! `export <cdr> <to-tool> <dst>` is the inverse; writing another tool's
 //! on-disk format is not yet implemented.
@@ -30,10 +29,16 @@ pub(crate) async fn run(
         ));
         return ExitCode::ConfigInvalid;
     };
-    let pw = args
-        .password
-        .clone()
-        .or_else(|| std::env::var("RESTIC_PASSWORD").ok());
+    let pw = args.password.clone().or_else(|| {
+        // Fall back to each tool's conventional passphrase env var.
+        let env_var = match from {
+            RepoFormat::Restic => "RESTIC_PASSWORD",
+            RepoFormat::Borg => "BORG_PASSPHRASE",
+            RepoFormat::Kopia => "KOPIA_PASSWORD",
+            _ => return None,
+        };
+        std::env::var(env_var).ok()
+    });
     match migrate(from, &args.src, &args.dst, pw.as_deref()) {
         Ok(report) => {
             let skipped = if report.skipped > 0 {

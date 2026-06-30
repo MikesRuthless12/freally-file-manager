@@ -148,18 +148,6 @@ fn b64(s: &str) -> Result<Vec<u8>, MigrateError> {
         .map_err(|e| dec_err("base64", e))
 }
 
-/// Constant-time byte-slice equality for MAC verification.
-fn ct_eq(a: &[u8], b: &[u8]) -> bool {
-    if a.len() != b.len() {
-        return false;
-    }
-    let mut diff = 0u8;
-    for (x, y) in a.iter().zip(b) {
-        diff |= x ^ y;
-    }
-    diff == 0
-}
-
 /// restic object IDs are 64-char lowercase hex (SHA-256). Validate one
 /// before using it to build a filesystem path — this rejects path
 /// traversal (`..`, slashes) and any non-ASCII byte from a malicious
@@ -190,7 +178,7 @@ fn restic_decrypt(key: &ResticKey, data: &[u8]) -> Result<Vec<u8>, MigrateError>
     poly_key[16..].copy_from_slice(s.as_slice());
     let computed =
         poly1305::Poly1305::new(GenericArray::from_slice(&poly_key)).compute_unpadded(ct);
-    if !ct_eq(computed.as_slice(), tag) {
+    if !super::ct_eq(computed.as_slice(), tag) {
         return Err(MigrateError::Decrypt(
             "restic MAC mismatch (wrong passphrase or corrupt data)".into(),
         ));
@@ -471,7 +459,10 @@ fn walk_tree(
                 }
                 let manifest =
                     crate::manifest::chunk_into_store(ctx.dest.store(), &ctx.chunker, &bytes)?.1;
-                out.push(FileEntry { path, manifest });
+                out.push(FileEntry {
+                    path: super::safe_path(&path),
+                    manifest,
+                });
             }
             // symlinks / devices / FIFOs carry no chunk content.
             _ => *skipped += 1,
