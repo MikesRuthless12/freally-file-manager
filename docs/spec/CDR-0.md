@@ -9,15 +9,15 @@ modify, or redistribute it for any purpose.
 
 **Status:** Draft · **Spec version:** `0` · **License:** [CC0-1.0](https://creativecommons.org/publicdomain/zero/1.0/)
 
-**Reference implementation:** [`copythat-chunk`](../../crates/copythat-chunk) in this
-repository — module [`cdr`](../../crates/copythat-chunk/src/cdr.rs) (manifest layer,
-v0) and [`store`](../../crates/copythat-chunk/src/store.rs) (chunk + pack layer).
+**Reference implementation:** [`freally-chunk`](../../crates/freally-chunk) in this
+repository — module [`cdr`](../../crates/freally-chunk/src/cdr.rs) (manifest layer,
+v0) and [`store`](../../crates/freally-chunk/src/store.rs) (chunk + pack layer).
 
 ---
 
 ## 0. Why this exists
 
-Every content-defined backup/sync tool — restic, Borg, Kopia, CopyThat — stores
+Every content-defined backup/sync tool — restic, Borg, Kopia, Freally — stores
 the same thing: variable-sized **chunks** keyed by a cryptographic hash, packed
 into files, indexed by per-file **manifests**, grouped into **snapshots**. They
 all reinvent an incompatible on-disk layout, so moving between them means a
@@ -116,7 +116,7 @@ be laid out as:
 - Packs are immutable once an index/footer is written. Reclaiming space is the
   GC's job (§7): a pack none of whose chunks remain reachable is deleted whole.
 
-> **Reference-implementation note (v0).** The current `copythat-chunk` store
+> **Reference-implementation note (v0).** The current `freally-chunk` store
 > writes raw concatenated chunk bytes + a `redb` index and tracks the active
 > pack in `index.redb` rather than emitting the in-pack INDEX/FOOTER above. The
 > framed pack format in this section is the **normative CDR-0 container**; a
@@ -217,7 +217,7 @@ Rules:
 - Metadata fields are individually optional; a reader **MUST** treat an absent
   field as "unknown" and **MUST NOT** fail solely because metadata is missing.
 
-> **Reference-implementation note (v0).** `copythat-chunk`'s `Repository` (Phase
+> **Reference-implementation note (v0).** `freally-chunk`'s `Repository` (Phase
 > 49) implements the snapshot **catalog** — id, kind, label, timestamp, and the
 > per-file manifests — and stores the timestamp as integer epoch-milliseconds
 > internally; the RFC 3339 surface and the optional `CdrFileMeta` (mode/ACL/
@@ -259,7 +259,7 @@ Rules:
 spec_version = 0
 algo = "fastcdc-2020;min=524288;avg=1048576;max=4194304;hash=blake3-256"
 # optional, advisory:
-created_by = "copythat-chunk 0.19"
+created_by = "freally-chunk 0.19"
 ```
 
 A reader **MUST** apply the §8 gate to `spec_version` and verify `algo` matches
@@ -291,15 +291,15 @@ backward compatible).
 
 ## 11. Migration & compliance tooling
 
-CopyThat ships the migration **framework + repository detector + importers** for
+Freally ships the migration **framework + repository detector + importers** for
 restic, Borg, and Kopia.
 
-**Implemented** (`copythat-chunk::migrate`, `copythat migrate` CLI):
+**Implemented** (`freally-chunk::migrate`, `freally migrate` CLI):
 - `RepoFormat::detect()` recognises restic / Borg / Kopia / CDR-0 repositories
   from their on-disk markers — no decryption, no new dependencies.
-- `copythat migrate cdr <src> <cdr-repo>` — copy / re-home a CDR-0 repository
+- `freally migrate cdr <src> <cdr-repo>` — copy / re-home a CDR-0 repository
   (the reference path; exercises the whole pipeline end to end).
-- **`copythat migrate <restic|borg|kopia> <repo> <cdr> --password <pw>`** —
+- **`freally migrate <restic|borg|kopia> <repo> <cdr> --password <pw>`** —
   real, validated importers for all three major deduplicating-backup tools
   (restic v1/v2; Borg repokey; Kopia filesystem). Each decrypts the source,
   reconstructs file bytes, and re-ingests them (source chunk IDs aren't

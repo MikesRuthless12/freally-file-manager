@@ -1,7 +1,7 @@
 //! Phase 6 smoke test.
 //!
 //! Creates a sparse file (default 64 MiB; opt-in 2 GiB via the
-//! `COPYTHAT_PHASE_06_FULL=1` env var to keep CI under a minute on
+//! `FREALLY_PHASE_06_FULL=1` env var to keep CI under a minute on
 //! slow runners), copies it via `fast_copy`, and asserts:
 //!
 //! 1. `fast_copy` returns `Ok(FastCopyOutcome)`.
@@ -22,8 +22,8 @@
 use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::Path;
 
-use copythat_core::{CopyControl, CopyEvent, CopyOptions};
-use copythat_platform::fast_copy;
+use freally_core::{CopyControl, CopyEvent, CopyOptions};
+use freally_platform::fast_copy;
 use tempfile::tempdir;
 use tokio::sync::mpsc;
 
@@ -31,7 +31,7 @@ const DEFAULT_SIZE: u64 = 64 * 1024 * 1024;
 const FULL_SIZE: u64 = 2 * 1024 * 1024 * 1024;
 
 fn target_size() -> u64 {
-    if std::env::var("COPYTHAT_PHASE_06_FULL").as_deref() == Ok("1") {
+    if std::env::var("FREALLY_PHASE_06_FULL").as_deref() == Ok("1") {
         FULL_SIZE
     } else {
         DEFAULT_SIZE

@@ -9,13 +9,13 @@ set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "$here/../../.." && pwd)"
-ext="$repo_root/packaging/linux/nautilus/copythat_nautilus.py"
+ext="$repo_root/packaging/linux/nautilus/freally_nautilus.py"
 
 ctx="$(mktemp -d)"
 trap 'rm -rf "$ctx"' EXIT
-cp "$ext" "$ctx/copythat_nautilus.py"
+cp "$ext" "$ctx/freally_nautilus.py"
 cp "$here/nautilus_runtime_check.py" "$ctx/nautilus_runtime_check.py"
 cp "$here/Dockerfile" "$ctx/Dockerfile"
 
-docker build -t copythat-nautilus-test "$ctx"
-docker run --rm copythat-nautilus-test
+docker build -t freally-nautilus-test "$ctx"
+docker run --rm freally-nautilus-test

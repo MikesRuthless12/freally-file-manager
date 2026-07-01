@@ -13,7 +13,7 @@ Every channel here costs $0 to publish.
 | `macos/scripts/`                 | Build helpers             | Phase 7 / 16                 |
 | `linux/flatpak/`                 | Flathub                   | AppImage / sandboxed Linux   |
 | `linux/aur/`                     | Arch User Repository      | `.deb` → Arch repackage      |
-| `linux/copythat.desktop`         | Freedesktop               | Phase 7 shell integration    |
+| `linux/freally.desktop`         | Freedesktop               | Phase 7 shell integration    |
 | `linux/kde/`, `nautilus/`, `thunar/` | Per-file-manager hooks | Phase 7 shell integration    |
 
 See [`docs/SIGNING_UPGRADE.md`](../docs/SIGNING_UPGRADE.md) for the paid

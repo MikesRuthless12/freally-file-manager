@@ -18,7 +18,7 @@
 use std::fs;
 use std::path::PathBuf;
 
-use copythat_platform::dedup::{
+use freally_platform::dedup::{
     DedupMode, DedupOptions, DedupOutcome, DedupStrategy, HardlinkPolicy, try_dedup,
 };
 
@@ -150,7 +150,7 @@ fn case05_dedup_outcome_round_trips_through_serde() {
 fn case06_phase_38_fluent_keys_present_in_every_locale() {
     let root = locate_locales_dir().expect("locate locales/");
     for code in LOCALES {
-        let path = root.join(code).join("copythat.ftl");
+        let path = root.join(code).join("freally.ftl");
         let content =
             fs::read_to_string(&path).unwrap_or_else(|e| panic!("read {}: {e}", path.display()));
         for key in PHASE_38_KEYS {
@@ -169,7 +169,7 @@ fn locate_locales_dir() -> Option<PathBuf> {
     let mut cur = std::env::current_dir().ok()?;
     for _ in 0..6 {
         let candidate = cur.join("locales");
-        if candidate.join("en").join("copythat.ftl").exists() {
+        if candidate.join("en").join("freally.ftl").exists() {
             return Some(candidate);
         }
         if !cur.pop() {

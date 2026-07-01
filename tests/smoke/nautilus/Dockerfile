@@ -15,9 +15,9 @@ RUN apt-get update \
         gir1.2-nautilus-3.0 \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
-COPY copythat_nautilus.py /app/ext/copythat_nautilus.py
+COPY freally_nautilus.py /app/ext/freally_nautilus.py
 COPY nautilus_runtime_check.py /app/nautilus_runtime_check.py
-ENV COPYTHAT_NAUTILUS_DIR=/app/ext
+ENV FREALLY_NAUTILUS_DIR=/app/ext
 # Headless note: Gdk prints a benign "Unable to init server: Could not
 # connect" to stderr (no X display), but the typelib import + MenuItem
 # construction don't need one — the check still verifies and exits 0.

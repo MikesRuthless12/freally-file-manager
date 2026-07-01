@@ -201,7 +201,7 @@ def build_tail_block(t: dict) -> str:
     return (
         "\n"
         "# Phase 23 — sparse-file preservation. MT-flagged drafts; the\n"
-        "# authoritative English source lives in locales/en/copythat.ftl.\n"
+        "# authoritative English source lives in locales/en/freally.ftl.\n"
         f"sparse-not-supported-title = {t['toast_title']}  # MT\n"
         f"sparse-not-supported-body = {t['toast_body']}  # MT\n"
         f"sparse-warning-densified = {t['warn_densified']}  # MT\n"
@@ -210,7 +210,7 @@ def build_tail_block(t: dict) -> str:
 
 
 def patch_locale(locale: str, t: dict) -> None:
-    path = LOCALES_DIR / locale / "copythat.ftl"
+    path = LOCALES_DIR / locale / "freally.ftl"
     text = path.read_text(encoding="utf-8")
     # Skip if already patched.
     if "sparse-not-supported-title" in text:

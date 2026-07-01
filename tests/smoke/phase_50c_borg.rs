@@ -1,6 +1,6 @@
 //! Phase 50 — Borg importer smoke test.
 //!
-//! Runs the `copythat_chunk::migrate` Borg importer against a committed,
+//! Runs the `freally_chunk::migrate` Borg importer against a committed,
 //! PII-free **repokey** Borg fixture (`tests/fixtures/borg-repo`, created
 //! with `borgbackup 1.4.4` inside Linux, passphrase `testpass`) and
 //! asserts every file restores byte-for-byte against the originals in
@@ -13,7 +13,7 @@
 
 use std::path::PathBuf;
 
-use copythat_chunk::{MigrateError, RepoFormat, Repository, SnapshotId, materialise_file, migrate};
+use freally_chunk::{MigrateError, RepoFormat, Repository, SnapshotId, materialise_file, migrate};
 
 fn fixtures() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures")

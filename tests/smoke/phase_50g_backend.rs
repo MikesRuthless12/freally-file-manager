@@ -3,7 +3,7 @@
 //! default `LocalFsBackend`; this pins the public backend contract (both
 //! shipped backends) + that the store's disk accounting reads via the backend.
 
-use copythat_chunk::{BlobBackend, ChunkStore, Chunker, LocalFsBackend, MemBackend, ingest_bytes};
+use freally_chunk::{BlobBackend, ChunkStore, Chunker, LocalFsBackend, MemBackend, ingest_bytes};
 
 #[test]
 fn shipped_backends_honour_the_contract() {

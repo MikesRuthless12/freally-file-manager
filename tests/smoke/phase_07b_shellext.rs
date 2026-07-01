@@ -1,7 +1,7 @@
 //! Phase 7b smoke test — cross-platform layer.
 //!
 //! Verifies the host-independent bits of the Windows COM shell
-//! extension: argv composition for the detached `copythat` spawn,
+//! extension: argv composition for the detached `freally` spawn,
 //! registry-key layout for per-user and system-wide install, and
 //! the opt-in copy-verb interceptor. Runs on every CI runner
 //! (Linux, macOS, Windows) because these helpers are pure Rust.
@@ -16,20 +16,20 @@
 //! and the compiled DLL exposes the four COM entry points
 //! `regsvr32` + the COM runtime need (there).
 
-use copythat_shellext::consts::{
+use freally_shellext::consts::{
     CLSID_COPY_STR, CLSID_MOVE_STR, DISPLAY_COPY, DISPLAY_MOVE, HOST_BIN, VERB_COPY, VERB_MOVE,
 };
-use copythat_shellext::registry::{
+use freally_shellext::registry::{
     InstallScope, SHELL_TARGETS, all_registration_keys, class_registration_keys,
     copy_interceptor_keys, verb_registration_keys,
 };
-use copythat_shellext::spawn::{Verb, build_argv};
+use freally_shellext::spawn::{Verb, build_argv};
 use std::ffi::OsString;
 
 #[test]
 fn argv_layout_matches_phase_7a_parser_contract() {
     // Shell extensions must emit exactly the shape the Phase 7a
-    // CLI parser accepts: `copythat --enqueue <verb> -- <paths...>`.
+    // CLI parser accepts: `freally --enqueue <verb> -- <paths...>`.
     let paths = vec![
         OsString::from(r"C:\pictures\a.jpg"),
         OsString::from(r"C:\pictures\b.jpg"),
@@ -72,7 +72,7 @@ fn argv_preserves_weird_names_after_double_dash() {
 
 #[test]
 fn per_user_registration_layout_has_expected_keys() {
-    let dll = r"C:\Program Files\CopyThat2026\copythat_shellext.dll";
+    let dll = r"C:\Program Files\freally-file-manager\freally_shellext.dll";
     let keys = all_registration_keys(InstallScope::PerUser, dll);
 
     // 2 classes × 3 tuples (default + InprocServer32 default + ThreadingModel)
@@ -187,12 +187,12 @@ fn clsid_strings_are_curly_brace_formatted() {
 
 #[test]
 fn verbs_do_not_collide_with_explorer_builtins() {
-    // Our canonical verb names have the `CopyThat.` prefix so they
+    // Our canonical verb names have the `Freally.` prefix so they
     // cannot shadow Explorer's own `copy`, `cut`, `paste`, `rename`
     // verbs by accident. (The opt-in interceptor uses the literal
     // `copy` key, but that's declared explicitly in
     // `copy_interceptor_keys` — and gated behind a user toggle.)
     for v in [VERB_COPY, VERB_MOVE] {
-        assert!(v.starts_with("CopyThat."), "verb {v} lacks project prefix");
+        assert!(v.starts_with("Freally."), "verb {v} lacks project prefix");
     }
 }

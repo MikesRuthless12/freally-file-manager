@@ -8,7 +8,7 @@
 
 use std::path::Path;
 
-use copythat_chunk::{Repository, RestoreConflict, SnapshotKind};
+use freally_chunk::{Repository, RestoreConflict, SnapshotKind};
 
 #[test]
 fn case1_snapshot_tree_lists_paths_and_sizes() {

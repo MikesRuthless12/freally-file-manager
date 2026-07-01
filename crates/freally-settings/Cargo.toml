@@ -1,0 +1,34 @@
+[package]
+name = "freally-settings"
+description = "Persistent user preferences + named profiles for Freally File Manager v1.0.0."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+# `directories` picks the OS-appropriate config dir
+# (%APPDATA%\freally-file-manager on Windows, ~/Library/Application Support on macOS,
+# $XDG_CONFIG_HOME/freally on Linux).
+# `serde` + `serde_json` + `toml` handle the round-trip for the
+# settings.toml main store and per-profile exports (JSON per the
+# Phase 12 spec — portable + hand-readable).
+# `thiserror` for typed error surface; same pattern as freally-history.
+directories = "6"
+# Phase 22 — `globset` compiles the per-pattern rules carried by
+# `ConflictProfile`. Already a workspace dep via `freally-core`
+# (Phase 14a filters), so this adds no new entry to the dep tree.
+globset = "0.4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+toml = "0.9"
+
+[dev-dependencies]
+tempfile = "3"

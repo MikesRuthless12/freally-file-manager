@@ -1,12 +1,12 @@
 //! `xtask` — workspace automation.
 //!
 //! Subcommands:
-//! - `i18n-lint`: verify Fluent key parity across every `locales/<code>/copythat.ftl`,
+//! - `i18n-lint`: verify Fluent key parity across every `locales/<code>/freally.ftl`,
 //!   plus Phase 11a checks: literal string keys referenced in source exist in `en`,
 //!   and every `.ftl` file parses with no duplicate keys.
 //! - `bench`: run the Criterion bench suite with the default
 //!   (full-size) workloads. Prints Criterion's normal output.
-//! - `bench-ci`: run the Criterion bench suite with `COPYTHAT_BENCH_CI=1`
+//! - `bench-ci`: run the Criterion bench suite with `FREALLY_BENCH_CI=1`
 //!   set so workloads scale down to CI-friendly sizes. The smoke
 //!   path (Phase 13). Still prints Criterion's normal output.
 //! - `bench-vs`: detect competitor copy tools on PATH (Robocopy,
@@ -50,11 +50,11 @@ const SOURCE_LOCALE: &str = "en";
 const DYNAMIC_KEY_PREFIXES: &[&str] = &["state-", "kind-", "status-", "err-"];
 
 /// Directories whose source files participate in the literal-key
-/// scan. Everything under `apps/copythat-ui` (Svelte/TS) and every
+/// scan. Everything under `apps/freally-ui` (Svelte/TS) and every
 /// Rust crate + the Tauri shell.
 const SOURCE_ROOTS: &[&str] = &[
-    "apps/copythat-ui/src",
-    "apps/copythat-ui/src-tauri/src",
+    "apps/freally-ui/src",
+    "apps/freally-ui/src-tauri/src",
     "crates",
     "xtask/src",
     "tests/smoke",
@@ -148,7 +148,7 @@ fn main() -> ExitCode {
 
 fn print_help() {
     println!(
-        "Usage: xtask <command>\n\nCommands:\n  i18n-lint              Verify key parity, literal-key coverage, and Fluent syntax\n                         across locales/<code>/copythat.ftl\n  bench                  Run the Criterion bench suite at full size\n  bench-ci               Run the Criterion bench suite at CI-scaled sizes\n  bench-vs               Time our engine against OS copy tools on PATH\n  release                Drive the Phase 16 free-first packaging path (pnpm tauri build)\n  qa-automate            Run every automatable QualityAssuranceChecklist item\n                         (§0 pre-flight + §1 static + §2 tests + §3 security + §5 perf)\n                         and emit a pass/fail report. Use `qa-automate --help` for flags.\n  build-sample-plugins   Compile every Phase 46.5 sample plugin under\n                         apps/copythat-ui/plugins/ to wasm32-unknown-unknown.\n"
+        "Usage: xtask <command>\n\nCommands:\n  i18n-lint              Verify key parity, literal-key coverage, and Fluent syntax\n                         across locales/<code>/freally.ftl\n  bench                  Run the Criterion bench suite at full size\n  bench-ci               Run the Criterion bench suite at CI-scaled sizes\n  bench-vs               Time our engine against OS copy tools on PATH\n  release                Drive the Phase 16 free-first packaging path (pnpm tauri build)\n  qa-automate            Run every automatable QualityAssuranceChecklist item\n                         (§0 pre-flight + §1 static + §2 tests + §3 security + §5 perf)\n                         and emit a pass/fail report. Use `qa-automate --help` for flags.\n  build-sample-plugins   Compile every Phase 46.5 sample plugin under\n                         apps/freally-ui/plugins/ to wasm32-unknown-unknown.\n"
     );
 }
 
@@ -162,7 +162,7 @@ fn i18n_lint() -> Result<(), String> {
     // file outright via `parse_ftl_keys`'s duplicate detection.
     let mut per_locale: Vec<(String, BTreeSet<String>)> = Vec::with_capacity(LOCALES.len());
     for code in LOCALES {
-        let path = locales_dir.join(code).join("copythat.ftl");
+        let path = locales_dir.join(code).join("freally.ftl");
         let content =
             fs::read_to_string(&path).map_err(|e| format!("reading {}: {e}", path.display()))?;
         let keys =

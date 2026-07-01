@@ -1,6 +1,6 @@
 //! Phase 14f smoke test — queue-while-locked / volume-arrival watcher.
 //!
-//! Drives `copythat_cli::volume_watch::watch_volumes` with a
+//! Drives `freally_cli::volume_watch::watch_volumes` with a
 //! tempdir-as-fake-volume timeline. Asserts:
 //!
 //! 1. A previously-absent root that becomes reachable surfaces as
@@ -15,7 +15,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
-use copythat_cli::volume_watch::{
+use freally_cli::volume_watch::{
     StdProbe, VolumeEvent, VolumeProbe, VolumeWatchCancel, VolumeWatchError, VolumeWatchOptions,
     watch_volumes,
 };

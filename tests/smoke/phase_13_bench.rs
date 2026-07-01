@@ -16,7 +16,7 @@
 //! The point of this test is to catch the "I accidentally added a
 //! `sleep(Duration::from_secs(1))` in the write loop" category of
 //! bug — not to grade performance. The full Criterion matrix lives
-//! in `crates/copythat-core/benches/copy_bench.rs` and runs via
+//! in `crates/freally-core/benches/copy_bench.rs` and runs via
 //! `cargo bench` / `xtask bench-ci`; CI wires the bench into the
 //! `clippy + test` matrix via `cargo test --workspace`, which
 //! picks up this file automatically.
@@ -31,8 +31,8 @@ use std::io::Write;
 use std::sync::Arc;
 use std::time::Instant;
 
-use copythat_core::{CopyControl, CopyOptions, FastCopyHook, copy_file};
-use copythat_platform::PlatformFastCopyHook;
+use freally_core::{CopyControl, CopyOptions, FastCopyHook, copy_file};
+use freally_platform::PlatformFastCopyHook;
 use tempfile::tempdir;
 use tokio::sync::mpsc;
 

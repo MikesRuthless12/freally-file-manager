@@ -17,7 +17,7 @@
 
 use std::path::PathBuf;
 
-use copythat_history::{History, HistoryFilter, ItemRow, JobSummary, export_csv};
+use freally_history::{History, HistoryFilter, ItemRow, JobSummary, export_csv};
 
 fn sample_job(kind: &str, started_at_ms: i64, src: &str, dst: &str) -> JobSummary {
     JobSummary {

@@ -3,7 +3,7 @@ set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 append() {
   local locale="$1"; shift
-  echo "activity-sort-locked = $1" >> "$root/locales/$locale/copythat.ftl"
+  echo "activity-sort-locked = $1" >> "$root/locales/$locale/freally.ftl"
 }
 append ar "الترتيب معطل أثناء تشغيل النسخ. أوقف مؤقتًا أو انتظر حتى ينتهي ثم غيّر الترتيب."
 append de "Sortierung ist deaktiviert, während ein Kopiervorgang läuft. Pausiere ihn oder warte bis zum Ende, dann ändere die Reihenfolge."

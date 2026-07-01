@@ -1,11 +1,11 @@
 //! Phase 24 — security-metadata preservation smoke test.
 //!
 //! Cross-platform contract test: every host arm seeds a per-OS metadata
-//! stream on the source, copies via `copythat_core::copy_file` with a
+//! stream on the source, copies via `freally_core::copy_file` with a
 //! `PlatformMetaOps` hook attached, and asserts the destination carries
 //! the same stream.
 //!
-//! - **Linux**: `setfattr user.copythat.test=phase24-roundtrip` on the
+//! - **Linux**: `setfattr user.freally.test=phase24-roundtrip` on the
 //!   source. After the copy the destination's xattr value must match.
 //! - **macOS**: `xattr -w com.apple.metadata:kMDItemWhereFroms` (the
 //!   Spotlight provenance attribute) on the source; round-trip.
@@ -30,9 +30,9 @@
 use std::path::Path;
 use std::sync::Arc;
 
-use copythat_core::meta::{MetaOps, MetaPolicy, NoopMetaOps};
-use copythat_core::{CopyControl, CopyEvent, CopyOptions, copy_file};
-use copythat_platform::PlatformMetaOps;
+use freally_core::meta::{MetaOps, MetaPolicy, NoopMetaOps};
+use freally_core::{CopyControl, CopyEvent, CopyOptions, copy_file};
+use freally_platform::PlatformMetaOps;
 use tempfile::tempdir;
 use tokio::sync::mpsc;
 
@@ -115,7 +115,7 @@ async fn phase_24_policy_filter_drops_stream() {
     // Capture a snapshot, run it through `MetaPolicy.filter` with
     // `preserve_xattrs = false`, and confirm only the structured
     // entries (POSIX ACLs / SELinux / capabilities) survive.
-    use copythat_core::meta::{MetaSnapshot, NtfsStream, XattrEntry};
+    use freally_core::meta::{MetaSnapshot, NtfsStream, XattrEntry};
 
     let snap = MetaSnapshot {
         ads: vec![NtfsStream {
@@ -203,7 +203,7 @@ fn assert_metadata_preserved(_src: &Path, dst: &Path) {
 #[cfg(target_os = "linux")]
 fn seed_metadata_for_host(src: &Path) -> bool {
     let value = b"phase24-roundtrip";
-    match xattr::set(src, "user.copythat.test", value) {
+    match xattr::set(src, "user.freally.test", value) {
         Ok(()) => true,
         Err(e) => {
             eprintln!("phase 24 linux seed: xattr::set failed: {e}");
@@ -214,14 +214,14 @@ fn seed_metadata_for_host(src: &Path) -> bool {
 
 #[cfg(target_os = "linux")]
 fn assert_metadata_preserved(_src: &Path, dst: &Path) {
-    let got = xattr::get(dst, "user.copythat.test")
+    let got = xattr::get(dst, "user.freally.test")
         .ok()
         .flatten()
         .unwrap_or_default();
     assert_eq!(
         got.as_slice(),
         b"phase24-roundtrip",
-        "user.copythat.test xattr missing or wrong on destination"
+        "user.freally.test xattr missing or wrong on destination"
     );
 }
 

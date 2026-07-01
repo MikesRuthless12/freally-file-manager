@@ -20,7 +20,7 @@
 //!    resume checkpoint can short-circuit already-written rows.
 //!
 //! The slow-path 100 000-file case opts in behind
-//! `COPYTHAT_PHASE19A_FULL=1`; the default runs a 2 000-file variant
+//! `FREALLY_PHASE19A_FULL=1`; the default runs a 2 000-file variant
 //! so `cargo test --workspace` stays under a minute.
 
 use std::path::{Path, PathBuf};
@@ -28,17 +28,17 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 
-use copythat_core::scan::{
+use freally_core::scan::{
     ScanControl, ScanCursor, ScanEvent, ScanId, ScanOptions, ScanStatus, Scanner,
 };
-use copythat_core::{CopyControl, CopyEvent, TreeOptions, copy_tree_from_scan};
+use freally_core::{CopyControl, CopyEvent, TreeOptions, copy_tree_from_scan};
 use rusqlite::Connection;
 use sysinfo::{Pid, System};
 use tempfile::tempdir;
 use tokio::sync::mpsc;
 
 fn full_mode() -> bool {
-    std::env::var("COPYTHAT_PHASE19A_FULL")
+    std::env::var("FREALLY_PHASE19A_FULL")
         .map(|v| v == "1")
         .unwrap_or(false)
 }
@@ -96,7 +96,7 @@ fn current_rss_bytes() -> u64 {
 async fn run_scan_to_completion(
     scanner: Scanner,
     ctrl: ScanControl,
-) -> (copythat_core::scan::ScanReport, u64) {
+) -> (freally_core::scan::ScanReport, u64) {
     let (tx, mut rx) = mpsc::channel::<ScanEvent>(256);
     let peak = Arc::new(AtomicU64::new(0));
     let peak_for_mon = peak.clone();
@@ -153,7 +153,7 @@ async fn scan_produces_expected_row_count_and_stats() {
     let dir_rows = report
         .stats
         .by_kind
-        .get(&copythat_core::scan::EntryKind::Dir)
+        .get(&freally_core::scan::EntryKind::Dir)
         .copied()
         .unwrap_or(0);
     assert!(

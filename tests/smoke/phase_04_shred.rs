@@ -18,8 +18,8 @@
 
 use std::path::Path;
 
-use copythat_core::CopyControl;
-use copythat_secure_delete::{ShredEvent, ShredMethod, shred_file};
+use freally_core::CopyControl;
+use freally_secure_delete::{ShredEvent, ShredMethod, shred_file};
 use tempfile::tempdir;
 use tokio::sync::mpsc;
 

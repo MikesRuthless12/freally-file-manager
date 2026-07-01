@@ -5,7 +5,7 @@ $ErrorActionPreference = 'Stop'
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 Push-Location (Join-Path $scriptDir '..\..')
 try {
-    & cargo test -p copythat-ui --test phase_16_package -- --nocapture @args
+    & cargo test -p freally-ui --test phase_16_package -- --nocapture @args
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 } finally {
     Pop-Location

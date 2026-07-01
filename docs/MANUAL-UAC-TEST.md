@@ -20,9 +20,9 @@ permission-denied copy first.
 
 ### 1. Build
 ```powershell
-cargo build -p copythat-ui --example ct_elevate_probe --features elevate-probe
+cargo build -p freally-ui --example ct_elevate_probe --features elevate-probe
 ```
-This drops `ct_elevate_probe.exe` next to `copythat-helper.exe` in
+This drops `ct_elevate_probe.exe` next to `freally-helper.exe` in
 `target\debug\` — the probe finds the helper as its `current_exe()`
 sibling, exactly as the real app does.
 
@@ -41,7 +41,7 @@ copy it to a temp destination.
    token, which always requires consent. That's expected, not a bug.
 2. **Click Yes (consent):** the probe prints
    `OK — helper Response: ElevatedRetryOk { bytes: N }` and the
-   destination file now exists — copied by the elevated `copythat-helper`.
+   destination file now exists — copied by the elevated `freally-helper`.
 3. **Click No (cancel):** the elevated child never connects, so after the
    30 s connect-timeout ceiling the probe prints
    `elevation failed/cancelled (the UI shows retry-elevated-unavailable
@@ -64,7 +64,7 @@ Denied*. (Removing the proof file will itself need elevation.)
 
 ## Linux (polkit / pkexec)
 ```bash
-cargo build -p copythat-ui --example ct_elevate_probe --features elevate-probe
+cargo build -p freally-ui --example ct_elevate_probe --features elevate-probe
 ./target/debug/examples/ct_elevate_probe /etc/hostname /root/ct-elevated-proof.bin
 ```
 Expect a **polkit authentication dialog** (GUI) or a `pkexec` password
@@ -77,7 +77,7 @@ from a TTY where you can type your password.)
 
 ## macOS (osascript admin)
 ```bash
-cargo build -p copythat-ui --example ct_elevate_probe --features elevate-probe
+cargo build -p freally-ui --example ct_elevate_probe --features elevate-probe
 ./target/debug/examples/ct_elevate_probe /etc/hosts /Library/ct-elevated-proof.bin
 ```
 Expect the system **"… wants to make changes. Enter your password to

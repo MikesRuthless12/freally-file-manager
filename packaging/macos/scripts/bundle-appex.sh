@@ -2,14 +2,14 @@
 #
 # Build the Freally File Manager v1.0.0 Finder Sync Extension (.appex) bundle.
 #
-# Produces `packaging/macos/build/CopyThatFinderSync.appex/` with the
+# Produces `packaging/macos/build/FreallyFinderSync.appex/` with the
 # layout macOS expects:
 #
-#   CopyThatFinderSync.appex/
+#   FreallyFinderSync.appex/
 #     Contents/
 #       Info.plist                    (copied from finder-sync-extension/)
 #       MacOS/
-#         CopyThatFinderSync          (Mach-O bundle exec, `swiftc` output)
+#         FreallyFinderSync          (Mach-O bundle exec, `swiftc` output)
 #
 # The bundle is ad-hoc signed (`codesign -s -`) so macOS Gatekeeper
 # lets the user load it after a right-click → Open on first launch.
@@ -49,13 +49,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MACOS_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 REPO_ROOT="$(cd "$MACOS_ROOT/../.." && pwd)"
 
-SRC="$MACOS_ROOT/finder-sync-extension/CopyThatFinderSync.swift"
+SRC="$MACOS_ROOT/finder-sync-extension/FreallyFinderSync.swift"
 INFO_PLIST="$MACOS_ROOT/finder-sync-extension/Info.plist"
 BUILD_DIR="$MACOS_ROOT/build"
-APPEX="$BUILD_DIR/CopyThatFinderSync.appex"
+APPEX="$BUILD_DIR/FreallyFinderSync.appex"
 APPEX_CONTENTS="$APPEX/Contents"
 APPEX_MACOS="$APPEX_CONTENTS/MacOS"
-APPEX_BIN="$APPEX_MACOS/CopyThatFinderSync"
+APPEX_BIN="$APPEX_MACOS/FreallyFinderSync"
 
 # Minimum supported OS. Matches LSMinimumSystemVersion in Info.plist and
 # the project's README Targets table.
@@ -83,11 +83,11 @@ trap 'rm -rf "$TMP_DIR"' EXIT
 
 THIN_BINS=()
 for triple in "${TARGETS[@]}"; do
-    out="$TMP_DIR/CopyThatFinderSync-${triple}"
+    out="$TMP_DIR/FreallyFinderSync-${triple}"
     echo "==> Compiling ($triple)"
     swiftc \
         -target "$triple" \
-        -module-name CopyThatFinderSync \
+        -module-name FreallyFinderSync \
         -parse-as-library \
         -emit-executable \
         -framework Cocoa \

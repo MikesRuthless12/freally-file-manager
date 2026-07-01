@@ -141,7 +141,7 @@ $md += "## Tools"
 $md += ""
 $md += "| Tool | Invocation |"
 $md += "|---|---|"
-$md += "| **CopyThat** | ``copythat copy <src> <dst>`` (release binary) |"
+$md += "| **Freally** | ``freally copy <src> <dst>`` (release binary) |"
 $md += "| **RoboCopy** | ``robocopy <srcDir> <dstDir> <name> /NFL /NDL /NJH /NJS /NP /R:0 /W:0`` |"
 $md += "| **cmd copy** | ``cmd /C copy /Y <src> <dst>`` |"
 $md += "| **TeraCopy** | ``TeraCopy.exe Copy <src> <dstDir>\\ /Close /SkipAll`` |"
@@ -190,7 +190,7 @@ foreach ($wl in $report.workloads) {
     $rank = 1
     foreach ($r in $sorted) {
         $tool = $r.Tool
-        $marker = if ($tool -eq 'CopyThat') { "**$tool**" } else { $tool }
+        $marker = if ($tool -eq 'Freally') { "**$tool**" } else { $tool }
         $crown = if ($rank -eq 1) { "🥇 " } elseif ($rank -eq 2) { "🥈 " } elseif ($rank -eq 3) { "🥉 " } else { "" }
         $md += "| $crown$rank | $marker | $($r.ColdMs) | **$($r.ColdMib)** | $($r.WarmMs) | **$($r.WarmMib)** |"
         $rank++
@@ -220,14 +220,14 @@ foreach ($wl in $report.workloads) {
     $md += '```'
     $md += ""
 
-    # Percentages -- CopyThat vs each competitor
-    $self = $rows | Where-Object { $_.Tool -eq 'CopyThat' }
+    # Percentages -- Freally vs each competitor
+    $self = $rows | Where-Object { $_.Tool -eq 'Freally' }
     if ($self) {
-        $md += "### CopyThat vs competitors"
+        $md += "### Freally vs competitors"
         $md += ""
-        $md += "| Competitor | COLD: CopyThat is | WARM: CopyThat is |"
+        $md += "| Competitor | COLD: Freally is | WARM: Freally is |"
         $md += "|---|:---:|:---:|"
-        foreach ($r in ($rows | Where-Object { $_.Tool -ne 'CopyThat' })) {
+        foreach ($r in ($rows | Where-Object { $_.Tool -ne 'Freally' })) {
             $pcCold = Pct-Faster $self.ColdMib $r.ColdMib
             $pcWarm = Pct-Faster $self.WarmMib $r.WarmMib
             $coldStr = if ($pcCold -gt 0) { "**+$pcCold% faster**" } elseif ($pcCold -lt 0) { "$pcCold% slower" } else { "tied" }
@@ -309,9 +309,9 @@ foreach ($wl in $report.workloads) {
 # ----- Cross-workload summary -----
 $md += "---"
 $md += ""
-$md += "## Cross-workload summary -- CopyThat throughput vs the field"
+$md += "## Cross-workload summary -- Freally throughput vs the field"
 $md += ""
-$md += "| Workload | CopyThat COLD MiB/s | Field-best COLD MiB/s | Δ vs best | CopyThat WARM MiB/s | Field-best WARM MiB/s | Δ vs best |"
+$md += "| Workload | Freally COLD MiB/s | Field-best COLD MiB/s | Δ vs best | Freally WARM MiB/s | Field-best WARM MiB/s | Δ vs best |"
 $md += "|---|---:|---:|---:|---:|---:|---:|"
 foreach ($wl in $report.workloads) {
     $rows = @()
@@ -323,7 +323,7 @@ foreach ($wl in $report.workloads) {
             WarmMib = $r.warm_throughput_MiBps
         }
     }
-    $self = $rows | Where-Object { $_.Tool -eq 'CopyThat' }
+    $self = $rows | Where-Object { $_.Tool -eq 'Freally' }
     $bestColdRow = $rows | Sort-Object -Property ColdMib -Descending | Select-Object -First 1
     $bestWarmRow = $rows | Sort-Object -Property WarmMib -Descending | Select-Object -First 1
     if (-not $self) { continue }
@@ -345,7 +345,7 @@ $md += ""
 # documents the parallel-path regression so future readers don't
 # flip the default without re-running the bench. Keep this section
 # in sync with the source-of-truth comment in
-# `crates/copythat-platform/src/native/parallel.rs`.
+# `crates/freally-platform/src/native/parallel.rs`.
 $md += "---"
 $md += ""
 $md += "## Phase 13c parallel-chunks A/B (do not flip without re-bench)"
@@ -357,7 +357,7 @@ $md += "- C -> C: single-stream `CopyFileExW` 1080 MiB/s -> parallel-4 **809 MiB
 $md += "- C -> E: single-stream `CopyFileExW` 328 MiB/s -> parallel-4 **80 MiB/s (-76%)**"
 $md += ""
 $md += "Modern NVMe + Windows 11's `CopyFileExW` already saturates the per-device queue with a single stream; splitting into 4 streams adds per-chunk seek + handle-open overhead and contends for the same hardware queue."
-$md += "Opt-in via `COPYTHAT_PARALLEL_CHUNKS=<N>` if your topology (RAID array, NVMe-over-fabric, distributed FS) might benefit; do not promote the path to default without a fresh A/B."
+$md += "Opt-in via `FREALLY_PARALLEL_CHUNKS=<N>` if your topology (RAID array, NVMe-over-fabric, distributed FS) might benefit; do not promote the path to default without a fresh A/B."
 $md += ""
 
 $mdText = $md -join [Environment]::NewLine
@@ -371,7 +371,7 @@ Write-Host ('wrote markdown mirror -> ' + $ResultMdMirror)
 # ----- HTML report ------------------------------------------------------
 
 $colors = @{
-    CopyThat = '#2563eb'  # blue -- our app, headline
+    Freally = '#2563eb'  # blue -- our app, headline
     RoboCopy = '#10b981'  # green
     CmdCopy  = '#f59e0b'  # amber
     TeraCopy = '#ef4444'  # red
@@ -396,7 +396,7 @@ function Html-BarChart {
         $pct = [Math]::Round($r.Mib / $maxMib * 100, 1)
         $color = $colors[$r.Tool]
         if (-not $color) { $color = '#888' }
-        $highlight = if ($r.Tool -eq 'CopyThat') { ' chart-self' } else { '' }
+        $highlight = if ($r.Tool -eq 'Freally') { ' chart-self' } else { '' }
         $html += "  <div class='bar-row$highlight'>"
         $html += "    <div class='bar-label'>$($r.Tool)</div>"
         $html += "    <div class='bar-track'><div class='bar-fill' style='width:$pct%; background:$color'></div></div>"
@@ -410,7 +410,7 @@ function Html-BarChart {
 $html = @()
 $html += '<!DOCTYPE html>'
 $html += '<html lang="en"><head><meta charset="utf-8">'
-$html += '<title>CopyThat -- Phase 42 head-to-head benchmark</title>'
+$html += '<title>Freally -- Phase 42 head-to-head benchmark</title>'
 $html += '<style>'
 $html += '  body { font-family: -apple-system, Segoe UI, Roboto, sans-serif; background: #0f172a; color: #e2e8f0; max-width: 1100px; margin: 0 auto; padding: 32px; }'
 $html += '  h1 { color: #60a5fa; }'
@@ -434,7 +434,7 @@ $html += '  .self-row td:first-child { color: #60a5fa; }'
 $html += '  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }'
 $html += '  @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }'
 $html += '</style></head><body>'
-$html += '<h1>CopyThat -- Phase 42 head-to-head benchmark</h1>'
+$html += '<h1>Freally -- Phase 42 head-to-head benchmark</h1>'
 $html += "<div class='meta'>Host: $($report.host) ($($report.os)) -- Generated $(Get-Date -Format 'yyyy-MM-dd HH:mm') -- Total bench duration $([Math]::Round($report.duration_ms / 1000.0, 1)) s</div>"
 $html += '<p>COLD = fresh source file before every iteration. WARM = same source file across iterations (page-cache hit after #1). Median across N iterations.</p>'
 
@@ -466,7 +466,7 @@ foreach ($wl in $report.workloads) {
     foreach ($c in $rows) { $html += "<th>$($c.Tool)</th>" }
     $html += "</tr></thead><tbody>"
     foreach ($r in $rows) {
-        $cls = if ($r.Tool -eq 'CopyThat') { ' class="self-row"' } else { '' }
+        $cls = if ($r.Tool -eq 'Freally') { ' class="self-row"' } else { '' }
         $html += "<tr$cls><td>$($r.Tool)</td>"
         foreach ($c in $rows) {
             if ($r.Tool -eq $c.Tool) { $html += "<td>--</td>"; continue }
@@ -480,15 +480,15 @@ foreach ($wl in $report.workloads) {
 }
 
 # Cross-workload summary
-$html += "<h2>Cross-workload summary &mdash; CopyThat vs field-best</h2>"
-$html += "<table class='summary-table'><thead><tr><th>Workload</th><th>CopyThat COLD</th><th>Field-best COLD</th><th>&Delta;</th><th>CopyThat WARM</th><th>Field-best WARM</th><th>&Delta;</th></tr></thead><tbody>"
+$html += "<h2>Cross-workload summary &mdash; Freally vs field-best</h2>"
+$html += "<table class='summary-table'><thead><tr><th>Workload</th><th>Freally COLD</th><th>Field-best COLD</th><th>&Delta;</th><th>Freally WARM</th><th>Field-best WARM</th><th>&Delta;</th></tr></thead><tbody>"
 foreach ($wl in $report.workloads) {
     $rows = @()
     foreach ($t in $wl.results.PSObject.Properties.Name) {
         $r = $wl.results.$t
         $rows += [pscustomobject]@{ Tool = $t; ColdMib = $r.cold_throughput_MiBps; WarmMib = $r.warm_throughput_MiBps }
     }
-    $self = $rows | Where-Object { $_.Tool -eq 'CopyThat' }
+    $self = $rows | Where-Object { $_.Tool -eq 'Freally' }
     if (-not $self) { continue }
     $bestC = $rows | Sort-Object -Property ColdMib -Descending | Select-Object -First 1
     $bestW = $rows | Sort-Object -Property WarmMib -Descending | Select-Object -First 1

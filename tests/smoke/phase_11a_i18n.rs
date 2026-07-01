@@ -1,6 +1,6 @@
 //! Phase 11a smoke test — i18n core.
 //!
-//! Per Phase 11a scope (see `CopyThat2026-Build-Prompts-Guide.md`):
+//! Per Phase 11a scope (see `freally-file-manager-Build-Prompts-Guide.md`):
 //! the full per-locale screenshot + pixelmatch visual-regression
 //! harness is deferred to Phase 18 polish. This smoke test instead
 //! verifies three cheap-but-load-bearing invariants:
@@ -22,8 +22,8 @@
 //!    a key vanished.
 //!
 //! The test is deterministic, has no filesystem side effects beyond
-//! reading `locales/*/copythat.ftl`, and exits non-zero on any
-//! violation. `cargo test -p copythat-ui phase_11a_i18n` runs it.
+//! reading `locales/*/freally.ftl`, and exits non-zero on any
+//! violation. `cargo test -p freally-ui phase_11a_i18n` runs it.
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -66,7 +66,7 @@ fn phase_11a_i18n_invariants() {
     let bundles: Vec<(&str, BTreeMap<String, String>)> = LOCALES
         .iter()
         .map(|code| {
-            let path = locales_root.join(code).join("copythat.ftl");
+            let path = locales_root.join(code).join("freally.ftl");
             let content = fs::read_to_string(&path)
                 .unwrap_or_else(|e| panic!("read {}: {e}", path.display()));
             (*code, parse_ftl(&content))
@@ -82,7 +82,7 @@ fn phase_11a_i18n_invariants() {
     for key in REQUIRED_KEYS {
         assert!(
             en.contains_key(*key),
-            "Phase 11a required key `{key}` missing from locales/en/copythat.ftl"
+            "Phase 11a required key `{key}` missing from locales/en/freally.ftl"
         );
     }
 
@@ -141,7 +141,7 @@ fn phase_11a_i18n_invariants() {
 fn placeables(value: &str) -> Vec<String> {
     // A Fluent placeable is `{ $name }` — with optional whitespace
     // around the `$name`. This matcher accepts what our runtime
-    // accepts (see `substitute()` in `apps/copythat-ui/src/lib/i18n.ts`).
+    // accepts (see `substitute()` in `apps/freally-ui/src/lib/i18n.ts`).
     let mut out = Vec::new();
     let mut rest = value;
     while let Some(lb) = rest.find('{') {
@@ -171,7 +171,7 @@ fn placeables(value: &str) -> Vec<String> {
 
 /// Minimal `.ftl` parser: accept `key = value` lines, reject
 /// continuations / attributes / comments. Matches the parser in
-/// `apps/copythat-ui/src-tauri/src/i18n.rs` so this test mirrors
+/// `apps/freally-ui/src-tauri/src/i18n.rs` so this test mirrors
 /// what the runtime sees.
 fn parse_ftl(content: &str) -> BTreeMap<String, String> {
     let mut out = BTreeMap::new();
@@ -199,7 +199,7 @@ fn parse_ftl(content: &str) -> BTreeMap<String, String> {
 }
 
 fn repo_root() -> PathBuf {
-    // The test is invoked from `apps/copythat-ui/src-tauri`. Walk up
+    // The test is invoked from `apps/freally-ui/src-tauri`. Walk up
     // until we see both `Cargo.toml` and `locales/`.
     let start = std::env::current_dir().expect("current_dir");
     let mut cur = start.as_path();

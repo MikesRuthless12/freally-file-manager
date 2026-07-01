@@ -4,7 +4,7 @@
 //!
 //! 1. **Elevated retry.** The `retry_elevated` IPC was a stub that
 //!    always surfaced `retry-elevated-unavailable`. Phase 17d's
-//!    `copythat-helper` now backs the path; the IPC routes through
+//!    `freally-helper` now backs the path; the IPC routes through
 //!    `handle_request(Request::ElevatedRetry, …)` and surfaces a
 //!    typed result.
 //! 2. **SHA-256 quick-hash button.** New `quick_hash_for_collision`
@@ -20,9 +20,9 @@
 
 use std::path::{Path, PathBuf};
 
-use copythat_helper::capability::Capability;
-use copythat_helper::handle_request;
-use copythat_helper::rpc::{Request, Response};
+use freally_helper::capability::Capability;
+use freally_helper::handle_request;
+use freally_helper::rpc::{Request, Response};
 use tempfile::TempDir;
 
 #[test]
@@ -70,7 +70,7 @@ fn elevated_retry_without_capability_returns_unavailable_key() {
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn quick_hash_returns_stable_sha256() {
     // The quick_hash_for_collision IPC routes through
-    // `copythat_hash::hash_file_async` with `HashAlgorithm::Sha256`.
+    // `freally_hash::hash_file_async` with `HashAlgorithm::Sha256`.
     // We exercise the same surface here so a regression in the
     // hash algorithm or the report-shape contract trips this smoke
     // before it lands in the modal.
@@ -78,10 +78,10 @@ async fn quick_hash_returns_stable_sha256() {
     let p = dir.path().join("hash-me.txt");
     std::fs::write(&p, b"abc").unwrap();
     let (tx, _rx) = tokio::sync::mpsc::channel(8);
-    let report = copythat_hash::hash_file_async(
+    let report = freally_hash::hash_file_async(
         &p,
-        copythat_hash::HashAlgorithm::Sha256,
-        copythat_core::CopyControl::new(),
+        freally_hash::HashAlgorithm::Sha256,
+        freally_core::CopyControl::new(),
         tx,
     )
     .await
@@ -118,7 +118,7 @@ fn drawer_toggle_locale_keys_present_in_every_locale() {
     let locales = std::fs::read_dir(root.join("locales")).unwrap();
     let mut count = 0;
     for entry in locales.flatten() {
-        let ftl = entry.path().join("copythat.ftl");
+        let ftl = entry.path().join("freally.ftl");
         if !ftl.exists() {
             continue;
         }
@@ -144,7 +144,7 @@ fn collision_modal_hash_check_locale_key_is_present() {
     // Phase 8's deferred SHA-256 quick-hash button references the
     // pre-existing locale key `collision-modal-hash-check`. Ensure
     // it's still in the source-of-truth locale.
-    let body = std::fs::read_to_string(repo_root().join("locales/en/copythat.ftl")).unwrap();
+    let body = std::fs::read_to_string(repo_root().join("locales/en/freally.ftl")).unwrap();
     assert!(body.contains("collision-modal-hash-check"));
 }
 
@@ -159,7 +159,7 @@ fn collision_quick_hash_result_keys_present_in_every_locale() {
     let locales = std::fs::read_dir(root.join("locales")).unwrap();
     let mut count = 0;
     for entry in locales.flatten() {
-        let ftl = entry.path().join("copythat.ftl");
+        let ftl = entry.path().join("freally.ftl");
         if !ftl.exists() {
             continue;
         }

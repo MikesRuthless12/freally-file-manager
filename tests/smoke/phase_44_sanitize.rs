@@ -32,8 +32,8 @@ use std::path::Path;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use copythat_core::CopyControl;
-use copythat_secure_delete::{
+use freally_core::CopyControl;
+use freally_secure_delete::{
     NoopSanitizeHelper, SanitizeCapabilities, SanitizeHelper, ShredErrorKind, ShredEvent,
     SsdSanitizeMode, free_space_trim, is_cow_filesystem, opal_psid_revert, refuse_shred_on_cow,
     sanitize_capabilities, set_cow_probe, whole_drive_sanitize,
@@ -259,7 +259,7 @@ fn cow_probe_default_is_noop_returns_false() {
     // returns false (preserves the Phase 4 contract). This is a
     // smoke that the OnceLock's default branch fires correctly;
     // production wiring (the Tauri runner / CLI calling
-    // set_cow_probe(copythat_platform::is_cow_filesystem) at
+    // set_cow_probe(freally_platform::is_cow_filesystem) at
     // startup) is exercised by the integration test below when
     // the probe install lands first.
     //

@@ -86,10 +86,10 @@ where
 {
     let args = parse_args(args)?;
     let root = repo_root().ok_or("could not locate repo root (Cargo.toml + locales/)")?;
-    let ui_dir: PathBuf = root.join("apps").join("copythat-ui");
+    let ui_dir: PathBuf = root.join("apps").join("freally-ui");
     if !ui_dir.is_dir() {
         return Err(format!(
-            "expected apps/copythat-ui at {}, but it does not exist",
+            "expected apps/freally-ui at {}, but it does not exist",
             ui_dir.display()
         ));
     }
@@ -102,7 +102,7 @@ where
     let fallback_bundles = default_bundles();
     let bundles = args.bundles.as_deref().unwrap_or(fallback_bundles);
 
-    // pnpm is our contracted package manager (see apps/copythat-ui
+    // pnpm is our contracted package manager (see apps/freally-ui
     // `pnpm-lock.yaml`). If the dev forgot to install it, surfacing
     // "pnpm: command not found" one layer deep is noise — catch it
     // at the door with a specific message.

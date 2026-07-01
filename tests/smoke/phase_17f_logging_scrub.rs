@@ -2,7 +2,7 @@
 //!
 //! Three workstreams converge here:
 //!
-//! 1. **Tracing field scrub.** The `copythat-audit` `AuditLayer`
+//! 1. **Tracing field scrub.** The `freally-audit` `AuditLayer`
 //!    drops events whose fields are named `body` / `bytes` /
 //!    `chunk` / `password` / `passphrase` / `secret` / `token` /
 //!    `api_key` regardless of level. The unit test in `layer.rs`
@@ -10,11 +10,11 @@
 //!    smoke duplicates the assertion at the workspace level so a
 //!    silent rename of the field-allowlist function trips the
 //!    smoke before it trips production.
-//! 2. **Sidecar relpath enforcement.** `copythat_hash::sidecar`
+//! 2. **Sidecar relpath enforcement.** `freally_hash::sidecar`
 //!    writers refuse absolute / `..` paths so the on-disk format
 //!    can't accidentally publish the user's directory layout.
 //! 3. **`eprintln!` audit.** The IPC layer in
-//!    `apps/copythat-ui/src-tauri/src/commands.rs` no longer prints
+//!    `apps/freally-ui/src-tauri/src/commands.rs` no longer prints
 //!    user paths via `eprintln!`. The sweep is best-effort — any
 //!    new diagnostic line should use `tracing::debug!` instead.
 
@@ -22,9 +22,9 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use copythat_audit::{AuditFormat, AuditLayer, AuditSink, WormMode};
-use copythat_hash::HashAlgorithm;
-use copythat_hash::sidecar::{
+use freally_audit::{AuditFormat, AuditLayer, AuditSink, WormMode};
+use freally_hash::HashAlgorithm;
+use freally_hash::sidecar::{
     SidecarEntry, validate_sidecar_relpath, write_single_file_sidecar, write_tree_sidecar,
 };
 use tempfile::TempDir;
@@ -57,7 +57,7 @@ fn audit_layer_drops_sensitive_fields() {
 
     tracing::subscriber::with_default(subscriber, || {
         tracing::warn!(
-            target: "copythat::audit",
+            target: "freally::audit",
             body = "leak-bytes-1",
             password = "leak-pwd-1",
             secret = "leak-secret-1",
@@ -165,7 +165,7 @@ fn ipc_layer_does_not_eprintln_user_paths_in_release_builds() {
     // eprintln line in commands.rs may interpolate `path` /
     // `paths` / `dst` / `src` / `destination` / `source`.
     let body =
-        fs::read_to_string(repo_root().join("apps/copythat-ui/src-tauri/src/commands.rs")).unwrap();
+        fs::read_to_string(repo_root().join("apps/freally-ui/src-tauri/src/commands.rs")).unwrap();
     let mut offenders: Vec<&str> = Vec::new();
     for line in body.lines() {
         let trimmed = line.trim_start();

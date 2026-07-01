@@ -12,10 +12,10 @@ step() { printf '\n\033[1;36m==> %s\033[0m\n' "$*"; }
 step "Phase 0 smoke: cargo build --all"
 ( cd "$REPO_ROOT" && cargo build --all )
 
-step "Phase 0 smoke: pnpm install --frozen-lockfile (apps/copythat-ui)"
-( cd "$REPO_ROOT/apps/copythat-ui" && pnpm install --frozen-lockfile )
+step "Phase 0 smoke: pnpm install --frozen-lockfile (apps/freally-ui)"
+( cd "$REPO_ROOT/apps/freally-ui" && pnpm install --frozen-lockfile )
 
-step "Phase 0 smoke: pnpm tauri build --debug (apps/copythat-ui)"
-( cd "$REPO_ROOT/apps/copythat-ui" && pnpm tauri build --debug )
+step "Phase 0 smoke: pnpm tauri build --debug (apps/freally-ui)"
+( cd "$REPO_ROOT/apps/freally-ui" && pnpm tauri build --debug )
 
 step "Phase 0 smoke: PASS"

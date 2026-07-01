@@ -22,9 +22,9 @@
 //!
 //! Also verifies the RTL direction flag: every non-`ar` locale
 //! resolves to LTR, `ar` resolves to RTL. This mirrors
-//! `applyHtmlAttributes` in `apps/copythat-ui/src/lib/i18n.ts`.
+//! `applyHtmlAttributes` in `apps/freally-ui/src/lib/i18n.ts`.
 //!
-//! Per Phase 11c scope (see `CopyThat2026-Build-Prompts-Guide.md`
+//! Per Phase 11c scope (see `freally-file-manager-Build-Prompts-Guide.md`
 //! and the 11b/11c scoping discussion), the full per-locale
 //! screenshot + pixelmatch visual-regression harness is deferred
 //! to Phase 18 polish. Cross-platform font rendering (Windows
@@ -149,7 +149,7 @@ fn canned_args(key: &str) -> HashMap<&'static str, String> {
         }
         // Phase 33 — mount status + toast placeables.
         "mount-status-mounted" | "mount-toast-mounted" => {
-            m.insert("path", "C:/Mounts/copythat".to_string());
+            m.insert("path", "C:/Mounts/freally".to_string());
         }
         "mount-toast-failed" => {
             m.insert("reason", "mountpoint not empty".to_string());
@@ -435,7 +435,7 @@ fn phase_11c_substitution_round_trip() {
     let bundles: Vec<(&str, BTreeMap<String, String>)> = LOCALES
         .iter()
         .map(|code| {
-            let path = locales_root.join(code).join("copythat.ftl");
+            let path = locales_root.join(code).join("freally.ftl");
             let content = fs::read_to_string(&path)
                 .unwrap_or_else(|e| panic!("read {}: {e}", path.display()));
             (*code, parse_ftl(&content))
@@ -496,7 +496,7 @@ fn phase_11c_substitution_round_trip() {
 
 #[test]
 fn phase_11c_direction_flag() {
-    // Mirrors `applyHtmlAttributes` in apps/copythat-ui/src/lib/i18n.ts.
+    // Mirrors `applyHtmlAttributes` in apps/freally-ui/src/lib/i18n.ts.
     // `ar` is the only RTL locale in the 18-locale set; everything
     // else resolves to LTR. A regression that silently adds another
     // RTL language (Hebrew, Persian, Urdu) would need the flip wired
@@ -511,7 +511,7 @@ fn phase_11c_direction_flag() {
     }
 }
 
-/// TS port of `apps/copythat-ui/src/lib/i18n.ts::substitute`.
+/// TS port of `apps/freally-ui/src/lib/i18n.ts::substitute`.
 /// Replaces `{ $name }` placeables with the value from `args`;
 /// leaves unknown placeables untouched (the TS behaviour). Used
 /// only in this test module — no public export needed.
@@ -584,13 +584,13 @@ fn has_unresolved_placeable(s: &str) -> bool {
     false
 }
 
-/// Mirrors `apps/copythat-ui/src/lib/i18n.ts`: only `ar` is RTL.
+/// Mirrors `apps/freally-ui/src/lib/i18n.ts`: only `ar` is RTL.
 fn direction_for(code: &str) -> &'static str {
     if code == "ar" { "rtl" } else { "ltr" }
 }
 
 /// Minimal `.ftl` parser — same shape as the runtime in
-/// `apps/copythat-ui/src-tauri/src/i18n.rs::parse`.
+/// `apps/freally-ui/src-tauri/src/i18n.rs::parse`.
 fn parse_ftl(content: &str) -> BTreeMap<String, String> {
     let mut out = BTreeMap::new();
     for raw in content.lines() {

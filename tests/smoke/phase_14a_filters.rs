@@ -11,7 +11,7 @@
 use std::path::{Path, PathBuf};
 use std::time::{Duration, UNIX_EPOCH};
 
-use copythat_core::{CopyControl, CopyEvent, FilterSet, TreeOptions, copy_tree};
+use freally_core::{CopyControl, CopyEvent, FilterSet, TreeOptions, copy_tree};
 use filetime::{FileTime, set_file_mtime};
 use tempfile::tempdir;
 use tokio::sync::mpsc;

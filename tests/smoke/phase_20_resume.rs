@@ -2,8 +2,8 @@
 //!
 //! Covers the four acceptance bars from the phase prompt:
 //!
-//! 1. **Spawn a child copying a 64 MiB random file via copythat-core.**
-//!    (2 GiB with `COPYTHAT_PHASE20_FULL=1` — the slow-path variant
+//! 1. **Spawn a child copying a 64 MiB random file via freally-core.**
+//!    (2 GiB with `FREALLY_PHASE20_FULL=1` — the slow-path variant
 //!    matches the spec's exact wording.)
 //! 2. **Kill the child at ~50 % via SIGKILL / TerminateProcess.**
 //!    `Child::kill()` is the cross-platform equivalent.
@@ -19,7 +19,7 @@
 //!
 //! The default workload is 64 MiB so `cargo test --workspace`
 //! finishes in a handful of seconds. CI can opt into the 2 GiB
-//! variant via `COPYTHAT_PHASE20_FULL=1` once a long-build job
+//! variant via `FREALLY_PHASE20_FULL=1` once a long-build job
 //! lands; the resume invariants are identical at either size.
 //!
 //! ## Child-process plumbing
@@ -42,26 +42,26 @@ use std::process::Stdio;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use copythat_core::{CopyControl, CopyOptions, copy_file};
-use copythat_journal::{CopyThatJournalSink, JobRecord, JobRowId, JobStatus, Journal};
+use freally_core::{CopyControl, CopyOptions, copy_file};
+use freally_journal::{FreallyJournalSink, JobRecord, JobRowId, JobStatus, Journal};
 use rand::RngCore;
 use tokio::sync::mpsc;
 
-const CHILD_ENV: &str = "COPYTHAT_PHASE20_CHILD_MODE";
-const ENV_SRC: &str = "COPYTHAT_PHASE20_SRC";
-const ENV_DST: &str = "COPYTHAT_PHASE20_DST";
-const ENV_JOURNAL: &str = "COPYTHAT_PHASE20_JOURNAL";
-const ENV_TOTAL: &str = "COPYTHAT_PHASE20_TOTAL";
+const CHILD_ENV: &str = "FREALLY_PHASE20_CHILD_MODE";
+const ENV_SRC: &str = "FREALLY_PHASE20_SRC";
+const ENV_DST: &str = "FREALLY_PHASE20_DST";
+const ENV_JOURNAL: &str = "FREALLY_PHASE20_JOURNAL";
+const ENV_TOTAL: &str = "FREALLY_PHASE20_TOTAL";
 
 fn workload_bytes() -> u64 {
-    if std::env::var("COPYTHAT_PHASE20_FULL").is_ok() {
+    if std::env::var("FREALLY_PHASE20_FULL").is_ok() {
         2 * 1024 * 1024 * 1024
     } else {
         // 256 MiB is a sweet spot for the local-disk smoke: big
         // enough that several PROGRESS_MIN_INTERVAL-throttled
         // checkpoints fire before the parent's 50% kill threshold,
         // small enough that `cargo test --workspace` finishes the
-        // case in a few seconds. The slow-path `COPYTHAT_PHASE20_FULL`
+        // case in a few seconds. The slow-path `FREALLY_PHASE20_FULL`
         // matches the spec's exact 2 GiB call-out.
         256 * 1024 * 1024
     }
@@ -101,7 +101,7 @@ async fn run_parent_flow() {
 
     seed_random_file(&src, total);
 
-    // Spawn the child copying through copythat-core. The
+    // Spawn the child copying through freally-core. The
     // `--exact <test>` flag isolates the child's test selection so
     // it doesn't also run other smoke tests.
     let test_exe = std::env::current_exe().expect("current_exe");
@@ -190,8 +190,8 @@ async fn run_parent_flow() {
     // sink hangs off the existing JobRowId so the engine's
     // `decide_resume` walks the prefix-hash path and seeks past
     // the bytes already on disk.
-    let sink: Arc<dyn copythat_core::JournalSink> =
-        Arc::new(CopyThatJournalSink::new(journal.clone(), row_id));
+    let sink: Arc<dyn freally_core::JournalSink> =
+        Arc::new(FreallyJournalSink::new(journal.clone(), row_id));
     let opts = CopyOptions {
         journal: Some(sink),
         journal_file_idx: 0,
@@ -240,7 +240,7 @@ async fn run_parent_flow() {
     let final_cp = &files[0];
     assert_eq!(
         final_cp.status,
-        copythat_journal::FileStatus::Finished,
+        freally_journal::FileStatus::Finished,
         "file status not Finished after resume"
     );
     assert!(final_cp.final_hash.is_some(), "final_hash not populated");
@@ -261,8 +261,8 @@ async fn run_child_copy() {
         .begin_job(JobRecord::new("copy", src.clone(), Some(dst.clone())))
         .expect("begin_job");
 
-    let sink: Arc<dyn copythat_core::JournalSink> =
-        Arc::new(CopyThatJournalSink::new(journal, row));
+    let sink: Arc<dyn freally_core::JournalSink> =
+        Arc::new(FreallyJournalSink::new(journal, row));
     let opts = CopyOptions {
         journal: Some(sink),
         journal_file_idx: 0,

@@ -54,7 +54,7 @@ fn workspace_release_profile_uses_fat_lto_and_panic_abort() {
 
 #[test]
 fn cli_build_script_emits_linux_hardening_flags() {
-    let body = read(&repo_root().join("crates/copythat-cli/build.rs"));
+    let body = read(&repo_root().join("crates/freally-cli/build.rs"));
     for flag in [
         "-Wl,-z,relro",
         "-Wl,-z,now",
@@ -64,27 +64,27 @@ fn cli_build_script_emits_linux_hardening_flags() {
     ] {
         assert!(
             body.contains(flag),
-            "crates/copythat-cli/build.rs missing Phase 17g flag: {flag}",
+            "crates/freally-cli/build.rs missing Phase 17g flag: {flag}",
         );
     }
 }
 
 #[test]
 fn cli_cargo_toml_declares_build_script() {
-    let body = read(&repo_root().join("crates/copythat-cli/Cargo.toml"));
+    let body = read(&repo_root().join("crates/freally-cli/Cargo.toml"));
     assert!(
         body.contains("build = \"build.rs\""),
-        "crates/copythat-cli/Cargo.toml must declare its build.rs",
+        "crates/freally-cli/Cargo.toml must declare its build.rs",
     );
 }
 
 #[test]
 fn tauri_build_script_emits_linux_hardening_flags() {
-    let body = read(&repo_root().join("apps/copythat-ui/src-tauri/build.rs"));
+    let body = read(&repo_root().join("apps/freally-ui/src-tauri/build.rs"));
     for flag in ["-Wl,-z,relro", "-Wl,-z,now", "-Wl,-z,noexecstack"] {
         assert!(
             body.contains(flag),
-            "apps/copythat-ui/src-tauri/build.rs missing Phase 17g flag: {flag}",
+            "apps/freally-ui/src-tauri/build.rs missing Phase 17g flag: {flag}",
         );
     }
     assert!(

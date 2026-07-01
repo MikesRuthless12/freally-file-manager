@@ -4,24 +4,24 @@
 
   This file defines the .appex bundle that macOS Finder loads when
   the main app is installed. The principal class is resolved by
-  name via the NSExtensionPrincipalClass key; @objc(CopyThatFinderSync)
+  name via the NSExtensionPrincipalClass key; @objc(FreallyFinderSync)
   in the Swift source exposes the matching Objective-C runtime
   name.
 
   Bundle layout on disk (produced by packaging/macos/scripts/bundle-appex.sh):
 
-    CopyThatFinderSync.appex/
+    FreallyFinderSync.appex/
       Contents/
         Info.plist                    (this file)
         MacOS/
-          CopyThatFinderSync          (Mach-O bundle exec)
+          FreallyFinderSync          (Mach-O bundle exec)
 
   The .appex sits inside the main app bundle:
 
     Freally File Manager v1.0.0.app/
       Contents/
         PlugIns/
-          CopyThatFinderSync.appex/
+          FreallyFinderSync.appex/
 -->
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -33,16 +33,16 @@
     <string>Freally File Manager Finder Sync</string>
 
     <key>CFBundleExecutable</key>
-    <string>CopyThatFinderSync</string>
+    <string>FreallyFinderSync</string>
 
     <key>CFBundleIdentifier</key>
-    <string>com.copythat.desktop.FinderSync</string>
+    <string>com.freally.filemanager.FinderSync</string>
 
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
 
     <key>CFBundleName</key>
-    <string>CopyThatFinderSync</string>
+    <string>FreallyFinderSync</string>
 
     <key>CFBundlePackageType</key>
     <string>XPC!</string>
@@ -64,7 +64,7 @@
         <key>NSExtensionPointIdentifier</key>
         <string>com.apple.FinderSync</string>
         <key>NSExtensionPrincipalClass</key>
-        <string>CopyThatFinderSync</string>
+        <string>FreallyFinderSync</string>
     </dict>
 </dict>
 </plist>

@@ -12,14 +12,14 @@
 //!    resource type.
 //! 4. `render_gcp_deployment` produces YAML containing
 //!    `compute.v1.instance` and a zone derived from the region.
-//! 5. Cross-cloud (S3 → GCS) defers to the `copythat copy` CLI when
+//! 5. Cross-cloud (S3 → GCS) defers to the `freally copy` CLI when
 //!    no provider-native idiom applies.
 //! 6. The Terraform heredoc + ARM `customData` placeholder do not
 //!    contain unescaped `EOT` / `}` sequences that would break the
 //!    enclosing template.
 
-use copythat_cloud::backend::{Backend, BackendConfig, BackendKind, GcsConfig, S3Config};
-use copythat_cloud::offload::{
+use freally_cloud::backend::{Backend, BackendConfig, BackendKind, GcsConfig, S3Config};
+use freally_cloud::offload::{
     OffloadOpts, render_aws_terraform, render_az_arm, render_cloudinit_template,
     render_gcp_deployment,
 };
@@ -134,13 +134,13 @@ fn case04_gcp_deployment_has_compute_instance_and_derived_zone() {
 }
 
 #[test]
-fn case05_cross_cloud_pair_defers_to_copythat_cli() {
+fn case05_cross_cloud_pair_defers_to_freally_cli() {
     let src = s3_backend("src", "primary-bucket");
     let dst = gcs_backend("dst", "secondary-bucket");
     let out = render_cloudinit_template(&src, &dst, &OffloadOpts::default());
     assert!(
-        out.contains("copythat copy"),
-        "cross-cloud must use the copythat CLI when no provider-native idiom applies"
+        out.contains("freally copy"),
+        "cross-cloud must use the freally CLI when no provider-native idiom applies"
     );
     assert!(out.contains("s3://primary-bucket/"));
     assert!(out.contains("gs://secondary-bucket/"));

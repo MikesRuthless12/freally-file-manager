@@ -3,7 +3,7 @@
 //! Three cases mirroring the prompt's contract:
 //!
 //! 1. `GET /` with a valid token → 200 + the brand string
-//!    "CopyThat Recovery" appears in the rendered HTML.
+//!    "Freally Recovery" appears in the rendered HTML.
 //! 2. `GET /` without a token → 401 (loopback gate alone is not
 //!    enough — every request must present the bearer token).
 //! 3. `POST /restore` with `{job_id, path, timestamp_ms}` → 202 +
@@ -18,9 +18,9 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use copythat_chunk::ChunkStore;
-use copythat_history::{History, JobSummary};
-use copythat_recovery::{generate_token, serve};
+use freally_chunk::ChunkStore;
+use freally_history::{History, JobSummary};
+use freally_recovery::{generate_token, serve};
 use secrecy::SecretString;
 
 const PHASE_39_KEYS: &[&str] = &[
@@ -40,7 +40,7 @@ const LOCALES: &[&str] = &[
 ];
 
 struct Harness {
-    handle: copythat_recovery::JoinHandle,
+    handle: freally_recovery::JoinHandle,
     token: String,
     seed_job_id: i64,
     _tmp: tempfile::TempDir,
@@ -103,7 +103,7 @@ async fn case01_landing_returns_200_with_valid_token() {
     assert_eq!(resp.status(), reqwest::StatusCode::OK, "GET / with token");
     let body = resp.text().await.unwrap();
     assert!(
-        body.contains("CopyThat Recovery"),
+        body.contains("Freally Recovery"),
         "landing must contain the brand string; got: {body}"
     );
     h.handle.shutdown().await;
@@ -181,7 +181,7 @@ async fn case04_token_in_query_param_also_authenticates() {
 fn case05_phase_39_fluent_keys_present_in_every_locale() {
     let root = locate_locales_dir().expect("locate locales/");
     for code in LOCALES {
-        let path = root.join(code).join("copythat.ftl");
+        let path = root.join(code).join("freally.ftl");
         let content =
             fs::read_to_string(&path).unwrap_or_else(|e| panic!("read {}: {e}", path.display()));
         for key in PHASE_39_KEYS {
@@ -200,7 +200,7 @@ fn locate_locales_dir() -> Option<PathBuf> {
     let mut cur = std::env::current_dir().ok()?;
     for _ in 0..6 {
         let candidate = cur.join("locales");
-        if candidate.join("en").join("copythat.ftl").exists() {
+        if candidate.join("en").join("freally.ftl").exists() {
             return Some(candidate);
         }
         if !cur.pop() {

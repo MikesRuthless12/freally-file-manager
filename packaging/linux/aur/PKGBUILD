@@ -1,21 +1,21 @@
-# Maintainer: Freally File Manager Contributors <https://github.com/MikesRuthless12/CopyThat2026>
+# Maintainer: Freally File Manager Contributors <https://github.com/MikesRuthless12/freally-file-manager>
 #
 # AUR binary package that installs the .deb-converted Freally File Manager v1.0.0
 # on Arch-family distributions. Free to publish to aur.archlinux.org.
 # The `sha256sums` array is a placeholder; the release helper rewrites
 # it from the freshly-built .deb at publish time.
-pkgname=copythat-bin
+pkgname=freally-bin
 pkgver=1.0.0
 pkgrel=1
 pkgdesc="Byte-exact cross-platform file copier (Rust + Tauri 2)"
 arch=('x86_64')
-url="https://github.com/MikesRuthless12/CopyThat2026"
+url="https://github.com/MikesRuthless12/freally-file-manager"
 license=('custom')
 depends=('webkit2gtk-4.1' 'gtk3' 'libayatana-appindicator')
 makedepends=('binutils' 'tar')
-provides=('copythat')
-conflicts=('copythat')
-source=("${pkgname}-${pkgver}.deb::https://github.com/MikesRuthless12/CopyThat2026/releases/download/v${pkgver}/copythat-ui_${pkgver}_amd64.deb")
+provides=('freally')
+conflicts=('freally')
+source=("${pkgname}-${pkgver}.deb::https://github.com/MikesRuthless12/freally-file-manager/releases/download/v${pkgver}/freally-ui_${pkgver}_amd64.deb")
 sha256sums=('SKIP')
 
 package() {
@@ -23,6 +23,6 @@ package() {
     bsdtar -xf "${pkgname}-${pkgver}.deb" -C "${srcdir}"
     bsdtar -xf "${srcdir}/data.tar."* -C "${pkgdir}"
     # Ship the upstream LICENSE under the conventional Arch path.
-    install -Dm644 "${pkgdir}/usr/share/doc/copythat-ui/LICENSE" \
+    install -Dm644 "${pkgdir}/usr/share/doc/freally-ui/LICENSE" \
         "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE" 2>/dev/null || true
 }

@@ -2,7 +2,7 @@
 """Phase 25 — insert two-way-sync Fluent keys into the 17 non-English
 locales. MT-flagged drafts matching the Standing Per-Phase Rules.
 The 44 keys live as a single block at the end of each locale; the
-English source in locales/en/copythat.ftl is authoritative."""
+English source in locales/en/freally.ftl is authoritative."""
 
 from pathlib import Path
 
@@ -802,7 +802,7 @@ def build_block(t: dict) -> str:
         "\n"
         "# Phase 25 — two-way sync with vector-clock conflict detection.\n"
         "# MT-flagged drafts; the authoritative English source lives in\n"
-        "# locales/en/copythat.ftl.\n"
+        "# locales/en/freally.ftl.\n"
         f"footer-sync = {t['footer_sync']}  # MT\n"
         f"sync-drawer-title = {t['title']}  # MT\n"
         f"sync-drawer-hint = {t['hint']}  # MT\n"
@@ -851,7 +851,7 @@ def build_block(t: dict) -> str:
 
 
 def patch_locale(locale: str, t: dict) -> None:
-    path = LOCALES_DIR / locale / "copythat.ftl"
+    path = LOCALES_DIR / locale / "freally.ftl"
     text = path.read_text(encoding="utf-8")
     if "sync-drawer-title" in text:
         print(f"{locale}: already patched, skipping")

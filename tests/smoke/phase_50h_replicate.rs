@@ -5,7 +5,7 @@
 //! it runs a *different* compression policy than the source (the copied
 //! manifest's per-chunk codec is re-stamped to match the destination).
 
-use copythat_chunk::{CompressionLevel, RepoCompression, Repository, SnapshotKind, VerifyLevel};
+use freally_chunk::{CompressionLevel, RepoCompression, Repository, SnapshotKind, VerifyLevel};
 
 #[test]
 fn replicate_to_dedups_is_idempotent_and_restores() {

@@ -25,8 +25,8 @@ use std::path::Path;
 use std::process::Command;
 use std::time::Instant;
 
-use copythat_core::{CopyControl, CopyEvent, CopyOptions, copy_file};
-use copythat_hash::{HashAlgorithm, HashEvent, hash_file_async};
+use freally_core::{CopyControl, CopyEvent, CopyOptions, copy_file};
+use freally_hash::{HashAlgorithm, HashEvent, hash_file_async};
 use rand::{RngCore, SeedableRng};
 use tempfile::tempdir;
 use tokio::sync::mpsc;

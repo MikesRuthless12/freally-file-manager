@@ -257,7 +257,7 @@ def build_block(t: dict) -> str:
     return (
         "\n"
         "# Phase 24 — security-metadata preservation. MT-flagged drafts;\n"
-        "# the authoritative English source lives in locales/en/copythat.ftl.\n"
+        "# the authoritative English source lives in locales/en/freally.ftl.\n"
         f"settings-preserve-security-metadata = {t['section']}  # MT\n"
         f"settings-preserve-security-metadata-hint = {t['section_hint']}  # MT\n"
         f"settings-preserve-motw = {t['motw']}  # MT\n"
@@ -274,7 +274,7 @@ def build_block(t: dict) -> str:
 
 
 def patch_locale(locale: str, t: dict) -> None:
-    path = LOCALES_DIR / locale / "copythat.ftl"
+    path = LOCALES_DIR / locale / "freally.ftl"
     text = path.read_text(encoding="utf-8")
     if "settings-preserve-security-metadata" in text:
         print(f"{locale}: already patched, skipping")

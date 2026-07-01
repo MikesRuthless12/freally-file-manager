@@ -66,12 +66,12 @@ exceptions = []
 # OR-Apache-2.0), `httpdate` (MIT-OR-Apache-2.0), `serde_path_to_error`
 # (MIT-OR-Apache-2.0), and `axum-core` (MIT). Every transitive license
 # is already covered by the allowlist above; no new entries needed.
-# Adding the new top-level `copythat-recovery` crate is itself
+# Adding the new top-level `freally-recovery` crate is itself
 # `LicenseRef-AllRightsReserved` like every other workspace crate
 # (private.ignore = true skips it).
 #
 # Phase 43 audit-pass — forensic chain-of-custody manifests
-# (`copythat-provenance`) pulls in:
+# (`freally-provenance`) pulls in:
 #   - `bao` (MIT-OR-Apache-2.0) — verified-streaming outboard encoder
 #     over BLAKE3 trees. By Jack O'Connor (BLAKE3's author).
 #   - `ed25519-dalek` (BSD-3-Clause) — RFC 8032 detached signing.
@@ -136,7 +136,7 @@ allow-git        = []
 #     `rsa 0.10.0-rc.17` is only reached when a user supplies an RSA-format
 #     OpenSSH private key for SFTP authentication; the actual SSH crypto
 #     runs through `aws-lc-rs` which is not the vulnerable code path).
-#   - `copythat-mobile` dev-dependencies (test-only RSA keypair generation
+#   - `freally-mobile` dev-dependencies (test-only RSA keypair generation
 #     for the FCM RS256 signer round-trip; never shipped in release builds).
 #
 # Phase 42 added cloud (rustls TLS) + mobile (rustls TLS via reqwest) +
@@ -149,7 +149,7 @@ allow-git        = []
 # The `rsa` crate is only reached for *local* signing/decryption with
 # user-supplied keys (age recipient decrypt, GCS service-account JWT
 # mint, SFTP RSA-key authentication). The Marvin Attack requires the
-# attacker to time many RSA operations over the network — CopyThat
+# attacker to time many RSA operations over the network — Freally
 # does not expose RSA timing to a remote attacker, the operations
 # happen on the user's own machine, and the JWT / authentication
 # response that ships afterwards reveals only that the signing
@@ -207,7 +207,7 @@ ignore = [
     "RUSTSEC-2024-0420",
     # glib 0.18 `VariantStrIter` Iterator/DoubleEndedIterator unsoundness.
     # Inherited transitively through `webkit2gtk` -> `wry` -> `tauri` (the
-    # same Linux WebView stack as the gtk-rs advisories above); CopyThat
+    # same Linux WebView stack as the gtk-rs advisories above); Freally
     # never constructs a `glib::VariantStrIter` itself — it is reached only
     # inside the WebView's GVariant handling on Linux. Newly published in
     # the advisory DB; clears with the same GTK4 migration.
@@ -228,7 +228,7 @@ ignore = [
     "RUSTSEC-2025-0100",
     # paste 1.0.15 — upstream archived. Inherited transitively through
     # `compio 0.13` → `compio-driver` / `-fs` / `-net` / `-runtime` /
-    # `-io`, used by `copythat-platform`'s Windows IOCP fast path
+    # `-io`, used by `freally-platform`'s Windows IOCP fast path
     # (Phase 6+) and Phase 31 power probes. No vulnerability;
     # maintenance signal only. Replacement candidates `pastey` /
     # `with_builtin_macros` would require a compio upstream bump.
@@ -239,7 +239,7 @@ ignore = [
     # under custom log() loggers that touch ThreadRng during reseed.
     # Workspace-wide concern: `rand 0.8.5` is the resolved version
     # for `age` / `age-core` / `rsa` / `pageant` / `phf_generator` /
-    # `reqsign` / `russh` / `russh-keys` and now `copythat-provenance`
+    # `reqsign` / `russh` / `russh-keys` and now `freally-provenance`
     # (which uses `rand::rngs::OsRng` for ed25519 keygen — NOT
     # ThreadRng — so the unsoundness path doesn't apply to our
     # call-sites). Mitigation: every workspace consumer either uses

@@ -25,7 +25,7 @@ use std::fs;
 use std::path::Path;
 
 use chrono::{TimeZone, Utc};
-use copythat_audit::{AuditEvent, AuditFormat, AuditSink, WormMode, verify_chain};
+use freally_audit::{AuditEvent, AuditFormat, AuditSink, WormMode, verify_chain};
 
 const PHASE_34_KEYS: &[&str] = &[
     "settings-audit-heading",
@@ -134,7 +134,7 @@ fn case01_cef_sink_records_the_brief_event_mix() {
     let raw = fs::read_to_string(&path).expect("read audit log");
     let cef_lines: Vec<&str> = raw
         .lines()
-        .filter(|l| l.starts_with("CEF:0|CopyThat|CopyThat|"))
+        .filter(|l| l.starts_with("CEF:0|Freally|Freally|"))
         .collect();
     assert!(
         cef_lines.len() >= 7,
@@ -186,7 +186,7 @@ fn case02_chain_verifies_and_tampering_is_detected() {
 
 #[test]
 fn case03_worm_apply_is_best_effort_on_this_host() {
-    use copythat_audit::worm::{WormError, apply_worm};
+    use freally_audit::worm::{WormError, apply_worm};
 
     let dir = tempfile::tempdir().expect("tempdir");
     let path = dir.path().join("audit-worm.log");
@@ -220,7 +220,7 @@ fn case04_rotation_preserves_previous_log() {
         &path,
         AuditFormat::JsonLines,
         WormMode::Off,
-        copythat_audit::RotationPolicy { max_size: 256 },
+        freally_audit::RotationPolicy { max_size: 256 },
     )
     .expect("open sink with 256-byte rotation");
 
@@ -229,7 +229,7 @@ fn case04_rotation_preserves_previous_log() {
     }
     drop(sink);
 
-    let rotated = copythat_audit::rotated_path(&path);
+    let rotated = freally_audit::rotated_path(&path);
     assert!(
         rotated.exists(),
         "rotation should move the primary log to {} — did not find it",
@@ -246,7 +246,7 @@ fn case04_rotation_preserves_previous_log() {
 fn case05_all_phase_34_keys_present_in_every_locale() {
     let root = locate_locales_dir().expect("locate locales/");
     for code in LOCALES {
-        let path = root.join(code).join("copythat.ftl");
+        let path = root.join(code).join("freally.ftl");
         let content =
             fs::read_to_string(&path).unwrap_or_else(|e| panic!("read {}: {e}", path.display()));
         for key in PHASE_34_KEYS {
@@ -265,7 +265,7 @@ fn locate_locales_dir() -> Option<std::path::PathBuf> {
     let mut cur = std::env::current_dir().ok()?;
     for _ in 0..6 {
         let candidate = cur.join("locales");
-        if candidate.join("en").join("copythat.ftl").exists() {
+        if candidate.join("en").join("freally.ftl").exists() {
             return Some(candidate);
         }
         if !cur.pop() {

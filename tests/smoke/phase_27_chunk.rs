@@ -16,15 +16,15 @@
 //!    once.
 //!
 //! All three cases run on every host (no platform gating). The
-//! slowest case is ~1.2 s on a 2024 laptop; `COPYTHAT_PHASE27_FULL=1`
+//! slowest case is ~1.2 s on a 2024 laptop; `FREALLY_PHASE27_FULL=1`
 //! bumps every size by 10× for CI's thorough pass.
 
 use std::sync::Arc;
 
-use copythat_chunk::{
-    ChunkStore, Chunker, CopyThatChunkSink, IngestStats, delta_plan, ingest_bytes, materialise_file,
+use freally_chunk::{
+    ChunkStore, Chunker, FreallyChunkSink, IngestStats, delta_plan, ingest_bytes, materialise_file,
 };
-use copythat_core::ChunkStoreSink;
+use freally_core::ChunkStoreSink;
 
 /// Deterministic PRNG so the smoke is reproducible across hosts. An
 /// LCG with the standard constants is plenty for "non-compressible
@@ -43,7 +43,7 @@ fn seeded_bytes(seed: u64, len: usize) -> Vec<u8> {
 }
 
 fn scale_up() -> bool {
-    std::env::var("COPYTHAT_PHASE27_FULL").is_ok_and(|v| v == "1")
+    std::env::var("FREALLY_PHASE27_FULL").is_ok_and(|v| v == "1")
 }
 
 #[test]
@@ -195,11 +195,11 @@ fn case3_shared_template_dedups_across_files() {
 fn case4_sink_trait_is_usable_from_core() {
     // Round-trip the Phase 27 sink trait from core's vantage point
     // — i.e. consume it as `Arc<dyn ChunkStoreSink>` with no direct
-    // copythat-chunk types visible, which is how the engine will
+    // freally-chunk types visible, which is how the engine will
     // interact with it.
     let tmp = tempfile::tempdir().unwrap();
     let store = Arc::new(ChunkStore::open(tmp.path()).unwrap());
-    let sink_arc: Arc<dyn ChunkStoreSink> = Arc::new(CopyThatChunkSink::new(Arc::clone(&store)));
+    let sink_arc: Arc<dyn ChunkStoreSink> = Arc::new(FreallyChunkSink::new(Arc::clone(&store)));
 
     assert!(!sink_arc.has_chunk(&[0u8; 32]));
     // Manifest helpers on the trait surface: put_manifest + get_manifest

@@ -23,7 +23,7 @@
 //!
 //! Environment knobs:
 //!
-//! - `COPYTHAT_PHASE21_FULL=1` → 1 GiB workload at 32 MiB/s (≈32 s).
+//! - `FREALLY_PHASE21_FULL=1` → 1 GiB workload at 32 MiB/s (≈32 s).
 //!   Off by default so `cargo test` stays fast.
 
 use std::path::Path;
@@ -31,13 +31,13 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use chrono::TimeZone;
-use copythat_core::{CopyControl, CopyOptions, copy_file};
-use copythat_shape::{ByteRate, CopyThatShapeSink, Schedule, Shape};
+use freally_core::{CopyControl, CopyOptions, copy_file};
+use freally_shape::{ByteRate, FreallyShapeSink, Schedule, Shape};
 use rand::RngCore;
 use tokio::sync::mpsc;
 
 fn workload_bytes() -> u64 {
-    if std::env::var("COPYTHAT_PHASE21_FULL").is_ok() {
+    if std::env::var("FREALLY_PHASE21_FULL").is_ok() {
         1024 * 1024 * 1024
     } else {
         256 * 1024 * 1024
@@ -76,7 +76,7 @@ async fn run_fixed_rate_case() {
 
     let rate = ByteRate::mebibytes_per_second(32);
     let shape = Arc::new(Shape::new(Some(rate)));
-    let sink: Arc<dyn copythat_core::ShapeSink> = Arc::new(CopyThatShapeSink::new(shape.clone()));
+    let sink: Arc<dyn freally_core::ShapeSink> = Arc::new(FreallyShapeSink::new(shape.clone()));
     let opts = CopyOptions {
         shape: Some(sink),
         ..CopyOptions::default()
@@ -136,7 +136,7 @@ async fn run_mid_copy_rate_change() {
     let initial_rate = ByteRate::mebibytes_per_second(32);
     let slowed_rate = ByteRate::mebibytes_per_second(8);
     let shape = Arc::new(Shape::new(Some(initial_rate)));
-    let sink: Arc<dyn copythat_core::ShapeSink> = Arc::new(CopyThatShapeSink::new(shape.clone()));
+    let sink: Arc<dyn freally_core::ShapeSink> = Arc::new(FreallyShapeSink::new(shape.clone()));
     let opts = CopyOptions {
         shape: Some(sink),
         ..CopyOptions::default()

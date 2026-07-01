@@ -22,7 +22,7 @@
 
 use std::path::PathBuf;
 
-use copythat_ui_lib::dropstack::DropStackRegistry;
+use freally_ui_lib::dropstack::DropStackRegistry;
 
 fn write(p: &std::path::Path, body: &str) {
     std::fs::write(p, body).unwrap();

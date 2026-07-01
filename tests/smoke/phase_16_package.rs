@@ -158,7 +158,7 @@ fn tauri_conf_uses_ad_hoc_codesign() {
     let root = repo_root();
     let path = root
         .join("apps")
-        .join("copythat-ui")
+        .join("freally-ui")
         .join("src-tauri")
         .join("tauri.conf.json");
     let content = read_to_string(&path);
@@ -183,20 +183,20 @@ fn packaging_manifests_exist_and_are_non_empty() {
     let root = repo_root();
     let required_files: &[&[&str]] = &[
         &["packaging", "README.md"],
-        &["packaging", "windows", "winget", "CopyThat.CopyThat.yaml"],
+        &["packaging", "windows", "winget", "Freally.Freally.yaml"],
         &[
             "packaging",
             "windows",
             "winget",
-            "CopyThat.CopyThat.locale.en-US.yaml",
+            "Freally.Freally.locale.en-US.yaml",
         ],
         &[
             "packaging",
             "windows",
             "winget",
-            "CopyThat.CopyThat.installer.yaml",
+            "Freally.Freally.installer.yaml",
         ],
-        &["packaging", "windows", "chocolatey", "copythat.nuspec"],
+        &["packaging", "windows", "chocolatey", "freally.nuspec"],
         &[
             "packaging",
             "windows",
@@ -204,13 +204,13 @@ fn packaging_manifests_exist_and_are_non_empty() {
             "tools",
             "chocolateyinstall.ps1",
         ],
-        &["packaging", "macos", "homebrew-cask", "copythat.rb"],
-        &["packaging", "linux", "flatpak", "com.copythat.desktop.yml"],
+        &["packaging", "macos", "homebrew-cask", "freally.rb"],
+        &["packaging", "linux", "flatpak", "com.freally.filemanager.yml"],
         &[
             "packaging",
             "linux",
             "flatpak",
-            "com.copythat.desktop.appdata.xml",
+            "com.freally.filemanager.appdata.xml",
         ],
         &["packaging", "linux", "aur", "PKGBUILD"],
     ];

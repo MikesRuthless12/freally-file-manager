@@ -9,7 +9,7 @@
   file path.
 
   The NSMessage strings (`copyFiles` / `moveFiles`) map 1:1 to the
-  @objc selectors in `CopyThatServiceHandler.swift`.
+  @objc selectors in `FreallyServiceHandler.swift`.
 
   Reference: macOS "Services Implementation Guide"
   https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/SysServices/introduction.html

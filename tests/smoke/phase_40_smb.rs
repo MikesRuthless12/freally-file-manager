@@ -8,7 +8,7 @@
 //!    must NOT be misinterpreted as a UNC.
 //! 3. (Windows-only) `negotiate_smb_compression(unc_path)` returns
 //!    `supported = true`, `algorithm = None` (today's user-mode
-//!    surface — see the [`copythat_platform::smb`] type-level note).
+//!    surface — see the [`freally_platform::smb`] type-level note).
 //! 4. `SmbCompressionAlgo::wire()` round-trips through serde for all
 //!    three variants — the wire string is what the IPC layer carries
 //!    inside `CopyEvent::SmbCompressionActive { algo }`.
@@ -17,7 +17,7 @@
 
 use std::path::Path;
 
-use copythat_platform::smb::{SmbCompressionAlgo, SmbCompressionState, negotiate_smb_compression};
+use freally_platform::smb::{SmbCompressionAlgo, SmbCompressionState, negotiate_smb_compression};
 
 const PHASE_40_KEYS: &[&str] = &[
     // SMB block
@@ -109,7 +109,7 @@ fn case05_all_phase_40_keys_present_in_every_locale() {
         let path = workspace_root
             .join("locales")
             .join(locale)
-            .join("copythat.ftl");
+            .join("freally.ftl");
         let body = std::fs::read_to_string(&path)
             .unwrap_or_else(|_| panic!("could not read {}", path.display()));
         for key in PHASE_40_KEYS {
@@ -124,7 +124,7 @@ fn case05_all_phase_40_keys_present_in_every_locale() {
 
 fn workspace_root() -> std::path::PathBuf {
     // CARGO_MANIFEST_DIR points at the crate that registered the test
-    // (copythat-platform); the workspace root is two levels up.
+    // (freally-platform); the workspace root is two levels up.
     let crate_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     crate_dir
         .parent()

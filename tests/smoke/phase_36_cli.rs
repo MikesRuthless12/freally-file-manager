@@ -1,8 +1,8 @@
-//! Phase 36 smoke — `copythat` CLI.
+//! Phase 36 smoke — `freally` CLI.
 //!
 //! Six cases mandated by the brief:
 //!
-//! 1. `copythat version --json` round-trips through serde and reports
+//! 1. `freally version --json` round-trips through serde and reports
 //!    the workspace crate name + version.
 //! 2. A jobspec describing 3 files; `plan --spec` exits 2 with three
 //!    `plan_action` JSON events.
@@ -20,8 +20,8 @@ use std::ffi::OsString;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use copythat_cli::ExitCode;
-use copythat_cli::output::{JsonEvent, JsonEventKind};
+use freally_cli::ExitCode;
+use freally_cli::output::{JsonEvent, JsonEventKind};
 use serde_json::Value;
 use tempfile::tempdir;
 
@@ -55,7 +55,7 @@ const LOCALES: &[&str] = &[
 
 #[test]
 fn case01_version_json_round_trips() {
-    let buf = run_capture(["copythat", "--json", "version"]);
+    let buf = run_capture(["freally", "--json", "version"]);
     let mut found = false;
     for line in buf.lines() {
         let evt: JsonEvent =
@@ -67,7 +67,7 @@ fn case01_version_json_round_trips() {
         } = evt.event
         {
             assert!(!version.is_empty(), "version string empty");
-            assert_eq!(crate_name, "copythat-cli");
+            assert_eq!(crate_name, "freally-cli");
             found = true;
         }
     }
@@ -81,7 +81,7 @@ fn case02_plan_emits_three_actions_for_three_file_spec() {
 
     let captured = run_capture_with_status(
         [
-            "copythat",
+            "freally",
             "--json",
             "plan",
             "--spec",
@@ -107,7 +107,7 @@ fn case03_apply_executes_then_idempotent_reapply_is_noop() {
 
     let _first = run_capture_with_status(
         [
-            "copythat",
+            "freally",
             "--json",
             "apply",
             "--spec",
@@ -123,7 +123,7 @@ fn case03_apply_executes_then_idempotent_reapply_is_noop() {
 
     let captured = run_capture_with_status(
         [
-            "copythat",
+            "freally",
             "--json",
             "apply",
             "--spec",
@@ -148,7 +148,7 @@ fn case04_copy_emits_well_formed_json_lines() {
 
     let captured = run_capture_with_status(
         [
-            "copythat",
+            "freally",
             "--json",
             "copy",
             &src.display().to_string(),
@@ -176,7 +176,7 @@ fn case05_verify_failed_jobspec_exits_four() {
 
     run_capture_with_status(
         [
-            "copythat",
+            "freally",
             "--json",
             "verify",
             &target.display().to_string(),
@@ -197,7 +197,7 @@ fn case06_unknown_algo_exits_config_invalid() {
 
     run_capture_with_status(
         [
-            "copythat",
+            "freally",
             "verify",
             &target.display().to_string(),
             "--algo",
@@ -211,7 +211,7 @@ fn case06_unknown_algo_exits_config_invalid() {
 fn case07_phase_36_fluent_keys_present_in_every_locale() {
     let root = locate_locales_dir().expect("locate locales/");
     for code in LOCALES {
-        let path = root.join(code).join("copythat.ftl");
+        let path = root.join(code).join("freally.ftl");
         let content =
             fs::read_to_string(&path).unwrap_or_else(|e| panic!("read {}: {e}", path.display()));
         for key in PHASE_36_KEYS {
@@ -274,7 +274,7 @@ where
     S: Into<OsString>,
 {
     let argv: Vec<OsString> = args.into_iter().map(Into::into).collect();
-    let exe = OsString::from(env!("CARGO_BIN_EXE_copythat"));
+    let exe = OsString::from(env!("CARGO_BIN_EXE_freally"));
     let mut cmd = std::process::Command::new(&exe);
     cmd.args(argv.iter().skip(1));
     let output = cmd
@@ -311,7 +311,7 @@ fn locate_locales_dir() -> Option<PathBuf> {
     let mut cur = std::env::current_dir().ok()?;
     for _ in 0..6 {
         let candidate = cur.join("locales");
-        if candidate.join("en").join("copythat.ftl").exists() {
+        if candidate.join("en").join("freally.ftl").exists() {
             return Some(candidate);
         }
         if !cur.pop() {

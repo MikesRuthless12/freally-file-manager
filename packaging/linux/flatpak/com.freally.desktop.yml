@@ -1,0 +1,42 @@
+# Flatpak manifest for Freally File Manager v1.0.0. Submitted to Flathub (free).
+# The Flathub build pipeline pulls directly from the source tag, so
+# we don't ship a pre-built AppImage through flatpak — the manifest
+# just tells the builder how to `cargo build` + `pnpm build` inside
+# the Freedesktop SDK runtime.
+app-id: com.freally.filemanager
+runtime: org.freedesktop.Platform
+runtime-version: "24.08"
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-stable
+  - org.freedesktop.Sdk.Extension.node20
+command: freally-ui
+finish-args:
+  # Needed for the webview.
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --share=ipc
+  - --device=dri
+  # File copier — full home access is the minimum usable scope.
+  # Users can narrow this via Flatseal if they prefer.
+  - --filesystem=home
+  # Auto-update checks over HTTPS.
+  - --share=network
+  # System tray via AppIndicator.
+  - --talk-name=org.kde.StatusNotifierWatcher
+build-options:
+  append-path: /usr/lib/sdk/rust-stable/bin:/usr/lib/sdk/node20/bin
+  env:
+    CARGO_HOME: /run/build/freally/cargo
+modules:
+  - name: freally
+    buildsystem: simple
+    build-commands:
+      - cargo build --release -p freally-ui --target-dir target
+      - install -Dm755 target/release/freally-ui /app/bin/freally-ui
+      - install -Dm644 packaging/linux/freally.desktop /app/share/applications/com.freally.filemanager.desktop
+      - install -Dm644 apps/freally-ui/src-tauri/icons/128x128.png /app/share/icons/hicolor/128x128/apps/com.freally.filemanager.png
+      - install -Dm644 packaging/linux/flatpak/com.freally.filemanager.appdata.xml /app/share/metainfo/com.freally.filemanager.appdata.xml
+    sources:
+      - type: dir
+        path: ../../..

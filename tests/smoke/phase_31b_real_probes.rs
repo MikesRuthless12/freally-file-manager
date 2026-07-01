@@ -4,7 +4,7 @@
 //! types backed by per-OS calls:
 //!
 //! - **Windows** — `SHQueryUserNotificationState` from Shell32 via
-//!   `copythat_platform::presence` (presentation and fullscreen are
+//!   `freally_platform::presence` (presentation and fullscreen are
 //!   distinct `QUNS_*` states).
 //! - **Linux / macOS / other** — deferred to the cross-platform stub
 //!   for now (`Real*Probe` are type aliases to the stub there). The
@@ -23,34 +23,34 @@
 //!    panicking — same shape as the existing `SyntheticProbes`
 //!    consumer.
 
-use copythat_power::source::{FullscreenProbe, PresentationProbe};
+use freally_power::source::{FullscreenProbe, PresentationProbe};
 
 // On Windows the `Real*Probe` names are unit structs that can be used
 // as value literals; on Linux / macOS / other platforms they are type
 // aliases to the cross-platform stub structs (see
-// `copythat_power::source`). A type alias can't be used as a value
+// `freally_power::source`). A type alias can't be used as a value
 // literal, so the probe-construction helpers below build the trait
 // object from whichever concrete unit struct is in scope on the host.
 // Importing each set only where it's used keeps the unused-import
 // lint quiet under `-D warnings`.
 #[cfg(target_os = "windows")]
-use copythat_power::source::{RealFullscreenProbe, RealPresentationProbe};
+use freally_power::source::{RealFullscreenProbe, RealPresentationProbe};
 #[cfg(not(target_os = "windows"))]
-use copythat_power::source::{StubFullscreenProbe, StubPresentationProbe};
+use freally_power::source::{StubFullscreenProbe, StubPresentationProbe};
 
 #[test]
 fn presence_module_is_callable_on_every_host() {
     // On Windows the presentation/fullscreen state comes straight from
-    // the `copythat_platform::presence` FFI helpers (the only crate
-    // allowed to carry unsafe). `copythat-platform` is a Windows-only
-    // dependency of `copythat-power`, so on other hosts we exercise the
+    // the `freally_platform::presence` FFI helpers (the only crate
+    // allowed to carry unsafe). `freally-platform` is a Windows-only
+    // dependency of `freally-power`, so on other hosts we exercise the
     // same callable surface through the public `Real*Probe` trait
     // methods instead. Either way the contract is "calling never
     // panics regardless of OS".
     #[cfg(target_os = "windows")]
     {
-        let _ = copythat_platform::presence::is_in_presentation_mode();
-        let _ = copythat_platform::presence::is_in_fullscreen_mode();
+        let _ = freally_platform::presence::is_in_presentation_mode();
+        let _ = freally_platform::presence::is_in_fullscreen_mode();
     }
     #[cfg(not(target_os = "windows"))]
     {
@@ -100,7 +100,7 @@ fn make_fullscreen_probe() -> Box<dyn FullscreenProbe> {
 #[cfg(target_os = "windows")]
 #[test]
 fn windows_presence_uses_quns_state_classification() {
-    use copythat_platform::presence::QunsState;
+    use freally_platform::presence::QunsState;
     // The QunsState enum is the documented public surface for unit
     // tests that want to assert per-state branches. Confirm the
     // enum survives being exported.

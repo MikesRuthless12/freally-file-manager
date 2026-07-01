@@ -14,15 +14,15 @@
 //!    *before* the destination ends up byte-identical to the source.
 //!    This exercises the `LockedFilePolicy::Snapshot` branch without
 //!    needing root / admin.
-//! 3. **Windows VSS (`COPYTHAT_PHASE19B_VSS=1` + Administrator).**
+//! 3. **Windows VSS (`FREALLY_PHASE19B_VSS=1` + Administrator).**
 //!    Opens a 100 MiB file with `FILE_SHARE_NONE`, calls
 //!    `create_snapshot`, reads from the snapshot-side path, and
 //!    asserts the file's bytes match.
-//! 4. **Linux Btrfs loopback (`COPYTHAT_PHASE19B_BTRFS=1` + root
+//! 4. **Linux Btrfs loopback (`FREALLY_PHASE19B_BTRFS=1` + root
 //!    + `mkfs.btrfs`).** Creates a temp loop device, mkfs.btrfs,
 //!      mounts, writes a 100 MiB file, holds an exclusive `flock(2)`,
 //!      snapshots, and copies from the snapshot-side path.
-//! 5. **macOS APFS (`COPYTHAT_PHASE19B_APFS=1`).** Best-effort on CI
+//! 5. **macOS APFS (`FREALLY_PHASE19B_APFS=1`).** Best-effort on CI
 //!    runners since local APFS snapshots are flaky under SIP.
 //!
 //! The default `cargo test` run covers cases 1 + 2 only — the
@@ -37,16 +37,16 @@ use std::pin::Pin;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use copythat_core::{
+use freally_core::{
     CopyControl, CopyError, CopyEvent, CopyOptions, LockedFilePolicy, SnapshotGuard, SnapshotHook,
     SnapshotLease, copy_file,
 };
-use copythat_snapshot::{SnapshotKind, capabilities};
+use freally_snapshot::{SnapshotKind, capabilities};
 // `translate_path` is only exercised by the Windows-gated VSS opt-in
 // test below (Case 4); importing it unconditionally trips
 // `unused_imports` under `-D warnings` on Linux / macOS.
 #[cfg(windows)]
-use copythat_snapshot::translate_path;
+use freally_snapshot::translate_path;
 use tempfile::tempdir;
 use tokio::sync::mpsc;
 
@@ -133,7 +133,7 @@ impl SnapshotHook for MockSnapshotHook {
 /// The engine's `open_src_with_snapshot_fallback` only triggers on
 /// `is_sharing_violation(err)` (os_error 32/33 on Windows, 16 on
 /// Unix). Rather than synthesise those, we add one additional
-/// integration: when `COPYTHAT_PHASE19B_VSS=1` is set on Windows, we
+/// integration: when `FREALLY_PHASE19B_VSS=1` is set on Windows, we
 /// exercise the real path. For the plain test, we instead verify the
 /// hook contract directly by calling it and re-opening against the
 /// translated path — the same two calls the engine makes.
@@ -251,9 +251,9 @@ fn translate_path_strips_original_root_from_nested_path() {
 #[cfg(windows)]
 #[tokio::test(flavor = "current_thread")]
 async fn vss_opt_in_real_snapshot_of_system_drive() {
-    if std::env::var("COPYTHAT_PHASE19B_VSS").ok().as_deref() != Some("1") {
+    if std::env::var("FREALLY_PHASE19B_VSS").ok().as_deref() != Some("1") {
         eprintln!(
-            "skipping real VSS test (set COPYTHAT_PHASE19B_VSS=1 and run elevated to enable)"
+            "skipping real VSS test (set FREALLY_PHASE19B_VSS=1 and run elevated to enable)"
         );
         return;
     }
@@ -270,10 +270,10 @@ async fn vss_opt_in_real_snapshot_of_system_drive() {
         eprintln!("VSS test target missing: {target:?}");
         return;
     }
-    let handle = match copythat_snapshot::create_snapshot(target).await {
+    let handle = match freally_snapshot::create_snapshot(target).await {
         Ok(h) => h,
-        Err(copythat_snapshot::SnapshotError::NeedsElevation)
-        | Err(copythat_snapshot::SnapshotError::UacDenied) => {
+        Err(freally_snapshot::SnapshotError::NeedsElevation)
+        | Err(freally_snapshot::SnapshotError::UacDenied) => {
             eprintln!("VSS test skipped: not elevated");
             return;
         }
@@ -293,9 +293,9 @@ async fn vss_opt_in_real_snapshot_of_system_drive() {
 #[cfg(target_os = "linux")]
 #[tokio::test(flavor = "current_thread")]
 async fn btrfs_opt_in_loopback_roundtrip() {
-    if std::env::var("COPYTHAT_PHASE19B_BTRFS").ok().as_deref() != Some("1") {
+    if std::env::var("FREALLY_PHASE19B_BTRFS").ok().as_deref() != Some("1") {
         eprintln!(
-            "skipping real Btrfs test (set COPYTHAT_PHASE19B_BTRFS=1 and run as root to enable)"
+            "skipping real Btrfs test (set FREALLY_PHASE19B_BTRFS=1 and run as root to enable)"
         );
         return;
     }
@@ -313,9 +313,9 @@ async fn btrfs_opt_in_loopback_roundtrip() {
 #[cfg(target_os = "macos")]
 #[tokio::test(flavor = "current_thread")]
 async fn apfs_opt_in_local_snapshot_roundtrip() {
-    if std::env::var("COPYTHAT_PHASE19B_APFS").ok().as_deref() != Some("1") {
+    if std::env::var("FREALLY_PHASE19B_APFS").ok().as_deref() != Some("1") {
         eprintln!(
-            "skipping real APFS test (set COPYTHAT_PHASE19B_APFS=1 to enable; \
+            "skipping real APFS test (set FREALLY_PHASE19B_APFS=1 to enable; \
              local snapshots are best-effort on CI runners)"
         );
         return;
@@ -325,7 +325,7 @@ async fn apfs_opt_in_local_snapshot_roundtrip() {
     let tmp = tempdir().expect("tempdir");
     let f = tmp.path().join("probe.txt");
     tokio::fs::write(&f, b"apfs live bytes").await.unwrap();
-    let handle = match copythat_snapshot::create_snapshot(&f).await {
+    let handle = match freally_snapshot::create_snapshot(&f).await {
         Ok(h) => h,
         Err(e) => {
             eprintln!("APFS test skipped: {e}");

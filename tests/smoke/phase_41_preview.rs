@@ -22,7 +22,7 @@ use std::fs;
 use std::path::Path;
 use std::time::{Duration, SystemTime};
 
-use copythat_core::dryrun::{
+use freally_core::dryrun::{
     ConflictKind, DryRunOptions, ReasonForReplacement, ReasonForSkip, compute_tree_diff,
 };
 
@@ -220,7 +220,7 @@ fn case06_all_phase_41_keys_present_in_every_locale() {
         let path = workspace_root
             .join("locales")
             .join(locale)
-            .join("copythat.ftl");
+            .join("freally.ftl");
         let body = std::fs::read_to_string(&path)
             .unwrap_or_else(|_| panic!("could not read {}", path.display()));
         for key in PHASE_41_KEYS {

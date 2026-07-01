@@ -2,7 +2,7 @@
 //! Prometheus exposition, and a real WebDAV PUT/GET round-trip that bumps
 //! the `/metrics` counters.
 
-use copythat_server::{
+use freally_server::{
     AuthMode, JobNotification, Metrics, OtelConfig, Protocol, ServerConfig, ServerError,
     WebhookTarget, format_webhook_payload, serve,
 };
@@ -77,11 +77,11 @@ fn prometheus_exposition_is_well_formed() {
         active_jobs: 2,
     };
     let s = m.render_prometheus();
-    assert!(s.contains("# TYPE copythat_jobs_total counter"));
-    assert!(s.contains("copythat_jobs_total 3"));
-    assert!(s.contains("# TYPE copythat_active_jobs gauge"));
-    assert!(s.contains("copythat_active_jobs 2"));
-    for name in ["copythat_jobs_total", "copythat_active_jobs"] {
+    assert!(s.contains("# TYPE freally_jobs_total counter"));
+    assert!(s.contains("freally_jobs_total 3"));
+    assert!(s.contains("# TYPE freally_active_jobs gauge"));
+    assert!(s.contains("freally_active_jobs 2"));
+    for name in ["freally_jobs_total", "freally_active_jobs"] {
         let help = s.find(&format!("# HELP {name} ")).unwrap();
         let typ = s.find(&format!("# TYPE {name} ")).unwrap();
         let sample = s.find(&format!("\n{name} ")).unwrap();
@@ -181,16 +181,16 @@ async fn webdav_put_get_roundtrip_and_metrics() {
         .text()
         .await
         .unwrap();
-    assert!(metrics.contains("# TYPE copythat_jobs_total counter"));
+    assert!(metrics.contains("# TYPE freally_jobs_total counter"));
     let jobs_line = metrics
         .lines()
-        .find(|l| l.starts_with("copythat_jobs_total "))
+        .find(|l| l.starts_with("freally_jobs_total "))
         .expect("jobs_total sample present");
     let n: u64 = jobs_line.rsplit(' ').next().unwrap().parse().unwrap();
     assert!(n >= 1, "expected >=1 job after PUT, got {n}");
     let bytes_line = metrics
         .lines()
-        .find(|l| l.starts_with("copythat_bytes_copied_total "))
+        .find(|l| l.starts_with("freally_bytes_copied_total "))
         .unwrap();
     let bytes: u64 = bytes_line.rsplit(' ').next().unwrap().parse().unwrap();
     assert_eq!(bytes, payload.len() as u64, "bytes_copied_total");

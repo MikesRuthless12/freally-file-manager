@@ -10,7 +10,7 @@
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 
-use copythat_core::{CopyControl, CopyEvent, MoveOptions, TreeOptions, copy_tree, move_tree};
+use freally_core::{CopyControl, CopyEvent, MoveOptions, TreeOptions, copy_tree, move_tree};
 use filetime::{FileTime, set_file_mtime};
 use rand::{RngCore, SeedableRng};
 use tempfile::tempdir;

@@ -12,7 +12,7 @@
 
 use std::time::Instant;
 
-use copythat_core::{CopyControl, CopyEvent, CopyOptions, copy_file};
+use freally_core::{CopyControl, CopyEvent, CopyOptions, copy_file};
 use filetime::{FileTime, set_file_mtime};
 use rand::{RngCore, SeedableRng};
 use tempfile::tempdir;

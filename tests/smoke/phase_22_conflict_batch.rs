@@ -3,7 +3,7 @@
 //! Drives the engine's `copy_tree` with `CollisionPolicy::Prompt`
 //! and a lightweight in-test runner-simulator that consumes
 //! `CopyEvent::Collision` events against a [`ConflictProfile`] —
-//! exactly the path the real `apps/copythat-ui` runner takes in
+//! exactly the path the real `apps/freally-ui` runner takes in
 //! production. Mirrors the Phase 22 brief's acceptance criteria:
 //!
 //! 1. Seed a tree where **50 source files collide** with pre-
@@ -24,7 +24,7 @@
 //!      pre-populated "OLD-" file AND a `_2` sibling carrying the
 //!      source "NEW-" bytes).
 //! 4. Round-trip the profile through
-//!    `copythat_settings::ProfileStore` — save under "Imports",
+//!    `freally_settings::ProfileStore` — save under "Imports",
 //!    load back, assert deep equality. Also exercise the
 //!    ProfileStore's TOML-path via `save_to` / `load_from` so a
 //!    user-edited `settings.toml` still recovers the profile.
@@ -44,10 +44,10 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, UNIX_EPOCH};
 
-use copythat_core::{
+use freally_core::{
     CollisionPolicy, CollisionResolution, CopyControl, CopyEvent, TreeOptions, copy_tree,
 };
-use copythat_settings::{
+use freally_settings::{
     ConflictProfile, ConflictProfileSettings, ConflictRule, ConflictRuleResolution, ProfileStore,
     Settings,
 };
@@ -114,7 +114,7 @@ fn seed_trees(src: &Path, dst: &Path) -> Vec<(PathBuf, PathBuf)> {
 /// user (i.e. cases where no rule matched).
 ///
 /// Matches the real runner's logic in
-/// `apps/copythat-ui/src-tauri/src/runner.rs` and
+/// `apps/freally-ui/src-tauri/src/runner.rs` and
 /// `collisions::apply_rule_resolution`. If the logic drifts, this
 /// test will catch it.
 async fn drive(

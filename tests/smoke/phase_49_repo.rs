@@ -16,12 +16,12 @@
 //!    byte-for-byte.
 //!
 //! All cases run on every host (pure std + redb, no platform gating).
-//! `COPYTHAT_PHASE49_FULL=1` scales the file sizes up for CI's thorough
+//! `FREALLY_PHASE49_FULL=1` scales the file sizes up for CI's thorough
 //! pass.
 
 use std::path::Path;
 
-use copythat_chunk::{Repository, SnapshotKind};
+use freally_chunk::{Repository, SnapshotKind};
 
 /// Deterministic PRNG (LCG) so the smoke is reproducible across hosts —
 /// same constants as the Phase 27 smoke. Content-defined chunking only
@@ -39,7 +39,7 @@ fn seeded_bytes(seed: u64, len: usize) -> Vec<u8> {
 }
 
 fn scale_up() -> bool {
-    std::env::var("COPYTHAT_PHASE49_FULL").is_ok_and(|v| v == "1")
+    std::env::var("FREALLY_PHASE49_FULL").is_ok_and(|v| v == "1")
 }
 
 #[test]
@@ -165,7 +165,7 @@ fn case3_gc_reclaims_orphans_preserves_live() {
     let a = seeded_bytes(0xA11CE, size);
     let b = seeded_bytes(0xB0B, size);
     // First chunk hash of `a` — a witness that a-only chunks vanish.
-    let a_chunk = copythat_chunk::Chunker::default().chunk_bytes(&a)[0].hash;
+    let a_chunk = freally_chunk::Chunker::default().chunk_bytes(&a)[0].hash;
 
     let s_a = repo
         .snapshot_bytes(SnapshotKind::Copy, "snap a", 1_000, &[("/a", &a)])

@@ -8,7 +8,7 @@
 //! structural assertions at the settings + fluent layer where the
 //! Phase 29 logic actually lives:
 //!
-//! 1. **DndSettings round-trip.** `copythat_settings::DndSettings`
+//! 1. **DndSettings round-trip.** `freally_settings::DndSettings`
 //!    defaults match the brief (650 ms spring-load, thumbnails on,
 //!    invalid-highlight on). Round-trips through TOML on a full
 //!    `Settings` save/load cycle.
@@ -16,7 +16,7 @@
 //!    too-fast, 30 000 ms too-slow) land inside the 50..5000 ms
 //!    guard rails via `effective_spring_ms`.
 //! 3. **Fluent keys present.** All 14 Phase 29 keys exist in
-//!    `locales/en/copythat.ftl` (the literal-coverage gate the
+//!    `locales/en/freally.ftl` (the literal-coverage gate the
 //!    i18n-lint enforces).
 //! 4. **Fluent key parity.** Every Phase 29 key exists in all 17
 //!    non-English locales (key-set parity is what i18n-lint
@@ -24,7 +24,7 @@
 //!    explicitly so a locale that silently drops a key still fails
 //!    here even if somehow the global lint regresses).
 
-use copythat_settings::{DND_MAX_SPRING_MS, DND_MIN_SPRING_MS, DndSettings, Settings};
+use freally_settings::{DND_MAX_SPRING_MS, DND_MIN_SPRING_MS, DndSettings, Settings};
 
 const PHASE_29_KEYS: &[&str] = &[
     "settings-dnd-heading",
@@ -103,12 +103,12 @@ fn case2_spring_load_delay_clamp() {
 
 #[test]
 fn case3_fluent_keys_present_in_en() {
-    let en = std::fs::read_to_string(repo_root().join("locales/en/copythat.ftl")).unwrap();
+    let en = std::fs::read_to_string(repo_root().join("locales/en/freally.ftl")).unwrap();
     for key in PHASE_29_KEYS {
         let needle = format!("\n{key} = ");
         assert!(
             en.contains(&needle),
-            "Phase 29 key {key} missing from locales/en/copythat.ftl",
+            "Phase 29 key {key} missing from locales/en/freally.ftl",
         );
     }
 }
@@ -116,7 +116,7 @@ fn case3_fluent_keys_present_in_en() {
 #[test]
 fn case4_fluent_parity_across_all_locales() {
     for loc in LOCALES {
-        let path = repo_root().join("locales").join(loc).join("copythat.ftl");
+        let path = repo_root().join("locales").join(loc).join("freally.ftl");
         let body = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("read {path:?}: {e}"));
         for key in PHASE_29_KEYS {
             let needle = format!("\n{key} = ");
@@ -130,11 +130,11 @@ fn case4_fluent_parity_across_all_locales() {
 
 fn repo_root() -> std::path::PathBuf {
     // Tests run from the UI crate's manifest dir —
-    // `apps/copythat-ui/src-tauri`. Jump up three levels.
+    // `apps/freally-ui/src-tauri`. Jump up three levels.
     let manifest = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let mut cur: &std::path::Path = manifest.as_path();
     for _ in 0..5 {
-        if cur.join("locales").join("en").join("copythat.ftl").exists() {
+        if cur.join("locales").join("en").join("freally.ftl").exists() {
             return cur.to_path_buf();
         }
         cur = cur.parent().unwrap_or(cur);

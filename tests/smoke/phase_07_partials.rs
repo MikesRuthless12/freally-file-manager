@@ -9,18 +9,18 @@
 //!    Services submenu when files are on the pasteboard.
 //! 2. **Windows IExplorerCommand intercept stanza.** The
 //!    `intercept_default_copy` HKCU keys are documented in
-//!    `copythat_shellext::registry::copy_interceptor_keys`. Confirm
+//!    `freally_shellext::registry::copy_interceptor_keys`. Confirm
 //!    the registry path + value format hasn't drifted.
 //! 3. **Linux Nautilus extension shape.** The Python file at
-//!    `packaging/linux/nautilus/copythat_nautilus.py` must declare
+//!    `packaging/linux/nautilus/freally_nautilus.py` must declare
 //!    the right `gi.require_version`, the `GObject` / `Nautilus`
-//!    imports, and a `_spawn_copythat` function that shells out to
-//!    the `copythat` binary. KDE Dolphin + XFCE Thunar configs
+//!    imports, and a `_spawn_freally` function that shells out to
+//!    the `freally` binary. KDE Dolphin + XFCE Thunar configs
 //!    similarly checked.
 //!
 //! Filesystem-only tripwire — never invokes the OS shell. Lives in
 //! the workspace's smoke matrix so the static config + the runtime
-//! `copythat-shellext` registry helpers stay in lockstep.
+//! `freally-shellext` registry helpers stay in lockstep.
 
 use std::path::{Path, PathBuf};
 
@@ -86,7 +86,7 @@ fn macos_finder_sync_extension_info_plist_is_present() {
 
 #[test]
 fn windows_intercept_default_copy_registry_stanza_is_correct() {
-    use copythat_shellext::registry::copy_interceptor_keys;
+    use freally_shellext::registry::copy_interceptor_keys;
     let clsid = "{A7D2C001-C097-4C96-8F7A-5C970C097001}";
     let keys = copy_interceptor_keys(clsid);
     assert_eq!(keys.len(), 1, "interceptor stanza is one key/value pair");
@@ -98,18 +98,18 @@ fn windows_intercept_default_copy_registry_stanza_is_correct() {
 
 #[test]
 fn linux_nautilus_extension_has_required_python_shape() {
-    let body = read(&repo_root().join("packaging/linux/nautilus/copythat_nautilus.py"));
+    let body = read(&repo_root().join("packaging/linux/nautilus/freally_nautilus.py"));
     // gi typelib pins
     assert!(body.contains("gi.require_version(\"Nautilus\""));
     assert!(body.contains("from gi.repository import GObject, Nautilus"));
-    // Spawn helper must shell out to the copythat binary
+    // Spawn helper must shell out to the freally binary
     assert!(
-        body.contains("_spawn_copythat") || body.contains("def "),
+        body.contains("_spawn_freally") || body.contains("def "),
         "Nautilus extension must define a spawn helper",
     );
     assert!(
-        body.contains("copythat"),
-        "Nautilus extension must invoke the copythat binary",
+        body.contains("freally"),
+        "Nautilus extension must invoke the freally binary",
     );
     // Detached spawn — Nautilus mustn't block on the GUI launch.
     assert!(
@@ -120,7 +120,7 @@ fn linux_nautilus_extension_has_required_python_shape() {
 
 #[test]
 fn linux_kde_servicemenu_desktop_is_well_formed() {
-    let body = read(&repo_root().join("packaging/linux/kde/copythat-servicemenu.desktop"));
+    let body = read(&repo_root().join("packaging/linux/kde/freally-servicemenu.desktop"));
     // Standard XDG ServiceMenu shape — Type=Service is required.
     assert!(
         body.contains("[Desktop Entry]"),
@@ -131,14 +131,14 @@ fn linux_kde_servicemenu_desktop_is_well_formed() {
         "KDE ServiceMenu must declare Service or Action type",
     );
     assert!(
-        body.contains("Exec=") && body.contains("copythat"),
-        "KDE ServiceMenu must invoke the copythat binary via Exec=",
+        body.contains("Exec=") && body.contains("freally"),
+        "KDE ServiceMenu must invoke the freally binary via Exec=",
     );
 }
 
 #[test]
 fn linux_thunar_uca_xml_declares_both_actions() {
-    let body = read(&repo_root().join("packaging/linux/thunar/copythat-uca.xml"));
+    let body = read(&repo_root().join("packaging/linux/thunar/freally-uca.xml"));
     assert!(
         body.contains("<actions>"),
         "Thunar UCA XML must root in <actions>",
@@ -146,8 +146,8 @@ fn linux_thunar_uca_xml_declares_both_actions() {
     // At least the copy verb. The move verb is optional in the
     // packaging today.
     assert!(
-        body.contains("copythat"),
-        "Thunar UCA XML must invoke the copythat binary",
+        body.contains("freally"),
+        "Thunar UCA XML must invoke the freally binary",
     );
     assert!(
         body.contains("<command>") && body.contains("</command>"),
@@ -161,12 +161,12 @@ fn linux_desktop_file_present_for_xdg_integration() {
     // environments use to surface the app in their launcher / file
     // manager menu. Phase 7 ships it; the smoke confirms it stayed
     // in place.
-    let p = repo_root().join("packaging/linux/copythat.desktop");
+    let p = repo_root().join("packaging/linux/freally.desktop");
     assert!(p.is_file());
     let body = read(&p);
     assert!(body.contains("[Desktop Entry]"));
     assert!(body.contains("Exec="));
-    assert!(body.contains("copythat"));
+    assert!(body.contains("freally"));
 }
 
 #[test]
@@ -174,7 +174,7 @@ fn shellext_consts_carry_stable_clsids() {
     // The two CLSIDs the registry stanzas use are stable across
     // releases (changing them invalidates every user's existing
     // registration). Confirm they haven't drifted.
-    let body = read(&repo_root().join("crates/copythat-shellext/src/consts.rs"));
+    let body = read(&repo_root().join("crates/freally-shellext/src/consts.rs"));
     assert!(body.contains("{A7D2C001-C097-4C96-8F7A-5C970C097001}"));
     assert!(body.contains("{A7D2C002-C097-4C96-8F7A-5C970C097002}"));
 }

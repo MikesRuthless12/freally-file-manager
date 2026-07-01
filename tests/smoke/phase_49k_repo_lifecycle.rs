@@ -1,6 +1,6 @@
 //! Phase 49k smoke — repository create/connect lifecycle + passphrase gate.
 
-use copythat_chunk::{ChunkStoreError, Repository, SnapshotKind};
+use freally_chunk::{ChunkStoreError, Repository, SnapshotKind};
 
 #[test]
 fn create_open_passphrase_and_isolation() {

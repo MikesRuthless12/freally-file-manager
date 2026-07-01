@@ -18,15 +18,15 @@
 //!    `transfer.buffer_size_bytes` to 4 MiB and re-reading via
 //!    `TransferSettings::effective_buffer_size` returns
 //!    `4 * 1024 * 1024`. Below-MIN or above-MAX values clamp to the
-//!    engine's window, mirroring `copythat_core::options::{MIN,MAX}_BUFFER_SIZE`.
+//!    engine's window, mirroring `freally_core::options::{MIN,MAX}_BUFFER_SIZE`.
 //!
 //! The Tauri `AppState` IPC path itself isn't exercised here (that
 //! would require booting a webview — too heavy for a CI smoke test);
 //! the pure-filesystem + pure-Rust surface is what CI validates.
-//! The `cargo test -p copythat-settings` battery covers the library
+//! The `cargo test -p freally-settings` battery covers the library
 //! unit tests; this file is the full end-to-end ergonomic check.
 
-use copythat_settings::{
+use freally_settings::{
     ConcurrencyChoice, ErrorDisplayMode, ErrorPolicyChoice, LogLevel, ProfileStore,
     ReflinkPreference, Settings, ShredMethodChoice, ThemePreference, VerifyChoice, defaults,
 };
@@ -40,7 +40,7 @@ use tempfile::tempdir;
 /// requires updating its `Default` impl — the test stays compiling.
 fn make_phase_12_fixture() -> Settings {
     Settings {
-        general: copythat_settings::GeneralSettings {
+        general: freally_settings::GeneralSettings {
             language: "fr".into(),
             theme: ThemePreference::Dark,
             start_with_os: true,
@@ -53,7 +53,7 @@ fn make_phase_12_fixture() -> Settings {
             auto_resume_interrupted: true,
             mobile_onboarding_dismissed: true,
         },
-        transfer: copythat_settings::TransferSettings {
+        transfer: freally_settings::TransferSettings {
             buffer_size_bytes: 4 * 1024 * 1024,
             verify: VerifyChoice::Sha256,
             concurrency: ConcurrencyChoice::Manual(4),
@@ -61,29 +61,29 @@ fn make_phase_12_fixture() -> Settings {
             fsync_on_close: true,
             preserve_permissions: false,
             preserve_acls: true,
-            on_locked: copythat_settings::LockedFilePolicyChoice::Snapshot,
+            on_locked: freally_settings::LockedFilePolicyChoice::Snapshot,
             dedup_mode: "auto-ladder".into(),
             dedup_hardlink_policy: "always".into(),
             dedup_prescan: true,
             ..Default::default()
         },
-        shell: copythat_settings::ShellSettings {
+        shell: freally_settings::ShellSettings {
             context_menu_enabled: false,
             intercept_default_copy: true,
             notify_on_completion: false,
         },
-        secure_delete: copythat_settings::SecureDeleteSettings {
+        secure_delete: freally_settings::SecureDeleteSettings {
             method: ShredMethodChoice::DoD7Pass,
             confirm_twice: false,
         },
-        advanced: copythat_settings::AdvancedSettings {
+        advanced: freally_settings::AdvancedSettings {
             log_level: LogLevel::Debug,
             error_policy: ErrorPolicyChoice::RetryN {
                 max_attempts: 5,
                 backoff_ms: 500,
             },
             history_retention_days: 90,
-            database_path: Some(std::path::PathBuf::from("/custom/path/copythat.db")),
+            database_path: Some(std::path::PathBuf::from("/custom/path/freally.db")),
             ..Default::default()
         },
         ..Default::default()
@@ -119,7 +119,7 @@ fn phase_12_effective_buffer_size_matches_engine_window() {
 
     // Requested 4 MiB (valid) → engine sees 4 MiB.
     let s = Settings {
-        transfer: copythat_settings::TransferSettings {
+        transfer: freally_settings::TransferSettings {
             buffer_size_bytes: 4 * 1024 * 1024,
             ..Default::default()
         },
@@ -129,7 +129,7 @@ fn phase_12_effective_buffer_size_matches_engine_window() {
 
     // Requested 1 byte (below MIN) → clamps up to MIN.
     let s = Settings {
-        transfer: copythat_settings::TransferSettings {
+        transfer: freally_settings::TransferSettings {
             buffer_size_bytes: 1,
             ..Default::default()
         },
@@ -142,7 +142,7 @@ fn phase_12_effective_buffer_size_matches_engine_window() {
 
     // Requested 1 GiB (above MAX) → clamps down to MAX.
     let s = Settings {
-        transfer: copythat_settings::TransferSettings {
+        transfer: freally_settings::TransferSettings {
             buffer_size_bytes: 1024 * 1024 * 1024,
             ..Default::default()
         },

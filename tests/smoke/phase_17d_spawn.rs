@@ -1,27 +1,27 @@
 //! Phase 17d — non-elevated handshake smoke for the elevated-retry path.
 //!
-//! Spawns the REAL `copythat-helper` binary NON-elevated with
+//! Spawns the REAL `freally-helper` binary NON-elevated with
 //! `--pipe=` / `--socket=` + `--capabilities=elevated_retry`, creates the
 //! matching server end (Windows: the DACL-restricted pipe from
-//! `copythat-platform`; Unix: a tokio `UnixListener` in a 0700 tempdir),
+//! `freally-platform`; Unix: a tokio `UnixListener` in a 0700 tempdir),
 //! and drives the exact `Hello` → `GrantCapabilities` → `ElevatedRetry` →
-//! `Shutdown` handshake the production caller (`copythat-ui::elevate`)
+//! `Shutdown` handshake the production caller (`freally-ui::elevate`)
 //! uses. This validates the binary's `--pipe`/`--socket` mode + run-loop +
 //! wire protocol end-to-end WITHOUT the UAC/polkit/osascript consent
 //! (which can't be automated — that path is verified by hand).
 //!
 //! Gated behind the `spawn-tests` feature (binary-spawning + named-pipe
-//! I/O): `cargo test -p copythat-helper --features spawn-tests`.
+//! I/O): `cargo test -p freally-helper --features spawn-tests`.
 #![cfg(feature = "spawn-tests")]
 
 use std::process::Command;
 use std::time::Duration;
 
-use copythat_helper::capability::Capability;
-use copythat_helper::rpc::{PROTOCOL_VERSION, Request, Response, generate_pipe_name};
+use freally_helper::capability::Capability;
+use freally_helper::rpc::{PROTOCOL_VERSION, Request, Response, generate_pipe_name};
 use tokio::io::{AsyncBufReadExt, AsyncRead, AsyncWrite, AsyncWriteExt, BufReader};
 
-const HELPER: &str = env!("CARGO_BIN_EXE_copythat-helper");
+const HELPER: &str = env!("CARGO_BIN_EXE_freally-helper");
 const TIMEOUT: Duration = Duration::from_secs(10);
 
 /// Write one newline-terminated JSON request (matches the helper's
@@ -45,8 +45,8 @@ async fn recv<R: AsyncBufReadExt + Unpin>(r: &mut R) -> Response {
 /// and return the connected duplex stream + the child handle.
 #[cfg(windows)]
 async fn connect_helper(caps: &str) -> (impl AsyncRead + AsyncWrite, std::process::Child) {
-    let pipe = generate_pipe_name(r"\\.\pipe\copythat-helper-").unwrap();
-    let server = copythat_platform::create_secure_named_pipe_server(&pipe).unwrap();
+    let pipe = generate_pipe_name(r"\\.\pipe\freally-helper-").unwrap();
+    let server = freally_platform::create_secure_named_pipe_server(&pipe).unwrap();
     let child = Command::new(HELPER)
         .arg(format!("--pipe={pipe}"))
         .arg(format!("--capabilities={caps}"))
@@ -66,7 +66,7 @@ async fn connect_helper(caps: &str) -> (impl AsyncRead + AsyncWrite, std::proces
     // ("path must be shorter than SUN_LEN"). Bind directly under /tmp
     // (short on both Linux + macOS); the 64-hex random basename keeps the
     // path unguessable.
-    let name = generate_pipe_name("copythat-helper-").unwrap();
+    let name = generate_pipe_name("freally-helper-").unwrap();
     let sock = std::path::Path::new("/tmp").join(&name);
     let listener = tokio::net::UnixListener::bind(&sock).unwrap();
     let child = Command::new(HELPER)

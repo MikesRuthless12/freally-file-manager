@@ -3,7 +3,7 @@
 //! What this proves:
 //!
 //! 1. With `CopyOptions::provenance` set to a wired
-//!    [`CopyThatProvenanceSink`], `copy_tree` runs unchanged: every
+//!    [`FreallyProvenanceSink`], `copy_tree` runs unchanged: every
 //!    file in the source tree lands at the destination byte-for-byte.
 //! 2. The sink accumulates a [`FileRecord`] per file. After
 //!    `copy_tree` returns, `finalize_to_path` writes a canonical-CBOR
@@ -18,7 +18,7 @@
 //! TSA timestamping is intentionally NOT exercised: the spec gates
 //! it behind a feature flag (`tsa`) because `freetsa.org/tsr` is
 //! external and flaky in CI. The TSA path is unit-tested in
-//! `crates/copythat-provenance/src/sink.rs`.
+//! `crates/freally-provenance/src/sink.rs`.
 //!
 //! Runtime: <1 s. The test copies five small files (a few KiB each).
 
@@ -26,9 +26,9 @@ use std::path::Path;
 use std::sync::Arc;
 use std::time::Duration;
 
-use copythat_core::{CopyControl, CopyEvent, ProvenancePolicy, TreeOptions, copy_tree};
-use copythat_provenance::{
-    CopyThatProvenanceSink, DEFAULT_MANIFEST_FILENAME, SinkConfig, VerificationOutcome,
+use freally_core::{CopyControl, CopyEvent, ProvenancePolicy, TreeOptions, copy_tree};
+use freally_provenance::{
+    FreallyProvenanceSink, DEFAULT_MANIFEST_FILENAME, SinkConfig, VerificationOutcome,
     generate_signing_key, verify_manifest,
 };
 use tempfile::TempDir;
@@ -69,14 +69,14 @@ async fn run() {
     //    path; TSA stays off).
     let mut sink_config = SinkConfig::new(src_root.clone(), dst_root.clone());
     sink_config.signing_key = Some(generate_signing_key());
-    let sink = CopyThatProvenanceSink::new(sink_config);
+    let sink = FreallyProvenanceSink::new(sink_config);
 
     // 3. Drive copy_tree with the provenance policy attached. The
     //    engine wires `make_encoder` / `record_file` per file from
     //    the source-read pass.
     let mut tree_opts = TreeOptions::default();
     tree_opts.file.provenance = Some(ProvenancePolicy {
-        sink: sink.clone() as Arc<dyn copythat_core::ProvenanceSink>,
+        sink: sink.clone() as Arc<dyn freally_core::ProvenanceSink>,
     });
 
     let (tx, mut rx) = mpsc::channel::<CopyEvent>(256);

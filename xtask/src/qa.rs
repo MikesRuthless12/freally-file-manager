@@ -9,10 +9,10 @@
 //!   `cargo clippy --workspace --all-targets -- -D warnings`,
 //!   `cargo deny check`. The workspace lint
 //!   `unsafe_code = "warn"` plus clippy's `-D warnings` already covers
-//!   the "no unsafe outside copythat-platform" rule, so no separate
+//!   the "no unsafe outside freally-platform" rule, so no separate
 //!   gate.
 //! - §1 frontend: `pnpm exec svelte-check` and
-//!   `pnpm exec tsc --noEmit` in `apps/copythat-ui`.
+//!   `pnpm exec tsc --noEmit` in `apps/freally-ui`.
 //! - §2 per-crate tests: `cargo test -p <crate>` for every workspace
 //!   crate. We deliberately skip the all-workspace
 //!   `cargo test --workspace` — the user's iteration profile prefers
@@ -57,44 +57,44 @@ use crate::repo_root;
 /// side). The `workspace_crates_match_cargo_toml` test trips on
 /// drift so a forgotten new crate fails the build.
 ///
-/// `copythat-ui` (the Tauri shell crate at
-/// `apps/copythat-ui/src-tauri`) is in the list because it
+/// `freally-ui` (the Tauri shell crate at
+/// `apps/freally-ui/src-tauri`) is in the list because it
 /// exclusively registers several Phase 17e / 28 / 29 smoke tests
 /// the QA checklist explicitly calls out. Its first build pulls in
 /// the Tauri toolchain (libwebkit2gtk on Linux, codesign hooks on
 /// macOS) so the slot lands at the bottom of the list. Reach for
 /// `--skip-tests` if a fast inner loop matters.
 const WORKSPACE_CRATES: &[&str] = &[
-    "copythat-core",
-    "copythat-diag",
-    "copythat-server",
-    "copythat-hash",
-    "copythat-secure-delete",
-    "copythat-history",
-    "copythat-platform",
-    "copythat-shellext",
-    "copythat-i18n",
-    "copythat-settings",
-    "copythat-snapshot",
-    "copythat-journal",
-    "copythat-shape",
-    "copythat-sync",
-    "copythat-watch",
-    "copythat-chunk",
-    "copythat-power",
-    "copythat-cloud",
-    "copythat-mount",
-    "copythat-audit",
-    "copythat-crypt",
-    "copythat-cli",
-    "copythat-helper",
-    "copythat-mobile",
-    "copythat-recovery",
-    "copythat-perceptual",
-    "copythat-provenance",
-    "copythat-plugin",
+    "freally-core",
+    "freally-diag",
+    "freally-server",
+    "freally-hash",
+    "freally-secure-delete",
+    "freally-history",
+    "freally-platform",
+    "freally-shellext",
+    "freally-i18n",
+    "freally-settings",
+    "freally-snapshot",
+    "freally-journal",
+    "freally-shape",
+    "freally-sync",
+    "freally-watch",
+    "freally-chunk",
+    "freally-power",
+    "freally-cloud",
+    "freally-mount",
+    "freally-audit",
+    "freally-crypt",
+    "freally-cli",
+    "freally-helper",
+    "freally-mobile",
+    "freally-recovery",
+    "freally-perceptual",
+    "freally-provenance",
+    "freally-plugin",
     "xtask",
-    "copythat-ui",
+    "freally-ui",
 ];
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -252,7 +252,7 @@ pub(crate) fn run(argv: Vec<String>) -> Result<(), String> {
         steps.push(skipped(Section::Frontend, "pnpm svelte-check", why));
         steps.push(skipped(Section::Frontend, "pnpm tsc --noEmit", why));
     } else {
-        let ui = root.join("apps").join("copythat-ui");
+        let ui = root.join("apps").join("freally-ui");
         // On Windows, pnpm ships as `pnpm.cmd` (a npm shim), and
         // Rust's `Command::new("pnpm")` only resolves .exe extensions
         // — so the bare name `pnpm` fails to spawn even when it's
@@ -866,8 +866,8 @@ mod tests {
     /// has to grow alongside it. Reads `Cargo.toml` at runtime so a
     /// drift between the two surfaces fails the build before merge.
     /// Mirrors the Phase 17b deny.toml ↔ ci.yml drift test in spirit.
-    /// The `apps/copythat-ui/src-tauri` workspace member maps to the
-    /// `copythat-ui` package name; we hard-code that translation here
+    /// The `apps/freally-ui/src-tauri` workspace member maps to the
+    /// `freally-ui` package name; we hard-code that translation here
     /// because the package name doesn't appear in the workspace
     /// `members = [...]` block, only the path.
     #[test]
@@ -883,8 +883,8 @@ mod tests {
                     Some(name.to_string())
                 } else if inner == "xtask" {
                     Some(inner.to_string())
-                } else if inner == "apps/copythat-ui/src-tauri" {
-                    Some("copythat-ui".to_string())
+                } else if inner == "apps/freally-ui/src-tauri" {
+                    Some("freally-ui".to_string())
                 } else {
                     None
                 }

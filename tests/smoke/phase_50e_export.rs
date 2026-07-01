@@ -5,7 +5,7 @@
 //! file restores — the same self-validating pattern as the 50b/50c/50d
 //! importer smokes.
 
-use copythat_chunk::{MigrateError, RepoFormat, Repository, SnapshotKind, export, migrate};
+use freally_chunk::{MigrateError, RepoFormat, Repository, SnapshotKind, export, migrate};
 
 fn build_src(dir: &std::path::Path) -> (Vec<u8>, Vec<u8>) {
     // `a` is shared across both snapshots (tests dedup survives export);

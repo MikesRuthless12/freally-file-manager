@@ -14,7 +14,7 @@
 #
 # Run this in one shell, leave it open, then in a second shell
 # run the smoke harness (`tests\vss_com_smoke.ps1`) or trigger
-# CopyThat's snapshot fallback against the locked file directly.
+# Freally's snapshot fallback against the locked file directly.
 
 [CmdletBinding()]
 param(

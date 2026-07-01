@@ -1,9 +1,9 @@
 //! Phase 33h smoke — platform-gated mount validation.
 //!
 //! Two env-gated cases:
-//! - `COPYTHAT_PHASE33H_FUSE=1` — exercise the real FUSE mount on
+//! - `FREALLY_PHASE33H_FUSE=1` — exercise the real FUSE mount on
 //!   Linux/macOS (requires `cargo test --features fuse`).
-//! - `COPYTHAT_PHASE33H_WINFSP=1` — exercise the real WinFsp mount
+//! - `FREALLY_PHASE33H_WINFSP=1` — exercise the real WinFsp mount
 //!   on Windows (requires `cargo test --features winfsp`, the
 //!   WinFsp driver installed, and an admin shell for the mount
 //!   syscall).
@@ -34,20 +34,20 @@
 use std::path::PathBuf;
 
 fn should_run_fuse() -> bool {
-    std::env::var("COPYTHAT_PHASE33H_FUSE").as_deref() == Ok("1")
+    std::env::var("FREALLY_PHASE33H_FUSE").as_deref() == Ok("1")
 }
 
 fn should_run_winfsp() -> bool {
-    std::env::var("COPYTHAT_PHASE33H_WINFSP").as_deref() == Ok("1")
+    std::env::var("FREALLY_PHASE33H_WINFSP").as_deref() == Ok("1")
 }
 
 /// Case 1 — FUSE mount round-trip. Requires Linux/macOS +
-/// `cargo test --features fuse` + `COPYTHAT_PHASE33H_FUSE=1`.
+/// `cargo test --features fuse` + `FREALLY_PHASE33H_FUSE=1`.
 #[test]
 #[cfg(all(feature = "fuse", any(target_os = "linux", target_os = "macos")))]
 fn case1_fuse_mount_round_trip() {
     if !should_run_fuse() {
-        eprintln!("skipping: COPYTHAT_PHASE33H_FUSE != 1");
+        eprintln!("skipping: FREALLY_PHASE33H_FUSE != 1");
         return;
     }
     // Phase 33i fills in:
@@ -76,13 +76,13 @@ fn case1_fuse_mount_skipped_on_default_build() {
 }
 
 /// Case 2 — WinFsp mount round-trip. Requires Windows +
-/// `cargo test --features winfsp` + `COPYTHAT_PHASE33H_WINFSP=1` +
+/// `cargo test --features winfsp` + `FREALLY_PHASE33H_WINFSP=1` +
 /// admin shell + WinFsp install.
 #[test]
 #[cfg(all(feature = "winfsp", target_os = "windows"))]
 fn case2_winfsp_mount_round_trip() {
     if !should_run_winfsp() {
-        eprintln!("skipping: COPYTHAT_PHASE33H_WINFSP != 1");
+        eprintln!("skipping: FREALLY_PHASE33H_WINFSP != 1");
         return;
     }
     // Phase 33i fills in the equivalent body:
@@ -115,5 +115,5 @@ fn case3_workspace_root_resolvable() {
         .and_then(|p| p.parent())
         .expect("workspace root");
     assert!(workspace.join("Cargo.toml").exists());
-    assert!(workspace.join("crates").join("copythat-mount").exists());
+    assert!(workspace.join("crates").join("freally-mount").exists());
 }

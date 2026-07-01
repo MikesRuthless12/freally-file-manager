@@ -5,7 +5,7 @@
 //! top-files ranking + `top_n` cap, the dedup ratio bounds, and that the
 //! markdown rendering carries its section headers.
 
-use copythat_chunk::{Repository, SnapshotKind};
+use freally_chunk::{Repository, SnapshotKind};
 
 fn lcg_bytes(seed: u64, len: usize) -> Vec<u8> {
     let mut out = vec![0u8; len];

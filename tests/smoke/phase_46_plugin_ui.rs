@@ -31,7 +31,7 @@
 use std::fs;
 use std::path::PathBuf;
 
-use copythat_ui_lib::plugin_commands::{
+use freally_ui_lib::plugin_commands::{
     PLUGINS_SUBDIR, blake3_hex, bundle_hash, grant, install_from_bytes, install_from_disk,
     list_entries, read_entry, revoke, set_enabled,
 };
@@ -235,7 +235,7 @@ fn case7_plugins_subdir_constant_matches_default_resolver() {
 fn case8_phase_46_6_fluent_keys_present_in_every_locale() {
     let root = locate_locales_dir().expect("locate locales/");
     for code in LOCALES {
-        let path = root.join(code).join("copythat.ftl");
+        let path = root.join(code).join("freally.ftl");
         let content =
             fs::read_to_string(&path).unwrap_or_else(|e| panic!("read {}: {e}", path.display()));
         for key in PHASE_46_6_KEYS {
@@ -259,7 +259,7 @@ fn locate_locales_dir() -> Option<PathBuf> {
     let mut cur = std::env::current_dir().ok()?;
     for _ in 0..6 {
         let candidate = cur.join("locales");
-        if candidate.join("en").join("copythat.ftl").exists() {
+        if candidate.join("en").join("freally.ftl").exists() {
             return Some(candidate);
         }
         if !cur.pop() {

@@ -1,0 +1,79 @@
+[package]
+name = "freally-secure-delete"
+description = "Multi-pass secure deletion (DoD, Gutmann, Schneier, NIST 800-88) for Freally File Manager v1.0.0."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[features]
+# Phase 44.4c — TCG OPAL Storage Specification packet-encoding
+# scaffold. Off by default. Brings in the
+# `crate::opal` module's marshaling code without enabling any
+# destructive transport — the IOCTL / SCSI passthrough path that
+# would actually send these packets to a drive lands in a future
+# phase once we have a hardware test bed. The feature gate exists
+# so consumers (CLI / UI) don't accidentally link the encoding
+# work into release binaries before it's been validated against
+# real OPAL drives.
+experimental-tcg-opal = []
+
+[dependencies]
+freally-core = { path = "../freally-core", version = "0.19" }
+rand = "0.9"
+thiserror = "2"
+tokio = { version = "1", features = [
+    "fs",
+    "io-util",
+    "macros",
+    "rt",
+    "rt-multi-thread",
+    "sync",
+    "time",
+] }
+walkdir = "2"
+
+# Phase 44.3a — cross-crate hop into the unsafe-confined-to-platform
+# corner. `freally-platform::linux_make_child_undumpable` wraps
+# `prctl(PR_SET_DUMPABLE, 0)` in a `Command::pre_exec` hook, closing
+# the Phase 44.2 PSID argv-leak finding without forcing this crate
+# to drop its `#![forbid(unsafe_code)]` invariant. Unix-only.
+[target.'cfg(unix)'.dependencies]
+freally-platform = { path = "../freally-platform", version = "0.19" }
+
+# Phase 44.3b — Windows-side IOCTL_STORAGE_QUERY_PROPERTY capability
+# probe + physical-drive enumeration via the same unsafe-confined-
+# to-platform seam. Replaces the Phase 44.2 stub
+# WindowsSanitizeHelper with real device-info reads.
+[target.'cfg(windows)'.dependencies]
+freally-platform = { path = "../freally-platform", version = "0.19" }
+
+[dev-dependencies]
+tempfile = "3"
+tokio = { version = "1", features = [
+    "fs",
+    "io-util",
+    "macros",
+    "rt",
+    "rt-multi-thread",
+    "sync",
+    "test-util",
+    "time",
+] }
+
+# Phase 4 smoke test lives at the workspace root.
+[[test]]
+name = "phase_04_shred"
+path = "../../tests/smoke/phase_04_shred.rs"
+
+# Phase 44 smoke test — exercises the SanitizeHelper trait surface
+# through Noop + a mock helper, plus the CoW refusal path.
+[[test]]
+name = "phase_44_sanitize"
+path = "../../tests/smoke/phase_44_sanitize.rs"

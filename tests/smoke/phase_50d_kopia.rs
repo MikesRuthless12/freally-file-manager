@@ -1,6 +1,6 @@
 //! Phase 50 — Kopia importer smoke test.
 //!
-//! Runs the `copythat_chunk::migrate` Kopia importer against a committed,
+//! Runs the `freally_chunk::migrate` Kopia importer against a committed,
 //! PII-free Kopia **filesystem** fixture (`tests/fixtures/kopia-repo`,
 //! created with `kopia 0.23.1` inside Linux, passphrase `testpass`) and
 //! asserts every file restores byte-for-byte against the originals in
@@ -14,7 +14,7 @@
 
 use std::path::PathBuf;
 
-use copythat_chunk::{MigrateError, RepoFormat, Repository, SnapshotId, materialise_file, migrate};
+use freally_chunk::{MigrateError, RepoFormat, Repository, SnapshotId, materialise_file, migrate};
 
 fn fixtures() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures")

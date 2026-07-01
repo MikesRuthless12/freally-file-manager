@@ -20,12 +20,12 @@
 use std::io::{BufReader, Cursor};
 use std::path::PathBuf;
 
-use copythat_helper::capability::{Capability, parse_capability_list};
-use copythat_helper::handler::handle_request;
-use copythat_helper::rpc::{
+use freally_helper::capability::{Capability, parse_capability_list};
+use freally_helper::handler::handle_request;
+use freally_helper::rpc::{
     PROTOCOL_VERSION, Request, Response, ShellExtensionKind, generate_pipe_name, parse_pipe_name,
 };
-use copythat_helper::transport::{read_line, write_line};
+use freally_helper::transport::{read_line, write_line};
 use tempfile::TempDir;
 
 fn full_caps() -> Vec<Capability> {
@@ -150,9 +150,9 @@ fn shell_extension_kind_native_to_current_host_is_correct() {
 #[test]
 fn pipe_name_generator_round_trips_through_parser() {
     let prefix = if cfg!(windows) {
-        r"\\.\pipe\copythat-helper-"
+        r"\\.\pipe\freally-helper-"
     } else {
-        "/tmp/copythat-helper-"
+        "/tmp/freally-helper-"
     };
     let name = generate_pipe_name(prefix).unwrap();
     let suffix = parse_pipe_name(prefix, &name).unwrap();
@@ -161,7 +161,7 @@ fn pipe_name_generator_round_trips_through_parser() {
 
 #[test]
 fn pipe_name_parser_rejects_mismatched_shape() {
-    let prefix = r"\\.\pipe\copythat-helper-";
+    let prefix = r"\\.\pipe\freally-helper-";
     assert!(parse_pipe_name(prefix, "not-a-helper-pipe").is_none());
     let too_short = format!("{prefix}deadbeef");
     assert!(parse_pipe_name(prefix, &too_short).is_none());

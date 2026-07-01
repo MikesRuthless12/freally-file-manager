@@ -6,12 +6,12 @@
 //! to a dropped snapshot while a surviving snapshot still restores
 //! byte-for-byte, and snapshots of other sources (or no source) are
 //! untouched. The retention math itself is the audited
-//! `copythat_core::versioning::select_for_pruning` (unit-tested there); this
+//! `freally_core::versioning::select_for_pruning` (unit-tested there); this
 //! verifies the `Repository` plumbing + the gc sweep + source isolation.
 
 use std::collections::HashSet;
 
-use copythat_chunk::{Chunker, GfsPolicy, Repository, RetentionPolicy, SnapshotKind};
+use freally_chunk::{Chunker, GfsPolicy, Repository, RetentionPolicy, SnapshotKind};
 
 /// Deterministic pseudo-random bytes (same LCG as the repository unit
 /// tests) so the fixture is reproducible without a `rand` dependency.

@@ -6,7 +6,7 @@
 #   2. `pnpm check` (svelte-check) finds zero errors and zero warnings.
 #   3. `pnpm build` produces a Vite bundle.
 #   4. The Rust command layer's integration tests (driven against
-#      the real `copythat-core` engine, minus the webview) pass —
+#      the real `freally-core` engine, minus the webview) pass —
 #      this covers `start_copy` / pause / resume / cancel round-trips
 #      plus the IPC DTO and i18n loader.
 #   5. `xtask i18n-lint` confirms 18-locale key parity.
@@ -22,7 +22,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-UI_DIR="$REPO_ROOT/apps/copythat-ui"
+UI_DIR="$REPO_ROOT/apps/freally-ui"
 
 step() { printf '\n\033[1;36m==> %s\033[0m\n' "$*"; }
 
@@ -35,11 +35,11 @@ step "Phase 5 smoke: pnpm check (svelte-check)"
 step "Phase 5 smoke: pnpm build (vite)"
 ( cd "$UI_DIR" && pnpm build )
 
-step "Phase 5 smoke: cargo test -p copythat-ui --lib (Rust command layer)"
-( cd "$REPO_ROOT" && cargo test -p copythat-ui --lib )
+step "Phase 5 smoke: cargo test -p freally-ui --lib (Rust command layer)"
+( cd "$REPO_ROOT" && cargo test -p freally-ui --lib )
 
-step "Phase 5 smoke: cargo test -p copythat-ui --test command_layer (integration)"
-( cd "$REPO_ROOT" && cargo test -p copythat-ui --test command_layer )
+step "Phase 5 smoke: cargo test -p freally-ui --test command_layer (integration)"
+( cd "$REPO_ROOT" && cargo test -p freally-ui --test command_layer )
 
 step "Phase 5 smoke: cargo run -p xtask -- i18n-lint"
 ( cd "$REPO_ROOT" && cargo run -p xtask --quiet -- i18n-lint )

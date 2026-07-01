@@ -1,36 +1,36 @@
 [workspace]
 resolver = "2"
 members = [
-    "crates/copythat-core",
-    "crates/copythat-hash",
-    "crates/copythat-secure-delete",
-    "crates/copythat-history",
-    "crates/copythat-platform",
-    "crates/copythat-shellext",
-    "crates/copythat-i18n",
-    "crates/copythat-settings",
-    "crates/copythat-snapshot",
-    "crates/copythat-journal",
-    "crates/copythat-shape",
-    "crates/copythat-sync",
-    "crates/copythat-watch",
-    "crates/copythat-chunk",
-    "crates/copythat-power",
-    "crates/copythat-cloud",
-    "crates/copythat-mount",
-    "crates/copythat-audit",
-    "crates/copythat-crypt",
-    "crates/copythat-cli",
-    "crates/copythat-helper",
-    "crates/copythat-mobile",
-    "crates/copythat-recovery",
-    "crates/copythat-perceptual",
-    "crates/copythat-provenance",
-    "crates/copythat-plugin",
-    "crates/copythat-diag",
-    "crates/copythat-server",
+    "crates/freally-core",
+    "crates/freally-hash",
+    "crates/freally-secure-delete",
+    "crates/freally-history",
+    "crates/freally-platform",
+    "crates/freally-shellext",
+    "crates/freally-i18n",
+    "crates/freally-settings",
+    "crates/freally-snapshot",
+    "crates/freally-journal",
+    "crates/freally-shape",
+    "crates/freally-sync",
+    "crates/freally-watch",
+    "crates/freally-chunk",
+    "crates/freally-power",
+    "crates/freally-cloud",
+    "crates/freally-mount",
+    "crates/freally-audit",
+    "crates/freally-crypt",
+    "crates/freally-cli",
+    "crates/freally-helper",
+    "crates/freally-mobile",
+    "crates/freally-recovery",
+    "crates/freally-perceptual",
+    "crates/freally-provenance",
+    "crates/freally-plugin",
+    "crates/freally-diag",
+    "crates/freally-server",
     "xtask",
-    "apps/copythat-ui/src-tauri",
+    "apps/freally-ui/src-tauri",
 ]
 
 [workspace.package]
@@ -39,8 +39,8 @@ edition = "2024"
 rust-version = "1.85"
 license = "LicenseRef-AllRightsReserved"
 authors = ["Freally File Manager Contributors"]
-repository = "https://github.com/MikesRuthless12/CopyThat2026"
-homepage = "https://github.com/MikesRuthless12/CopyThat2026"
+repository = "https://github.com/MikesRuthless12/freally-file-manager"
+homepage = "https://github.com/MikesRuthless12/freally-file-manager"
 readme = "README.md"
 # Proprietary, source-visible: workspace crates are not for crates.io.
 # Combined with `[licenses] private.ignore = true` in deny.toml so the
@@ -67,8 +67,8 @@ strip = "symbols"
 panic = "abort"
 # Linux RELRO/NOW (`-Wl,-z,relro -Wl,-z,now`), Windows /guard:cf, and
 # macOS PAC+BTI flags live in the per-target build.rs scripts in the
-# crates that ship binaries (apps/copythat-ui/src-tauri,
-# crates/copythat-cli) so the workspace profile stays portable.
+# crates that ship binaries (apps/freally-ui/src-tauri,
+# crates/freally-cli) so the workspace profile stays portable.
 
 [profile.dev]
 opt-level = 0

@@ -180,13 +180,13 @@ jobs:
       - name: Test
         run: cargo test --workspace
       # Phase 17d — the elevated-handshake smoke is behind the
-      # `spawn-tests` feature (it spawns the real copythat-helper binary
+      # `spawn-tests` feature (it spawns the real freally-helper binary
       # NON-elevated over the DACL pipe / Unix socket and drives the full
       # handshake), so `cargo test --workspace` above doesn't run it.
       # Run it explicitly on every OS. The actual UAC/polkit/osascript
       # consent prompt is still manual — this covers the wire path only.
       - name: Test (Phase 17d elevated-handshake smoke)
-        run: cargo test -p copythat-helper --features spawn-tests --test phase_17d_spawn
+        run: cargo test -p freally-helper --features spawn-tests --test phase_17d_spawn
 
   tauri-build:
     name: Tauri debug build (${{ matrix.os }})
@@ -221,7 +221,7 @@ jobs:
         with:
           workspaces: |
             .
-            apps/copythat-ui/src-tauri
+            apps/freally-ui/src-tauri
       - uses: pnpm/action-setup@v4
         with:
           version: 10
@@ -229,9 +229,9 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
-          cache-dependency-path: apps/copythat-ui/pnpm-lock.yaml
+          cache-dependency-path: apps/freally-ui/pnpm-lock.yaml
       - name: Install frontend deps
-        working-directory: apps/copythat-ui
+        working-directory: apps/freally-ui
         run: pnpm install --frozen-lockfile
       # Debug build skips the rpm target on ubuntu-latest — Tauri's
       # `rpmbuild` shells out silently for ~25 min on hosted runners
@@ -245,7 +245,7 @@ jobs:
       # Tauri bundler itself runs identically across targets.
       - name: Tauri build (debug — Linux subset)
         if: matrix.os == 'ubuntu-latest'
-        working-directory: apps/copythat-ui
+        working-directory: apps/freally-ui
         # Compile-only check with `--no-bundle`: this verifies the Rust
         # + frontend build without producing a signed updater artifact,
         # so no TAURI_SIGNING_* key is required, and the deb/appimage
@@ -254,7 +254,7 @@ jobs:
         run: pnpm tauri build --debug --no-bundle
       - name: Tauri build (debug)
         if: matrix.os != 'ubuntu-latest'
-        working-directory: apps/copythat-ui
+        working-directory: apps/freally-ui
         # See the Linux subset step above — `--no-bundle` keeps this a
         # compile-only check, so no signing key is needed here.
         run: pnpm tauri build --debug --no-bundle
@@ -280,5 +280,5 @@ jobs:
             python3 python3-gi gir1.2-nautilus-3.0
       - name: Load the extension against the real Nautilus typelib
         env:
-          COPYTHAT_NAUTILUS_DIR: packaging/linux/nautilus
+          FREALLY_NAUTILUS_DIR: packaging/linux/nautilus
         run: python3 tests/smoke/nautilus/nautilus_runtime_check.py

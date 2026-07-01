@@ -18,9 +18,9 @@
 
 use std::path::PathBuf;
 
-use copythat_chunk::ChunkStore;
-use copythat_history::JobSummary;
-use copythat_mount::{
+use freally_chunk::ChunkStore;
+use freally_history::JobSummary;
+use freally_mount::{
     ArchiveRefs, MountBackend, MountError, MountFileKind, MountHandle, MountLayout, MountTree,
     NodeKind, NoopBackend, ROOT_INODE, TreeInodeMap, default_backend_name, synthesize_attr,
 };
@@ -182,13 +182,13 @@ fn case6_partial_layout_suppresses_branches() {
 #[test]
 fn case7_en_fluent_keys_present() {
     let root = workspace_root();
-    let path = root.join("locales").join("en").join("copythat.ftl");
+    let path = root.join("locales").join("en").join("freally.ftl");
     let content = std::fs::read_to_string(&path).expect("read en locale");
     for key in PHASE_33_KEYS {
         let needle = format!("{key} =");
         assert!(
             content.contains(&needle),
-            "missing Phase 33 Fluent key `{key}` in en/copythat.ftl"
+            "missing Phase 33 Fluent key `{key}` in en/freally.ftl"
         );
     }
 }
@@ -198,7 +198,7 @@ fn case7_en_fluent_keys_present() {
 fn case8_all_18_locales_have_phase_33_keys() {
     let root = workspace_root();
     for locale in LOCALES {
-        let path = root.join("locales").join(locale).join("copythat.ftl");
+        let path = root.join("locales").join(locale).join("freally.ftl");
         let content = std::fs::read_to_string(&path).expect("read locale");
         for key in PHASE_33_KEYS {
             let needle = format!("{key} =");
@@ -211,7 +211,7 @@ fn case8_all_18_locales_have_phase_33_keys() {
 }
 
 fn workspace_root() -> PathBuf {
-    // `CARGO_MANIFEST_DIR` is `crates/copythat-mount`; workspace is
+    // `CARGO_MANIFEST_DIR` is `crates/freally-mount`; workspace is
     // two parents up.
     let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     manifest

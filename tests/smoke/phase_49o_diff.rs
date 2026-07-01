@@ -6,7 +6,7 @@
 //! changed chunks (most chunks shared). Also checks the self-diff is
 //! all-unchanged and a missing snapshot id errors.
 
-use copythat_chunk::{FileChange, Repository, SnapshotId, SnapshotKind};
+use freally_chunk::{FileChange, Repository, SnapshotId, SnapshotKind};
 
 fn lcg_bytes(seed: u64, len: usize) -> Vec<u8> {
     let mut out = vec![0u8; len];

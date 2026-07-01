@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://copythat.dev/spec/cdr-0/manifest.schema.json",
+  "$id": "https://freally.dev/spec/cdr-0/manifest.schema.json",
   "title": "CDR-0 file manifest",
   "type": "object",
   "additionalProperties": false,

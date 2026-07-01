@@ -18,13 +18,13 @@
 use std::fs;
 use std::path::PathBuf;
 
-use copythat_mobile::pairing::{
+use freally_mobile::pairing::{
     PAIRING_SAS_SEED_BYTES, PairingToken, SasFingerprint, sas_fingerprint, sas_fingerprint_to_emoji,
 };
-use copythat_mobile::server::{
+use freally_mobile::server::{
     CollisionAction, HistoryRow, JobSummary, RemoteCommand, RemoteResponse,
 };
-use copythat_mobile::{generate_qr_png, mint_peer_id};
+use freally_mobile::{generate_qr_png, mint_peer_id};
 
 const PHASE_37_KEYS: &[&str] = &[
     "settings-mobile-heading",
@@ -251,7 +251,7 @@ fn case05_remote_command_response_round_trip() {
 fn case06_phase_37_fluent_keys_present_in_every_locale() {
     let root = locate_locales_dir().expect("locate locales/");
     for code in LOCALES {
-        let path = root.join(code).join("copythat.ftl");
+        let path = root.join(code).join("freally.ftl");
         let content =
             fs::read_to_string(&path).unwrap_or_else(|e| panic!("read {}: {e}", path.display()));
         for key in PHASE_37_KEYS {
@@ -270,7 +270,7 @@ fn locate_locales_dir() -> Option<PathBuf> {
     let mut cur = std::env::current_dir().ok()?;
     for _ in 0..6 {
         let candidate = cur.join("locales");
-        if candidate.join("en").join("copythat.ftl").exists() {
+        if candidate.join("en").join("freally.ftl").exists() {
             return Some(candidate);
         }
         if !cur.pop() {

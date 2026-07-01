@@ -6,7 +6,7 @@
 //! the summary index immediately and persist across reopen, and that an
 //! empty policy + a missing id are inert.
 
-use copythat_chunk::{PrunePolicy, Repository, SnapshotId, SnapshotKind};
+use freally_chunk::{PrunePolicy, Repository, SnapshotId, SnapshotKind};
 
 fn lcg_bytes(seed: u64, len: usize) -> Vec<u8> {
     let mut out = vec![0u8; len];

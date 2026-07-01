@@ -1,0 +1,113 @@
+[Desktop Entry]
+Type=Application
+Version=1.1
+Name=Freally File Manager v1.0.0
+Name[es]=Freally File Manager v1.0.0
+Name[zh-CN]=Freally File Manager v1.0.0
+Name[hi]=कॉपी दैट 2026
+Name[ar]=Freally File Manager v1.0.0
+Name[pt-BR]=Freally File Manager v1.0.0
+Name[ru]=Freally File Manager v1.0.0
+Name[ja]=Freally File Manager v1.0.0
+Name[de]=Freally File Manager v1.0.0
+Name[fr]=Freally File Manager v1.0.0
+Name[ko]=Freally File Manager v1.0.0
+Name[it]=Freally File Manager v1.0.0
+Name[tr]=Freally File Manager v1.0.0
+Name[vi]=Freally File Manager v1.0.0
+Name[pl]=Freally File Manager v1.0.0
+Name[nl]=Freally File Manager v1.0.0
+Name[id]=Freally File Manager v1.0.0
+Name[uk]=Freally File Manager v1.0.0
+GenericName=File Copier
+GenericName[es]=Copiador de archivos
+GenericName[zh-CN]=文件复制工具
+GenericName[hi]=फ़ाइल कॉपीयर
+GenericName[ar]=ناسخ الملفات
+GenericName[pt-BR]=Copiador de arquivos
+GenericName[ru]=Копировщик файлов
+GenericName[ja]=ファイルコピー
+GenericName[de]=Dateikopierer
+GenericName[fr]=Copieur de fichiers
+GenericName[ko]=파일 복사기
+GenericName[it]=Copiatore di file
+GenericName[tr]=Dosya Kopyalayıcı
+GenericName[vi]=Trình sao chép tệp
+GenericName[pl]=Kopiarka plików
+GenericName[nl]=Bestandskopieerder
+GenericName[id]=Penyalin Berkas
+GenericName[uk]=Копіювач файлів
+Comment=Byte-exact async file and folder copier
+Comment[es]=Copiador asíncrono byte-exacto de archivos y carpetas
+Comment[zh-CN]=字节精确的异步文件与文件夹复制工具
+Comment[hi]=बाइट-सटीक असिंक फ़ाइल और फ़ोल्डर कॉपीयर
+Comment[ar]=ناسخ ملفات ومجلدات غير متزامن دقيق بالبايت
+Comment[pt-BR]=Copiador assíncrono e byte-exato de arquivos e pastas
+Comment[ru]=Побайтно точный асинхронный копировщик файлов и папок
+Comment[ja]=バイト単位で正確な非同期ファイル・フォルダコピー
+Comment[de]=Byte-genauer asynchroner Datei- und Ordnerkopierer
+Comment[fr]=Copieur asynchrone octet par octet de fichiers et de dossiers
+Comment[ko]=바이트 단위 정확한 비동기 파일 및 폴더 복사기
+Comment[it]=Copiatore asincrono byte-esatto di file e cartelle
+Comment[tr]=Bayt-tam asenkron dosya ve klasör kopyalayıcı
+Comment[vi]=Trình sao chép tệp và thư mục không đồng bộ chính xác theo byte
+Comment[pl]=Asynchroniczny, dokładny co do bajtu, kopiarka plików i folderów
+Comment[nl]=Byte-exacte asynchrone bestands- en mapkopieerder
+Comment[id]=Penyalin berkas dan folder asinkron yang presisi per byte
+Comment[uk]=Побайтно точний асинхронний копіювач файлів і тек
+Exec=freally %F
+Icon=freally
+Terminal=false
+Categories=Utility;FileTools;FileManager;
+MimeType=inode/directory;application/octet-stream;
+Actions=Copy;Move;
+Keywords=copy;move;verify;checksum;tera;
+
+# Per-Phase-7 rule: these two Desktop Actions expose the shell-
+# integration verbs. The file manager renders them as sub-entries
+# under the application; right-clicking on files/folders with the
+# `MimeType` above will offer them via the MIME system.
+
+[Desktop Action Copy]
+Name=Copy with Freally File Manager
+Name[es]=Copiar con Freally File Manager
+Name[zh-CN]=用 Freally File Manager 复制
+Name[hi]=Freally File Manager के साथ कॉपी करें
+Name[ar]=انسخ باستخدام Freally File Manager
+Name[pt-BR]=Copiar com Freally File Manager
+Name[ru]=Копировать через Freally File Manager
+Name[ja]=Freally File Manager でコピー
+Name[de]=Mit Freally File Manager kopieren
+Name[fr]=Copier avec Freally File Manager
+Name[ko]=Freally File Manager로 복사
+Name[it]=Copia con Freally File Manager
+Name[tr]=Freally File Manager ile kopyala
+Name[vi]=Sao chép bằng Freally File Manager
+Name[pl]=Kopiuj za pomocą Freally File Manager
+Name[nl]=Kopiëren met Freally File Manager
+Name[id]=Salin dengan Freally File Manager
+Name[uk]=Копіювати через Freally File Manager
+Exec=freally --enqueue copy %F
+Icon=freally
+
+[Desktop Action Move]
+Name=Move with Freally File Manager
+Name[es]=Mover con Freally File Manager
+Name[zh-CN]=用 Freally File Manager 移动
+Name[hi]=Freally File Manager के साथ मूव करें
+Name[ar]=انقل باستخدام Freally File Manager
+Name[pt-BR]=Mover com Freally File Manager
+Name[ru]=Переместить через Freally File Manager
+Name[ja]=Freally File Manager で移動
+Name[de]=Mit Freally File Manager verschieben
+Name[fr]=Déplacer avec Freally File Manager
+Name[ko]=Freally File Manager로 이동
+Name[it]=Sposta con Freally File Manager
+Name[tr]=Freally File Manager ile taşı
+Name[vi]=Di chuyển bằng Freally File Manager
+Name[pl]=Przenieś za pomocą Freally File Manager
+Name[nl]=Verplaatsen met Freally File Manager
+Name[id]=Pindahkan dengan Freally File Manager
+Name[uk]=Перемістити через Freally File Manager
+Exec=freally --enqueue move %F
+Icon=freally

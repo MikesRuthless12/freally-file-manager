@@ -7,7 +7,7 @@
 //! codec (so the manifest records the truth). The on-disk v0→v1 locator
 //! back-compat is unit-tested inside `store.rs`.
 
-use copythat_chunk::{ChunkCodec, CompressionLevel, RepoCompression, Repository, SnapshotKind};
+use freally_chunk::{ChunkCodec, CompressionLevel, RepoCompression, Repository, SnapshotKind};
 
 fn lcg_bytes(seed: u64, len: usize) -> Vec<u8> {
     let mut out = vec![0u8; len];

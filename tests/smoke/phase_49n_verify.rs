@@ -1,6 +1,6 @@
 //! Phase 49n smoke — snapshot verification & repair (quarantine).
 
-use copythat_chunk::{Repository, SnapshotKind, VerifyLevel};
+use freally_chunk::{Repository, SnapshotKind, VerifyLevel};
 
 #[test]
 fn verify_clean_then_detect_corruption_and_repair() {

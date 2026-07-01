@@ -15,7 +15,7 @@
 
 use std::path::{Path, PathBuf};
 
-use copythat_chunk::{Repository, SnapshotKind};
+use freally_chunk::{Repository, SnapshotKind};
 
 fn seeded_bytes(seed: u64, len: usize) -> Vec<u8> {
     let mut out = vec![0u8; len];

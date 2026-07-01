@@ -1,6 +1,6 @@
 //! Phase 50 — restic importer smoke test.
 //!
-//! Runs the `copythat_chunk::migrate` restic importer against a committed,
+//! Runs the `freally_chunk::migrate` restic importer against a committed,
 //! PII-free restic **v2** fixture (`tests/fixtures/restic-repo`, created
 //! with `restic 0.17.3` inside Linux, host `ci`, passphrase `testpass`)
 //! and asserts every file restores byte-for-byte against the original
@@ -13,7 +13,7 @@
 
 use std::path::PathBuf;
 
-use copythat_chunk::{MigrateError, RepoFormat, Repository, SnapshotId, materialise_file, migrate};
+use freally_chunk::{MigrateError, RepoFormat, Repository, SnapshotId, materialise_file, migrate};
 
 fn fixtures() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures")

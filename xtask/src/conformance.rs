@@ -7,8 +7,8 @@
 
 use std::path::Path;
 
-use copythat_chunk::ChunkCodec;
-use copythat_chunk::cdr::{CDR_ALGO, CDR_SPEC_VERSION, CdrChunkRef, CdrManifest};
+use freally_chunk::ChunkCodec;
+use freally_chunk::cdr::{CDR_ALGO, CDR_SPEC_VERSION, CdrChunkRef, CdrManifest};
 
 const OUT_DIR: &str = "docs/spec/conformance";
 
@@ -113,7 +113,7 @@ fn fixtures() -> Vec<(&'static str, CdrManifest, bool, &'static str)> {
 /// with `CdrManifest` by hand — a schema, not generated, so it is readable.
 const MANIFEST_SCHEMA: &str = r#"{
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://copythat.dev/spec/cdr-0/manifest.schema.json",
+  "$id": "https://freally.dev/spec/cdr-0/manifest.schema.json",
   "title": "CDR-0 file manifest",
   "type": "object",
   "additionalProperties": false,

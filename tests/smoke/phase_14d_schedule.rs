@@ -1,6 +1,6 @@
 //! Phase 14d smoke test — scheduled-job render paths.
 //!
-//! Drives `copythat_cli::schedule::render_schedule` against the
+//! Drives `freally_cli::schedule::render_schedule` against the
 //! three host OS targets (Windows / macOS / Linux) and asserts:
 //!
 //! 1. **Per-OS shape** — schtasks for Windows, launchd plist for
@@ -21,8 +21,8 @@
 
 use std::path::{Path, PathBuf};
 
-use copythat_cli::jobspec::{JobBlock, JobKind, JobSpec, ScheduleBlock};
-use copythat_cli::schedule::{ScheduleError, ScheduleHostOs, ScheduleSpec, render_schedule};
+use freally_cli::jobspec::{JobBlock, JobKind, JobSpec, ScheduleBlock};
+use freally_cli::schedule::{ScheduleError, ScheduleHostOs, ScheduleSpec, render_schedule};
 
 fn make_spec(kind: JobKind, src: PathBuf, dst: PathBuf, cron: Option<&str>) -> JobSpec {
     JobSpec {
@@ -95,7 +95,7 @@ fn render_linux_systemd_shape() {
     assert!(
         render
             .body
-            .contains("ExecStart=/usr/bin/copythat apply --spec")
+            .contains("ExecStart=/usr/bin/freally apply --spec")
     );
 }
 

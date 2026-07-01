@@ -19,13 +19,13 @@ url = "https://raw.githubusercontent.com/mozilla/supply-chain/main/audits.toml"
 [imports.zcash]
 url = "https://raw.githubusercontent.com/zcash/rust-ecosystem/main/supply-chain/audits.toml"
 
-[policy.copythat-cli]
+[policy.freally-cli]
 audit-as-crates-io = false
 
-[policy.copythat-core]
+[policy.freally-core]
 audit-as-crates-io = false
 
-[policy.copythat-platform]
+[policy.freally-platform]
 audit-as-crates-io = false
 
 [[exemptions.addr2line]]

@@ -1,4 +1,4 @@
-﻿# Phase 42 head-to-head bench harness -- CopyThat vs RoboCopy / cmd copy / TeraCopy / FastCopy.
+﻿# Phase 42 head-to-head bench harness -- Freally vs RoboCopy / cmd copy / TeraCopy / FastCopy.
 #
 # Per-workload methodology:
 #   - COLD: create a fresh source file before each iteration (uncached source bytes)
@@ -19,15 +19,15 @@
 
 param(
     # Optional tool filter -- restricts the bench to a subset of tools.
-    # Default: full bench (all 5 tools). Pass `-OnlyTools @('CopyThat')`
-    # for a CopyThat-only re-bench that keeps competitor data from the
+    # Default: full bench (all 5 tools). Pass `-OnlyTools @('Freally')`
+    # for a Freally-only re-bench that keeps competitor data from the
     # last full run intact (merged by `scripts/bench-merge.ps1`).
-    [string[]]$OnlyTools = @('CopyThat', 'RoboCopy', 'CmdCopy', 'TeraCopy', 'FastCopy'),
+    [string[]]$OnlyTools = @('Freally', 'RoboCopy', 'CmdCopy', 'TeraCopy', 'FastCopy'),
 
-    # Optional workdir override -- defaults to C:\copythat-bench-vs.
+    # Optional workdir override -- defaults to C:\freally-bench-vs.
     # Pass e.g. `-WorkDir T:\bench-vs` to bench on a different volume
     # (Dev Drive / cross-volume / external SSD).
-    [string]$WorkDir = "C:\copythat-bench-vs",
+    [string]$WorkDir = "C:\freally-bench-vs",
 
     # Optional tag for the output filenames. Useful when running
     # multiple back-to-back benches on different volumes; the JSON /
@@ -47,7 +47,7 @@ $ResultJson    = Join-Path $RepoRoot "target\bench-phase42$suffix.json"
 $ResultMd      = Join-Path $RepoRoot "docs\BENCHMARKS_PHASE_42$suffix.md"
 $ResultHtml    = Join-Path $RepoRoot "target\bench-phase42$suffix.html"
 
-$CopyThat = "$RepoRoot\target\release\copythat.exe"
+$Freally = "$RepoRoot\target\release\freally.exe"
 $TeraCopy = "C:\Program Files\TeraCopy\TeraCopy.exe"
 $FastCopy = "C:\Users\miken\FastCopy\FastCopy.exe"
 
@@ -117,11 +117,11 @@ function Run-Tool {
         [string]$DstFile  # for tools that take dst as a file path
     )
     switch ($Tool) {
-        'CopyThat' {
+        'Freally' {
             # Use --quiet so we time the engine, not the progress bar paint.
             $args = @('copy', '--quiet', $SrcFile, $DstFile)
             $t0 = Now-Ms
-            & $CopyThat @args | Out-Null
+            & $Freally @args | Out-Null
             return (Now-Ms) - $t0
         }
         'RoboCopy' {
@@ -201,10 +201,10 @@ function Run-Tool-Tree {
         [string]$DstDir
     )
     switch ($Tool) {
-        'CopyThat' {
+        'Freally' {
             # Engine handles tree copy via copy <dir> <dir>
             $t0 = Now-Ms
-            & $CopyThat copy --quiet $SrcDir $DstDir | Out-Null
+            & $Freally copy --quiet $SrcDir $DstDir | Out-Null
             return (Now-Ms) - $t0
         }
         'RoboCopy' {
@@ -458,10 +458,10 @@ Write-Host "Output: $ResultJson + $ResultMd + $ResultHtml"
 Write-Host ""
 
 # Tooling sanity check
-foreach ($p in @($CopyThat, $TeraCopy, $FastCopy)) {
+foreach ($p in @($Freally, $TeraCopy, $FastCopy)) {
     if (-not (Test-Path $p)) { throw "tool not found: $p" }
 }
-Write-Host "  [ok] CopyThat = $CopyThat"
+Write-Host "  [ok] Freally = $Freally"
 Write-Host "  [ok] TeraCopy = $TeraCopy"
 Write-Host "  [ok] FastCopy = $FastCopy"
 Write-Host "  [ok] RoboCopy / CmdCopy via PATH"

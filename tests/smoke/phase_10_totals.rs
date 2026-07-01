@@ -16,7 +16,7 @@
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
-use copythat_history::{History, JobSummary};
+use freally_history::{History, JobSummary};
 
 const DAY_MS: i64 = 86_400_000;
 

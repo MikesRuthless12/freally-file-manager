@@ -1,8 +1,8 @@
 //! Phase 13c smoke test — parallel multi-chunk copy gating.
 //!
 //! Phase 13c shipped a parallel-chunk copy path at
-//! `crates/copythat-platform/src/native/parallel.rs`, gated behind
-//! the `COPYTHAT_PARALLEL_CHUNKS=<N>` environment variable. The
+//! `crates/freally-platform/src/native/parallel.rs`, gated behind
+//! the `FREALLY_PARALLEL_CHUNKS=<N>` environment variable. The
 //! same phase measured the path against single-stream `CopyFileExW`
 //! on Windows 11 across same-volume SSD, NTFS-cross-volume, and
 //! exFAT-external-USB at 10 GiB:
@@ -25,9 +25,9 @@
 //!    "normal" file copy, regardless of size).
 //! 2. The min-file-size threshold (1 GiB) hasn't drifted.
 //! 3. The 4-chunk default is still the documented value.
-//! 4. The `COPYTHAT_PARALLEL_CHUNKS=2` env override engages the
+//! 4. The `FREALLY_PARALLEL_CHUNKS=2` env override engages the
 //!    path with the requested chunk count.
-//! 5. Setting `COPYTHAT_PARALLEL_CHUNKS=0` or `=1` disables.
+//! 5. Setting `FREALLY_PARALLEL_CHUNKS=0` or `=1` disables.
 //! 6. The Phase 38-followup-2 research conclusions are documented
 //!    in `COMPETITOR-TEST.md` so future readers don't try to flip
 //!    the path on without re-running the bench.
@@ -36,7 +36,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
 /// Process-global lock the env-var-touching tests acquire before
-/// flipping `COPYTHAT_PARALLEL_CHUNKS`. cargo runs tests in parallel
+/// flipping `FREALLY_PARALLEL_CHUNKS`. cargo runs tests in parallel
 /// by default; without this lock two tests that set/clear the same
 /// var would race and produce intermittent failures whose root cause
 /// (the env var, not the parallel-copy logic) is hard to spot.
@@ -64,7 +64,7 @@ fn parallel_module_carries_min_file_threshold() {
     // catches a drift even when the module isn't built (e.g. a
     // non-Windows host that skipped the conditional compilation).
     let parallel = std::fs::read_to_string(
-        repo_root().join("crates/copythat-platform/src/native/parallel.rs"),
+        repo_root().join("crates/freally-platform/src/native/parallel.rs"),
     )
     .unwrap();
     assert!(
@@ -80,7 +80,7 @@ fn parallel_module_carries_min_file_threshold() {
 #[test]
 fn parallel_module_documents_the_regression_outcome() {
     let parallel = std::fs::read_to_string(
-        repo_root().join("crates/copythat-platform/src/native/parallel.rs"),
+        repo_root().join("crates/freally-platform/src/native/parallel.rs"),
     )
     .unwrap();
     // The docstring spells out the measured A/B regression so a
@@ -108,8 +108,8 @@ fn competitor_test_documents_parallel_outcome() {
     // than pinning a specific (rewritable) phase string.
     let body = std::fs::read_to_string(repo_root().join("COMPETITOR-TEST.md")).unwrap();
     assert!(
-        body.contains("CopyThat"),
-        "COMPETITOR-TEST.md must still be the CopyThat head-to-head benchmark report",
+        body.contains("Freally"),
+        "COMPETITOR-TEST.md must still be the Freally head-to-head benchmark report",
     );
     assert!(
         body.contains("regression") || body.contains("regress"),
@@ -121,7 +121,7 @@ fn competitor_test_documents_parallel_outcome() {
 fn requested_chunks_stays_off_below_threshold() {
     let small_file = 100 * 1024 * 1024; // 100 MiB
     assert!(
-        copythat_platform_parallel_chunks_for(small_file).is_none(),
+        freally_platform_parallel_chunks_for(small_file).is_none(),
         "parallel path must stay off below 1 GiB",
     );
 }
@@ -138,10 +138,10 @@ fn requested_chunks_default_is_4_for_large_files() {
     // env var, so the set/remove pair is the only mutation in
     // flight while the guard is held.
     unsafe {
-        std::env::remove_var("COPYTHAT_PARALLEL_CHUNKS");
+        std::env::remove_var("FREALLY_PARALLEL_CHUNKS");
     }
     let huge = 4 * 1024 * 1024 * 1024; // 4 GiB
-    let chunks = copythat_platform_parallel_chunks_for(huge);
+    let chunks = freally_platform_parallel_chunks_for(huge);
     assert_eq!(chunks, Some(4), "default chunk count must be 4");
 }
 
@@ -153,22 +153,22 @@ fn requested_chunks_zero_or_one_disables_via_env() {
     // SAFETY: serialised by ENV_VAR_LOCK; see the
     // `requested_chunks_default_is_4_for_large_files` comment.
     unsafe {
-        std::env::set_var("COPYTHAT_PARALLEL_CHUNKS", "0");
+        std::env::set_var("FREALLY_PARALLEL_CHUNKS", "0");
     }
     let huge = 4 * 1024 * 1024 * 1024;
     assert!(
-        copythat_platform_parallel_chunks_for(huge).is_none(),
-        "COPYTHAT_PARALLEL_CHUNKS=0 must disable the parallel path",
+        freally_platform_parallel_chunks_for(huge).is_none(),
+        "FREALLY_PARALLEL_CHUNKS=0 must disable the parallel path",
     );
     unsafe {
-        std::env::set_var("COPYTHAT_PARALLEL_CHUNKS", "1");
+        std::env::set_var("FREALLY_PARALLEL_CHUNKS", "1");
     }
     assert!(
-        copythat_platform_parallel_chunks_for(huge).is_none(),
-        "COPYTHAT_PARALLEL_CHUNKS=1 must disable the parallel path",
+        freally_platform_parallel_chunks_for(huge).is_none(),
+        "FREALLY_PARALLEL_CHUNKS=1 must disable the parallel path",
     );
     unsafe {
-        std::env::remove_var("COPYTHAT_PARALLEL_CHUNKS");
+        std::env::remove_var("FREALLY_PARALLEL_CHUNKS");
     }
 }
 
@@ -179,18 +179,18 @@ fn requested_chunks_clamps_to_2_through_16() {
         .unwrap_or_else(|poisoned| poisoned.into_inner());
     // SAFETY: serialised by ENV_VAR_LOCK.
     unsafe {
-        std::env::set_var("COPYTHAT_PARALLEL_CHUNKS", "32");
+        std::env::set_var("FREALLY_PARALLEL_CHUNKS", "32");
     }
     let huge = 4 * 1024 * 1024 * 1024;
-    let chunks = copythat_platform_parallel_chunks_for(huge);
+    let chunks = freally_platform_parallel_chunks_for(huge);
     assert_eq!(chunks, Some(16), "must clamp to upper bound of 16");
     unsafe {
-        std::env::set_var("COPYTHAT_PARALLEL_CHUNKS", "2");
+        std::env::set_var("FREALLY_PARALLEL_CHUNKS", "2");
     }
-    let chunks = copythat_platform_parallel_chunks_for(huge);
+    let chunks = freally_platform_parallel_chunks_for(huge);
     assert_eq!(chunks, Some(2), "must accept lower bound of 2");
     unsafe {
-        std::env::remove_var("COPYTHAT_PARALLEL_CHUNKS");
+        std::env::remove_var("FREALLY_PARALLEL_CHUNKS");
     }
 }
 
@@ -198,13 +198,13 @@ fn requested_chunks_clamps_to_2_through_16() {
 /// `requested_chunks` is `pub(crate)`; for the smoke we re-implement
 /// the same shape so we don't have to widen the visibility just for
 /// a tripwire.
-fn copythat_platform_parallel_chunks_for(total: u64) -> Option<usize> {
+fn freally_platform_parallel_chunks_for(total: u64) -> Option<usize> {
     const MIN_FILE_FOR_PARALLEL: u64 = 1024 * 1024 * 1024;
     const DEFAULT_NUM_CHUNKS: usize = 4;
     if total < MIN_FILE_FOR_PARALLEL {
         return None;
     }
-    if let Ok(raw) = std::env::var("COPYTHAT_PARALLEL_CHUNKS") {
+    if let Ok(raw) = std::env::var("FREALLY_PARALLEL_CHUNKS") {
         let n: usize = raw.parse().ok()?;
         if n < 2 {
             return None;

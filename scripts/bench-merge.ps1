@@ -1,13 +1,13 @@
-﻿# Merge a CopyThat-only bench run back into the full-run JSON.
+﻿# Merge a Freally-only bench run back into the full-run JSON.
 #
-# Use case: the user reran only CopyThat (`-OnlyTools @('CopyThat')`)
+# Use case: the user reran only Freally (`-OnlyTools @('Freally')`)
 # to refresh its numbers without burning 24 minutes on competitors.
 # This script:
 #   1. Loads the saved full run from `target/bench-phase42.full.json`
 #      (the previous full bench's data, with all 5 tools).
 #   2. Loads the partial run from `target/bench-phase42.json` (the
-#      most recent CopyThat-only run).
-#   3. For each workload in the full run, replaces the CopyThat
+#      most recent Freally-only run).
+#   3. For each workload in the full run, replaces the Freally
 #      result with the fresh one. Competitor results stay intact.
 #   4. Writes the merged JSON back to `target/bench-phase42.json` so
 #      the renderer picks it up.
@@ -39,7 +39,7 @@ foreach ($wlFull in $full.workloads) {
         Write-Host "  $label : no fresh data, leaving full as-is"
         continue
     }
-    # Replace CopyThat result for this workload
+    # Replace Freally result for this workload
     $tools = @($wlFresh.results.PSObject.Properties.Name)
     foreach ($tool in $tools) {
         Write-Host "  $label : updating $tool from fresh run"
@@ -53,7 +53,7 @@ foreach ($wlFull in $full.workloads) {
 
 # Note: keep the original `host`, `os`, `hardware`, `duration_ms` from
 # the FULL run. The merge represents "competitor data from full run +
-# CopyThat data from fresh run". duration_ms reflects the longer of
+# Freally data from fresh run". duration_ms reflects the longer of
 # the two; a re-render simply summarizes the merge.
 $full | ConvertTo-Json -Depth 12 | Set-Content -Path $FreshJson -Encoding UTF8
 Write-Host ""

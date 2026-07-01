@@ -3,11 +3,11 @@
     Phase 7b smoke test -- Windows COM DLL layer.
 
 .DESCRIPTION
-    Verifies the compiled copythat-shellext.dll is a valid COM
+    Verifies the compiled freally-shellext.dll is a valid COM
     in-proc server without actually registering it against a user
     profile. The test:
 
-    1. Builds the DLL in release mode via `cargo build -p copythat-shellext --release`.
+    1. Builds the DLL in release mode via `cargo build -p freally-shellext --release`.
     2. Resolves the produced DLL path.
     3. LoadLibraries the DLL via Win32 P/Invoke.
     4. Calls GetProcAddress for the four COM entry points
@@ -40,14 +40,14 @@ $ErrorActionPreference = 'Stop'
 $RepoRoot = Resolve-Path (Join-Path $PSScriptRoot '..\..')
 Set-Location $RepoRoot
 
-Write-Host "==> Building copythat-shellext (release)..."
-& cargo build -p copythat-shellext --release
+Write-Host "==> Building freally-shellext (release)..."
+& cargo build -p freally-shellext --release
 if ($LASTEXITCODE -ne 0) {
     Write-Error "cargo build failed with exit code $LASTEXITCODE"
     exit 1
 }
 
-$DllPath = Join-Path $RepoRoot 'target\release\copythat_shellext.dll'
+$DllPath = Join-Path $RepoRoot 'target\release\freally_shellext.dll'
 if (-not (Test-Path $DllPath)) {
     Write-Error "DLL not found at $DllPath"
     exit 2

@@ -32,11 +32,11 @@
 
 use std::path::{Path, PathBuf};
 
-use copythat_core::{
+use freally_core::{
     CollisionPolicy, CopyControl, CopyEvent, CopyOptions, ErrorAction, ErrorPolicy, TreeOptions,
     copy_tree,
 };
-use copythat_ui_lib::errors::{ErrorRegistry, export_csv, export_txt};
+use freally_ui_lib::errors::{ErrorRegistry, export_csv, export_txt};
 use tempfile::tempdir;
 use tokio::sync::mpsc;
 
@@ -159,7 +159,7 @@ async fn skip_all_of_kind_lets_tree_finish_and_logs_three_errors() {
     //
     // The engine emits *both* `ErrorPrompt` and (after Skip / RetryN
     // exhaustion) `CopyEvent::FileError` for the same file — see
-    // `copythat_core::tree::record_file_error`. So the first
+    // `freally_core::tree::record_file_error`. So the first
     // read-only file produces two log entries: one from
     // `ErrorRegistry::resolve` (resolution = "skip"), another from
     // `ErrorRegistry::log_auto` on the follow-up `FileError`
@@ -209,7 +209,7 @@ async fn skip_all_of_kind_lets_tree_finish_and_logs_three_errors() {
 /// quotes. Host-independent; runs on every CI OS.
 #[test]
 fn csv_export_quotes_commas_and_quotes() {
-    let entries = vec![copythat_ui_lib::errors::LoggedError {
+    let entries = vec![freally_ui_lib::errors::LoggedError {
         id: 1,
         job_id: 1,
         timestamp_ms: 0,

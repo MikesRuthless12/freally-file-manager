@@ -1,12 +1,12 @@
 //! Phase 49f smoke — the in-process backup schedule evaluator.
 //!
 //! Validates the public `BackupSchedule` surface the GUI daemon + the
-//! `copythat backup` CLI tick on: spec parse + round-trip, `is_due` across
+//! `freally backup` CLI tick on: spec parse + round-trip, `is_due` across
 //! the cadences, `next_after` anchoring in the future, and Manual being
 //! inert. (The DST + bucket-edge math is unit-tested inside the module.)
 
 use chrono::{DateTime, Local, TimeZone};
-use copythat_shape::{BackupSchedule, BackupScheduleError};
+use freally_shape::{BackupSchedule, BackupScheduleError};
 
 fn at(y: i32, m: u32, d: u32, h: u32, min: u32) -> DateTime<Local> {
     Local.with_ymd_and_hms(y, m, d, h, min, 0).single().unwrap()

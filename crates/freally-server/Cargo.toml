@@ -1,0 +1,171 @@
+[package]
+name = "freally-server"
+description = "Phase 48 — server mode + observability. Runs Freally headless over WebDAV (and the HTTP/S3 file surface) on an axum/hyper listener with a Prometheus `/metrics` endpoint, bearer/basic auth, and read-only mode; webhook sinks (Slack / Discord / ntfy / Pushover), an SFTP transport, and OpenTelemetry export land in follow-up increments."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+# The public config/notification types cross the IPC + on-disk boundary as
+# JSON, and `format_webhook_payload` returns a `serde_json::Value`; both
+# match every other workspace member's single-version pins.
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+
+# Phase 48 — server mode. axum/hyper/tower are already resolved in the
+# workspace (Phase 39 recovery UI); we mirror its loopback-server pattern.
+tokio = { version = "1", features = [
+    "rt",
+    "rt-multi-thread",
+    "net",
+    "fs",
+    "io-util",
+    "sync",
+    "macros",
+    "time",
+] }
+axum = { version = "0.8", default-features = false, features = [
+    "tokio",
+    "http1",
+] }
+tower = { version = "0.5", default-features = false }
+hyper = { version = "1", default-features = false, features = ["server"] }
+http = "1"
+http-body-util = "0.1"
+bytes = "1"
+futures-util = { version = "0.3", default-features = false }
+tracing = { version = "0.1", default-features = false, features = ["std"] }
+# WebDAV protocol — local-filesystem backend + hyper request/response
+# integration so the handler mounts on the same axum/hyper stack as the
+# `/metrics` endpoint. Apache-2.0.
+dav-server = { version = "0.11", default-features = false, features = [
+    "localfs",
+    "hyper",
+] }
+# HTTP Basic credential decode. Already resolved in the workspace; MIT.
+base64 = "0.22"
+# Constant-time credential compare — the workspace's shared primitive
+# (also used by freally-audit / -recovery / -mobile). Already in-tree.
+subtle = "2"
+# `http_body::Body` for the byte-counting request-body wrapper; already
+# resolved transitively via hyper/axum. MIT.
+http-body = "1"
+# Phase 48 follow-up — S3 API. AWS SigV4 request authentication is a chain
+# of HMAC-SHA256 derivations plus SHA-256 payload/canonical-request digests;
+# `percent-encoding` URL-decodes the object key before the path jail. All
+# four are the exact versions freally-cloud / -hash / -audit already pin
+# (digest 0.10 family), so they add no new resolution. No aws-sdk / aws-sigv4
+# crate — the SigV4 maths is a few dozen lines. MIT / Apache-2.0.
+hmac = "0.12"
+sha2 = "0.10"
+hex = "0.4"
+percent-encoding = "2"
+# Webhook delivery (Slack / Discord / ntfy / Pushover are HTTPS endpoints).
+# rustls-tls reuses the workspace's existing rustls stack — no OpenSSL, no
+# new TLS backend. Already resolved in-tree (Phase 32/42 cloud + mobile).
+reqwest = { version = "0.12", default-features = false, features = [
+    "rustls-tls",
+    "json",
+] }
+# Phase 48 follow-up — SFTP transport. russh (SSH) + russh-sftp (SFTP
+# subsystem) are the same pure-Rust, Windows-clean stack freally-cloud
+# already uses for its SFTP *client*; here they back the *server*. Drop the
+# default `rsa` (we mint an ed25519 host key). Crypto backend is `ring`, not
+# cloud's `aws-lc-rs`: aws-lc-sys needs NASM to assemble on Windows MSVC,
+# which isn't part of this toolchain, so building `-p freally-server` alone
+# would fail; `ring` builds clean here. russh prefers aws-lc-rs whenever it's
+# enabled (server/mod.rs cfg), so a full-workspace build (where cloud turns
+# aws-lc-rs on) still unifies onto aws-lc-rs — this only changes the
+# server-crate-only build. `ring` 0.17 is already resolved in-tree. MIT.
+russh = { version = "0.60", default-features = false, features = [
+    "flate2",
+    "ring",
+] }
+russh-sftp = "2"
+# Ephemeral ed25519 host-key generation. `rand::rng()` is the version-correct
+# RNG for russh 0.60's ssh-key (rand 0.10 is already resolved in-tree via
+# russh). MIT / Apache-2.0.
+rand = "0.10"
+# Phase 48 follow-up — OpenTelemetry trace export. OTLP over HTTP/protobuf
+# via the `reqwest-rustls` path, NOT grpc-tonic. otlp 0.32 pulls reqwest
+# **0.13** (distinct from the webhook/sftp reqwest 0.12) and `reqwest-rustls`
+# enables reqwest's `default-tls` = rustls with the aws-lc-rs crypto provider.
+# A bare `reqwest-client` leaves reqwest 0.13's `__rustls` on with NO provider
+# under the workspace feature union, so building the exporter panics
+# "No provider set" — `reqwest-rustls` installs the provider and avoids that.
+# `rt-tokio` gives the batch span processor a tokio-driven
+# background runtime so buffered spans flush on the engine's runtime;
+# `tracing-opentelemetry` bridges the engine's `tracing` spans into the OTel
+# pipeline; the `registry` subscriber layer is the install surface
+# (tracing-subscriber is already resolved in-tree via freally-audit + the
+# Tauri app, with `registry` already active). MIT / Apache-2.0.
+opentelemetry = "0.32"
+opentelemetry_sdk = { version = "0.32", features = [
+    "rt-tokio",
+    # The runtime-driven batch span processor lives behind this experimental
+    # gate in 0.32 (the stable `with_batch_exporter` runs on a dedicated
+    # std::thread + `futures_executor::block_on`, which cannot drive the
+    # async reqwest exporter — it needs a tokio reactor). `rt-tokio` supplies
+    # `runtime::Tokio`; this feature supplies the matching processor module.
+    "experimental_trace_batch_span_processor_with_async_runtime",
+] }
+opentelemetry-otlp = { version = "0.32", default-features = false, features = [
+    "trace",
+    "http-proto",
+    # `reqwest-client` registers reqwest as the exporter's HTTP client;
+    # `reqwest-rustls` adds reqwest's `default-tls` = rustls + aws-lc-rs
+    # provider. BOTH are needed — `reqwest-client` alone leaves reqwest 0.13's
+    # `__rustls` without a provider (panics "No provider set" under the
+    # workspace feature union); `reqwest-rustls` alone wires no client
+    # ("no http client specified").
+    "reqwest-client",
+    "reqwest-rustls",
+] }
+tracing-opentelemetry = "0.33"
+tracing-subscriber = { version = "0.3", default-features = false, features = [
+    "registry",
+] }
+
+[dev-dependencies]
+# Smoke round-trips the public types through JSON.
+serde_json = "1"
+# Phase 48 smoke — drive a real WebDAV PUT/GET + scrape /metrics over a
+# loopback HTTP client. All already resolved in the workspace tree.
+# `io-util` adds the AsyncRead/Write ext traits the SFTP round-trip needs.
+tokio = { version = "1", features = [
+    "macros",
+    "rt-multi-thread",
+    "time",
+    "io-util",
+] }
+reqwest = { version = "0.12", default-features = false }
+tempfile = "3"
+# Phase 48 follow-up — the S3 SigV4 smoke computes a valid signature with the
+# same HMAC-SHA256 chain the server verifies. Same in-tree versions as the
+# library deps.
+hmac = "0.12"
+sha2 = "0.10"
+hex = "0.4"
+# Phase 48 follow-up — the SFTP round-trip drives a real russh client +
+# russh-sftp client session against the in-process server. Same `ring`
+# backend as the library dep so the test build resolves one russh (and stays
+# NASM-free on Windows).
+russh = { version = "0.60", default-features = false, features = [
+    "flate2",
+    "ring",
+] }
+russh-sftp = "2"
+
+# Phase 48 scaffold smoke lives at the workspace root (mirrors the
+# convention set by the other phase smoke tests).
+[[test]]
+name = "phase_48_server"
+path = "../../tests/smoke/phase_48_server.rs"

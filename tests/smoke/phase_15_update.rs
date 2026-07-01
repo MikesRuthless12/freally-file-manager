@@ -23,8 +23,8 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::{Duration, Instant};
 
-use copythat_settings::UpdaterSettings;
-use copythat_ui_lib::updater::{
+use freally_settings::UpdaterSettings;
+use freally_ui_lib::updater::{
     UpdateManifest, fetch_manifest_http, format_endpoint, is_strictly_newer,
 };
 
@@ -161,11 +161,11 @@ fn format_endpoint_threads_channel_target_arch_version() {
     // a refactor of `format_endpoint` that drops a placeholder is
     // caught here rather than surfacing only in a live release build.
     let template =
-        "https://releases.copythat.app/{{channel}}/{{target}}-{{arch}}/{{current_version}}.json";
+        "https://releases.freally.app/{{channel}}/{{target}}-{{arch}}/{{current_version}}.json";
     let url = format_endpoint(template, "beta", "windows", "x86_64", "0.1.0");
     assert_eq!(
         url,
-        "https://releases.copythat.app/beta/windows-x86_64/0.1.0.json"
+        "https://releases.freally.app/beta/windows-x86_64/0.1.0.json"
     );
 }
 

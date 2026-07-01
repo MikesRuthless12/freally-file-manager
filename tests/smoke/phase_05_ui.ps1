@@ -5,7 +5,7 @@
 #   2. `pnpm check` (svelte-check) finds zero errors and zero warnings.
 #   3. `pnpm build` produces a Vite bundle.
 #   4. The Rust command layer's integration tests (driven against
-#      the real `copythat-core` engine, minus the webview) pass —
+#      the real `freally-core` engine, minus the webview) pass —
 #      this covers `start_copy` / pause / resume / cancel round-trips
 #      plus the IPC DTO and i18n loader.
 #   5. The Phase 0 scaffold smoke also passes (Tauri debug build
@@ -23,7 +23,7 @@
 $ErrorActionPreference = "Stop"
 
 $RepoRoot = Resolve-Path (Join-Path $PSScriptRoot "..\..")
-$UiDir = Join-Path $RepoRoot "apps\copythat-ui"
+$UiDir = Join-Path $RepoRoot "apps\freally-ui"
 
 function Step {
     param([string]$Message)
@@ -51,13 +51,13 @@ finally {
 
 Push-Location $RepoRoot
 try {
-    Step "Phase 5 smoke: cargo test -p copythat-ui --lib (Rust command layer)"
-    cargo test -p copythat-ui --lib
-    if ($LASTEXITCODE -ne 0) { throw "copythat-ui lib tests failed" }
+    Step "Phase 5 smoke: cargo test -p freally-ui --lib (Rust command layer)"
+    cargo test -p freally-ui --lib
+    if ($LASTEXITCODE -ne 0) { throw "freally-ui lib tests failed" }
 
-    Step "Phase 5 smoke: cargo test -p copythat-ui --test command_layer (integration)"
-    cargo test -p copythat-ui --test command_layer
-    if ($LASTEXITCODE -ne 0) { throw "copythat-ui integration tests failed" }
+    Step "Phase 5 smoke: cargo test -p freally-ui --test command_layer (integration)"
+    cargo test -p freally-ui --test command_layer
+    if ($LASTEXITCODE -ne 0) { throw "freally-ui integration tests failed" }
 
     Step "Phase 5 smoke: cargo run -p xtask -- i18n-lint"
     cargo run -p xtask --quiet -- i18n-lint

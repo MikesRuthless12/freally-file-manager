@@ -1,0 +1,82 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Freally File Manager v0.19.85",
+  "version": "0.19.85",
+  "identifier": "com.freally.filemanager",
+  "mainBinaryName": "freally-ui",
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "pnpm build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Freally File Manager",
+        "width": 1120,
+        "height": 640,
+        "minWidth": 960,
+        "minHeight": 420,
+        "resizable": true,
+        "fullscreen": false,
+        "dragDropEnabled": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["msi", "nsis", "app", "dmg", "appimage", "deb", "rpm"],
+    "createUpdaterArtifacts": true,
+    "category": "Utility",
+    "shortDescription": "Byte-exact cross-platform file copier.",
+    "longDescription": "Freally File Manager is a lightweight, cross-platform, async, byte-exact file and folder copier + backup repository manager. Matches every TeraCopy feature while staying as fast as — or faster than — Explorer, Finder, cp, and rsync for typical desktop workloads.",
+    "homepage": "https://github.com/MikesRuthless12/freally-file-manager",
+    "publisher": "Freally File Manager Contributors",
+    "copyright": "Copyright (C) 2026 Freally File Manager Contributors",
+    "licenseFile": "../../../LICENSE",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "webviewInstallMode": { "type": "downloadBootstrapper" },
+      "allowDowngrades": true
+    },
+    "macOS": {
+      "minimumSystemVersion": "12.0",
+      "signingIdentity": "-",
+      "hardenedRuntime": true
+    },
+    "linux": {
+      "deb": {
+        "depends": ["libwebkit2gtk-4.1-0", "libgtk-3-0", "libayatana-appindicator3-1"]
+      },
+      "rpm": {
+        "depends": ["webkit2gtk4.1", "gtk3", "libayatana-appindicator-gtk3"]
+      },
+      "appimage": {
+        "bundleMediaFramework": true
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/MikesRuthless12/freally-file-manager/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEMwNUExOTc5MzUzMzI3RUQKUldUdEp6TTFlUmxhd0dHUURMSGxEcmcwdnV6N2dhQm4wT2xaOFdNcThKTmcxTWpLM2c4OHRyUjgK",
+      "dangerousInsecureTransportProtocol": false,
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
+}

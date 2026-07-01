@@ -16,7 +16,7 @@
 //! 4. **Burst test.** Create 200 regular files in a tight loop. Assert
 //!    every filename round-trips through the watcher without loss.
 //!    (The 1000-file variant from the brief can be opted into with
-//!    `COPYTHAT_PHASE26_FULL=1`; the default 200 keeps
+//!    `FREALLY_PHASE26_FULL=1`; the default 200 keeps
 //!    `cargo test --workspace` short while still exercising the
 //!    overflow-recovery path on Windows.)
 //!
@@ -31,7 +31,7 @@ use std::fs;
 use std::path::Path;
 use std::time::{Duration, Instant};
 
-use copythat_watch::{FsEvent, Watcher, WatcherOptions};
+use freally_watch::{FsEvent, Watcher, WatcherOptions};
 
 const DEBOUNCE_MS: u64 = 150;
 const ATOMIC_MS: u64 = 150;
@@ -42,7 +42,7 @@ const FLUSH_MS: u64 = 20;
 const COLLECT_MS: u64 = 2000;
 
 fn burst_size() -> usize {
-    if std::env::var("COPYTHAT_PHASE26_FULL").is_ok() {
+    if std::env::var("FREALLY_PHASE26_FULL").is_ok() {
         1000
     } else {
         200

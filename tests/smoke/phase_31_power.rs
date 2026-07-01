@@ -7,7 +7,7 @@
 //! 4. Inject `PresentationStateChanged { presenting: true }` → engine pauses.
 //!
 //! The runner-level side of the pause path (queue.pause_job in a
-//! loop, shape.set_rate for caps) lives in `copythat-ui-lib`; wiring
+//! loop, shape.set_rate for caps) lives in `freally-ui-lib`; wiring
 //! a full Tauri runtime into a smoke would drag in the entire UI
 //! graph. Instead this smoke exercises the pure-library layer where
 //! the Phase 31 logic actually decides things:
@@ -24,12 +24,12 @@
 
 use std::time::Duration;
 
-use copythat_power::{
+use freally_power::{
     BatteryPolicy, NetworkClass, PowerAction, PowerBus, PowerEvent, PowerPolicies, PowerReason,
     PowerState, PresentationPolicy, SyntheticProbes, ThermalKind, ThermalPolicy, apply_event,
     compute_action,
 };
-use copythat_settings::{PowerPoliciesSettings, PowerRuleChoice, Settings, ThermalRuleChoice};
+use freally_settings::{PowerPoliciesSettings, PowerRuleChoice, Settings, ThermalRuleChoice};
 
 const PHASE_31_KEYS: &[&str] = &[
     "power-heading",
@@ -236,7 +236,7 @@ fn case7_fullscreen_default_does_not_pause() {
 #[test]
 fn case8_metered_cap_resolves_at_configured_rate() {
     let policies = PowerPolicies {
-        metered: copythat_power::NetworkPolicy::Cap {
+        metered: freally_power::NetworkPolicy::Cap {
             bytes_per_second: 512 * 1024,
         },
         ..Default::default()
@@ -262,7 +262,7 @@ fn case9_pause_dominates_cap_across_dimensions() {
     // the poller observes the transitions.
     let policies = PowerPolicies {
         battery: BatteryPolicy::Pause,
-        metered: copythat_power::NetworkPolicy::Cap {
+        metered: freally_power::NetworkPolicy::Cap {
             bytes_per_second: 1_000_000,
         },
         presentation: PresentationPolicy::Continue,
@@ -292,12 +292,12 @@ fn case9_pause_dominates_cap_across_dimensions() {
 
 #[test]
 fn case10_fluent_keys_present_in_en() {
-    let en = std::fs::read_to_string(repo_root().join("locales/en/copythat.ftl")).expect("read en");
+    let en = std::fs::read_to_string(repo_root().join("locales/en/freally.ftl")).expect("read en");
     for key in PHASE_31_KEYS {
         let needle = format!("\n{key} = ");
         assert!(
             en.contains(&needle),
-            "Phase 31 key `{key}` missing from locales/en/copythat.ftl"
+            "Phase 31 key `{key}` missing from locales/en/freally.ftl"
         );
     }
 }
@@ -305,7 +305,7 @@ fn case10_fluent_keys_present_in_en() {
 #[test]
 fn case11_fluent_parity_across_all_locales() {
     for loc in LOCALES {
-        let path = repo_root().join("locales").join(loc).join("copythat.ftl");
+        let path = repo_root().join("locales").join(loc).join("freally.ftl");
         let body = std::fs::read_to_string(&path)
             .unwrap_or_else(|e| panic!("read {}: {e}", path.display()));
         for key in PHASE_31_KEYS {
@@ -319,12 +319,12 @@ fn case11_fluent_parity_across_all_locales() {
 }
 
 fn repo_root() -> std::path::PathBuf {
-    // Smoke runs from `crates/copythat-power`. Walk up until we find
+    // Smoke runs from `crates/freally-power`. Walk up until we find
     // the `locales/en/…` directory.
     let manifest = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let mut cur: &std::path::Path = manifest.as_path();
     for _ in 0..5 {
-        if cur.join("locales").join("en").join("copythat.ftl").exists() {
+        if cur.join("locales").join("en").join("freally.ftl").exists() {
             return cur.to_path_buf();
         }
         cur = cur.parent().unwrap_or(cur);

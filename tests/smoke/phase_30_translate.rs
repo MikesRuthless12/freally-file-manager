@@ -25,12 +25,12 @@
 use std::fs;
 use std::path::PathBuf;
 
-use copythat_core::{
+use freally_core::{
     LineEndingMode, LongPathStrategy, NormalizationMode, PathPolicy, ReservedNameStrategy,
     TargetOs, TranslateError, default_text_extensions, translate_content_line_endings,
     translate_path,
 };
-use copythat_settings::{PathTranslationSettings, default_text_extensions_for_settings};
+use freally_settings::{PathTranslationSettings, default_text_extensions_for_settings};
 
 const PHASE_30_KEYS: &[&str] = &[
     "translate-heading",
@@ -242,7 +242,7 @@ fn case4_mixed_line_endings_translate_to_lf() {
 
 #[test]
 fn case5_settings_allowlist_matches_engine_default() {
-    // The settings crate can't depend on copythat-core, so it
+    // The settings crate can't depend on freally-core, so it
     // copies the default extension allowlist inline. This smoke is
     // the parity check — if either list drifts, the copy-path
     // behaviour (rewrite vs byte-copy) starts disagreeing with the
@@ -251,7 +251,7 @@ fn case5_settings_allowlist_matches_engine_default() {
     let settings = default_text_extensions_for_settings();
     assert_eq!(
         engine, settings,
-        "PathTranslationSettings allowlist must match copythat_core \
+        "PathTranslationSettings allowlist must match freally_core \
          default_text_extensions() — update both when adding extensions"
     );
 }
@@ -261,35 +261,35 @@ fn case6_path_translation_settings_round_trip() {
     let tmp = tempfile::tempdir().expect("tempdir");
     let path = tmp.path().join("settings.toml");
 
-    let s = copythat_settings::Settings {
+    let s = freally_settings::Settings {
         path_translation: PathTranslationSettings {
             enabled: true,
-            unicode_normalization: copythat_settings::NormalizationModeChoice::Nfc,
-            line_endings: copythat_settings::LineEndingModeChoice::Lf,
-            reserved_name_strategy: copythat_settings::ReservedNameChoice::Reject,
-            long_path_strategy: copythat_settings::LongPathChoice::Truncate,
+            unicode_normalization: freally_settings::NormalizationModeChoice::Nfc,
+            line_endings: freally_settings::LineEndingModeChoice::Lf,
+            reserved_name_strategy: freally_settings::ReservedNameChoice::Reject,
+            long_path_strategy: freally_settings::LongPathChoice::Truncate,
             line_ending_allowlist: vec!["txt".into(), "md".into()],
             ..Default::default()
         },
         ..Default::default()
     };
     s.save_to(&path).expect("save");
-    let loaded = copythat_settings::Settings::load_from(&path).expect("load");
+    let loaded = freally_settings::Settings::load_from(&path).expect("load");
     assert_eq!(
         loaded.path_translation.unicode_normalization,
-        copythat_settings::NormalizationModeChoice::Nfc
+        freally_settings::NormalizationModeChoice::Nfc
     );
     assert_eq!(
         loaded.path_translation.line_endings,
-        copythat_settings::LineEndingModeChoice::Lf
+        freally_settings::LineEndingModeChoice::Lf
     );
     assert_eq!(
         loaded.path_translation.reserved_name_strategy,
-        copythat_settings::ReservedNameChoice::Reject
+        freally_settings::ReservedNameChoice::Reject
     );
     assert_eq!(
         loaded.path_translation.long_path_strategy,
-        copythat_settings::LongPathChoice::Truncate
+        freally_settings::LongPathChoice::Truncate
     );
     assert_eq!(
         loaded.path_translation.line_ending_allowlist,
@@ -299,14 +299,14 @@ fn case6_path_translation_settings_round_trip() {
 
 #[test]
 fn case7_fluent_keys_present_in_en() {
-    let en_path = repo_root().join("locales/en/copythat.ftl");
+    let en_path = repo_root().join("locales/en/freally.ftl");
     let en =
         fs::read_to_string(&en_path).unwrap_or_else(|e| panic!("read {}: {e}", en_path.display()));
     for key in PHASE_30_KEYS {
         let needle = format!("\n{key} = ");
         assert!(
             en.contains(&needle),
-            "Phase 30 key `{key}` missing from locales/en/copythat.ftl"
+            "Phase 30 key `{key}` missing from locales/en/freally.ftl"
         );
     }
 }
@@ -314,7 +314,7 @@ fn case7_fluent_keys_present_in_en() {
 #[test]
 fn case8_fluent_parity_across_all_locales() {
     for loc in LOCALES {
-        let path = repo_root().join("locales").join(loc).join("copythat.ftl");
+        let path = repo_root().join("locales").join(loc).join("freally.ftl");
         let body =
             fs::read_to_string(&path).unwrap_or_else(|e| panic!("read {}: {e}", path.display()));
         for key in PHASE_30_KEYS {
@@ -328,12 +328,12 @@ fn case8_fluent_parity_across_all_locales() {
 }
 
 fn repo_root() -> std::path::PathBuf {
-    // Tests registered on `copythat-core` run from
-    // `crates/copythat-core`. Walk up until we find `locales/en/…`.
+    // Tests registered on `freally-core` run from
+    // `crates/freally-core`. Walk up until we find `locales/en/…`.
     let manifest = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let mut cur: &std::path::Path = manifest.as_path();
     for _ in 0..5 {
-        if cur.join("locales").join("en").join("copythat.ftl").exists() {
+        if cur.join("locales").join("en").join("freally.ftl").exists() {
             return cur.to_path_buf();
         }
         cur = cur.parent().unwrap_or(cur);

@@ -25,7 +25,7 @@ use windows::Win32::UI::Shell::{
 use windows::core::PCWSTR;
 use windows_core::ComObject;
 
-use copythat_shellext::com::{CopyCommand, MoveCommand, collect_paths};
+use freally_shellext::com::{CopyCommand, MoveCommand, collect_paths};
 
 fn wide(path: &std::path::Path) -> Vec<u16> {
     path.as_os_str()

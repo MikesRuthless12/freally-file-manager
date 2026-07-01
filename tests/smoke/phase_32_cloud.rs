@@ -6,7 +6,7 @@
 //! actually decides things:
 //!
 //! - `Backend` / `BackendKind` / `BackendConfig` TOML round-trip via
-//!   the `copythat-settings::RemoteSettings` mirror, which is the
+//!   the `freally-settings::RemoteSettings` mirror, which is the
 //!   real persistence path (the crate itself is unopinionated about
 //!   storage).
 //! - `make_operator` + `OperatorTarget` put/get/list/stat/delete
@@ -24,11 +24,11 @@
 use std::path::PathBuf;
 
 use bytes::Bytes;
-use copythat_cloud::{
+use freally_cloud::{
     Backend, BackendConfig, BackendKind, BackendRegistry, CopyTarget, LocalFsConfig,
     OperatorTarget, make_operator,
 };
-use copythat_settings::{
+use freally_settings::{
     BackendConfigEntry, BackendKindChoice, RemoteSettings, S3BackendConfig, Settings,
 };
 
@@ -236,7 +236,7 @@ fn case4_s3_config_field_fidelity() {
 #[test]
 fn case5_en_fluent_keys_present() {
     let root = cargo_workspace_root();
-    let en_path = root.join("locales").join("en").join("copythat.ftl");
+    let en_path = root.join("locales").join("en").join("freally.ftl");
     let content = std::fs::read_to_string(&en_path).unwrap_or_else(|e| {
         panic!("failed to read {}: {e}", en_path.display());
     });
@@ -244,7 +244,7 @@ fn case5_en_fluent_keys_present() {
         let needle = format!("{key} =");
         assert!(
             content.contains(&needle),
-            "missing Fluent key `{key}` in en/copythat.ftl"
+            "missing Fluent key `{key}` in en/freally.ftl"
         );
     }
 }
@@ -256,7 +256,7 @@ fn case5_en_fluent_keys_present() {
 fn case6_all_18_locales_have_phase_32_keys() {
     let root = cargo_workspace_root();
     for locale in LOCALES {
-        let path = root.join("locales").join(locale).join("copythat.ftl");
+        let path = root.join("locales").join(locale).join("freally.ftl");
         let content = std::fs::read_to_string(&path).unwrap_or_else(|e| {
             panic!("failed to read {}: {e}", path.display());
         });
@@ -272,11 +272,11 @@ fn case6_all_18_locales_have_phase_32_keys() {
 
 /// Resolve the workspace root from the crate under test. The smoke
 /// tests live under `tests/smoke/` at the workspace root, but
-/// `CARGO_MANIFEST_DIR` points at `crates/copythat-cloud` because
+/// `CARGO_MANIFEST_DIR` points at `crates/freally-cloud` because
 /// the `[[test]]` entry is declared there.
 fn cargo_workspace_root() -> PathBuf {
     let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    // crates/copythat-cloud → walk up two parents to the workspace.
+    // crates/freally-cloud → walk up two parents to the workspace.
     manifest
         .parent()
         .and_then(|p| p.parent())
@@ -322,7 +322,7 @@ fn case7_phase_32f_enabled_kinds_stable() {
 fn case8a_engine_cloud_sink_branch() {
     use std::sync::{Arc, Mutex};
 
-    use copythat_core::{CloudSink, CopyControl, CopyEvent, CopyOptions, copy_file};
+    use freally_core::{CloudSink, CopyControl, CopyEvent, CopyOptions, copy_file};
 
     #[derive(Debug, Default)]
     struct RecordingSink {
@@ -392,7 +392,7 @@ fn case8a_engine_cloud_sink_branch() {
 }
 
 /// Case 8b — Phase 32f streaming writer through
-/// `CopyThatCloudSink`. Wraps a LocalFs `OperatorTarget` in a real
+/// `FreallyCloudSink`. Wraps a LocalFs `OperatorTarget` in a real
 /// sink, uploads a 5 MiB file through the engine, and asserts the
 /// engine emits one Progress per buffer chunk (via the
 /// `put_stream_blocking` override that pipes through
@@ -402,11 +402,11 @@ fn case8a_engine_cloud_sink_branch() {
 fn case8b_streaming_writer_through_real_cloud_sink() {
     use std::sync::Arc;
 
-    use copythat_cloud::{
-        Backend as CloudBackend, BackendConfig, BackendKind, CopyThatCloudSink, LocalFsConfig,
+    use freally_cloud::{
+        Backend as CloudBackend, BackendConfig, BackendKind, FreallyCloudSink, LocalFsConfig,
         OperatorTarget, make_operator,
     };
-    use copythat_core::{CloudSink, CopyControl, CopyEvent, CopyOptions, copy_file};
+    use freally_core::{CloudSink, CopyControl, CopyEvent, CopyOptions, copy_file};
 
     let rt = tokio::runtime::Builder::new_current_thread()
         .enable_all()
@@ -433,7 +433,7 @@ fn case8b_streaming_writer_through_real_cloud_sink() {
         };
         let op = make_operator(&backend, None).expect("operator");
         let target = Arc::new(OperatorTarget::new("streaming-test", op));
-        let sink = Arc::new(CopyThatCloudSink::new(target).expect("sink runtime build"));
+        let sink = Arc::new(FreallyCloudSink::new(target).expect("sink runtime build"));
         let opts = CopyOptions {
             cloud_sink: Some(sink.clone() as Arc<dyn CloudSink>),
             buffer_size: 1024 * 1024,
@@ -503,7 +503,7 @@ fn case8_empty_remote_settings_round_trip() {
 /// every kind so a future refactor that drops a driver surfaces here.
 #[test]
 fn case9_phase_32b_drivers_build_operator() {
-    use copythat_cloud::{
+    use freally_cloud::{
         AzureBlobConfig, FtpConfig, GcsConfig, OAuthConfig, S3Config, WebdavConfig,
     };
 

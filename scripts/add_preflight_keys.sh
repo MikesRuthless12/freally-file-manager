@@ -6,7 +6,7 @@ root="$(cd "$(dirname "$0")/.." && pwd)"
 
 append() {
   local locale="$1"; shift
-  local file="$root/locales/$locale/copythat.ftl"
+  local file="$root/locales/$locale/freally.ftl"
   cat >> "$file" <<EOF
 
 # Phase 14 — preflight free-space dialog

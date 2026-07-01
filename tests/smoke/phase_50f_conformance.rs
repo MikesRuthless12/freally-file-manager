@@ -5,10 +5,10 @@
 
 use std::path::PathBuf;
 
-use copythat_chunk::cdr::CdrManifest;
+use freally_chunk::cdr::CdrManifest;
 
 fn corpus_dir() -> PathBuf {
-    // CARGO_MANIFEST_DIR is the copythat-chunk crate dir; the corpus lives at
+    // CARGO_MANIFEST_DIR is the freally-chunk crate dir; the corpus lives at
     // the workspace root under docs/spec/conformance.
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../docs/spec/conformance")
 }

@@ -1,7 +1,7 @@
 //! Phase 50 smoke — CDR-0 cross-tool repository portability.
 //!
-//! The full Phase 50 vision (a `copythat migrate restic|borg|kopia` /
-//! `copythat export kopia` CLI, a sibling `cdr-py` PyPI package, and
+//! The full Phase 50 vision (a `freally migrate restic|borg|kopia` /
+//! `freally export kopia` CLI, a sibling `cdr-py` PyPI package, and
 //! upstream adoption PRs) needs third-party repository binaries, a
 //! separately published crate, and community engagement — none of which
 //! a self-contained `cargo test` can exercise. Those are tracked as
@@ -25,8 +25,8 @@
 //!    `spec_version`, or with a corrupt digest / broken tiling, is
 //!    rejected rather than mis-parsed.
 
-use copythat_chunk::cdr::{CDR_SPEC_VERSION, CdrManifest};
-use copythat_chunk::{Repository, SnapshotKind, ensure_readable};
+use freally_chunk::cdr::{CDR_SPEC_VERSION, CdrManifest};
+use freally_chunk::{Repository, SnapshotKind, ensure_readable};
 
 fn seeded_bytes(seed: u64, len: usize) -> Vec<u8> {
     let mut out = vec![0u8; len];
@@ -41,12 +41,12 @@ fn seeded_bytes(seed: u64, len: usize) -> Vec<u8> {
 }
 
 fn scale_up() -> bool {
-    std::env::var("COPYTHAT_PHASE50_FULL").is_ok_and(|v| v == "1")
+    std::env::var("FREALLY_PHASE50_FULL").is_ok_and(|v| v == "1")
 }
 
 /// Capture a file into a fresh repository and return its internal
 /// manifest, resolved through the Phase 49 query API.
-fn repo_manifest(tmp: &std::path::Path) -> copythat_chunk::Manifest {
+fn repo_manifest(tmp: &std::path::Path) -> freally_chunk::Manifest {
     let repo = Repository::open(tmp).unwrap();
     let size = if scale_up() {
         32 * 1024 * 1024

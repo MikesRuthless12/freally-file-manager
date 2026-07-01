@@ -1,7 +1,7 @@
 //! Phase 42 — combined-paths integration smoke.
 //!
-//! Drives the public `copythat_platform::fast_copy` (and, where the
-//! built-in retry surface lives, `copythat_core::copy_file`) through
+//! Drives the public `freally_platform::fast_copy` (and, where the
+//! built-in retry surface lives, `freally_core::copy_file`) through
 //! five integration shapes that previous phases each tested in
 //! isolation:
 //!
@@ -26,10 +26,10 @@
 //!    auto-engages the overlapped pipeline for ≥1 GiB cross-volume
 //!    copies. We can't *force* a second volume to exist on every
 //!    runner, so the test probes for one (`D:\` / `E:\` / explicit
-//!    `COPYTHAT_PHASE42_ALT_VOL`) and skips with a `println!` when
+//!    `FREALLY_PHASE42_ALT_VOL`) and skips with a `println!` when
 //!    none is present. When a second volume IS present we copy a
 //!    256 MiB file (we keep the size below the 1 GiB threshold by
-//!    default; an explicit `COPYTHAT_PHASE42_LARGE=1` opt-in bumps
+//!    default; an explicit `FREALLY_PHASE42_LARGE=1` opt-in bumps
 //!    it to 1.25 GiB so the auto-engage actually fires).
 //!
 //! 4. **Verify with cache eviction** — cross-platform. Copy a 4 MiB
@@ -58,8 +58,8 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
-use copythat_core::{CopyControl, CopyEvent, CopyOptions, copy_file};
-use copythat_platform::fast_copy;
+use freally_core::{CopyControl, CopyEvent, CopyOptions, copy_file};
+use freally_platform::fast_copy;
 use tempfile::tempdir;
 use tokio::sync::mpsc;
 
@@ -75,7 +75,7 @@ const VERIFY_SIZE: usize = 4 * 1024 * 1024;
 /// Phase 41's auto-engage threshold is 1 GiB. Default test size sits
 /// below it (256 MiB) so the smoke test is fast and still asserts the
 /// dispatcher doesn't crash on cross-volume; the optional larger run
-/// (`COPYTHAT_PHASE42_LARGE=1`) bumps to 1.25 GiB so the auto-engage
+/// (`FREALLY_PHASE42_LARGE=1`) bumps to 1.25 GiB so the auto-engage
 /// actually fires.
 const CROSS_VOLUME_DEFAULT: u64 = 256 * 1024 * 1024;
 const CROSS_VOLUME_LARGE: u64 = (1024 + 256) * 1024 * 1024;
@@ -204,8 +204,8 @@ fn make_windows_sparse(path: &Path, size: u64) -> std::io::Result<()> {
 
 #[cfg(target_os = "windows")]
 fn windows_allocated_bytes(path: &Path) -> std::io::Result<u64> {
-    use copythat_core::sparse::SparseOps;
-    use copythat_platform::PlatformSparseOps;
+    use freally_core::sparse::SparseOps;
+    use freally_platform::PlatformSparseOps;
     let extents = PlatformSparseOps.detect_extents(path)?;
     Ok(extents.iter().map(|r| r.len).sum())
 }
@@ -265,7 +265,7 @@ async fn scenario_01_sparse_copy_file2_enable_sparse_copy() {
         // foreshadows.
         let opts = CopyOptions {
             preserve_sparseness: true,
-            sparse_ops: Some(Arc::new(copythat_platform::PlatformSparseOps)),
+            sparse_ops: Some(Arc::new(freally_platform::PlatformSparseOps)),
             ..CopyOptions::default()
         };
         let (tx, rx) = mpsc::channel::<CopyEvent>(64);
@@ -329,7 +329,7 @@ fn unc_admin_share_writable() -> Option<PathBuf> {
     if !probe_dir.is_dir() {
         return None;
     }
-    let probe = probe_dir.join("copythat-phase42-unc-probe");
+    let probe = probe_dir.join("freally-phase42-unc-probe");
     match std::fs::File::create(&probe) {
         Ok(f) => {
             drop(f);
@@ -425,7 +425,7 @@ fn scopeguard_remove(p: PathBuf) -> impl Drop {
 
 #[cfg(target_os = "windows")]
 fn alt_volume_root() -> Option<PathBuf> {
-    if let Ok(s) = std::env::var("COPYTHAT_PHASE42_ALT_VOL") {
+    if let Ok(s) = std::env::var("FREALLY_PHASE42_ALT_VOL") {
         let p = PathBuf::from(&s);
         if p.is_dir() {
             return Some(p);
@@ -466,12 +466,12 @@ async fn scenario_03_cross_volume_auto_overlapped() {
             None => {
                 println!(
                     "[phase-42][scenario-03] SKIP: no second mounted volume \
-                     found (set COPYTHAT_PHASE42_ALT_VOL=<path> to override)."
+                     found (set FREALLY_PHASE42_ALT_VOL=<path> to override)."
                 );
                 return;
             }
         };
-        let large = std::env::var("COPYTHAT_PHASE42_LARGE").ok().as_deref() == Some("1");
+        let large = std::env::var("FREALLY_PHASE42_LARGE").ok().as_deref() == Some("1");
         let size = if large {
             CROSS_VOLUME_LARGE
         } else {
@@ -554,7 +554,7 @@ async fn scenario_04_paranoid_verify_with_cache_eviction() {
     write_pattern(&src, VERIFY_SIZE);
 
     let opts = CopyOptions {
-        verify: Some(copythat_hash::HashAlgorithm::XxHash3_128.verifier()),
+        verify: Some(freally_hash::HashAlgorithm::XxHash3_128.verifier()),
         // `fsync_before_verify = true` is the engine's "evict the
         // writeback cache before re-reading for the verify pass" knob.
         // Default is `true`; we pin it explicitly so a future default
@@ -675,7 +675,7 @@ async fn scenario_05_sharing_violation_retry() {
             // Fast paths bypass the engine retry loop — they call
             // CopyFileExW directly. Force the engine path so we
             // exercise the retry surface.
-            strategy: copythat_core::CopyStrategy::AlwaysAsync,
+            strategy: freally_core::CopyStrategy::AlwaysAsync,
             ..CopyOptions::default()
         };
         let (tx, mut rx) = mpsc::channel::<CopyEvent>(64);

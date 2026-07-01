@@ -1,5 +1,5 @@
 $ErrorActionPreference = 'Stop'
-$packageName = 'copythat'
+$packageName = 'freally'
 $softwareName = 'Freally File Manager v1.0.0*'
 $args = @{
     PackageName    = $packageName

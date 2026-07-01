@@ -1,0 +1,77 @@
+[package]
+name = "freally-power"
+description = "Power-aware copying: battery / metered-network / presentation / fullscreen / thermal probes and policy engine for Freally File Manager v1.0.0."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+# Phase 21 stub enums live in `freally-shape` — re-used here so the
+# Network Settings tab and the Power & State tab share one vocabulary
+# for `NetworkClass`.
+freally-shape = { path = "../freally-shape", version = "0.19" }
+# Cross-platform battery probe. Apache-2.0 OR MIT. Phase 21 brief
+# flagged this as the crate to pull in during Phase 31; it exposes a
+# safe enumerator + `Manager::batteries()` + per-battery
+# `State::Charging` / `State::Discharging` reads without any OS-FFI
+# on our side.
+battery = "0.7"
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+tokio = { version = "1", features = [
+    "macros",
+    "rt",
+    "rt-multi-thread",
+    "sync",
+    "time",
+] }
+
+# Phase 31 — x86 CPU frequency introspection for thermal throttling
+# detection. MIT. Linux-on-Apple-Silicon + AArch64 builds skip the
+# probe at compile time and fall through to `ThermalKind::Unknown`.
+[target.'cfg(any(target_arch = "x86", target_arch = "x86_64"))'.dependencies]
+raw-cpuid = "11"
+
+# Phase 31b — Windows presentation / fullscreen FFI lives in
+# `freally-platform::presence`, the only crate in the workspace
+# allowed to carry unsafe code. We re-export through the safe
+# `is_in_presentation_mode` / `is_in_fullscreen_mode` helpers.
+[target.'cfg(target_os = "windows")'.dependencies]
+freally-platform = { path = "../freally-platform", version = "0.19" }
+
+[dev-dependencies]
+tokio = { version = "1", features = [
+    "macros",
+    "rt",
+    "rt-multi-thread",
+    "sync",
+    "test-util",
+    "time",
+] }
+tempfile = "3"
+# Phase 31 smoke exercises the TOML round-trip of
+# `PowerPoliciesSettings`. Dev-only so the power crate's release
+# graph stays independent of `freally-settings`.
+freally-settings = { path = "../freally-settings", version = "0.19" }
+
+# Phase 31 smoke test lives at the workspace root so it's easy to find
+# alongside the other phase smokes.
+[[test]]
+name = "phase_31_power"
+path = "../../tests/smoke/phase_31_power.rs"
+
+# Phase 31b — real OS presentation/fullscreen probes via
+# `freally_platform::presence` (Windows) and `zbus::blocking`
+# (Linux). Smoke confirms the callable surface on every host
+# without panicking; per-OS branches assert the public enum / DBus
+# fallback contracts.
+[[test]]
+name = "phase_31b_real_probes"
+path = "../../tests/smoke/phase_31b_real_probes.rs"

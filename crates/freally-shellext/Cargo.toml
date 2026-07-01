@@ -1,0 +1,77 @@
+[package]
+name = "freally-shellext"
+description = "Windows COM in-proc shell extension (IExplorerCommand + IExplorerCommandState) for Freally File Manager v1.0.0."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+# cdylib produces the `.dll` that Windows Explorer loads via regsvr32
+# / COM activation; rlib keeps the pure-Rust helpers (registry path
+# composition, argv building) testable from integration tests. An
+# empty cdylib on non-Windows is harmless.
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[lints.rust]
+# This crate's whole purpose is raw COM FFI — every `extern "system"`
+# export and `windows::core::implement` block wraps an unsafe surface.
+# Matches `freally-platform`'s relaxation for the same reason.
+unsafe_code = "allow"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+
+[dependencies]
+
+# Only pull the Windows COM / Shell surfaces on Windows targets.
+# On other platforms the crate compiles as an empty lib — this lets
+# `cargo build --all` succeed on CI macOS / Linux runners without
+# swapping the workspace membership in and out.
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.61", features = [
+    "Win32_Foundation",
+    "Win32_Security",
+    "Win32_System_Com",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Registry",
+    "Win32_System_SystemServices",
+    "Win32_System_Threading",
+    "Win32_UI_Shell",
+    "Win32_UI_Shell_Common",
+] }
+# `#[implement]` is not a feature of `windows` 0.61 — it lives in the
+# sibling proc-macro crate. Without it we cannot synthesise COM
+# vtables for our IExplorerCommand / IClassFactory impls.
+windows-implement = "0.60"
+windows-core = "0.61"
+
+[dev-dependencies]
+tempfile = "3"
+
+# Phase 7b smoke test lives at the workspace root (mirrors the
+# convention set by Phase 6's `freally-platform` crate and Phase
+# 7a's `freally-ui`).
+[[test]]
+name = "phase_07b_shellext"
+path = "../../tests/smoke/phase_07b_shellext.rs"
+
+# Phase 7 partials — shell-integration tripwire. Filesystem-only
+# verification that macOS NSServicesMenu plist, Windows
+# IExplorerCommand registry stanza, and Linux Nautilus / KDE /
+# Thunar packaging files carry the keys / shapes the runtime
+# extension expects.
+[[test]]
+name = "phase_07_partials"
+path = "../../tests/smoke/phase_07_partials.rs"
+
+# Phase 7 follow-up — in-process IExplorerCommand::Invoke coverage
+# (Windows-only; #![cfg(windows)] makes it a no-op elsewhere). Drives
+# the real COM vtable + IShellItemArray->paths extraction without a
+# live Explorer session.
+[[test]]
+name = "phase_07b_shellext_invoke"
+path = "../../tests/smoke/phase_07b_shellext_invoke.rs"

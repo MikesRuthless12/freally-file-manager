@@ -4,7 +4,7 @@
 //! clear drop. The per-syscall engine instrumentation + the UI
 //! speed-graph rendering are deferred (see the crate docs).
 
-use copythat_diag::{
+use freally_diag::{
     Bottleneck, DiagSink, NoopDiagSink, PhaseSample, SpeedDip, annotate_dips, classify,
 };
 use std::collections::HashSet;

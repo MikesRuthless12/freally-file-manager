@@ -2,7 +2,7 @@
 //! snapshot-mount read callback. Kernel-free: exercises the range math +
 //! chunk assembly directly.
 
-use copythat_chunk::{ChunkStore, Chunker, ingest_bytes, materialise_range};
+use freally_chunk::{ChunkStore, Chunker, ingest_bytes, materialise_range};
 
 #[test]
 fn range_reads_match_the_original() {

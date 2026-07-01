@@ -9,7 +9,7 @@
 
 use std::sync::Arc;
 
-use copythat_chunk::{ChunkStore, CompactOptions, MaintenanceProgress, Repository, SnapshotKind};
+use freally_chunk::{ChunkStore, CompactOptions, MaintenanceProgress, Repository, SnapshotKind};
 
 const F: usize = 48 * 1024;
 

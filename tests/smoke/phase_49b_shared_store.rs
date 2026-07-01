@@ -1,13 +1,13 @@
 //! Phase 49b smoke — the shared-store invariant.
 //!
 //! 49b makes a *single* open `ChunkStore` back the unified [`Repository`],
-//! the delta-resume [`CopyThatChunkSink`], and (in the app) the recovery
+//! the delta-resume [`FreallyChunkSink`], and (in the app) the recovery
 //! web UI + mount — one `index.redb` lock taken once. These cases prove
-//! that contract at the `copythat-chunk` layer; the runner + Tauri command
+//! that contract at the `freally-chunk` layer; the runner + Tauri command
 //! wiring is exercised by the app's own build + manual QA.
 //!
 //! 1. **One open, many consumers.** `Repository::with_store(Arc<ChunkStore>)`
-//!    and `CopyThatChunkSink::new(Arc<ChunkStore>)` built from the SAME
+//!    and `FreallyChunkSink::new(Arc<ChunkStore>)` built from the SAME
 //!    handle coexist with no second `open` (which would deadlock redb's
 //!    exclusive lock); a chunk written through one is visible through the
 //!    other; `store_arc()` hands back the very same allocation.
@@ -19,7 +19,7 @@
 
 use std::sync::Arc;
 
-use copythat_chunk::{ChunkStore, Chunker, CopyThatChunkSink, Repository, SnapshotKind};
+use freally_chunk::{ChunkStore, Chunker, FreallyChunkSink, Repository, SnapshotKind};
 
 /// Deterministic, non-compressible bytes (same LCG as the Phase 27/49
 /// smokes) so content-defined chunking is reproducible across hosts.
@@ -46,7 +46,7 @@ fn case1_with_store_shares_one_open() {
     // handle — no second `ChunkStore::open` anywhere, so redb's exclusive
     // index.redb lock is never contended (a second open would error).
     let repo = Repository::with_store(Arc::clone(&store)).unwrap();
-    let _sink = CopyThatChunkSink::new(Arc::clone(&store));
+    let _sink = FreallyChunkSink::new(Arc::clone(&store));
 
     // A chunk written straight to the store is visible through the
     // repository's view of that same store.
@@ -107,7 +107,7 @@ fn case3_phase27_manifest_chunks_survive_gc_on_with_store_repo() {
     // the shared store — NO Repository snapshot references these chunks.
     let data = seeded_bytes(0x42, 2 * 1024 * 1024);
     let (_stats, manifest) =
-        copythat_chunk::ingest_bytes(&store, &Chunker::default(), &data, "/delta/key").unwrap();
+        freally_chunk::ingest_bytes(&store, &Chunker::default(), &data, "/delta/key").unwrap();
     let witness = manifest.chunks[0].hash;
     assert!(store.has(&witness).unwrap());
 

@@ -1,7 +1,7 @@
 //! Phase 23 — sparse-file preservation smoke test.
 //!
 //! Creates a 100 MiB sparse source with two 1-MiB data extents and
-//! copies it via `copythat_core::copy_file` with the
+//! copies it via `freally_core::copy_file` with the
 //! `PlatformSparseOps` hook wired into `CopyOptions`. Asserts:
 //!
 //! 1. The source's on-disk footprint is well under its 100 MiB logical
@@ -23,9 +23,9 @@ use std::io::{Seek, SeekFrom, Write};
 use std::path::Path;
 use std::sync::Arc;
 
-use copythat_core::sparse::SparseOps;
-use copythat_core::{CopyControl, CopyEvent, CopyOptions, copy_file};
-use copythat_platform::PlatformSparseOps;
+use freally_core::sparse::SparseOps;
+use freally_core::{CopyControl, CopyEvent, CopyOptions, copy_file};
+use freally_platform::PlatformSparseOps;
 use tempfile::tempdir;
 use tokio::sync::mpsc;
 

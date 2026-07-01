@@ -25,10 +25,10 @@
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
-use copythat_core::versioning::{
+use freally_core::versioning::{
     RetentionPolicy, VersionEntry, VersioningPolicy, VersioningSink, select_for_pruning,
 };
-use copythat_history::{History, VersionRecord, VersionRowId};
+use freally_history::{History, VersionRecord, VersionRowId};
 
 const PHASE_42_PART_B_KEYS: &[&str] = &[
     "version-list-heading",
@@ -73,7 +73,7 @@ async fn case01_record_and_round_trip_preserves_every_field() {
     // valid target — the schema's `ON DELETE SET NULL` only kicks
     // in after the job exists.
     let job_id = history
-        .record_start(&copythat_history::JobSummary {
+        .record_start(&freally_history::JobSummary {
             row_id: 0,
             kind: "copy".into(),
             status: "running".into(),
@@ -201,7 +201,7 @@ async fn case05_v1_to_v2_migration_lands_versions_table_alongside_jobs_items() {
     // And jobs/items still work — record one of each to prove the
     // migration didn't disturb pre-existing tables.
     let job_id = history
-        .record_start(&copythat_history::JobSummary {
+        .record_start(&freally_history::JobSummary {
             row_id: 0,
             kind: "copy".into(),
             status: "running".into(),
@@ -244,7 +244,7 @@ impl VersioningSink for RecordingSink {
 
 #[tokio::test]
 async fn case07_engine_fires_sink_when_dst_exists_and_policy_enabled() {
-    use copythat_core::{CopyControl, CopyOptions, copy_file};
+    use freally_core::{CopyControl, CopyOptions, copy_file};
 
     let dir = tempfile::tempdir().unwrap();
     let src = dir.path().join("src.bin");
@@ -282,7 +282,7 @@ async fn case07_engine_fires_sink_when_dst_exists_and_policy_enabled() {
 
 #[tokio::test]
 async fn case08_engine_skips_sink_when_dst_does_not_exist() {
-    use copythat_core::{CopyControl, CopyOptions, copy_file};
+    use freally_core::{CopyControl, CopyOptions, copy_file};
 
     let dir = tempfile::tempdir().unwrap();
     let src = dir.path().join("src.bin");
@@ -316,7 +316,7 @@ async fn case08_engine_skips_sink_when_dst_does_not_exist() {
 
 #[tokio::test]
 async fn case09_engine_skips_sink_when_policy_disabled_even_with_sink_present() {
-    use copythat_core::{CopyControl, CopyOptions, copy_file};
+    use freally_core::{CopyControl, CopyOptions, copy_file};
 
     let dir = tempfile::tempdir().unwrap();
     let src = dir.path().join("src.bin");
@@ -352,7 +352,7 @@ fn case06_all_phase_42_part_b_keys_present_in_every_locale() {
         let path = workspace_root
             .join("locales")
             .join(locale)
-            .join("copythat.ftl");
+            .join("freally.ftl");
         let body = std::fs::read_to_string(&path)
             .unwrap_or_else(|_| panic!("could not read {}", path.display()));
         for key in PHASE_42_PART_B_KEYS {

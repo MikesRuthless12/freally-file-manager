@@ -1,0 +1,33 @@
+{
+  "name": "freally-ui",
+  "private": true,
+  "version": "0.19.85",
+  "description": "Freally File Manager v0.19.85 — Tauri 2.x + Svelte 5 shell",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "tauri": "tauri",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:list": "playwright test --list"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-dialog": "^2"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48",
+    "@sveltejs/vite-plugin-svelte": "^5",
+    "@tauri-apps/cli": "^2",
+    "@tsconfig/svelte": "^5",
+    "@types/node": "^22",
+    "svelte": "^5",
+    "svelte-check": "^4",
+    "tslib": "^2",
+    "typescript": "^5",
+    "vite": "^6"
+  }
+}

@@ -1,0 +1,72 @@
+[package]
+name = "freally-helper"
+description = "Phase 17d — privilege-separated helper. Holds the elevated paths the main UI process never touches: shell-extension install/uninstall, hardware secure-erase, elevated-retry on a permission-denied copy. Spawned via OS-native UAC / sudo / polkit; speaks JSON-RPC over a per-launch random pipe / Unix socket."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[lib]
+name = "freally_helper"
+
+[[bin]]
+name = "freally-helper"
+path = "src/bin/helper.rs"
+
+[features]
+# Phase 17d — gates the binary-spawning handshake smoke
+# (tests/smoke/phase_17d_spawn.rs) so default `cargo test` stays fast +
+# deterministic; the elevated path is exercised NON-elevated under this
+# feature. Run: `cargo test -p freally-helper --features spawn-tests`.
+spawn-tests = []
+
+[dependencies]
+# Phase 17d shares the lexical safety bar with the main app — every
+# IPC argument that names a path passes through Phase 17a's
+# validate_path_no_traversal before the helper acts on it.
+freally-core = { path = "../freally-core", version = "0.19" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+# Cryptographically-random pipe/socket name. Already in the
+# workspace via freally-cloud's PKCE flow.
+getrandom = "0.3"
+# Hex-encode the random suffix the named pipe uses. Already in
+# the workspace via Phase 32 cloud verify.
+hex = "0.4"
+
+[dev-dependencies]
+tempfile = "3"
+tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros", "io-util", "fs", "net", "time", "sync"] }
+# Phase 8 follow-up smoke uses freally-hash for the SHA-256 round-trip.
+freally-hash = { path = "../freally-hash", version = "0.19" }
+
+# Phase 17d spawn smoke needs the DACL-restricted pipe server (Windows
+# only) to stand in for the caller; the unsafe FFI lives in
+# freally-platform so this crate stays #![forbid(unsafe_code)].
+[target.'cfg(windows)'.dev-dependencies]
+freally-platform = { path = "../freally-platform", version = "0.19" }
+
+[[test]]
+name = "phase_17d_helper"
+path = "../../tests/smoke/phase_17d_helper.rs"
+
+# Phase 8 follow-up — elevated-retry routed through the Phase 17d
+# helper, SHA-256 quick-hash IPC for the collision modal, and the
+# drawer-mode toggle locale-key tripwire.
+[[test]]
+name = "phase_08_partials"
+path = "../../tests/smoke/phase_08_partials.rs"
+
+# Phase 17d — non-elevated handshake smoke: spawns the real helper
+# binary over a pipe/socket + drives the full RPC handshake end-to-end.
+# Behind the `spawn-tests` feature (binary-spawning + named-pipe I/O).
+[[test]]
+name = "phase_17d_spawn"
+path = "../../tests/smoke/phase_17d_spawn.rs"

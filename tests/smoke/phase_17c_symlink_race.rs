@@ -17,7 +17,7 @@
 
 use std::path::Path;
 
-use copythat_core::safety::{
+use freally_core::safety::{
     PathSafetyError, is_no_follow_rejection, is_within_root, no_follow_open_flags,
     validate_path_no_traversal,
 };
@@ -108,7 +108,7 @@ fn lexical_guard_still_rejects_traversal() {
 #[cfg(unix)]
 #[test]
 fn no_follow_open_flag_rejects_a_symlink_at_open_unix() {
-    use copythat_core::safety::{is_no_follow_rejection, no_follow_open_flags};
+    use freally_core::safety::{is_no_follow_rejection, no_follow_open_flags};
     use std::os::unix::fs::{OpenOptionsExt, symlink};
 
     let dir = TempDir::new().unwrap();

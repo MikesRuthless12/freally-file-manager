@@ -2,7 +2,7 @@
 """Phase 26 — insert real-time mirror watcher Fluent keys into the 17
 non-English locales. MT-flagged drafts matching the Standing Per-Phase
 Rules. The 6 keys live as a single block at the end of each locale;
-the English source in locales/en/copythat.ftl is authoritative."""
+the English source in locales/en/freally.ftl is authoritative."""
 
 from pathlib import Path
 
@@ -155,7 +155,7 @@ def build_block(t: dict) -> str:
     return (
         "\n"
         "# Phase 26 — real-time mirror watcher. MT-flagged drafts;\n"
-        "# the authoritative English source lives in locales/en/copythat.ftl.\n"
+        "# the authoritative English source lives in locales/en/freally.ftl.\n"
         f"live-mirror-start = {t['start']}  # MT\n"
         f"live-mirror-stop = {t['stop']}  # MT\n"
         f"live-mirror-watching = {t['watching']}  # MT\n"
@@ -166,7 +166,7 @@ def build_block(t: dict) -> str:
 
 
 def patch_locale(locale: str, t: dict) -> None:
-    path = LOCALES_DIR / locale / "copythat.ftl"
+    path = LOCALES_DIR / locale / "freally.ftl"
     text = path.read_text(encoding="utf-8")
     if "live-mirror-watching" in text:
         print(f"{locale}: already patched, skipping")

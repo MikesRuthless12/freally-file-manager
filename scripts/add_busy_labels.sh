@@ -3,7 +3,7 @@ set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 append() {
   local locale="$1"; shift
-  cat >> "$root/locales/$locale/copythat.ftl" <<EOF
+  cat >> "$root/locales/$locale/freally.ftl" <<EOF
 drop-dialog-busy-checking = $1
 drop-dialog-busy-enumerating = $2
 drop-dialog-busy-starting = $3

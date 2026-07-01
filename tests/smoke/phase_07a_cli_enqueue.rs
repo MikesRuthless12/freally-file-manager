@@ -15,10 +15,10 @@
 //!    what the live app's runner does, and assert the destination
 //!    file shows up byte-exact within two seconds.
 //!
-//! Tauri is not required: we call `copythat_ui_lib::cli` and
-//! `copythat_ui_lib::shell::destination_for` directly and use
-//! `copythat_core::copy_file` to drive the copy. The integration
-//! tests in `apps/copythat-ui/src-tauri/tests/command_layer.rs` use
+//! Tauri is not required: we call `freally_ui_lib::cli` and
+//! `freally_ui_lib::shell::destination_for` directly and use
+//! `freally_core::copy_file` to drive the copy. The integration
+//! tests in `apps/freally-ui/src-tauri/tests/command_layer.rs` use
 //! the same approach — the shell layer only adds AppHandle emits on
 //! top, which is covered by the unit tests in `cli.rs` and `shell.rs`.
 
@@ -26,9 +26,9 @@ use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
-use copythat_core::{CopyOptions, JobKind, Queue, copy_file};
-use copythat_ui_lib::cli::{self, CliAction, EnqueueVerb};
-use copythat_ui_lib::shell::destination_for;
+use freally_core::{CopyOptions, JobKind, Queue, copy_file};
+use freally_ui_lib::cli::{self, CliAction, EnqueueVerb};
+use freally_ui_lib::shell::destination_for;
 use tempfile::tempdir;
 use tokio::sync::mpsc;
 
@@ -38,7 +38,7 @@ use tokio::sync::mpsc;
 #[test]
 fn parses_copy_enqueue_argv() {
     let argv = os(&[
-        "copythat",
+        "freally",
         "--enqueue",
         "copy",
         "/source/a.bin",
@@ -58,7 +58,7 @@ fn parses_copy_enqueue_argv() {
 #[test]
 fn parses_move_enqueue_with_destination() {
     let argv = os(&[
-        "copythat",
+        "freally",
         "--enqueue",
         "move",
         "/source/c.bin",
@@ -79,7 +79,7 @@ fn parses_move_enqueue_with_destination() {
 #[test]
 fn double_dash_preserves_paths_that_look_like_flags() {
     let argv = os(&[
-        "copythat",
+        "freally",
         "--enqueue",
         "copy",
         "--",
@@ -100,11 +100,11 @@ fn double_dash_preserves_paths_that_look_like_flags() {
 #[test]
 fn help_and_version_recognised() {
     assert_eq!(
-        cli::parse_args(os(&["copythat", "--help"])).unwrap(),
+        cli::parse_args(os(&["freally", "--help"])).unwrap(),
         CliAction::PrintHelp
     );
     assert_eq!(
-        cli::parse_args(os(&["copythat", "--version"])).unwrap(),
+        cli::parse_args(os(&["freally", "--version"])).unwrap(),
         CliAction::PrintVersion
     );
 }
@@ -127,7 +127,7 @@ async fn enqueue_with_destination_drives_a_real_copy() {
 
     // Parse the exact argv shell extensions will generate.
     let argv = vec![
-        OsString::from("copythat"),
+        OsString::from("freally"),
         OsString::from("--enqueue"),
         OsString::from("copy"),
         OsString::from(&src),

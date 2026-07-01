@@ -2,7 +2,7 @@
 """Phase 7 follow-up — REAL-runtime load check for the Nautilus extension.
 
 Unlike `tests/smoke/phase_07_shell_linux.sh` (py_compile + AST only), this
-imports `packaging/linux/nautilus/copythat_nautilus.py` against the REAL
+imports `packaging/linux/nautilus/freally_nautilus.py` against the REAL
 `gi.repository.Nautilus` typelib, instantiates the provider, and exercises
 `get_file_items` / `get_background_items` — the runtime discoverability the
 static check cannot perform.
@@ -18,7 +18,7 @@ import os
 import sys
 
 EXT_DIR = os.environ.get(
-    "COPYTHAT_NAUTILUS_DIR",
+    "FREALLY_NAUTILUS_DIR",
     os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
         "..", "..", "..", "packaging", "linux", "nautilus",
@@ -30,7 +30,7 @@ sys.path.insert(0, os.path.abspath(EXT_DIR))
 # `from gi.repository import Nautilus` — the exact runtime resolution the
 # static AST check cannot perform. An ImportError/ValueError here means the
 # extension would not load in a real GNOME Files session.
-import copythat_nautilus as ext  # noqa: E402
+import freally_nautilus as ext  # noqa: E402
 from gi.repository import Nautilus  # noqa: E402
 
 
@@ -53,10 +53,10 @@ def main():
             failures.append(msg)
 
     # 1. Provider instantiates and IS a real Nautilus.MenuProvider.
-    prov = ext.CopyThatMenuProvider()
+    prov = ext.FreallyMenuProvider()
     check(
         isinstance(prov, Nautilus.MenuProvider),
-        "CopyThatMenuProvider is not a Nautilus.MenuProvider",
+        "FreallyMenuProvider is not a Nautilus.MenuProvider",
     )
 
     # 2. get_file_items returns the two real Nautilus.MenuItem entries.
@@ -73,7 +73,7 @@ def main():
         )
         names = sorted(i.get_property("name") for i in items)
         check(
-            names == ["CopyThatMenuProvider::Copy", "CopyThatMenuProvider::Move"],
+            names == ["FreallyMenuProvider::Copy", "FreallyMenuProvider::Move"],
             "unexpected menu item names: {}".format(names),
         )
         labels = sorted(i.get_property("label") for i in items)

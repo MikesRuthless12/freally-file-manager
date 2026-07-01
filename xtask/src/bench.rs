@@ -1,9 +1,9 @@
 //! Phase 13 bench runners driven by `xtask bench`, `xtask bench-ci`,
 //! and `xtask bench-vs`.
 //!
-//! The first two shell out to `cargo bench -p copythat-core --bench
+//! The first two shell out to `cargo bench -p freally-core --bench
 //! copy_bench` with the same argv Criterion expects, optionally
-//! setting the `COPYTHAT_BENCH_CI=1` env var so each workload scales
+//! setting the `FREALLY_BENCH_CI=1` env var so each workload scales
 //! down to its CI-friendly size. We don't re-implement Criterion's
 //! harness here — a subprocess wrapper keeps the output format
 //! identical to `cargo bench`, and the 10 %-regression gate in
@@ -24,9 +24,9 @@ use std::time::{Duration, Instant};
 
 use crate::repo_root;
 
-/// Run `cargo bench -p copythat-core --bench copy_bench [args...]`.
+/// Run `cargo bench -p freally-core --bench copy_bench [args...]`.
 ///
-/// When `ci` is true, set `COPYTHAT_BENCH_CI=1` so the bench file
+/// When `ci` is true, set `FREALLY_BENCH_CI=1` so the bench file
 /// picks up its scaled-down workload constants. Also pass Criterion's
 /// `--warm-up-time 1 --measurement-time 3 --sample-size 10` in CI
 /// mode so the total run finishes under a couple of minutes.
@@ -36,13 +36,13 @@ pub fn run(ci: bool) -> Result<(), String> {
     cmd.current_dir(&root)
         .arg("bench")
         .arg("-p")
-        .arg("copythat-core")
+        .arg("freally-core")
         .arg("--bench")
         .arg("copy_bench")
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit());
     if ci {
-        cmd.env("COPYTHAT_BENCH_CI", "1");
+        cmd.env("FREALLY_BENCH_CI", "1");
         // Forward a conservative Criterion arg block so CI runs
         // finish in tens of seconds rather than minutes.
         cmd.arg("--")
@@ -71,10 +71,10 @@ pub fn run(ci: bool) -> Result<(), String> {
 ///
 /// The workload is small enough to finish in ~60 s even on spinning
 /// media. For a proper 1 GiB–10 GiB run the user bumps
-/// `COPYTHAT_BENCH_VS_SIZE_MB=10240` before invoking xtask.
+/// `FREALLY_BENCH_VS_SIZE_MB=10240` before invoking xtask.
 pub fn run_vs_with(secure_cleanup: bool) -> Result<(), String> {
     let root = repo_root().ok_or("could not locate repo root")?;
-    let size_mb = std::env::var("COPYTHAT_BENCH_VS_SIZE_MB")
+    let size_mb = std::env::var("FREALLY_BENCH_VS_SIZE_MB")
         .ok()
         .and_then(|s| s.parse::<usize>().ok())
         .unwrap_or(256);
@@ -101,12 +101,12 @@ pub fn run_vs_with(secure_cleanup: bool) -> Result<(), String> {
     let src = src_dir.join("bench-source.bin");
 
     // Destination override — lets us benchmark a cross-volume copy
-    // by setting `COPYTHAT_BENCH_DST=D:\path\to\workdir` before
+    // by setting `FREALLY_BENCH_DST=D:\path\to\workdir` before
     // running. Falls back to a `dst/` subdir inside the same
     // tempdir (same-volume baseline) when unset.
-    let (_dst_tmp, dst_dir) = match std::env::var("COPYTHAT_BENCH_DST") {
+    let (_dst_tmp, dst_dir) = match std::env::var("FREALLY_BENCH_DST") {
         Ok(raw) => {
-            let dir = PathBuf::from(raw).join("copythat-bench-vs");
+            let dir = PathBuf::from(raw).join("freally-bench-vs");
             std::fs::create_dir_all(&dir).map_err(|e| format!("create {}: {e}", dir.display()))?;
             // No TempDir guard — the user-chosen location is their
             // responsibility to clean up.
@@ -130,7 +130,7 @@ pub fn run_vs_with(secure_cleanup: bool) -> Result<(), String> {
     let mut rows: Vec<Row> = Vec::new();
 
     // --- Our engine ---
-    // xtask now links copythat-core directly so we can time the
+    // xtask now links freally-core directly so we can time the
     // async loop head-to-head. 3 warm-ups + 5 measured runs; we
     // report the median wall-clock elapsed, same shape as the
     // competitor runners below.
@@ -160,7 +160,7 @@ pub fn run_vs_with(secure_cleanup: bool) -> Result<(), String> {
 
     if secure_cleanup {
         // Shred the leftover dst file with the same DoD-3 overwrite
-        // the UI offers. Uses `copythat_secure_delete::shred_file`
+        // the UI offers. Uses `freally_secure_delete::shred_file`
         // on the Rust side (same engine the app ships) so a run of
         // `bench-vs --secure-cleanup` also doubles as a smoke test
         // of the shredder against a real 10 GiB file.
@@ -185,14 +185,14 @@ pub fn run_vs_with(secure_cleanup: bool) -> Result<(), String> {
     Ok(())
 }
 
-/// Phase 13c — DoD-3-pass shred via `copythat-secure-delete`. Used
+/// Phase 13c — DoD-3-pass shred via `freally-secure-delete`. Used
 /// by `bench-vs --secure-cleanup` to wipe the bench dst file after
 /// a run. Takes ~30 s on a 10 GiB file on an external USB drive
 /// (three sequential writes through the bus); only invoked on
 /// explicit opt-in so default bench runs stay fast.
 async fn secure_shred_dst(dst: &Path) -> Result<(), String> {
-    use copythat_core::CopyControl;
-    use copythat_secure_delete::{ShredMethod, shred_file};
+    use freally_core::CopyControl;
+    use freally_secure_delete::{ShredMethod, shred_file};
     use tokio::sync::mpsc;
 
     if !dst.exists() {
@@ -208,7 +208,7 @@ async fn secure_shred_dst(dst: &Path) -> Result<(), String> {
     Ok(())
 }
 
-/// Delete any leftover `copythat-bench-vs/` directories on C:, D:,
+/// Delete any leftover `freally-bench-vs/` directories on C:, D:,
 /// and E: (whichever exist). The name is predictable — every run
 /// creates one under whichever drive is the destination — so
 /// we never touch unrelated user data. Missing directories are
@@ -216,12 +216,12 @@ async fn secure_shred_dst(dst: &Path) -> Result<(), String> {
 fn purge_bench_residue() {
     let candidates: &[&str] = if cfg!(windows) {
         &[
-            r"C:\copythat-bench-vs",
-            r"D:\copythat-bench-vs",
-            r"E:\copythat-bench-vs",
+            r"C:\freally-bench-vs",
+            r"D:\freally-bench-vs",
+            r"E:\freally-bench-vs",
         ]
     } else {
-        &["/tmp/copythat-bench-vs"]
+        &["/tmp/freally-bench-vs"]
     };
     for path in candidates {
         let p = Path::new(path);
@@ -392,15 +392,15 @@ struct Row {
 fn time_engine(src: &Path, dst: &Path, size_bytes: usize) -> Row {
     use std::sync::Arc;
 
-    use copythat_core::{CopyControl, CopyOptions, copy_file};
-    use copythat_platform::PlatformFastCopyHook;
+    use freally_core::{CopyControl, CopyOptions, copy_file};
+    use freally_platform::PlatformFastCopyHook;
 
     let Ok(rt) = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()
     else {
         return Row {
-            label: "CopyThat".into(),
+            label: "Freally".into(),
             median: None,
             note: "tokio runtime build failed".into(),
         };
@@ -410,7 +410,7 @@ fn time_engine(src: &Path, dst: &Path, size_bytes: usize) -> Row {
     // attached. Without this, we're racing a pure-async byte loop
     // against Windows's kernel-tuned CopyFileEx — which is the
     // same asymmetry users would never see in the real app.
-    let hook: Arc<dyn copythat_core::FastCopyHook> = Arc::new(PlatformFastCopyHook);
+    let hook: Arc<dyn freally_core::FastCopyHook> = Arc::new(PlatformFastCopyHook);
     let base_opts = CopyOptions {
         fast_copy_hook: Some(hook.clone()),
         ..Default::default()
@@ -439,7 +439,7 @@ fn time_engine(src: &Path, dst: &Path, size_bytes: usize) -> Row {
         let elapsed = t0.elapsed();
         if outcome.is_err() {
             return Row {
-                label: "CopyThat".into(),
+                label: "Freally".into(),
                 median: None,
                 note: format!("copy_file: {:?}", outcome.err().map(|e| e.message)),
             };
@@ -454,7 +454,7 @@ fn time_engine(src: &Path, dst: &Path, size_bytes: usize) -> Row {
         .map(|d| format!("{:>6.0} MiB/s", mb_per_sec(size_bytes, d)))
         .unwrap_or_else(|| "no samples".into());
     Row {
-        label: "CopyThat".into(),
+        label: "Freally".into(),
         median,
         note,
     }

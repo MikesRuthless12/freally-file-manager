@@ -6,7 +6,7 @@ root="$(cd "$(dirname "$0")/.." && pwd)"
 
 append() {
   local locale="$1"; shift
-  local file="$root/locales/$locale/copythat.ftl"
+  local file="$root/locales/$locale/freally.ftl"
   cat >> "$file" <<EOF
 sort-name-asc-simple = $1
 sort-name-desc-simple = $2

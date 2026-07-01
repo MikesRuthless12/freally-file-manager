@@ -1,0 +1,68 @@
+[Desktop Entry]
+Type=Service
+X-KDE-ServiceTypes=KonqPopupMenu/Plugin
+# `all/all` makes the menu appear on every selection — files and
+# folders both. Dolphin 5.x honours X-KDE-Submenu to group our two
+# verbs under a single "Freally File Manager" entry in the right-click menu.
+MimeType=all/all;
+X-KDE-Priority=TopLevel
+X-KDE-Submenu=Freally File Manager
+X-KDE-Submenu[es]=Freally File Manager
+X-KDE-Submenu[zh-CN]=Freally File Manager
+X-KDE-Submenu[ja]=Freally File Manager
+X-KDE-Submenu[de]=Freally File Manager
+X-KDE-Submenu[fr]=Freally File Manager
+X-KDE-Submenu[ru]=Freally File Manager
+X-KDE-Submenu[ko]=Freally File Manager
+Icon=freally
+Actions=freallyCopy;freallyMove;
+
+# Install target: ~/.local/share/kio/servicemenus/
+# (or system-wide: /usr/share/kservices5/ServiceMenus/)
+# The freally package's postinst drops this file in the system-wide
+# location; AppImage users run the provided install-shell-integration
+# script instead.
+
+[Desktop Action freallyCopy]
+Name=Copy with Freally File Manager
+Name[es]=Copiar con Freally File Manager
+Name[zh-CN]=用 Freally File Manager 复制
+Name[hi]=Freally File Manager के साथ कॉपी करें
+Name[ar]=انسخ باستخدام Freally File Manager
+Name[pt-BR]=Copiar com Freally File Manager
+Name[ru]=Копировать через Freally File Manager
+Name[ja]=Freally File Manager でコピー
+Name[de]=Mit Freally File Manager kopieren
+Name[fr]=Copier avec Freally File Manager
+Name[ko]=Freally File Manager로 복사
+Name[it]=Copia con Freally File Manager
+Name[tr]=Freally File Manager ile kopyala
+Name[vi]=Sao chép bằng Freally File Manager
+Name[pl]=Kopiuj za pomocą Freally File Manager
+Name[nl]=Kopiëren met Freally File Manager
+Name[id]=Salin dengan Freally File Manager
+Name[uk]=Копіювати через Freally File Manager
+Icon=freally
+Exec=freally --enqueue copy %F
+
+[Desktop Action freallyMove]
+Name=Move with Freally File Manager
+Name[es]=Mover con Freally File Manager
+Name[zh-CN]=用 Freally File Manager 移动
+Name[hi]=Freally File Manager के साथ मूव करें
+Name[ar]=انقل باستخدام Freally File Manager
+Name[pt-BR]=Mover com Freally File Manager
+Name[ru]=Переместить через Freally File Manager
+Name[ja]=Freally File Manager で移動
+Name[de]=Mit Freally File Manager verschieben
+Name[fr]=Déplacer avec Freally File Manager
+Name[ko]=Freally File Manager로 이동
+Name[it]=Sposta con Freally File Manager
+Name[tr]=Freally File Manager ile taşı
+Name[vi]=Di chuyển bằng Freally File Manager
+Name[pl]=Przenieś za pomocą Freally File Manager
+Name[nl]=Verplaatsen met Freally File Manager
+Name[id]=Pindahkan dengan Freally File Manager
+Name[uk]=Перемістити через Freally File Manager
+Icon=freally
+Exec=freally --enqueue move %F

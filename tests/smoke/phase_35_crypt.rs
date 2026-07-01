@@ -4,7 +4,7 @@
 //!
 //! 1. Compressible payload (16 MiB of `'A'`) copied through
 //!    Always(level=3) — assert the destination is < 4 MiB and
-//!    `CopyThatCryptHook::transform` reports a compression ratio
+//!    `FreallyCryptHook::transform` reports a compression ratio
 //!    < 0.25.
 //! 2. Incompressible payload (16 MiB of pseudo-random bytes) named
 //!    `noise.jpg` copied through Smart policy with the default
@@ -20,9 +20,9 @@ use std::fs;
 use std::io::Read;
 use std::path::Path;
 
-use copythat_core::TransformSink;
-use copythat_crypt::{
-    CompressionLevel, CompressionPolicy, CopyThatCryptHook, EncryptionPolicy, Identity,
+use freally_core::TransformSink;
+use freally_crypt::{
+    CompressionLevel, CompressionPolicy, FreallyCryptHook, EncryptionPolicy, Identity,
     decrypted_reader,
 };
 use secrecy::SecretString;
@@ -69,7 +69,7 @@ async fn case01_always_compression_shrinks_a_repeating_payload() {
     let payload: Vec<u8> = std::iter::repeat_n(b'A', 16 * 1024 * 1024).collect();
     fs::write(&src, &payload).expect("write src");
 
-    let hook = CopyThatCryptHook::new(
+    let hook = FreallyCryptHook::new(
         CompressionPolicy::Always {
             level: CompressionLevel(3),
         },
@@ -109,7 +109,7 @@ async fn case02_smart_policy_denies_jpg_extension() {
     }
     fs::write(&src, &payload).expect("write src");
 
-    let hook = CopyThatCryptHook::new(CompressionPolicy::smart(), None);
+    let hook = FreallyCryptHook::new(CompressionPolicy::smart(), None);
     let plan = hook.will_transform("jpg");
     assert!(
         plan.is_noop(),
@@ -140,7 +140,7 @@ async fn case03_passphrase_encryption_round_trips() {
     fs::write(&src, &payload).expect("write src");
 
     let pw = SecretString::from("phase35-correct-horse-battery".to_string());
-    let hook = CopyThatCryptHook::new(
+    let hook = FreallyCryptHook::new(
         CompressionPolicy::Off,
         Some(EncryptionPolicy::passphrase(pw.clone())),
     );
@@ -164,7 +164,7 @@ async fn case03_passphrase_encryption_round_trips() {
 fn case04_all_phase_35_keys_present_in_every_locale() {
     let root = locate_locales_dir().expect("locate locales/");
     for code in LOCALES {
-        let path = root.join(code).join("copythat.ftl");
+        let path = root.join(code).join("freally.ftl");
         let content =
             fs::read_to_string(&path).unwrap_or_else(|e| panic!("read {}: {e}", path.display()));
         for key in PHASE_35_KEYS {
@@ -183,7 +183,7 @@ fn locate_locales_dir() -> Option<std::path::PathBuf> {
     let mut cur = std::env::current_dir().ok()?;
     for _ in 0..6 {
         let candidate = cur.join("locales");
-        if candidate.join("en").join("copythat.ftl").exists() {
+        if candidate.join("en").join("freally.ftl").exists() {
             return Some(candidate);
         }
         if !cur.pop() {

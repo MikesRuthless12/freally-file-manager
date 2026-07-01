@@ -2,7 +2,7 @@
 """Phase 28 — insert tray-resident Drop Stack Fluent keys into the
 17 non-English locales. MT-flagged drafts matching the Standing
 Per-Phase Rules. The 14 keys live as a single block at the end of
-each locale; the English source in locales/en/copythat.ftl is
+each locale; the English source in locales/en/freally.ftl is
 authoritative."""
 
 from pathlib import Path
@@ -292,7 +292,7 @@ def build_block(t: dict) -> str:
     return (
         "\n"
         "# Phase 28 — tray-resident Drop Stack. MT-flagged drafts;\n"
-        "# the authoritative English source lives in locales/en/copythat.ftl.\n"
+        "# the authoritative English source lives in locales/en/freally.ftl.\n"
         f"dropstack-window-title = {t['title']}  # MT\n"
         f"dropstack-tray-open = {t['tray']}  # MT\n"
         f"dropstack-empty-title = {t['empty_title']}  # MT\n"
@@ -311,7 +311,7 @@ def build_block(t: dict) -> str:
 
 
 def patch_locale(locale: str, t: dict) -> None:
-    path = LOCALES_DIR / locale / "copythat.ftl"
+    path = LOCALES_DIR / locale / "freally.ftl"
     text = path.read_text(encoding="utf-8")
     if "dropstack-window-title" in text:
         print(f"{locale}: already patched, skipping")

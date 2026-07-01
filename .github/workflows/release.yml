@@ -92,7 +92,7 @@ jobs:
         with:
           workspaces: |
             .
-            apps/copythat-ui/src-tauri
+            apps/freally-ui/src-tauri
 
       - uses: pnpm/action-setup@v4
         with:
@@ -102,14 +102,14 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
-          cache-dependency-path: apps/copythat-ui/pnpm-lock.yaml
+          cache-dependency-path: apps/freally-ui/pnpm-lock.yaml
 
       - name: Install frontend deps
-        working-directory: apps/copythat-ui
+        working-directory: apps/freally-ui
         run: pnpm install --frozen-lockfile
 
       - name: Tauri build (release, ${{ matrix.target.bundles }})
-        working-directory: apps/copythat-ui
+        working-directory: apps/freally-ui
         env:
           # Ad-hoc codesign for macOS (free — no Apple Developer cert).
           # The dash identity tells codesign to stamp a self-contained
@@ -200,7 +200,7 @@ jobs:
         if: "!startsWith(github.ref, 'refs/tags/v')"
         uses: actions/upload-artifact@v4
         with:
-          name: copythat-${{ matrix.target.label }}
+          name: freally-${{ matrix.target.label }}
           path: release-staging/
           if-no-files-found: ignore
 
@@ -318,8 +318,8 @@ jobs:
   #     - uses: Azure/trusted-signing-action@v0.4.0
   #       with:
   #         endpoint: https://eus.codesigning.azure.net/
-  #         trusted-signing-account-name: copythat-signing
-  #         certificate-profile-name: copythat-cert-profile
+  #         trusted-signing-account-name: freally-signing
+  #         certificate-profile-name: freally-cert-profile
   #         files-folder: release-staging
   #         files-folder-filter: msi,exe
 

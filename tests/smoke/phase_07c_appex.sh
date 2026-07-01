@@ -48,27 +48,27 @@ plutil -lint "$MACOS_ROOT/services/Services.plist"
 # against the standard frameworks. We pass the same frameworks the
 # .appex uses so the Finder Sync references compile.
 
-echo "==> swiftc -typecheck CopyThatFinderSync.swift"
+echo "==> swiftc -typecheck FreallyFinderSync.swift"
 swiftc \
     -typecheck \
     -target "arm64-apple-macos12.0" \
     -framework Cocoa \
     -framework FinderSync \
-    "$MACOS_ROOT/finder-sync-extension/CopyThatFinderSync.swift"
+    "$MACOS_ROOT/finder-sync-extension/FreallyFinderSync.swift"
 
-echo "==> swiftc -typecheck CopyThatServiceHandler.swift"
+echo "==> swiftc -typecheck FreallyServiceHandler.swift"
 swiftc \
     -typecheck \
     -target "arm64-apple-macos12.0" \
     -framework Cocoa \
-    "$MACOS_ROOT/services/CopyThatServiceHandler.swift"
+    "$MACOS_ROOT/services/FreallyServiceHandler.swift"
 
 # ----- Step 3: bundle --------------------------------------------------
 
 echo "==> running bundle-appex.sh"
 bash "$MACOS_ROOT/scripts/bundle-appex.sh"
 
-APPEX="$MACOS_ROOT/build/CopyThatFinderSync.appex"
+APPEX="$MACOS_ROOT/build/FreallyFinderSync.appex"
 
 if [[ ! -d "$APPEX" ]]; then
     echo "FAIL: expected .appex directory not found at $APPEX" >&2
@@ -78,7 +78,7 @@ fi
 # Required files
 for path in \
     "$APPEX/Contents/Info.plist" \
-    "$APPEX/Contents/MacOS/CopyThatFinderSync"; do
+    "$APPEX/Contents/MacOS/FreallyFinderSync"; do
     if [[ ! -e "$path" ]]; then
         echo "FAIL: missing $path" >&2
         exit 1
@@ -88,13 +88,13 @@ done
 # NSExtension principal class check
 principal="$(plutil -extract NSExtension.NSExtensionPrincipalClass raw -o - \
     "$APPEX/Contents/Info.plist")"
-if [[ "$principal" != "CopyThatFinderSync" ]]; then
-    echo "FAIL: principal class in Info.plist is '$principal', expected 'CopyThatFinderSync'" >&2
+if [[ "$principal" != "FreallyFinderSync" ]]; then
+    echo "FAIL: principal class in Info.plist is '$principal', expected 'FreallyFinderSync'" >&2
     exit 1
 fi
 
 # Universal binary check (arm64 + x86_64 slices present)
-lipo_info="$(lipo -info "$APPEX/Contents/MacOS/CopyThatFinderSync")"
+lipo_info="$(lipo -info "$APPEX/Contents/MacOS/FreallyFinderSync")"
 echo "    $lipo_info"
 if ! grep -q "arm64" <<<"$lipo_info"; then
     echo "FAIL: .appex executable missing arm64 slice" >&2

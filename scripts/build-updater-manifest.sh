@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Phase 16 — Assemble per-channel, per-target updater manifests for
 # the Tauri `tauri-plugin-updater` endpoint
-# (https://releases.copythat.app/{{channel}}/{{target}}-{{arch}}.json).
+# (https://releases.freally.app/{{channel}}/{{target}}-{{arch}}.json).
 #
 # Arguments:
 #   $1 — version string (e.g. "1.0.0")
@@ -33,7 +33,7 @@ for channel in stable beta; do
         "windows-x86_64:windows-x86_64"; do
         tgt="${pair%%:*}"
         src="${pair##*:}"
-        src_manifest="${IN_DIR}/copythat-${src}/latest.json"
+        src_manifest="${IN_DIR}/freally-${src}/latest.json"
         if [[ ! -f "$src_manifest" ]]; then
             echo "skip ${channel}/${tgt}: no ${src_manifest}"
             continue
@@ -46,7 +46,7 @@ for channel in stable beta; do
     done
 done
 
-# Minimal index so `curl https://releases.copythat.app/` returns
+# Minimal index so `curl https://releases.freally.app/` returns
 # something other than 404.
 printf '{"version":"%s"}\n' "$VERSION" >"${OUT_DIR}/latest.json"
 printf 'Assembled updater manifests under %s\n' "$OUT_DIR" >&2

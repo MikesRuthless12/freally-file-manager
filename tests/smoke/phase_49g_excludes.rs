@@ -10,7 +10,7 @@
 
 use std::fs;
 
-use copythat_chunk::{FilterError, FilterSet, Repository, SnapshotKind};
+use freally_chunk::{FilterError, FilterSet, Repository, SnapshotKind};
 
 fn lcg_bytes(seed: u64, len: usize) -> Vec<u8> {
     let mut out = vec![0u8; len];

@@ -68,10 +68,10 @@ $scriptDir = if ($PSScriptRoot) {
 }
 $repoRoot = Split-Path -Parent $scriptDir
 if (-not $SkipBuild) {
-    Step "cargo check -p copythat-snapshot --features vss-com"
+    Step "cargo check -p freally-snapshot --features vss-com"
     Push-Location $repoRoot
     try {
-        & cargo check -p copythat-snapshot --features vss-com --tests
+        & cargo check -p freally-snapshot --features vss-com --tests
         if ($LASTEXITCODE -ne 0) { Write-Error "cargo check failed" }
     } finally {
         Pop-Location
@@ -82,11 +82,11 @@ if (-not $SkipBuild) {
 Step "cargo test --features vss-com vss_com_create_release_round_trip --ignored"
 Push-Location $repoRoot
 try {
-    $env:COPYTHAT_VSS_TEST_VOLUME = $Volume
-    & cargo test -p copythat-snapshot --features vss-com `
+    $env:FREALLY_VSS_TEST_VOLUME = $Volume
+    & cargo test -p freally-snapshot --features vss-com `
         vss_com_create_release_round_trip -- --ignored --nocapture
     $rc = $LASTEXITCODE
-    Remove-Item Env:COPYTHAT_VSS_TEST_VOLUME -ErrorAction SilentlyContinue
+    Remove-Item Env:FREALLY_VSS_TEST_VOLUME -ErrorAction SilentlyContinue
     if ($rc -ne 0) { Write-Error "VSS COM round-trip test failed (rc=$rc)" }
 } finally {
     Pop-Location
@@ -131,13 +131,13 @@ if ($LockedFilePath) {
     Step "cargo test --features vss-com vss_com_copy_locked_file_via_shadow --ignored"
     Push-Location $repoRoot
     try {
-        $env:COPYTHAT_VSS_LOCKED_FILE_PATH = $LockedFilePath
-        $env:COPYTHAT_VSS_DEST_DIR = $destDir
-        & cargo test -p copythat-snapshot --features vss-com `
+        $env:FREALLY_VSS_LOCKED_FILE_PATH = $LockedFilePath
+        $env:FREALLY_VSS_DEST_DIR = $destDir
+        & cargo test -p freally-snapshot --features vss-com `
             vss_com_copy_locked_file_via_shadow -- --ignored --nocapture
         $rc = $LASTEXITCODE
-        Remove-Item Env:COPYTHAT_VSS_LOCKED_FILE_PATH -ErrorAction SilentlyContinue
-        Remove-Item Env:COPYTHAT_VSS_DEST_DIR -ErrorAction SilentlyContinue
+        Remove-Item Env:FREALLY_VSS_LOCKED_FILE_PATH -ErrorAction SilentlyContinue
+        Remove-Item Env:FREALLY_VSS_DEST_DIR -ErrorAction SilentlyContinue
         if ($rc -ne 0) { Write-Error "locked-file copy-via-shadow probe failed (rc=$rc)" }
     } finally {
         Pop-Location

@@ -8,7 +8,7 @@
 //! dropped before the next open. The key-slot mutations act on the on-disk
 //! `repo-key.json`, independent of the open database.
 
-use copythat_chunk::Repository;
+use freally_chunk::Repository;
 
 /// `true` if `secret` opens the repository at `root`.
 fn unlocks(root: &std::path::Path, secret: &str) -> bool {

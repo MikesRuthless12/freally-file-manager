@@ -2,14 +2,14 @@
 # Phase 45 smoke test — drag-progress-merge + named queues + F2 +
 # tray destination targets.
 #
-# Phase 45 ships entirely on top of the existing copythat-core /
-# copythat-ui workspace — no new crates — so the smoke is a focused
+# Phase 45 ships entirely on top of the existing freally-core /
+# freally-ui workspace — no new crates — so the smoke is a focused
 # orchestration of the per-sub-phase tests + a clean svelte-check +
 # vite build pass. Each sub-phase already carries its own targeted
 # test:
 #
-#   - 45.1 backend data model    -> crates/copythat-core/tests/queue_registry.rs (8/8)
-#   - 45.2 Tauri IPC layer       -> apps/copythat-ui/src-tauri/tests/queue_commands.rs
+#   - 45.1 backend data model    -> crates/freally-core/tests/queue_registry.rs (8/8)
+#   - 45.2 Tauri IPC layer       -> apps/freally-ui/src-tauri/tests/queue_commands.rs
 #                                   (10/10 from 45.2 + the unpin case added in 45.6)
 #   - 45.3 UI tabs + queueId     -> command_layer.rs (incl. JobDto split + locale
 #                                   parity over the 19 new Phase-45 Fluent keys)
@@ -23,21 +23,21 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-UI_DIR="$REPO_ROOT/apps/copythat-ui"
+UI_DIR="$REPO_ROOT/apps/freally-ui"
 
 step() { printf '\n\033[1;36m==> %s\033[0m\n' "$*"; }
 
-step "Phase 45 smoke: cargo test -p copythat-core --test queue_registry"
-( cd "$REPO_ROOT" && cargo test -p copythat-core --test queue_registry )
+step "Phase 45 smoke: cargo test -p freally-core --test queue_registry"
+( cd "$REPO_ROOT" && cargo test -p freally-core --test queue_registry )
 
-step "Phase 45 smoke: cargo test -p copythat-ui --test queue_commands"
-( cd "$REPO_ROOT" && cargo test -p copythat-ui --test queue_commands )
+step "Phase 45 smoke: cargo test -p freally-ui --test queue_commands"
+( cd "$REPO_ROOT" && cargo test -p freally-ui --test queue_commands )
 
-step "Phase 45 smoke: cargo test -p copythat-ui --test command_layer"
-( cd "$REPO_ROOT" && cargo test -p copythat-ui --test command_layer )
+step "Phase 45 smoke: cargo test -p freally-ui --test command_layer"
+( cd "$REPO_ROOT" && cargo test -p freally-ui --test command_layer )
 
-step "Phase 45 smoke: cargo check -p copythat-ui (Tauri runtime build)"
-( cd "$REPO_ROOT" && cargo check -p copythat-ui )
+step "Phase 45 smoke: cargo check -p freally-ui (Tauri runtime build)"
+( cd "$REPO_ROOT" && cargo check -p freally-ui )
 
 step "Phase 45 smoke: pnpm check (svelte-check)"
 ( cd "$UI_DIR" && pnpm check )

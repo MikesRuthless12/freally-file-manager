@@ -5,23 +5,23 @@
 # Covers the three right-click-menu extensions the Linux packaging
 # step (Phase 16) installs: Nautilus (GNOME Files), KDE Dolphin's
 # KIO ServiceMenu, and XFCE Thunar's Custom Actions. Also validates
-# the top-level `copythat.desktop` launcher's two MIME-bound Desktop
+# the top-level `freally.desktop` launcher's two MIME-bound Desktop
 # Actions.
 #
 # The test is split into two layers:
 #
 # 1. **Static validation** — every integration file parses cleanly
-#    and references the expected `copythat --enqueue <verb>` argv
+#    and references the expected `freally --enqueue <verb>` argv
 #    shape. This is the Linux counterpart of
 #    `phase_07b_shellext.ps1`'s "DLL exports resolve" check and
 #    `phase_07c_appex.sh`'s `plutil -lint` / `swiftc -typecheck` step.
 #
-# 2. **Live argv simulation** — a stub `copythat` shell script is
+# 2. **Live argv simulation** — a stub `freally` shell script is
 #    dropped at the head of PATH; each extension's Exec / command
 #    line is invoked against a representative file path; the stub
 #    records its argv to a file; we assert the argv matches the
 #    Phase 7a CLI parser contract (`--enqueue`, the verb, `--`, paths).
-#    This is cheaper than wiring up a real `copythat` binary + IPC
+#    This is cheaper than wiring up a real `freally` binary + IPC
 #    socket but still catches the class of bug where a packaging
 #    change silently breaks the handoff from file manager to app.
 #
@@ -50,10 +50,10 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 LINUX_ROOT="$REPO_ROOT/packaging/linux"
-NAUTILUS_PY="$LINUX_ROOT/nautilus/copythat_nautilus.py"
-KDE_DESKTOP="$LINUX_ROOT/kde/copythat-servicemenu.desktop"
-THUNAR_UCA="$LINUX_ROOT/thunar/copythat-uca.xml"
-TOP_DESKTOP="$LINUX_ROOT/copythat.desktop"
+NAUTILUS_PY="$LINUX_ROOT/nautilus/freally_nautilus.py"
+KDE_DESKTOP="$LINUX_ROOT/kde/freally-servicemenu.desktop"
+THUNAR_UCA="$LINUX_ROOT/thunar/freally-uca.xml"
+TOP_DESKTOP="$LINUX_ROOT/freally.desktop"
 
 echo "==> phase_07_shell_linux.sh"
 echo "    REPO_ROOT = $REPO_ROOT"
@@ -88,32 +88,32 @@ if ! python3 -m py_compile "$NAUTILUS_PY"; then
 fi
 
 # AST-level structural check: verify the module defines a class
-# named `CopyThatMenuProvider` with the expected method names.
+# named `FreallyMenuProvider` with the expected method names.
 # This catches accidental renames that `py_compile` alone wouldn't.
 
-echo "==> ast check: CopyThatMenuProvider surface"
+echo "==> ast check: FreallyMenuProvider surface"
 python3 - <<EOF
 import ast, sys
 
 path = "$NAUTILUS_PY"
 tree = ast.parse(open(path, encoding="utf-8").read(), filename=path)
 classes = {c.name: c for c in ast.walk(tree) if isinstance(c, ast.ClassDef)}
-if "CopyThatMenuProvider" not in classes:
-    print(f"FAIL: CopyThatMenuProvider missing from {path}", file=sys.stderr)
+if "FreallyMenuProvider" not in classes:
+    print(f"FAIL: FreallyMenuProvider missing from {path}", file=sys.stderr)
     sys.exit(1)
 
-cls = classes["CopyThatMenuProvider"]
+cls = classes["FreallyMenuProvider"]
 methods = {m.name for m in cls.body if isinstance(m, ast.FunctionDef)}
 expected = {"get_file_items", "get_background_items", "_on_copy", "_on_move"}
 missing = expected - methods
 if missing:
-    print(f"FAIL: CopyThatMenuProvider missing methods: {sorted(missing)}", file=sys.stderr)
+    print(f"FAIL: FreallyMenuProvider missing methods: {sorted(missing)}", file=sys.stderr)
     sys.exit(1)
 
-# The module must invoke the copythat CLI with `--enqueue`. Walk the
+# The module must invoke the freally CLI with `--enqueue`. Walk the
 # literal strings to confirm the argv construction is intact.
 strings = {node.value for node in ast.walk(tree) if isinstance(node, ast.Constant) and isinstance(node.value, str)}
-for needle in ("copythat", "--enqueue", "copy", "move"):
+for needle in ("freally", "--enqueue", "copy", "move"):
     if needle not in strings:
         print(f"FAIL: Nautilus extension missing literal {needle!r}", file=sys.stderr)
         sys.exit(1)
@@ -128,7 +128,7 @@ EOF
 if command -v desktop-file-validate >/dev/null 2>&1; then
     echo "==> desktop-file-validate (top-level)"
     if ! desktop-file-validate "$TOP_DESKTOP"; then
-        fail "top-level copythat.desktop failed desktop-file-validate"
+        fail "top-level freally.desktop failed desktop-file-validate"
     fi
     echo "==> desktop-file-validate (KDE ServiceMenu)"
     # KDE ServiceMenus use some KDE-specific keys that the validator
@@ -160,24 +160,24 @@ else
 fi
 
 # Structural assertion: every integration file must reference the
-# `copythat --enqueue copy` and `copythat --enqueue move` argv
+# `freally --enqueue copy` and `freally --enqueue move` argv
 # shape. If a package maintainer copy-paste-edits one but forgets
 # the other, the context menu half-works in a way that's painful
 # to spot manually.
 
 echo "==> argv-shape grep across integration files"
 for path in "$TOP_DESKTOP" "$KDE_DESKTOP" "$THUNAR_UCA"; do
-    if ! grep -qF "copythat --enqueue copy" "$path"; then
-        fail "$path missing 'copythat --enqueue copy'"
+    if ! grep -qF "freally --enqueue copy" "$path"; then
+        fail "$path missing 'freally --enqueue copy'"
     fi
-    if ! grep -qF "copythat --enqueue move" "$path"; then
-        fail "$path missing 'copythat --enqueue move'"
+    if ! grep -qF "freally --enqueue move" "$path"; then
+        fail "$path missing 'freally --enqueue move'"
     fi
 done
 
 # ----- Step 3: live argv simulation ---------------------------------------
 #
-# Build a stub `copythat` binary on a scratch PATH, then invoke each
+# Build a stub `freally` binary on a scratch PATH, then invoke each
 # extension's `Exec=` / `<command>` line with `%F` substituted for a
 # real file path. The stub writes its argv to a predictable file so we
 # can inspect what Nautilus / Dolphin / Thunar would have sent.
@@ -187,7 +187,7 @@ SCRATCH="$(mktemp -d)"
 trap "rm -rf '$SCRATCH'" EXIT
 
 STUB_LOG="$SCRATCH/stub.log"
-STUB_BIN="$SCRATCH/bin/copythat"
+STUB_BIN="$SCRATCH/bin/freally"
 mkdir -p "$SCRATCH/bin"
 cat > "$STUB_BIN" <<'STUB'
 #!/usr/bin/env bash
@@ -210,7 +210,7 @@ touch "$SAMPLE_FILE"
 # command line isn't found in the file.
 run_exec_line() {
     local file="$1"
-    local pattern="$2"     # e.g. 'Exec=copythat --enqueue copy'
+    local pattern="$2"     # e.g. 'Exec=freally --enqueue copy'
     local label="$3"
     # The first Exec= line matching the pattern in the file. Strip the
     # `Exec=` prefix, substitute %F, and execute via bash -c.
@@ -231,15 +231,15 @@ run_exec_line() {
 
 # --- Top-level .desktop (Actions: Copy, Move) ---
 
-run_exec_line "$TOP_DESKTOP" "Exec=copythat --enqueue copy" "top-level desktop copy"
-run_exec_line "$TOP_DESKTOP" "Exec=copythat --enqueue move" "top-level desktop move"
+run_exec_line "$TOP_DESKTOP" "Exec=freally --enqueue copy" "top-level desktop copy"
+run_exec_line "$TOP_DESKTOP" "Exec=freally --enqueue move" "top-level desktop move"
 
 # --- KDE ServiceMenu ---
 
-run_exec_line "$KDE_DESKTOP" "Exec=copythat --enqueue copy" "KDE ServiceMenu copy"
-run_exec_line "$KDE_DESKTOP" "Exec=copythat --enqueue move" "KDE ServiceMenu move"
+run_exec_line "$KDE_DESKTOP" "Exec=freally --enqueue copy" "KDE ServiceMenu copy"
+run_exec_line "$KDE_DESKTOP" "Exec=freally --enqueue move" "KDE ServiceMenu move"
 
-# --- Thunar UCA: <command>copythat ...</command> ---
+# --- Thunar UCA: <command>freally ...</command> ---
 
 # UCA's <command> element is raw — no `Exec=` prefix. Extract via
 # Python so XML escaping / whitespace doesn't trip us up.

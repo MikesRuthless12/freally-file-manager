@@ -14,7 +14,7 @@ set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 
 append_en() {
-  local file="$root/locales/en/copythat.ftl"
+  local file="$root/locales/en/freally.ftl"
   cat >> "$file" <<'EOF'
 phase42-paranoid-verify-label = Paranoid verify
 phase42-paranoid-verify-hint = Drops the destination's cached pages and re-reads from disk to catch write-cache lies and silent corruption. About 50% slower than the default verify; off by default.
@@ -27,7 +27,7 @@ EOF
 
 append_other() {
   local locale="$1"
-  local file="$root/locales/$locale/copythat.ftl"
+  local file="$root/locales/$locale/freally.ftl"
   # English placeholders — translation pending. Each locale gets
   # the same fallback strings so `xtask i18n-lint` reports parity.
   cat >> "$file" <<'EOF'

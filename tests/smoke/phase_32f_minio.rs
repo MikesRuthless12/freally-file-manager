@@ -2,13 +2,13 @@
 //!
 //! # How to run
 //!
-//! The smoke is gated on the `COPYTHAT_PHASE32F_MINIO` env var — set
+//! The smoke is gated on the `FREALLY_PHASE32F_MINIO` env var — set
 //! to `1` to activate. Skipped by default so CI + local
 //! `cargo test` don't need docker.
 //!
 //! ```bash
 //! # Start a minio sidecar (runs on localhost:9000, RootUser / RootPass).
-//! docker run -d --rm --name copythat-minio \
+//! docker run -d --rm --name freally-minio \
 //!   -p 9000:9000 -p 9001:9001 \
 //!   -e "MINIO_ROOT_USER=minioadmin" \
 //!   -e "MINIO_ROOT_PASSWORD=minioadmin" \
@@ -17,18 +17,18 @@
 //! # Create the target bucket (via the mc client or the web UI at :9001).
 //! docker run --rm --network host quay.io/minio/mc \
 //!   alias set local http://localhost:9000 minioadmin minioadmin
-//! docker run --rm --network host quay.io/minio/mc mb local/copythat-test
+//! docker run --rm --network host quay.io/minio/mc mb local/freally-test
 //!
 //! # Run the smoke.
-//! COPYTHAT_PHASE32F_MINIO=1 \
-//! COPYTHAT_MINIO_ENDPOINT=http://localhost:9000 \
-//! COPYTHAT_MINIO_BUCKET=copythat-test \
-//! COPYTHAT_MINIO_AK=minioadmin \
-//! COPYTHAT_MINIO_SK=minioadmin \
-//!   cargo test -p copythat-cloud --test phase_32f_minio -- --nocapture
+//! FREALLY_PHASE32F_MINIO=1 \
+//! FREALLY_MINIO_ENDPOINT=http://localhost:9000 \
+//! FREALLY_MINIO_BUCKET=freally-test \
+//! FREALLY_MINIO_AK=minioadmin \
+//! FREALLY_MINIO_SK=minioadmin \
+//!   cargo test -p freally-cloud --test phase_32f_minio -- --nocapture
 //!
 //! # Cleanup.
-//! docker stop copythat-minio
+//! docker stop freally-minio
 //! ```
 //!
 //! # What it verifies
@@ -41,7 +41,7 @@
 //! 5. `stat` returns the right content length after the upload.
 //!
 //! Phase 32f's streaming writer path exercises the same operator
-//! via `CopyThatCloudSink::put_stream_blocking` when `cloud_sink`
+//! via `FreallyCloudSink::put_stream_blocking` when `cloud_sink`
 //! is wired through `copy_file` — that happy-path lands in a
 //! follow-up smoke once a "streaming end-to-end through minio"
 //! case is worth the extra docker orchestration.
@@ -49,13 +49,13 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use copythat_cloud::{
+use freally_cloud::{
     Backend, BackendConfig, BackendKind, CopyTarget, OperatorTarget, S3Config, copy_from_target,
     copy_to_target, make_operator,
 };
 
 fn should_run() -> bool {
-    std::env::var("COPYTHAT_PHASE32F_MINIO").as_deref() == Ok("1")
+    std::env::var("FREALLY_PHASE32F_MINIO").as_deref() == Ok("1")
 }
 
 fn minio_backend() -> Option<(Backend, String)> {
@@ -63,10 +63,10 @@ fn minio_backend() -> Option<(Backend, String)> {
         return None;
     }
     let endpoint =
-        std::env::var("COPYTHAT_MINIO_ENDPOINT").unwrap_or_else(|_| "http://localhost:9000".into());
-    let bucket = std::env::var("COPYTHAT_MINIO_BUCKET").unwrap_or_else(|_| "copythat-test".into());
-    let ak = std::env::var("COPYTHAT_MINIO_AK").unwrap_or_else(|_| "minioadmin".into());
-    let sk = std::env::var("COPYTHAT_MINIO_SK").unwrap_or_else(|_| "minioadmin".into());
+        std::env::var("FREALLY_MINIO_ENDPOINT").unwrap_or_else(|_| "http://localhost:9000".into());
+    let bucket = std::env::var("FREALLY_MINIO_BUCKET").unwrap_or_else(|_| "freally-test".into());
+    let ak = std::env::var("FREALLY_MINIO_AK").unwrap_or_else(|_| "minioadmin".into());
+    let sk = std::env::var("FREALLY_MINIO_SK").unwrap_or_else(|_| "minioadmin".into());
 
     let backend = Backend {
         name: "minio-smoke".into(),
@@ -85,7 +85,7 @@ fn minio_backend() -> Option<(Backend, String)> {
 #[tokio::test(flavor = "current_thread")]
 async fn case_minio_round_trip_1mib() {
     let Some((backend, secret)) = minio_backend() else {
-        eprintln!("skipping: COPYTHAT_PHASE32F_MINIO != 1");
+        eprintln!("skipping: FREALLY_PHASE32F_MINIO != 1");
         return;
     };
 

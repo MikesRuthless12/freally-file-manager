@@ -27,7 +27,7 @@
 
 use std::path::Path;
 
-use copythat_core::{
+use freally_core::{
     CopyControl, CopyErrorKind, CopyOptions, PathSafetyError, TreeOptions, copy_file, copy_tree,
     safety::validate_path_no_traversal,
 };
@@ -158,7 +158,7 @@ fn err_path_escape_key_resolves() {
     // English source-of-truth string. `xtask i18n-lint` runs the
     // 18-locale parity check; this anchors the constant.
     assert_eq!(
-        copythat_core::CopyErrorKind::PathEscape.localized_key(),
+        freally_core::CopyErrorKind::PathEscape.localized_key(),
         "err-path-escape"
     );
 }

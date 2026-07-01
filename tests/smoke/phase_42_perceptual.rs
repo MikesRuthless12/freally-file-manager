@@ -17,7 +17,7 @@
 use std::fs;
 use std::path::Path;
 
-use copythat_perceptual::{
+use freally_perceptual::{
     PerceptualKind, SIMILARITY_DEFAULT_THRESHOLD, perceptual_hash, similarity,
 };
 use image::ImageBuffer;
@@ -146,7 +146,7 @@ fn case04_audio_kind_returns_not_implemented() {
     let err = perceptual_hash(&path, PerceptualKind::Audio).unwrap_err();
     assert!(matches!(
         err,
-        copythat_perceptual::PerceptualError::AudioNotImplemented
+        freally_perceptual::PerceptualError::AudioNotImplemented
     ));
 }
 
@@ -158,7 +158,7 @@ fn case05_all_phase_42_keys_present_in_every_locale() {
         let path = workspace_root
             .join("locales")
             .join(locale)
-            .join("copythat.ftl");
+            .join("freally.ftl");
         let body = fs::read_to_string(&path)
             .unwrap_or_else(|_| panic!("could not read {}", path.display()));
         for key in PHASE_42_KEYS {

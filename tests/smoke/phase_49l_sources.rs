@@ -1,6 +1,6 @@
 //! Phase 49l smoke — Sources dashboard fold (summaries only, by directory).
 
-use copythat_chunk::{Repository, SnapshotKind};
+use freally_chunk::{Repository, SnapshotKind};
 
 #[test]
 fn sources_group_by_directory_prefix() {

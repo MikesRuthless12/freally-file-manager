@@ -11,14 +11,14 @@
 //!    locale (cross-checked indirectly via the existence count).
 //! 4. **Source-grep tripwire** — every `#[tauri::command]` whose
 //!    signature contains a `path:`/`paths:`/`destination:`/`source:`
-//!    arg in `apps/copythat-ui/src-tauri/src/commands.rs` calls
+//!    arg in `apps/freally-ui/src-tauri/src/commands.rs` calls
 //!    one of the gate helpers. Drift past this gate fires before
 //!    the commit lands.
 
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use copythat_ui_lib::ipc_safety::{IpcError, validate_ipc_path, validate_ipc_paths};
+use freally_ui_lib::ipc_safety::{IpcError, validate_ipc_path, validate_ipc_paths};
 
 #[test]
 fn rejects_traversal_via_helper() {
@@ -41,8 +41,8 @@ fn rejects_replacement_character_via_helper() {
 
 #[test]
 fn accepts_normal_path() {
-    let p = validate_ipc_path("/var/log/copythat").unwrap();
-    assert_eq!(p, PathBuf::from("/var/log/copythat"));
+    let p = validate_ipc_path("/var/log/freally").unwrap();
+    assert_eq!(p, PathBuf::from("/var/log/freally"));
 }
 
 #[test]
@@ -86,7 +86,7 @@ fn every_locale_carries_the_new_key() {
     let locales_dir = root.join("locales");
     let mut count = 0;
     for entry in fs::read_dir(&locales_dir).unwrap().flatten() {
-        let ftl = entry.path().join("copythat.ftl");
+        let ftl = entry.path().join("freally.ftl");
         if !ftl.exists() {
             continue;
         }
@@ -111,7 +111,7 @@ fn commands_rs_path_args_pass_through_the_gate() {
     // `validate_path_no_traversal`). The sweep is body-text-based;
     // false positives are easy enough to fix with a one-line
     // helper call.
-    let body = fs::read_to_string(repo_root().join("apps/copythat-ui/src-tauri/src/commands.rs"))
+    let body = fs::read_to_string(repo_root().join("apps/freally-ui/src-tauri/src/commands.rs"))
         .expect("commands.rs missing");
 
     // Carve out the file by `#[tauri::command]` markers — each block

@@ -1,5 +1,5 @@
 //! `xtask build-sample-plugins` — compile every Phase 46.5 sample
-//! plugin under `apps/copythat-ui/plugins/` to
+//! plugin under `apps/freally-ui/plugins/` to
 //! `target/wasm32-unknown-unknown/release/<name>.wasm`.
 //!
 //! Each plugin lives in a standalone Cargo package (its own
@@ -19,7 +19,7 @@ use std::process::Command;
 
 use crate::repo_root;
 
-/// Plugin directory names under `apps/copythat-ui/plugins/`. Listed
+/// Plugin directory names under `apps/freally-ui/plugins/`. Listed
 /// in the order Phase 46.5's spec introduces them so the CI log
 /// reads top-to-bottom in the same order as the build prompts guide.
 const SAMPLE_PLUGINS: &[&str] = &[
@@ -33,7 +33,7 @@ const PLUGIN_TARGET: &str = "wasm32-unknown-unknown";
 
 pub fn run() -> Result<(), String> {
     let root = repo_root().ok_or("could not locate repo root (Cargo.toml + locales/)")?;
-    let plugins_dir = root.join("apps").join("copythat-ui").join("plugins");
+    let plugins_dir = root.join("apps").join("freally-ui").join("plugins");
     if !plugins_dir.is_dir() {
         return Err(format!(
             "expected sample-plugin root at {}, but the directory does not exist",

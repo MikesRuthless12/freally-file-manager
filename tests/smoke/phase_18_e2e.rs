@@ -14,7 +14,7 @@
 //! the real engine crates with no mocks:
 //!
 //! 1. Generate a tree of small files (default 500, scale to 10 000
-//!    via `COPYTHAT_PHASE18_FULL=1`).
+//!    via `FREALLY_PHASE18_FULL=1`).
 //! 2. `copy_tree` the whole thing to a second tempdir with
 //!    `verify = Some(HashAlgorithm::Blake3.verifier())` wired into
 //!    `TreeOptions.file.verify` so every byte is hashed on the write
@@ -34,19 +34,19 @@
 //! Scaling matters: the default 50-file mode runs in ~60 s on a
 //! stock Windows dev box (shred_tree dominates because
 //! `FlushFileBuffers` per small file is ~100 ms), and stays under
-//! CI's per-test budget. The `COPYTHAT_PHASE18_FULL=1` 10k-file mode
+//! CI's per-test budget. The `FREALLY_PHASE18_FULL=1` 10k-file mode
 //! matches the literal phase brief but is reserved for the manual
 //! release rehearsal — the shred pass alone would take a couple of
 //! hours on Windows, which is unacceptable for a normal CI run.
 
 use std::path::{Path, PathBuf};
 
-use copythat_core::{
+use freally_core::{
     CopyControl, CopyEvent, TreeOptions, copy_tree, safety::validate_path_no_traversal,
 };
-use copythat_hash::HashAlgorithm;
-use copythat_history::{History, HistoryFilter, ItemRow, JobSummary, export_csv};
-use copythat_secure_delete::{ShredEvent, ShredMethod, shred_tree};
+use freally_hash::HashAlgorithm;
+use freally_history::{History, HistoryFilter, ItemRow, JobSummary, export_csv};
+use freally_secure_delete::{ShredEvent, ShredMethod, shred_tree};
 use tempfile::TempDir;
 use tokio::sync::mpsc;
 
@@ -56,7 +56,7 @@ use tokio::sync::mpsc;
 const FILE_PAYLOAD_BYTES: usize = 256;
 
 fn file_count() -> usize {
-    if std::env::var_os("COPYTHAT_PHASE18_FULL").is_some() {
+    if std::env::var_os("FREALLY_PHASE18_FULL").is_some() {
         10_000
     } else {
         50
@@ -203,7 +203,7 @@ async fn phase_18_full_round_trip() {
     let row_id = history
         .record_start(&JobSummary {
             row_id: 0,
-            // Wire-format kind string; see copythat-history's
+            // Wire-format kind string; see freally-history's
             // `types.rs` doc — the history crate treats this as
             // opaque kebab text so the engine doesn't need to impl
             // Display on JobKind.

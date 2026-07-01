@@ -28,7 +28,7 @@
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
 
-use copythat_sync::{
+use freally_sync::{
     Conflict, ConflictKind, Direction, SyncControl, SyncEvent, SyncMode, SyncOptions, SyncPair,
     sync,
 };
@@ -78,7 +78,7 @@ fn pair(label: &str, left: &Path, right: &Path, host: &str) -> SyncPair {
         .with_host_label(host)
 }
 
-fn run_sync(p: &SyncPair) -> (copythat_sync::SyncReport, Vec<Conflict>) {
+fn run_sync(p: &SyncPair) -> (freally_sync::SyncReport, Vec<Conflict>) {
     let ctrl = SyncControl::new();
     let (tx, mut rx) = mpsc::channel::<SyncEvent>(128);
     let (done_tx, done_rx) = std::sync::mpsc::channel::<Vec<Conflict>>();
