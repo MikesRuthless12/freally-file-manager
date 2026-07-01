@@ -1443,7 +1443,7 @@ impl Repository {
             }
         }
         let mut out: Vec<SourceSummary> = map.into_values().collect();
-        out.sort_by(|a, b| b.latest_ms.cmp(&a.latest_ms));
+        out.sort_by_key(|s| std::cmp::Reverse(s.latest_ms));
         Ok(out)
     }
 
