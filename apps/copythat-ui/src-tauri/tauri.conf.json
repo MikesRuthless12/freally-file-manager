@@ -3,6 +3,7 @@
   "productName": "Freally File Manager v0.19.85",
   "version": "0.19.85",
   "identifier": "com.copythat.desktop",
+  "mainBinaryName": "copythat-ui",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",
