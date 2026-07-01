@@ -20,7 +20,7 @@ permission-denied copy first.
 
 ### 1. Build
 ```powershell
-cargo build -p copythat-ui --bin ct_elevate_probe --features elevate-probe
+cargo build -p copythat-ui --example ct_elevate_probe --features elevate-probe
 ```
 This drops `ct_elevate_probe.exe` next to `copythat-helper.exe` in
 `target\debug\` — the probe finds the helper as its `current_exe()`
@@ -64,8 +64,8 @@ Denied*. (Removing the proof file will itself need elevation.)
 
 ## Linux (polkit / pkexec)
 ```bash
-cargo build -p copythat-ui --bin ct_elevate_probe --features elevate-probe
-./target/debug/ct_elevate_probe /etc/hostname /root/ct-elevated-proof.bin
+cargo build -p copythat-ui --example ct_elevate_probe --features elevate-probe
+./target/debug/examples/ct_elevate_probe /etc/hostname /root/ct-elevated-proof.bin
 ```
 Expect a **polkit authentication dialog** (GUI) or a `pkexec` password
 prompt (TTY). On auth, the helper runs as root and copies into `/root/…`
@@ -77,8 +77,8 @@ from a TTY where you can type your password.)
 
 ## macOS (osascript admin)
 ```bash
-cargo build -p copythat-ui --bin ct_elevate_probe --features elevate-probe
-./target/debug/ct_elevate_probe /etc/hosts /Library/ct-elevated-proof.bin
+cargo build -p copythat-ui --example ct_elevate_probe --features elevate-probe
+./target/debug/examples/ct_elevate_probe /etc/hosts /Library/ct-elevated-proof.bin
 ```
 Expect the system **"… wants to make changes. Enter your password to
 allow this."** dialog. On auth, the helper (root) writes into `/Library/…`.

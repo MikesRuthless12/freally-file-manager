@@ -1,5 +1,10 @@
 [package]
 name = "copythat-ui"
+# Multi-binary crate (the app + the Phase 17d `ct_elevate_probe` UAC harness):
+# pin the default binary so cargo + the tauri v2 bundler package the APP, not
+# the probe. Without this the bundler picks the explicit `[[bin]]` and fails
+# with "failed to rename app binary ct_elevate_probe.exe".
+default-run = "copythat-ui"
 description = "Freally File Manager v1.0.0 — Tauri 2.x application shell."
 version.workspace = true
 edition.workspace = true
@@ -235,7 +240,7 @@ windows-sys = { version = "0.59", features = [
     "Win32_System_Threading",
 ] }
 # Phase 42 — per-message HMAC-SHA256 authentication on the broker
-# pipe so a same-user hostile process can't forge `{argv: [...]}`
+# pipe so a same-user hostile process can't forge `{argv: [...] }`
 # job-injection messages. `sha2` is already a top-level dep above
 # (Phase 34); `hmac` and `getrandom` come in here.
 hmac = "0.12"
@@ -420,7 +425,12 @@ path = "../../../tests/smoke/phase_46_plugin_ui.rs"
 [features]
 elevate-probe = []
 
-[[bin]]
+# A manual UAC/elevation test harness (docs/MANUAL-UAC-TEST.md), NOT part of
+# the shipped app. Kept as an `[[example]]` rather than a `[[bin]]` so the
+# tauri v2 bundler doesn't try to package it (it enumerates bin targets
+# regardless of required-features and fails when this one isn't built). Build
+# with `cargo build -p copythat-ui --example ct_elevate_probe --features elevate-probe`.
+[[example]]
 name = "ct_elevate_probe"
-path = "src/bin/ct_elevate_probe.rs"
+path = "examples/ct_elevate_probe.rs"
 required-features = ["elevate-probe"]
