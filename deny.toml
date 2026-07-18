@@ -163,10 +163,12 @@ allow-git        = []
 version = 2
 yanked  = "deny"
 ignore = [
-    # rustybuzz unmaintained — transitive text-shaping dep via the Tauri 2.x
-    # Linux WebView stack; no maintained replacement yet. Informational only,
-    # not a vulnerability.
-    "RUSTSEC-2026-0206",
+    # quick-xml 0.39 DoS advisories — no semver-compatible patch yet; transitive
+    # XML parsing with no untrusted-XML path in this app. (crossbeam-epoch's
+    # RUSTSEC-2026-0204 and the yanked `spin` were fixed by lockfile bumps.)
+    # These MUST mirror the cargo-audit --ignore flags (phase_17b test).
+    "RUSTSEC-2026-0194",
+    "RUSTSEC-2026-0195",
     # Phase 35 / 32 — Marvin Attack on `rsa` crate; see provenance
     # comment above. Local file-copying tool, no remote-observable
     # RSA timing.
