@@ -163,6 +163,10 @@ allow-git        = []
 version = 2
 yanked  = "deny"
 ignore = [
+    # rustybuzz unmaintained — transitive text-shaping dep via the Tauri 2.x
+    # Linux WebView stack; no maintained replacement yet. Informational only,
+    # not a vulnerability.
+    "RUSTSEC-2026-0206",
     # Phase 35 / 32 — Marvin Attack on `rsa` crate; see provenance
     # comment above. Local file-copying tool, no remote-observable
     # RSA timing.
