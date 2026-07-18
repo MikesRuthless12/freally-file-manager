@@ -1344,3 +1344,6 @@ repo-repair-removed = { $n } instantanés endommagés supprimés
 repo-repair-none = Rien à réparer — le dépôt est sain
 repo-gc-done = { $bytes } récupérés ({ $chunks } blocs)
 restore-toast-partial = { $restored } restaurés, { $skipped } ignorés, { $failed } en échec
+
+# More Freally apps (embedded Central panel) — host chrome
+moreapps-title = Plus d'apps Freally

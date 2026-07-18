@@ -1344,3 +1344,6 @@ repo-repair-removed = Đã xóa { $n } ảnh chụp bị hỏng
 repo-repair-none = Không có gì để sửa chữa — kho lưu trữ sạch
 repo-gc-done = Đã thu hồi { $bytes } ({ $chunks } khối)
 restore-toast-partial = Đã khôi phục { $restored }, bỏ qua { $skipped }, thất bại { $failed }
+
+# More Freally apps (embedded Central panel) — host chrome
+moreapps-title = Ứng dụng Freally khác

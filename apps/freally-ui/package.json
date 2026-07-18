@@ -10,24 +10,35 @@
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "tauri": "tauri",
+    "test:unit": "vitest run",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:list": "playwright test --list"
   },
   "dependencies": {
+    "@fluent/bundle": "^0.18.0",
     "@tauri-apps/api": "^2",
-    "@tauri-apps/plugin-dialog": "^2"
+    "@tauri-apps/plugin-dialog": "^2",
+    "@tauri-apps/plugin-opener": "^2",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.48",
     "@sveltejs/vite-plugin-svelte": "^5",
     "@tauri-apps/cli": "^2",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
     "@tsconfig/svelte": "^5",
     "@types/node": "^22",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "jsdom": "^25.0.1",
     "svelte": "^5",
     "svelte-check": "^4",
     "tslib": "^2",
     "typescript": "^5",
-    "vite": "^6"
+    "vite": "^6",
+    "vitest": "^2.1.8"
   }
 }

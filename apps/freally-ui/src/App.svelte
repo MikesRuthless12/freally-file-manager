@@ -27,6 +27,7 @@
   import TotalsDrawer from "./lib/components/TotalsDrawer.svelte";
   import MobileOnboardingModal from "./lib/components/MobileOnboardingModal.svelte";
   import SettingsModal from "./lib/components/SettingsModal.svelte";
+  import MoreFreallyAppsDialog from "./lib/components/MoreFreallyAppsDialog.svelte";
   import ResumePromptModal from "./lib/components/ResumePromptModal.svelte";
   import SyncDrawer from "./lib/components/SyncDrawer.svelte";
   import LibraryDrawer from "./lib/components/LibraryDrawer.svelte";
@@ -39,6 +40,8 @@
   import { initI18n, t } from "./lib/i18n";
   import { initTheme } from "./lib/theme";
   import {
+    centralPanelOpen,
+    closeCentralPanel,
     closeSyncDrawer,
     currentF2Mode,
     dropped,
@@ -286,6 +289,9 @@
 
   <!-- Phase 11b: Settings modal (Phase 12 extends with more tabs) -->
   <SettingsModal />
+
+  <!-- More Freally apps — the embedded Central panel (view-only). -->
+  <MoreFreallyAppsDialog open={$centralPanelOpen} onClose={closeCentralPanel} />
 
   <!-- Phase 37 follow-up #2: first-launch mobile companion onboarding. -->
   <MobileOnboardingModal

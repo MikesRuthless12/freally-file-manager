@@ -1344,3 +1344,6 @@ repo-repair-removed = 손상된 스냅샷 { $n }개를 제거했습니다
 repo-repair-none = 복구할 항목이 없습니다 — 저장소가 정상입니다
 repo-gc-done = { $bytes } 회수됨 ({ $chunks } 청크)
 restore-toast-partial = { $restored }개 복원, { $skipped }개 건너뜀, { $failed }개 실패
+
+# More Freally apps (embedded Central panel) — host chrome
+moreapps-title = 더 많은 Freally 앱

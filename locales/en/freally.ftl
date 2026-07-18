@@ -1351,3 +1351,6 @@ repo-repair-removed = Removed { $n } damaged snapshot(s)
 repo-repair-none = Nothing to repair — the repository is clean
 repo-gc-done = Reclaimed { $bytes } ({ $chunks } chunks)
 restore-toast-partial = Restored { $restored }, skipped { $skipped }, failed { $failed }
+
+# More Freally apps (embedded Central panel) — host chrome
+moreapps-title = More Freally apps

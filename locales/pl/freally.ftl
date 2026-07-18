@@ -1344,3 +1344,6 @@ repo-repair-removed = Usunięto { $n } uszkodzonych migawek
 repo-repair-none = Nie ma nic do naprawienia — repozytorium jest czyste
 repo-gc-done = Odzyskano { $bytes } ({ $chunks } fragmentów)
 restore-toast-partial = Przywrócono { $restored }, pominięto { $skipped }, nieudane { $failed }
+
+# More Freally apps (embedded Central panel) — host chrome
+moreapps-title = Więcej aplikacji Freally

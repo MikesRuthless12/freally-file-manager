@@ -1344,3 +1344,6 @@ repo-repair-removed = { $n } snapshot rusak dihapus
 repo-repair-none = Tidak ada yang perlu diperbaiki — repositori bersih
 repo-gc-done = { $bytes } diklaim ulang ({ $chunks } potongan)
 restore-toast-partial = { $restored } dipulihkan, { $skipped } dilewati, { $failed } gagal
+
+# More Freally apps (embedded Central panel) — host chrome
+moreapps-title = Aplikasi Freally lainnya

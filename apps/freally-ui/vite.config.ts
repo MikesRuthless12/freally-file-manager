@@ -1,11 +1,30 @@
 import { defineConfig } from "vite";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
+import { fileURLToPath } from "node:url";
 
 const host = process.env.TAURI_DEV_HOST;
 
 // https://vite.dev/config/
 export default defineConfig(async () => ({
   plugins: [svelte()],
+
+  // "More Freally apps" is the React CentralPanel vendored from the
+  // freally-central submodule (view-only). Svelte owns the app; the panel is a
+  // React island. esbuild's automatic JSX runtime transforms the vendored .tsx;
+  // dedupe forces the out-of-tree panel's bare imports onto this project's
+  // single installed copy of react/react-dom/@tauri-apps/api.
+  resolve: {
+    dedupe: ["react", "react-dom", "@tauri-apps/api"],
+    alias: {
+      "@freally/central-panel": fileURLToPath(
+        new URL("../../vendor/freally-central/ui/src/panel", import.meta.url),
+      ),
+    },
+  },
+  esbuild: {
+    jsx: "automatic",
+    jsxImportSource: "react",
+  },
 
   // Tauri prefers a fixed port and clean output.
   clearScreen: false,
