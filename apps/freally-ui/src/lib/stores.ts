@@ -120,6 +120,8 @@ const totalsDrawerOpenStore = writable<boolean>(false);
 // tab with Language only — Phase 12 extends to Transfer, Shell,
 // Secure-delete, Advanced tabs.
 const settingsOpenStore = writable<boolean>(false);
+// More Freally apps — the embedded Central panel (view-only) open flag.
+const centralPanelOpenStore = writable<boolean>(false);
 // Phase 25: Sync drawer open flag.
 const syncDrawerOpenStore = writable<boolean>(false);
 // Phase 49: Library drawer open flag.
@@ -275,6 +277,17 @@ export function openSettings(): void {
 }
 export function closeSettings(): void {
   settingsOpenStore.set(false);
+}
+
+// More Freally apps — embedded Central panel (view-only).
+export const centralPanelOpen: Readable<boolean> = {
+  subscribe: centralPanelOpenStore.subscribe,
+};
+export function openCentralPanel(): void {
+  centralPanelOpenStore.set(true);
+}
+export function closeCentralPanel(): void {
+  centralPanelOpenStore.set(false);
 }
 
 // Phase 25 — Sync drawer.

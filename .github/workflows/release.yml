@@ -71,6 +71,9 @@ jobs:
             bundles: msi,nsis
     steps:
       - uses: actions/checkout@v4
+        with:
+          # vendor/freally-central (the "More Freally apps" panel) is a submodule.
+          submodules: recursive
 
       - name: Install Linux Tauri prerequisites
         if: matrix.target.os == 'ubuntu-latest'

@@ -1344,3 +1344,6 @@ repo-repair-removed = { $n } beschadigde momentopnamen verwijderd
 repo-repair-none = Niets te repareren — de repository is schoon
 repo-gc-done = { $bytes } vrijgemaakt ({ $chunks } blokken)
 restore-toast-partial = { $restored } hersteld, { $skipped } overgeslagen, { $failed } mislukt
+
+# More Freally apps (embedded Central panel) — host chrome
+moreapps-title = Meer Freally-apps

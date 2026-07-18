@@ -1344,3 +1344,6 @@ repo-repair-removed = تمت إزالة { $n } لقطة تالفة
 repo-repair-none = لا شيء لإصلاحه — المستودع سليم
 repo-gc-done = تم استرجاع { $bytes } ({ $chunks } كتلة)
 restore-toast-partial = تمت استعادة { $restored }، وتخطّي { $skipped }، وفشل { $failed }
+
+# More Freally apps (embedded Central panel) — host chrome
+moreapps-title = مزيد من تطبيقات Freally

@@ -1344,3 +1344,6 @@ repo-repair-removed = { $n } hasarlı anlık görüntü kaldırıldı
 repo-repair-none = Onarılacak bir şey yok — depo temiz
 repo-gc-done = { $bytes } geri kazanıldı ({ $chunks } yığın)
 restore-toast-partial = { $restored } geri yüklendi, { $skipped } atlandı, { $failed } başarısız
+
+# More Freally apps (embedded Central panel) — host chrome
+moreapps-title = Diğer Freally uygulamaları

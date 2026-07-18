@@ -14,6 +14,7 @@
     openLibraryDrawer,
     openTaskCenter,
     openSettings,
+    openCentralPanel,
     openSyncDrawer,
     openTotalsDrawer,
     pushToast,
@@ -211,6 +212,15 @@
       title={t("settings-title")}
     >
       <Icon name="settings" size={14} />
+    </button>
+    <button
+      class="history icon-only"
+      type="button"
+      onclick={openCentralPanel}
+      aria-label={t("moreapps-title")}
+      title={t("moreapps-title")}
+    >
+      <Icon name="rocket" size={14} />
     </button>
   {/key}
 </footer>

@@ -1344,3 +1344,6 @@ repo-repair-removed = 已移除 { $n } 个损坏的快照
 repo-repair-none = 无需修复 — 仓库正常
 repo-gc-done = 已回收 { $bytes }（{ $chunks } 个块）
 restore-toast-partial = 已还原 { $restored } 个，跳过 { $skipped } 个，失败 { $failed } 个
+
+# More Freally apps (embedded Central panel) — host chrome
+moreapps-title = 更多 Freally 应用

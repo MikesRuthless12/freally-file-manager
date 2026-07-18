@@ -460,6 +460,7 @@ pub fn run() {
                 .build(),
         )
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_opener::init())
         // Phase 16 — the Tauri updater plugin is now wired. The
         // `[plugins.updater]` block in `tauri.conf.json` carries the
         // real ed25519 (minisign) pubkey + the owned GitHub Releases
