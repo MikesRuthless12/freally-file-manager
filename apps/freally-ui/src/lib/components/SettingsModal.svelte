@@ -54,10 +54,13 @@
     serverStart,
     serverStatus,
     serverStop,
+    shellCopyInterceptStatus,
+    shellRevertOsCopyHandler,
     updateSettings,
     updaterCheckNow,
     updaterDismissVersion,
   } from "../ipc";
+  import type { CopyInterceptStatus } from "../ipc";
   import type { ServerStatusDto } from "../ipc";
   import type {
     PinnedDestinationDto,
@@ -213,6 +216,43 @@
     // modal re-renders in the new language immediately.
     await setLocale(code);
     await pushSettings();
+  }
+
+  // FFM-M01 — live copy-interceptor state for the Shell tab. Loaded
+  // when the tab opens and re-probed after any shell-toggle push, so
+  // the UI reflects reality (e.g. the toggle is on but the handler
+  // isn't registered, so interception never actually armed).
+  let interceptStatus = $state<CopyInterceptStatus | null>(null);
+
+  async function loadInterceptStatus() {
+    try {
+      interceptStatus = await shellCopyInterceptStatus();
+    } catch {
+      interceptStatus = null;
+    }
+  }
+
+  $effect(() => {
+    if (activeTab === "shell" && interceptStatus === null) {
+      void loadInterceptStatus();
+    }
+  });
+
+  // Shell toggles route through here so the status line re-probes.
+  async function pushShellSettings() {
+    await pushSettings();
+    await loadInterceptStatus();
+  }
+
+  async function onRevertCopyHandler() {
+    try {
+      await shellRevertOsCopyHandler();
+      settings = await getSettings();
+      await loadInterceptStatus();
+      pushToast("success", "toast-copy-handler-reverted");
+    } catch (e) {
+      pushToast("error", e instanceof Error ? e.message : String(e));
+    }
   }
 
   async function onResetAll() {
@@ -1232,20 +1272,40 @@
                 <input
                   type="checkbox"
                   bind:checked={settings.shell.contextMenuEnabled}
-                  onchange={pushSettings}
+                  onchange={pushShellSettings}
                 />
                 <span class="label">{t("settings-context-menu")}</span>
               </label>
+              <p class="hint">{t("settings-context-menu-hint")}</p>
 
               <label class="row check">
                 <input
                   type="checkbox"
                   bind:checked={settings.shell.interceptDefaultCopy}
-                  onchange={pushSettings}
+                  onchange={pushShellSettings}
+                  disabled={interceptStatus !== null && !interceptStatus.supported}
                 />
                 <span class="label">{t("settings-intercept-copy")}</span>
               </label>
               <p class="hint">{t("settings-intercept-copy-hint")}</p>
+
+              {#if interceptStatus && !interceptStatus.supported}
+                <p class="hint">{t("settings-intercept-copy-unsupported")}</p>
+              {:else if interceptStatus}
+                {#if settings.shell.interceptDefaultCopy && !interceptStatus.handlerRegistered}
+                  <p class="hint warn">
+                    {t("settings-intercept-copy-needs-menu")}
+                  </p>
+                {/if}
+                <button
+                  type="button"
+                  class="revert-copy-handler"
+                  onclick={onRevertCopyHandler}
+                  disabled={!interceptStatus.active}
+                >
+                  {t("settings-revert-copy-handler")}
+                </button>
+              {/if}
 
               <label class="row check">
                 <input
@@ -1279,6 +1339,25 @@
                 />
                 <span class="label">{t("settings-shred-confirm-twice")}</span>
               </label>
+
+              <!-- FFM-M03 — trash-aware delete safety nets. -->
+              <label class="row check">
+                <input
+                  type="checkbox"
+                  bind:checked={settings.safety.confirmTrashDelete}
+                  onchange={pushSettings}
+                />
+                <span class="label">{t("settings-safety-confirm-trash")}</span>
+              </label>
+              <label class="row check">
+                <input
+                  type="checkbox"
+                  bind:checked={settings.safety.moveSourceToTrash}
+                  onchange={pushSettings}
+                />
+                <span class="label">{t("settings-safety-move-to-trash")}</span>
+              </label>
+              <p class="hint">{t("settings-safety-move-to-trash-hint")}</p>
             {:else if activeTab === "advanced"}
               <label class="row">
                 <span class="label">{t("settings-log-level")}</span>
@@ -1625,6 +1704,17 @@
                   onchange={pushSettings}
                 />
               </label>
+
+              <!-- FFM-M05 — inhibit sleep while jobs run. -->
+              <label class="row check">
+                <input
+                  type="checkbox"
+                  bind:checked={settings.power.keepAwakeDuringJobs}
+                  onchange={pushSettings}
+                />
+                <span class="label">{t("settings-power-keep-awake")}</span>
+              </label>
+              <p class="hint">{t("settings-power-keep-awake-hint")}</p>
 
               {#each [["battery", "settings-power-battery"], ["metered", "settings-power-metered"], ["cellular", "settings-power-cellular"], ["presentation", "settings-power-presentation"], ["fullscreen", "settings-power-fullscreen"]] as const as [field, key] (field)}
                 <label class="row">
@@ -2117,6 +2207,16 @@
     margin: 0;
     font-size: 11px;
     color: var(--fg-dim, #6a6a6a);
+  }
+
+  /* FFM-M01 — warn variant for the "context menu not installed" note. */
+  .hint.warn {
+    color: var(--warn, #e4a040);
+  }
+
+  .revert-copy-handler {
+    align-self: flex-start;
+    margin-top: 4px;
   }
 
   .subheading {

@@ -1347,3 +1347,88 @@ restore-toast-partial = Đã khôi phục { $restored }, bỏ qua { $skipped }, 
 
 # More Freally apps (embedded Central panel) — host chrome
 moreapps-title = Ứng dụng Freally khác
+# First-run EULA acceptance gate.
+eula-title = Thỏa thuận cấp phép người dùng cuối
+eula-version = Phiên bản { $version }
+eula-intro = Vui lòng xem thỏa thuận bên dưới. Bạn phải chấp nhận trước khi sử dụng Freally File Manager.
+eula-scroll-hint = Cuộn đến cuối để bật "Tôi đồng ý".
+eula-thanks = Cảm ơn bạn đã đọc.
+eula-agree = Tôi đồng ý
+eula-decline = Từ chối & Thoát
+eula-error = Không thể lưu chấp nhận: { $error }
+
+# FFM-M01 — Explorer copy-verb takeover.
+settings-intercept-copy-unsupported = Chặn sao chép chỉ khả dụng trên Windows.
+settings-intercept-copy-needs-menu = Bật tích hợp menu ngữ cảnh trước — trình xử lý sao chép phải được đăng ký trước khi việc chặn có thể tiếp quản.
+settings-revert-copy-handler = Khôi phục trình xử lý sao chép của Windows
+toast-copy-handler-reverted = Đã khôi phục trình xử lý sao chép của Windows
+settings-context-menu-hint = Đăng ký hoặc gỡ menu chuột phải và trình xử lý sao chép của Freally trong hệ điều hành (theo người dùng, không cần quản trị).
+paste-chooser-title = Sao chép & Dán
+paste-chooser-close = Đóng
+paste-chooser-files = { $count } tệp — chọn đích đến
+paste-chooser-system-copy = Sao chép hệ thống
+paste-chooser-system-move = Di chuyển hệ thống
+paste-chooser-system-hint = Truyền đơn giản, nhanh, không xác minh
+paste-chooser-freally-copy = Sao chép Freally
+paste-chooser-freally-move = Di chuyển Freally
+paste-chooser-freally-hint = Truyền đã xác minh chính xác từng byte
+paste-chooser-replace-older = Freally — thay thế tệp cũ hơn
+paste-chooser-replace-older-hint = Đã xác minh; chỉ ghi đè khi nguồn mới hơn
+paste-chooser-more = Tùy chọn khác…
+toast-system-paste-done = Đã dán { $items } mục
+
+# FFM-M02 — transactional undo.
+undo-title-copy = Hoàn tác sao chép — xóa các tệp đã sao chép?
+undo-title-move = Hoàn tác di chuyển — đưa tệp trở lại?
+undo-summary = Có thể hoàn tác { $ready } trong { $total } mục; phần còn lại đã thay đổi, biến mất hoặc xung đột.
+undo-action-trash = Vào thùng rác
+undo-action-move-back = Đưa trở lại
+undo-status-ready = Sẵn sàng
+undo-status-skip-missing = Thiếu — bỏ qua
+undo-status-skip-changed = Đã thay đổi — bỏ qua
+undo-status-conflict = Đường dẫn gốc đang bị chiếm
+undo-cancel = Hủy
+undo-confirm = Hoàn tác { $count } mục
+toast-undo-done = Hoàn tác xong: { $done } hoàn thành, { $skipped } bỏ qua, { $failed } thất bại
+toast-undo-nothing = Không có gì để hoàn tác
+history-undo = Hoàn tác
+history-undo-hint = Đảo ngược công việc này: tệp đã sao chép vào thùng rác, tệp đã di chuyển trở về vị trí gốc
+
+# FFM-M03 — trash-aware delete.
+menu-trash-source = Xóa nguồn vào thùng rác
+trash-confirm = Gửi vào thùng rác?
+{ $path }
+toast-trash-done = Đã chuyển vào thùng rác: { $trashed } mục, { $failed } thất bại
+settings-safety-confirm-trash = Xác nhận trước khi xóa vào thùng rác
+settings-safety-move-to-trash = Gửi tệp nguồn đã di chuyển vào thùng rác
+settings-safety-move-to-trash-hint = Khi di chuyển, gửi nguồn vào thùng rác thay vì xóa — một thao tác di chuyển có thể khôi phục.
+
+# FFM-M04/M05 — eject + keep-awake.
+menu-eject-destination = Tháo ổ đĩa đích
+toast-eject-done = Đã tháo ổ đĩa — an toàn để rút
+toast-eject-failed = Không thể tháo: { $error }
+settings-power-keep-awake = Giữ máy tính thức khi có tác vụ chạy
+settings-power-keep-awake-hint = Giữ khóa hệ thống (không ngủ, không trình bảo vệ màn hình) khi còn tác vụ đang sao chép.
+
+# FFM-M06 — content-aware collision policies.
+collision-policy-skip-identical-else-overwrite = Chỉ ghi đè nếu nội dung khác
+collision-policy-skip-identical-else-prompt = Bỏ qua nếu giống hệt, nếu không thì hỏi
+
+# FFM-M07 — failed-file ledger + retry.
+history-retry-failed = Thử lại thất bại
+history-retry-failed-hint = Chỉ sao chép lại các tệp đã thất bại trong tác vụ này
+history-export-failed = Xuất thất bại
+history-export-failed-hint = Lưu danh sách tệp thất bại dưới dạng CSV / TXT / JSON
+toast-retry-failed-none = Không có tệp thất bại để thử lại
+toast-retry-failed-queued = Đã xếp lại hàng đợi { $count } tệp thất bại
+toast-failed-exported = Đã xuất danh sách thất bại
+
+# FFM-M08 — checksum sidecars.
+menu-create-checksums = Tạo tổng kiểm (SHA-256)
+toast-checksums-created = Đã ghi tổng kiểm cho { $files } tệp
+sidecar-verify-clean-title = Đã xác minh tất cả tệp
+sidecar-verify-bad-title = Xác minh tổng kiểm thất bại
+sidecar-verify-summary = { $ok } OK, { $failed } thất bại, { $missing } thiếu
+sidecar-verify-failed = Không khớp
+sidecar-verify-missing = Thiếu
+sidecar-verify-close = Đóng

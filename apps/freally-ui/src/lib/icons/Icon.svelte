@@ -33,6 +33,7 @@
     | "play"
     | "refresh"
     | "rocket"
+    | "rotate-ccw"
     | "settings"
     | "square"
     | "trash"
@@ -141,6 +142,9 @@
     <path d="M21 3v5h-5" />
     <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
     <path d="M3 21v-5h5" />
+  {:else if name === "rotate-ccw"}
+    <polyline points="1 4 1 10 7 10" />
+    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
   {:else if name === "rocket"}
     <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
     <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" />

@@ -41,7 +41,7 @@ vss-com = ["dep:winapi"]
 # dep in this direction (rather than core → snapshot) preserves
 # freally-core's `#![forbid(unsafe_code)]` and keeps the platform-
 # specific unsafe blocks confined to this crate.
-freally-core = { path = "../freally-core", version = "0.19" }
+freally-core = { path = "../freally-core", version = "0.20" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"

@@ -653,6 +653,8 @@ pub struct SettingsDto {
     pub transfer: TransferDto,
     pub shell: ShellDto,
     pub secure_delete: SecureDeleteDto,
+    /// FFM-M03 — trash-aware delete + move-to-trash safety.
+    pub safety: SafetyDto,
     pub advanced: AdvancedDto,
     /// Phase 14a — enumeration-time filters.
     pub filters: FiltersDto,
@@ -1180,6 +1182,8 @@ pub struct PowerPoliciesDto {
     pub presentation: PowerRuleDto,
     pub fullscreen: PowerRuleDto,
     pub thermal: ThermalRuleDto,
+    /// FFM-M05 — inhibit sleep while jobs run.
+    pub keep_awake_during_jobs: bool,
 }
 
 impl Default for PowerPoliciesDto {
@@ -1193,6 +1197,7 @@ impl Default for PowerPoliciesDto {
             presentation: (&d.presentation).into(),
             fullscreen: (&d.fullscreen).into(),
             thermal: (&d.thermal).into(),
+            keep_awake_during_jobs: d.keep_awake_during_jobs,
         }
     }
 }
@@ -1418,6 +1423,14 @@ pub struct SecureDeleteDto {
     /// "nist-800-88"`.
     pub method: String,
     pub confirm_twice: bool,
+}
+
+/// FFM-M03 — trash-aware delete + move-to-trash safety nets.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SafetyDto {
+    pub confirm_trash_delete: bool,
+    pub move_source_to_trash: bool,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -1896,6 +1909,10 @@ impl From<&freally_settings::Settings> for SettingsDto {
                 method: s.secure_delete.method.as_str().to_string(),
                 confirm_twice: s.secure_delete.confirm_twice,
             },
+            safety: SafetyDto {
+                confirm_trash_delete: s.safety.confirm_trash_delete,
+                move_source_to_trash: s.safety.move_source_to_trash,
+            },
             advanced: AdvancedDto {
                 log_level: s.advanced.log_level.as_str().to_string(),
                 telemetry: s.advanced.telemetry,
@@ -1986,6 +2003,7 @@ impl From<&freally_settings::Settings> for SettingsDto {
                 presentation: (&s.power.presentation).into(),
                 fullscreen: (&s.power.fullscreen).into(),
                 thermal: (&s.power.thermal).into(),
+                keep_awake_during_jobs: s.power.keep_awake_during_jobs,
             },
             mount: s.mount.clone().into(),
             audit: s.audit.clone().into(),
@@ -2102,6 +2120,8 @@ impl SettingsDto {
 
         s.secure_delete.method = parse_shred(&self.secure_delete.method);
         s.secure_delete.confirm_twice = self.secure_delete.confirm_twice;
+        s.safety.confirm_trash_delete = self.safety.confirm_trash_delete;
+        s.safety.move_source_to_trash = self.safety.move_source_to_trash;
 
         s.advanced.log_level = parse_log_level(&self.advanced.log_level);
         // Never honour a `telemetry: true` value, regardless of
@@ -2201,6 +2221,7 @@ impl SettingsDto {
             presentation: (&self.power.presentation).into(),
             fullscreen: (&self.power.fullscreen).into(),
             thermal: (&self.power.thermal).into(),
+            keep_awake_during_jobs: self.power.keep_awake_during_jobs,
         };
 
         s.mount = self.mount.into();

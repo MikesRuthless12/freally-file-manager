@@ -25,90 +25,90 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-freally-core = { path = "../../../crates/freally-core", version = "0.19" }
-freally-hash = { path = "../../../crates/freally-hash", version = "0.19" }
-freally-history = { path = "../../../crates/freally-history", version = "0.19" }
-freally-platform = { path = "../../../crates/freally-platform", version = "0.19" }
-freally-secure-delete = { path = "../../../crates/freally-secure-delete", version = "0.19" }
-freally-settings = { path = "../../../crates/freally-settings", version = "0.19" }
+freally-core = { path = "../../../crates/freally-core", version = "0.20" }
+freally-hash = { path = "../../../crates/freally-hash", version = "0.20" }
+freally-history = { path = "../../../crates/freally-history", version = "0.20" }
+freally-platform = { path = "../../../crates/freally-platform", version = "0.20" }
+freally-secure-delete = { path = "../../../crates/freally-secure-delete", version = "0.20" }
+freally-settings = { path = "../../../crates/freally-settings", version = "0.20" }
 # Phase 19b — filesystem-snapshot bridge (VSS / ZFS / Btrfs / APFS)
 # wired into `CopyOptions::snapshot_hook` when the user opts into the
 # "Use snapshot" locked-file policy.
-freally-snapshot = { path = "../../../crates/freally-snapshot", version = "0.19" }
+freally-snapshot = { path = "../../../crates/freally-snapshot", version = "0.20" }
 # Phase 20 — durable resume journal. Opened at app start; the runner
 # attaches a per-job FreallyJournalSink to every CopyOptions so a
 # crash mid-copy can resume from the last 50 ms checkpoint.
-freally-journal = { path = "../../../crates/freally-journal", version = "0.19" }
+freally-journal = { path = "../../../crates/freally-journal", version = "0.20" }
 # Phase 21 — bandwidth shaping. AppState owns a shared `Shape` whose
 # rate is updated once a minute by a tokio interval task driven by
 # the user's NetworkSettings.
-freally-shape = { path = "../../../crates/freally-shape", version = "0.19" }
+freally-shape = { path = "../../../crates/freally-shape", version = "0.20" }
 # Phase 25 — two-way sync with vector-clock conflict detection.
 # AppState owns a map of configured pairs; each `start_sync` IPC
 # spawns a runner task that emits sync-* events through Tauri.
-freally-sync = { path = "../../../crates/freally-sync", version = "0.19" }
+freally-sync = { path = "../../../crates/freally-sync", version = "0.20" }
 # Phase 26 — real-time filesystem watcher. Live-mirror mode spawns
 # one watcher per sync pair; a debounced event triggers a re-sync.
-freally-watch = { path = "../../../crates/freally-watch", version = "0.19" }
+freally-watch = { path = "../../../crates/freally-watch", version = "0.20" }
 # Phase 31 — power-aware copying. AppState owns a PowerBus; a
 # subscriber task maps PowerEvent into pause_all / resume_all / shape
 # cap directives driven by the user's PowerPoliciesSettings.
-freally-power = { path = "../../../crates/freally-power", version = "0.19" }
+freally-power = { path = "../../../crates/freally-power", version = "0.20" }
 # Phase 47 — "why is this slow?" diagnostics. The diag_sampler task uses
 # freally-diag's SystemSampler + classify_snapshot to emit job-diag
 # events for the live speed-graph annotations.
-freally-diag = { path = "../../../crates/freally-diag", version = "0.19" }
+freally-diag = { path = "../../../crates/freally-diag", version = "0.20" }
 # Phase 32 — cloud backend matrix via OpenDAL. AppState owns the
 # BackendRegistry + keychain-backed Credentials; IPC commands in
 # cloud_commands.rs surface list/add/remove/test-connection.
-freally-cloud = { path = "../../../crates/freally-cloud", version = "0.19" }
+freally-cloud = { path = "../../../crates/freally-cloud", version = "0.20" }
 # Phase 33 — mount-as-filesystem. AppState owns the MountRegistry +
 # an active NoopBackend (33b); real fuser / winfsp dispatch behind
 # the crate's feature flags lands in Phase 33c.
-freally-mount = { path = "../../../crates/freally-mount", version = "0.19" }
+freally-mount = { path = "../../../crates/freally-mount", version = "0.20" }
 # Phase 34 — enterprise audit log export + WORM mode. AppState owns
 # an `AuditRegistry` whose live `Arc<AuditSink>` is (re)built from
 # `Settings::audit` at startup + on every `update_settings` flip.
 # The runner records `JobStarted` / `JobCompleted` / `FileCopied`
 # / `FileFailed` / `CollisionResolved` / `SettingsChanged` into
 # the sink when one is active.
-freally-audit = { path = "../../../crates/freally-audit", version = "0.19" }
+freally-audit = { path = "../../../crates/freally-audit", version = "0.20" }
 # Phase 35 — destination encryption + on-the-fly compression. The
 # runner builds a `FreallyCryptHook` from `Settings::crypt` and
 # attaches it to every queued job's `CopyOptions::transform`.
-freally-crypt = { path = "../../../crates/freally-crypt", version = "0.19" }
+freally-crypt = { path = "../../../crates/freally-crypt", version = "0.20" }
 # Phase 37 follow-up — desktop-side mobile companion. AppState owns
 # a MobileRegistry; `mobile_commands` IPC handlers spin up the
 # pair-server, return the QR PNG bytes, complete the SAS, and
 # dispatch APNs / FCM pushes when a job finishes.
-freally-mobile = { path = "../../../crates/freally-mobile", version = "0.19" }
+freally-mobile = { path = "../../../crates/freally-mobile", version = "0.20" }
 # Phase 39 — browser-accessible recovery UI. AppState owns a
 # RecoveryRegistry whose live `JoinHandle` reflects the current
 # Settings → Advanced → Recovery toggle. Started/stopped via
 # `recovery_commands::recovery_apply` at boot + on every
 # `update_settings` flip.
-freally-recovery = { path = "../../../crates/freally-recovery", version = "0.19" }
+freally-recovery = { path = "../../../crates/freally-recovery", version = "0.20" }
 # Phase 48 — server mode + observability. AppState owns a
 # `ServerRegistry` whose live `ServerHandle` reflects the current
 # Settings → Server panel state. Started/stopped via
 # `server_commands::{server_start, server_stop}` from the GUI.
-freally-server = { path = "../../../crates/freally-server", version = "0.19" }
+freally-server = { path = "../../../crates/freally-server", version = "0.20" }
 # Phase 46.6 — Settings → Plugins UI. The Tauri shell owns the
 # per-user plugin store on disk (manifest + .wasm + state.toml per
 # plugin) and surfaces it through `plugin_commands.rs`. The runtime
 # itself lives in `freally-plugin`; the IPC layer here is responsible
 # for filesystem layout + persistence of enable/grant state, while
 # `PluginManifest::parse` handles validation.
-freally-plugin = { path = "../../../crates/freally-plugin", version = "0.19" }
+freally-plugin = { path = "../../../crates/freally-plugin", version = "0.20" }
 # Phase 39 — `recovery_commands` opens the default chunk store path
 # the same way `lib.rs` will hand it to a future per-job sink, so
 # the recovery server can pull manifests without a second config
 # knob. The crate is otherwise consumed only by the engine's
 # `FreallyChunkSink`; listing it here makes the dep explicit.
-freally-chunk = { path = "../../../crates/freally-chunk", version = "0.19" }
+freally-chunk = { path = "../../../crates/freally-chunk", version = "0.20" }
 # Phase 17d — privilege-separated helper. Used by retry_elevated and
 # (future) shell-extension install/uninstall flows.
-freally-helper = { path = "../../../crates/freally-helper", version = "0.19" }
+freally-helper = { path = "../../../crates/freally-helper", version = "0.20" }
 # Phase 37 follow-up — `RemoteControl` is async-trait. The impl
 # in `mobile_commands.rs` re-applies the macro on the impl block,
 # so the host crate needs the dep too.
@@ -247,6 +247,18 @@ windows-sys = { version = "0.59", features = [
 # (Phase 34); `hmac` and `getrandom` come in here.
 hmac = "0.12"
 getrandom = "0.2"
+# FFM-M01 — the shell-extension registry layer, so the app can arm /
+# revert the Explorer copy-verb interceptor at runtime to match the
+# `intercept_default_copy` setting. Windows-only (the interceptor has
+# no macOS/Linux analogue).
+freally-shellext = { path = "../../../crates/freally-shellext" }
+
+[dependencies.trash]
+# FFM-M02/M03 — OS Recycle Bin / Trash integration: undo's safety net
+# (deleted-by-undo destinations are parked in the trash, never
+# permanently unlinked) and the plain "Delete to Trash" job kind.
+# MIT/Apache — within the cargo-deny allowlist.
+version = "5"
 
 # macOS-only clipboard reader: NSPasteboard via the modern `objc2`
 # bindings. `objc2-foundation` covers NSArray / NSString / NSURL and
@@ -271,8 +283,8 @@ arboard = { version = "3", features = ["wayland-data-control"] }
 
 [dev-dependencies]
 tempfile = "3"
-freally-settings = { path = "../../../crates/freally-settings", version = "0.19" }
-freally-platform = { path = "../../../crates/freally-platform", version = "0.19" }
+freally-settings = { path = "../../../crates/freally-settings", version = "0.20" }
+freally-platform = { path = "../../../crates/freally-platform", version = "0.20" }
 # Phase 22 smoke test — seeds colliding trees with explicit mtimes to
 # exercise the `OverwriteIfNewer` rule branch. `filetime` is already a
 # workspace dep via `freally-core` and `freally-secure-delete`.

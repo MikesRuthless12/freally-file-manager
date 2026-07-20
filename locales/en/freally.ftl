@@ -383,7 +383,10 @@ settings-force-parallel-chunks-hint = Splits each large copy into concurrent chu
 # Shell tab
 settings-context-menu = Enable shell context menu entries
 settings-intercept-copy = Intercept default copy handler (Windows)
-settings-intercept-copy-hint = When on, Explorer's Ctrl+C / Ctrl+V routes through Freally File Manager. Registration lands in Phase 14.
+settings-intercept-copy-hint = When on, Explorer's Ctrl+C / Ctrl+V and drag-copy route through Freally File Manager.
+settings-intercept-copy-unsupported = Copy interception is only available on Windows.
+settings-intercept-copy-needs-menu = Enable context-menu integration first — the copy handler must be registered before interception can take over.
+settings-revert-copy-handler = Revert to Windows copy handler
 settings-notify-completion = Notify on job completion
 
 # Secure delete tab
@@ -1354,3 +1357,84 @@ restore-toast-partial = Restored { $restored }, skipped { $skipped }, failed { $
 
 # More Freally apps (embedded Central panel) — host chrome
 moreapps-title = More Freally apps
+# First-run EULA acceptance gate.
+eula-title = End User License Agreement
+eula-version = Version { $version }
+eula-intro = Please review the agreement below. You must accept it before using Freally File Manager.
+eula-scroll-hint = Scroll to the end to enable "I Agree".
+eula-thanks = Thanks for reading.
+eula-agree = I Agree
+eula-decline = Decline & Quit
+eula-error = Could not record acceptance: { $error }
+# FFM-M01 — Explorer copy-verb takeover.
+toast-copy-handler-reverted = Reverted to the Windows copy handler
+settings-context-menu-hint = Registers or removes Freally's right-click menu and copy handler in the OS (per-user, no admin).
+paste-chooser-title = Copy & Paste
+paste-chooser-close = Close
+paste-chooser-files = { $count } file(s) — choose a destination
+paste-chooser-system-copy = System copy
+paste-chooser-system-move = System move
+paste-chooser-system-hint = Fast plain transfer, no verification
+paste-chooser-freally-copy = Freally copy
+paste-chooser-freally-move = Freally move
+paste-chooser-freally-hint = Verified byte-exact transfer
+paste-chooser-replace-older = Freally — replace older files
+paste-chooser-replace-older-hint = Verified; overwrites only when the source is newer
+paste-chooser-more = More options…
+toast-system-paste-done = Pasted { $items } item(s)
+
+# FFM-M02 — transactional undo.
+undo-title-copy = Undo copy — remove the copied files?
+undo-title-move = Undo move — move the files back?
+undo-summary = { $ready } of { $total } item(s) can be undone; the rest changed, vanished, or conflict.
+undo-action-trash = To trash
+undo-action-move-back = Move back
+undo-status-ready = Ready
+undo-status-skip-missing = Missing — skipped
+undo-status-skip-changed = Changed — skipped
+undo-status-conflict = Original path occupied
+undo-cancel = Cancel
+undo-confirm = Undo { $count } item(s)
+toast-undo-done = Undo finished: { $done } done, { $skipped } skipped, { $failed } failed
+toast-undo-nothing = Nothing to undo
+history-undo = Undo
+history-undo-hint = Reverse this job: copied files go to the trash, moved files return to their original location
+
+# FFM-M03 — trash-aware delete.
+menu-trash-source = Delete source to Trash
+trash-confirm = Send to the Recycle Bin / Trash?
+{ $path }
+toast-trash-done = Moved to trash: { $trashed } item(s), { $failed } failed
+settings-safety-confirm-trash = Confirm before deleting to Trash
+settings-safety-move-to-trash = Send moved source files to Trash
+settings-safety-move-to-trash-hint = On a move, send the source to the Recycle Bin / Trash instead of deleting it — a recoverable move.
+
+# FFM-M04/M05 — eject + keep-awake.
+menu-eject-destination = Eject destination volume
+toast-eject-done = Volume ejected — safe to remove
+toast-eject-failed = Could not eject: { $error }
+settings-power-keep-awake = Keep the computer awake while jobs run
+settings-power-keep-awake-hint = Hold a system wake-lock (no sleep, no screensaver) for as long as any job is copying.
+
+# FFM-M06 — content-aware collision policies.
+collision-policy-skip-identical-else-overwrite = Overwrite only if content differs
+collision-policy-skip-identical-else-prompt = Skip if identical, else ask
+
+# FFM-M07 — failed-file ledger + retry.
+history-retry-failed = Retry failed
+history-retry-failed-hint = Re-copy only the files that failed in this job
+history-export-failed = Export failed
+history-export-failed-hint = Save the failed file list as CSV / TXT / JSON
+toast-retry-failed-none = No failed files to retry
+toast-retry-failed-queued = Re-queued { $count } failed file(s)
+toast-failed-exported = Failed list exported
+
+# FFM-M08 — checksum sidecars.
+menu-create-checksums = Create checksums (SHA-256)
+toast-checksums-created = Checksums written for { $files } file(s)
+sidecar-verify-clean-title = All files verified
+sidecar-verify-bad-title = Checksum verification failed
+sidecar-verify-summary = { $ok } OK, { $failed } failed, { $missing } missing
+sidecar-verify-failed = Mismatch
+sidecar-verify-missing = Missing
+sidecar-verify-close = Close

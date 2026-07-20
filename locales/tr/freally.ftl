@@ -1347,3 +1347,88 @@ restore-toast-partial = { $restored } geri yüklendi, { $skipped } atlandı, { $
 
 # More Freally apps (embedded Central panel) — host chrome
 moreapps-title = Diğer Freally uygulamaları
+# First-run EULA acceptance gate.
+eula-title = Son Kullanıcı Lisans Sözleşmesi
+eula-version = Sürüm { $version }
+eula-intro = Lütfen aşağıdaki sözleşmeyi inceleyin. Freally File Manager'ı kullanmadan önce kabul etmeniz gerekir.
+eula-scroll-hint = "Kabul Ediyorum" seçeneğini etkinleştirmek için sona kadar kaydırın.
+eula-thanks = Okuduğunuz için teşekkürler.
+eula-agree = Kabul Ediyorum
+eula-decline = Reddet ve Çık
+eula-error = Kabul kaydedilemedi: { $error }
+
+# FFM-M01 — Explorer copy-verb takeover.
+settings-intercept-copy-unsupported = Kopya araya girme yalnızca Windows'ta kullanılabilir.
+settings-intercept-copy-needs-menu = Önce bağlam menüsü tümleşmesini etkinleştirin — araya girmenin devralabilmesi için kopyalama işleyicisinin kayıtlı olması gerekir.
+settings-revert-copy-handler = Windows kopyalama işleyicisine geri dön
+toast-copy-handler-reverted = Windows kopyalama işleyicisine geri dönüldü
+settings-context-menu-hint = Freally'nin sağ tık menüsünü ve kopyalama işleyicisini işletim sisteminde kaydeder veya kaldırır (kullanıcı başına, yönetici gerekmez).
+paste-chooser-title = Kopyala ve Yapıştır
+paste-chooser-close = Kapat
+paste-chooser-files = { $count } dosya — bir hedef seçin
+paste-chooser-system-copy = Sistem kopyalama
+paste-chooser-system-move = Sistem taşıma
+paste-chooser-system-hint = Hızlı düz aktarım, doğrulama yok
+paste-chooser-freally-copy = Freally kopyalama
+paste-chooser-freally-move = Freally taşıma
+paste-chooser-freally-hint = Doğrulanmış bayt düzeyinde aktarım
+paste-chooser-replace-older = Freally — eski dosyaları değiştir
+paste-chooser-replace-older-hint = Doğrulanmış; yalnızca kaynak daha yeniyse üzerine yazar
+paste-chooser-more = Diğer seçenekler…
+toast-system-paste-done = { $items } öğe yapıştırıldı
+
+# FFM-M02 — transactional undo.
+undo-title-copy = Kopyalamayı geri al — kopyalanan dosyalar kaldırılsın mı?
+undo-title-move = Taşımayı geri al — dosyalar geri taşınsın mı?
+undo-summary = { $total } öğeden { $ready } tanesi geri alınabilir; kalanı değişti, kayboldu veya çakışıyor.
+undo-action-trash = Çöp kutusuna
+undo-action-move-back = Geri taşı
+undo-status-ready = Hazır
+undo-status-skip-missing = Eksik — atlandı
+undo-status-skip-changed = Değişti — atlandı
+undo-status-conflict = Özgün yol dolu
+undo-cancel = İptal
+undo-confirm = { $count } öğeyi geri al
+toast-undo-done = Geri alma bitti: { $done } tamamlandı, { $skipped } atlandı, { $failed } başarısız
+toast-undo-nothing = Geri alınacak bir şey yok
+history-undo = Geri al
+history-undo-hint = Bu işi tersine çevirir: kopyalanan dosyalar çöp kutusuna gider, taşınanlar özgün konumuna döner
+
+# FFM-M03 — trash-aware delete.
+menu-trash-source = Kaynağı çöp kutusuna sil
+trash-confirm = Çöp kutusuna gönderilsin mi?
+{ $path }
+toast-trash-done = Çöp kutusuna taşındı: { $trashed } öğe, { $failed } başarısız
+settings-safety-confirm-trash = Çöp kutusuna silmeden önce onayla
+settings-safety-move-to-trash = Taşınan kaynak dosyaları çöp kutusuna gönder
+settings-safety-move-to-trash-hint = Taşıma sırasında kaynağı silmek yerine çöp kutusuna gönder — geri alınabilir bir taşıma.
+
+# FFM-M04/M05 — eject + keep-awake.
+menu-eject-destination = Hedef birimi çıkar
+toast-eject-done = Birim çıkarıldı — güvenle kaldırılabilir
+toast-eject-failed = Çıkarılamadı: { $error }
+settings-power-keep-awake = İşler çalışırken bilgisayarı uyanık tut
+settings-power-keep-awake-hint = Bir iş kopyaladığı sürece sistem uyanık kilidini tutar (uyku yok, ekran koruyucu yok).
+
+# FFM-M06 — content-aware collision policies.
+collision-policy-skip-identical-else-overwrite = Yalnızca içerik farklıysa üzerine yaz
+collision-policy-skip-identical-else-prompt = Aynıysa atla, değilse sor
+
+# FFM-M07 — failed-file ledger + retry.
+history-retry-failed = Başarısızları yeniden dene
+history-retry-failed-hint = Yalnızca bu işte başarısız olan dosyaları yeniden kopyala
+history-export-failed = Başarısızları dışa aktar
+history-export-failed-hint = Başarısız dosya listesini CSV / TXT / JSON olarak kaydet
+toast-retry-failed-none = Yeniden denenecek başarısız dosya yok
+toast-retry-failed-queued = { $count } başarısız dosya yeniden kuyruğa alındı
+toast-failed-exported = Başarısız listesi dışa aktarıldı
+
+# FFM-M08 — checksum sidecars.
+menu-create-checksums = Sağlama toplamları oluştur (SHA-256)
+toast-checksums-created = { $files } dosya için sağlama toplamları yazıldı
+sidecar-verify-clean-title = Tüm dosyalar doğrulandı
+sidecar-verify-bad-title = Sağlama toplamı doğrulaması başarısız
+sidecar-verify-summary = { $ok } tamam, { $failed } başarısız, { $missing } eksik
+sidecar-verify-failed = Uyuşmuyor
+sidecar-verify-missing = Eksik
+sidecar-verify-close = Kapat

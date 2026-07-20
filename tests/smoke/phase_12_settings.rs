@@ -76,6 +76,10 @@ fn make_phase_12_fixture() -> Settings {
             method: ShredMethodChoice::DoD7Pass,
             confirm_twice: false,
         },
+        safety: freally_settings::SafetySettings {
+            confirm_trash_delete: false,
+            move_source_to_trash: true,
+        },
         advanced: freally_settings::AdvancedSettings {
             log_level: LogLevel::Debug,
             error_policy: ErrorPolicyChoice::RetryN {

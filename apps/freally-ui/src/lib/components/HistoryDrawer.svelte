@@ -22,6 +22,11 @@
     historyRerun,
     historySearch,
     mountSnapshot,
+    undoPlan,
+    jobFailedItems,
+    exportFailedItems,
+    startCopy,
+    startMove,
   } from "../ipc";
   import {
     closeHistoryDetail,
@@ -29,6 +34,7 @@
     historyDetailRow,
     historyDrawerOpen,
     openHistoryDetail,
+    openUndoPreview,
     pushToast,
   } from "../stores";
   import type {
@@ -117,6 +123,75 @@
     try {
       await historyRerun(row.rowId);
       pushToast("info", "toast-history-rerun-queued");
+    } catch (e) {
+      pushToast("error", e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  // FFM-M02 — fetch the undo plan for this job and open the preview
+  // modal (rendered by App, above the drawer).
+  async function undoRow(row: HistoryJobDto) {
+    try {
+      openUndoPreview(await undoPlan(row.rowId));
+    } catch (e) {
+      pushToast("error", e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  // FFM-M07 — re-enqueue only this job's failed files. Group by the
+  // destination folder so each file lands back at its exact path
+  // (a copy/move keeps the basename), then re-run through the same
+  // verb the original job used (a failed move re-moves, not re-copies).
+  function parentDir(p: string): string {
+    const cut = Math.max(p.lastIndexOf("\\"), p.lastIndexOf("/"));
+    // Preserve the root when the only separator is the leading one
+    // (e.g. "/f.txt" → "/", "C:\\x" handled by cut>2).
+    if (cut < 0) return p;
+    if (cut === 0) return p.slice(0, 1);
+    return p.slice(0, cut);
+  }
+
+  async function retryFailed(row: HistoryJobDto) {
+    try {
+      const failed = await jobFailedItems(row.rowId);
+      if (failed.length === 0) {
+        pushToast("info", "toast-retry-failed-none");
+        return;
+      }
+      const byDest = new Map<string, string[]>();
+      for (const item of failed) {
+        const dir = parentDir(item.dst);
+        let arr = byDest.get(dir);
+        if (!arr) byDest.set(dir, (arr = []));
+        arr.push(item.src);
+      }
+      const run = row.kind === "move" ? startMove : startCopy;
+      for (const [dir, srcs] of byDest) {
+        await run(srcs, dir);
+      }
+      pushToast("success", t("toast-retry-failed-queued", { count: failed.length }));
+    } catch (e) {
+      pushToast("error", e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  // FFM-M07 — export this job's failed set (feeds an M13 --files-from
+  // import too).
+  async function exportFailed(row: HistoryJobDto) {
+    try {
+      const dest = await save({
+        defaultPath: `freally-failed-${row.rowId}.csv`,
+        filters: [
+          { name: "CSV", extensions: ["csv"] },
+          { name: "Text", extensions: ["txt"] },
+          { name: "JSON", extensions: ["json"] },
+        ],
+      });
+      if (!dest || typeof dest !== "string") return;
+      const ext = dest.slice(dest.lastIndexOf(".") + 1).toLowerCase();
+      const format = ext === "txt" || ext === "json" ? ext : "csv";
+      await exportFailedItems(row.rowId, format, dest);
+      pushToast("success", "toast-failed-exported");
     } catch (e) {
       pushToast("error", e instanceof Error ? e.message : String(e));
     }
@@ -347,6 +422,40 @@
                   <Icon name="folder" size={13} />
                   <span>{t("mount-action-mount")}</span>
                 </button>
+                <button
+                  type="button"
+                  class="tiny"
+                  onclick={() => undoRow(row)}
+                  aria-label={t("history-undo")}
+                  title={t("history-undo-hint")}
+                  disabled={row.status !== "succeeded" ||
+                    (row.kind !== "copy" && row.kind !== "move")}
+                >
+                  <Icon name="rotate-ccw" size={13} />
+                  <span>{t("history-undo")}</span>
+                </button>
+                {#if row.filesFailed > 0}
+                  <button
+                    type="button"
+                    class="tiny"
+                    onclick={() => retryFailed(row)}
+                    aria-label={t("history-retry-failed")}
+                    title={t("history-retry-failed-hint")}
+                  >
+                    <Icon name="refresh" size={13} />
+                    <span>{t("history-retry-failed")}</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="tiny"
+                    onclick={() => exportFailed(row)}
+                    aria-label={t("history-export-failed")}
+                    title={t("history-export-failed-hint")}
+                  >
+                    <Icon name="download" size={13} />
+                    <span>{t("history-export-failed")}</span>
+                  </button>
+                {/if}
               </td>
             </tr>
           {/each}

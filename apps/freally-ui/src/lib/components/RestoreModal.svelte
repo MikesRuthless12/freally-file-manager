@@ -124,7 +124,7 @@
   }
 </script>
 
-<div class="overlay" role="dialog" aria-modal="true" aria-label={t("restore-title")}>
+<div class="overlay backdrop" role="dialog" aria-modal="true" aria-label={t("restore-title")}>
   <div class="modal">
     <header>
       <h3>{t("restore-title")}</h3>

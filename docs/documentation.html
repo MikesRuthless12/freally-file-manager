@@ -8,8 +8,12 @@
       name="description"
       content="Step-by-step help guide for Freally File Manager — how to copy, move, securely delete, verify, and more."
     />
-    <link rel="icon" type="image/png" href="icon.png" />
-    <link rel="apple-touch-icon" href="icon.png" />
+    <link rel="icon" href="favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="favicon-48.png" />
+    <link rel="icon" type="image/png" sizes="96x96" href="favicon-96.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
     <link rel="stylesheet" href="styles.css" />
     <style>
       /* Supplement: code, table, note-box, warn-box — not in shared sheet */
@@ -79,10 +83,30 @@
   </head>
   <body>
     <header class="hero">
-      <img class="logo" src="icon.png" alt="Freally File Manager icon" width="96" height="96" />
+      <img class="logo" src="icon.png" alt="Freally File Manager icon" width="288" height="288" />
       <h1>Documentation</h1>
       <p class="sub">Step-by-step guides for everything in Freally File Manager.</p>
     </header>
+
+    <!-- Unified search across every Freally app (autocomplete). -->
+    <style>
+      .doc-searchbar { max-width: 1150px; margin: 1.25rem auto 0; padding: 0 2rem; box-sizing: border-box; }
+      .doc-search { position: relative; }
+      .ds-box { display: flex; align-items: center; gap: 8px; border: 1px solid var(--border, #26324a); border-radius: 12px; background: rgba(255,255,255,0.03); padding: 10px 14px; }
+      .ds-box:focus-within { border-color: var(--accent, #6ea8fe); box-shadow: 0 0 0 3px rgba(110,168,254,0.12); }
+      .ds-icon { color: var(--muted, #93a1b5); font-size: 1.1rem; line-height: 1; }
+      #doc-search-input { flex: 1; min-width: 0; border: none; background: transparent; color: var(--text, #e6edf6); font-size: 0.98rem; outline: none; padding: 2px 0; }
+      #doc-search-input::placeholder { color: var(--muted, #93a1b5); }
+      .ds-results { list-style: none; margin: 6px 0 0; padding: 6px; position: absolute; left: 0; right: 0; z-index: 50; background: var(--panel, #14181f); border: 1px solid var(--border, #26324a); border-radius: 12px; box-shadow: 0 18px 55px rgba(0,0,0,0.55); max-height: 62vh; overflow-y: auto; }
+      .ds-item { display: flex; align-items: flex-start; gap: 10px; padding: 9px 10px; border-radius: 8px; cursor: pointer; }
+      .ds-item.ds-active, .ds-item:hover { background: rgba(110,168,254,0.12); }
+      .ds-app { flex: 0 0 auto; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--accent, #6ea8fe); background: rgba(110,168,254,0.12); border: 1px solid rgba(110,168,254,0.25); border-radius: 6px; padding: 3px 6px; margin-top: 2px; white-space: nowrap; }
+      .ds-text { display: flex; flex-direction: column; min-width: 0; }
+      .ds-title { color: var(--text, #e6edf6); font-weight: 600; font-size: 0.92rem; }
+      .ds-desc { color: var(--muted, #93a1b5); font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .ds-empty { padding: 10px; color: var(--muted, #93a1b5); font-size: 0.88rem; }
+    </style>
+    <div class="doc-searchbar"><div class="doc-search" id="doc-search"></div></div>
 
     <div class="doc-layout">
 
@@ -824,5 +848,7 @@ freally migrate kopia  /path/to/kopia-repo  /path/to/cdr-repo --password &lt;pas
     onScroll();
   })();
 </script>
+    <script src="search-index.js"></script>
+    <script src="search.js"></script>
   </body>
 </html>

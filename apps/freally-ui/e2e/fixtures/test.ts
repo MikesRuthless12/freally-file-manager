@@ -321,6 +321,14 @@ export const test = base.extend<Fixtures>({
         const locale = (args?.locale as string | undefined) ?? "en";
         return locale === "en" ? enBundle : {};
       });
+      // Absorb the first-run EULA gate the same way the mobile
+      // onboarding modal is absorbed below — e2e specs test the main
+      // UI, not the gate.
+      reg.setHandlerIfMissing("eula_status", () => ({
+        version: "e2e",
+        text: "# End User License Agreement\n(e2e fixture)",
+        accepted: true,
+      }));
       reg.setHandlerIfMissing("get_settings", () => ({
         general: {
           locale: "en",

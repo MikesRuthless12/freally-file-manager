@@ -74,7 +74,7 @@ nix = { version = "0.29", default-features = false, features = ["fs"] }
 # Phase 30 — smoke test exercises the TOML round-trip of
 # `PathTranslationSettings`. Dev-only so the settings crate is still
 # kept out of the engine's release graph.
-freally-settings = { path = "../freally-settings", version = "0.19" }
+freally-settings = { path = "../freally-settings", version = "0.20" }
 criterion = { version = "0.7", features = ["html_reports"] }
 rand = "0.9"
 # Phase 19a — cross-platform RSS probe used by the scan smoke test to

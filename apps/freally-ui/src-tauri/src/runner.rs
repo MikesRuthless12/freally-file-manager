@@ -33,6 +33,7 @@ use crate::ipc::{
     JobFailedDto, JobIdDto, JobProgressDto, MetaTranslatedToAppleDoubleDto, SnapshotCreatedDto,
     SparsenessNotSupportedDto,
 };
+use crate::keep_awake::KeepAwakeGuard;
 use crate::state::AppState;
 
 /// How big is the per-job mpsc channel between engine and runner.
@@ -117,6 +118,16 @@ pub(crate) async fn run_job(job: RunJob) {
     queue.start(id);
     let _ = app.emit(EVENT_JOB_STARTED, JobIdDto { id: id.as_u64() });
     emit_globals(&app, &state);
+
+    // FFM-M05 — inhibit sleep for the lifetime of this job when the
+    // setting is on. The guard disarms on every exit path (success,
+    // failure, early return, panic-unwind), so the OS wake-lock is
+    // released the moment the last running job ends.
+    let _keep_awake = state
+        .settings_snapshot()
+        .power
+        .keep_awake_during_jobs
+        .then(|| KeepAwakeGuard::arm(state.job_keep_awake.clone()));
 
     // Phase 34 — fire a `JobStarted` audit record on the active
     // sink. No-op when audit is disabled.
@@ -352,18 +363,81 @@ pub(crate) async fn run_job(job: RunJob) {
                 .await
                 .map(|m| m.is_dir())
                 .unwrap_or(false);
-            let move_opts = MoveOptions {
-                copy: copy_opts_with_verify,
-                ..MoveOptions::default()
-            };
-            if source_is_dir {
-                move_tree(&src, &dst_path, move_opts, ctrl, tx.clone())
-                    .await
-                    .map(|_| ())
+            // FFM-M03 safety net: when "move source to trash" is on, run
+            // the move as a verified copy and then send the source to
+            // the OS trash instead of unlinking it — a recoverable move.
+            // The copy is byte-verified first, so the source only goes
+            // to the trash after the destination is proven good.
+            //
+            // Guarded on "no enumeration filters active": a filtered
+            // move copies only the matching files, but trashing the
+            // whole source would then send the *excluded* files to the
+            // trash even though they were never moved to the
+            // destination. When filters are present we fall through to
+            // the plain `move_tree`/`move_file` path, which respects the
+            // filters and doesn't trash — the safety net degrades off
+            // rather than move data the user didn't ask to move.
+            let filters_active = filters.as_ref().is_some_and(|f| !f.is_empty());
+            if state.settings_snapshot().safety.move_source_to_trash && !filters_active {
+                let copy_result = if source_is_dir {
+                    let tree_opts = TreeOptions {
+                        file: copy_opts_with_verify,
+                        collision: collision_policy,
+                        on_error: error_policy,
+                        concurrency: tree_concurrency.unwrap_or(TreeOptions::default().concurrency),
+                        filters: filters.clone(),
+                        ..TreeOptions::default()
+                    };
+                    copy_tree(&src, &dst_path, tree_opts, ctrl, tx.clone())
+                        .await
+                        .map(|_| ())
+                } else {
+                    copy_file(&src, &dst_path, copy_opts_with_verify, ctrl, tx.clone())
+                        .await
+                        .map(|_| ())
+                };
+                // Trash the source only after a verified copy succeeds —
+                // and surface a trash failure as the job's failure, so a
+                // "move" that couldn't remove its source isn't reported
+                // as done with the source still in place.
+                match copy_result {
+                    Ok(()) => {
+                        let src_for_trash = src.clone();
+                        tauri::async_runtime::spawn_blocking(move || trash::delete(&src_for_trash))
+                            .await
+                            .map_err(|e| CopyError {
+                                kind: CopyErrorKind::IoOther,
+                                src: src.clone(),
+                                dst: dst_path.clone(),
+                                raw_os_error: None,
+                                message: format!("trash task failed: {e}"),
+                            })
+                            .and_then(|r| {
+                                r.map_err(|e| CopyError {
+                                    kind: CopyErrorKind::IoOther,
+                                    src: src.clone(),
+                                    dst: dst_path.clone(),
+                                    raw_os_error: None,
+                                    message: format!("could not send source to trash: {e}"),
+                                })
+                            })
+                    }
+                    Err(e) => Err(e),
+                }
             } else {
-                move_file(&src, &dst_path, move_opts, ctrl, tx.clone())
-                    .await
-                    .map(|_| ())
+                let move_opts = MoveOptions {
+                    copy: copy_opts_with_verify,
+                    ..MoveOptions::default()
+                };
+                if source_is_dir {
+                    move_tree(&src, &dst_path, move_opts, ctrl, tx.clone())
+                        .await
+                        .map(|_| ())
+                } else {
+                    move_file(&src, &dst_path, move_opts, ctrl, tx.clone())
+                        .await
+                        .map(|_| ())
+                }
             }
         }
         JobKind::Delete | JobKind::SecureDelete | JobKind::Verify => {

@@ -104,7 +104,7 @@
 </script>
 
 {#if $repositoryWizardOpen}
-  <div class="scrim" role="presentation" onclick={closeRepositoryWizard}></div>
+  <div class="scrim backdrop" role="presentation" onclick={closeRepositoryWizard}></div>
   <div class="modal" role="dialog" aria-modal="true" aria-label={t("repo-wizard-title")}>
     {#key $i18nVersion}
       <header>

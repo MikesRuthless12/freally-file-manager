@@ -54,6 +54,8 @@ pub struct Settings {
     pub transfer: TransferSettings,
     pub shell: ShellSettings,
     pub secure_delete: SecureDeleteSettings,
+    /// FFM-M03 — trash-aware delete + move-to-trash safety nets.
+    pub safety: SafetySettings,
     pub advanced: AdvancedSettings,
     /// Phase 14a — enumeration-time filters (include/exclude globs,
     /// size range, date range, attribute bits). See [`FilterSettings`].
@@ -157,6 +159,21 @@ pub struct Settings {
     /// Phase 49k — the registered repositories + the active selection
     /// (the multi-repo "Repository" screen).
     pub repository: RepositorySettings,
+    /// First-run EULA acceptance (public-release gate). Recorded only
+    /// by the `eula_accept` command — the Settings UI never writes it,
+    /// and `update_settings` carries it across wholesale replaces. See
+    /// [`EulaSettings`].
+    pub eula: EulaSettings,
+}
+
+/// First-run EULA acceptance state. `accepted_version` holds the exact
+/// `EULA_VERSION` the user accepted; the gate re-shows whenever it
+/// differs from the version embedded in the running binary.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(default, rename_all = "kebab-case")]
+pub struct EulaSettings {
+    /// The EULA version the user accepted, `None` until first accept.
+    pub accepted_version: Option<String>,
 }
 
 /// Phase 49k — the multi-repository list + which one is active (the Kopia
@@ -702,9 +719,11 @@ pub struct ShellSettings {
     /// wiring; Phase 12 adds a user-level on/off flag that the
     /// installer respects on first run and subsequent launches honour.
     pub context_menu_enabled: bool,
-    /// Windows-only. When on, COM copy-hook intercepts Explorer's
-    /// default Ctrl+C/Ctrl+V handler. Stored flag; the registration
-    /// toggle lands in Phase 14.
+    /// Windows-only. When on, the COM copy-hook intercepts Explorer's
+    /// default Ctrl+C / Ctrl+V / drag-copy verb and routes it into
+    /// Freally's queue (FFM-M01). The Tauri shell applies/reverts the
+    /// `HKCU\…\*\shell\copy` override to match this flag; a fresh
+    /// install ships it off.
     pub intercept_default_copy: bool,
     /// Show an OS notification when a job completes.
     pub notify_on_completion: bool,
@@ -739,6 +758,30 @@ impl Default for SecureDeleteSettings {
         Self {
             method: ShredMethodChoice::DoD3Pass,
             confirm_twice: true,
+        }
+    }
+}
+
+/// FFM-M03 — trash-aware delete + move-to-trash safety nets. All
+/// opt-in so existing workflows are unchanged until the user turns
+/// one on.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(default, rename_all = "kebab-case")]
+pub struct SafetySettings {
+    /// Ask before sending a selection to the OS trash. On by default —
+    /// delete is reversible via trash, but a stray keypress shouldn't
+    /// silently move files.
+    pub confirm_trash_delete: bool,
+    /// When a move job would unlink its source after a verified copy,
+    /// send that source to the OS trash instead — a recoverable move.
+    pub move_source_to_trash: bool,
+}
+
+impl Default for SafetySettings {
+    fn default() -> Self {
+        Self {
+            confirm_trash_delete: true,
+            move_source_to_trash: false,
         }
     }
 }
@@ -1862,6 +1905,11 @@ pub struct PowerPoliciesSettings {
     /// "When CPU is thermal-throttling" rule. Default `Pause`
     /// (the cap option was removed from the UI — see `ThermalRuleChoice`).
     pub thermal: ThermalRuleChoice,
+    /// FFM-M05 — hold a system wake-lock (inhibit sleep + screensaver)
+    /// for as long as any local job is running, so a long copy on an
+    /// idle desktop isn't interrupted by the machine sleeping. Default
+    /// `true`; released the moment the last active job finishes.
+    pub keep_awake_during_jobs: bool,
 }
 
 impl Default for PowerPoliciesSettings {
@@ -1874,6 +1922,7 @@ impl Default for PowerPoliciesSettings {
             presentation: PowerRuleChoice::Pause,
             fullscreen: PowerRuleChoice::Continue,
             thermal: ThermalRuleChoice::default(),
+            keep_awake_during_jobs: true,
         }
     }
 }

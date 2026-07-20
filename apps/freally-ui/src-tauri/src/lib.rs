@@ -47,15 +47,20 @@ pub mod dropstack;
 // caller-side spawner + JSON-RPC handshake to the elevated
 // freally-helper, used by commands::retry_elevated.
 pub mod backup_commands;
+pub mod eject;
 pub mod elevate;
 pub mod errors;
+pub mod eula;
+pub mod failed_commands;
 pub mod global_paste;
+pub mod hashing;
 pub mod i18n;
 pub mod icon;
 #[cfg(windows)]
 pub mod instance_broker;
 pub mod ipc;
 pub mod ipc_safety;
+pub mod keep_awake;
 pub mod live_mirror;
 pub mod mobile_commands;
 pub mod mount_commands;
@@ -74,10 +79,14 @@ pub mod sanitize_commands;
 pub mod scan_commands;
 pub mod server_commands;
 pub mod shell;
+pub mod shell_commands;
+pub mod sidecar_commands;
 pub mod state;
 pub mod sync_commands;
 mod tasks;
 pub mod thumbnail;
+pub mod trash_commands;
+pub mod undo_commands;
 pub mod updater;
 pub mod version_commands;
 
@@ -520,6 +529,31 @@ pub fn run() {
             }
         })
         .invoke_handler(tauri::generate_handler![
+            // First-run EULA acceptance gate (public-release requirement):
+            // the frontend blocks the main UI until `eula_status` reports
+            // the current version accepted.
+            eula::eula_status,
+            eula::eula_accept,
+            eula::eula_decline_quit,
+            // FFM-M01 — Explorer copy-verb takeover status + revert,
+            // and the paste chooser's plain "System copy / move".
+            shell_commands::shell_copy_intercept_status,
+            shell_commands::shell_revert_os_copy_handler,
+            shell_commands::system_paste,
+            // FFM-M02 — transactional undo (preview + apply + Ctrl+Z).
+            undo_commands::undo_plan,
+            undo_commands::undo_apply,
+            undo_commands::undo_last_candidate,
+            // FFM-M03 — plain delete-to-trash.
+            trash_commands::trash_delete,
+            // FFM-M04 — eject / safely-remove a destination volume.
+            eject::eject_volume,
+            // FFM-M07 — failed-file ledger + export.
+            failed_commands::job_failed_items,
+            failed_commands::export_failed_items,
+            // FFM-M08 — checksum sidecar create + verify.
+            sidecar_commands::sidecar_create,
+            sidecar_commands::sidecar_verify,
             commands::start_copy,
             commands::start_move,
             commands::pause_job,

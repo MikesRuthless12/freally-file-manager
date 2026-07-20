@@ -1347,3 +1347,88 @@ restore-toast-partial = { $restored } पुनर्स्थापित, { $s
 
 # More Freally apps (embedded Central panel) — host chrome
 moreapps-title = और Freally ऐप्स
+# First-run EULA acceptance gate.
+eula-title = अंतिम उपयोगकर्ता लाइसेंस अनुबंध
+eula-version = संस्करण { $version }
+eula-intro = कृपया नीचे दिया गया अनुबंध पढ़ें। Freally File Manager का उपयोग करने से पहले इसे स्वीकार करना होगा।
+eula-scroll-hint = "मैं सहमत हूँ" सक्षम करने के लिए अंत तक स्क्रॉल करें।
+eula-thanks = पढ़ने के लिए धन्यवाद।
+eula-agree = मैं सहमत हूँ
+eula-decline = अस्वीकार करें और बाहर निकलें
+eula-error = स्वीकृति दर्ज नहीं हो सकी: { $error }
+
+# FFM-M01 — Explorer copy-verb takeover.
+settings-intercept-copy-unsupported = कॉपी इंटरसेप्शन केवल Windows पर उपलब्ध है।
+settings-intercept-copy-needs-menu = पहले संदर्भ-मेनू एकीकरण सक्षम करें — इंटरसेप्शन के नियंत्रण लेने से पहले कॉपी हैंडलर पंजीकृत होना चाहिए।
+settings-revert-copy-handler = Windows कॉपी हैंडलर पर वापस लौटें
+toast-copy-handler-reverted = Windows कॉपी हैंडलर पर वापस लौट आया
+settings-context-menu-hint = OS में Freally का राइट-क्लिक मेनू और कॉपी हैंडलर पंजीकृत या हटाता है (प्रति-उपयोगकर्ता, बिना एडमिन)।
+paste-chooser-title = कॉपी और पेस्ट
+paste-chooser-close = बंद करें
+paste-chooser-files = { $count } फ़ाइल(ें) — गंतव्य चुनें
+paste-chooser-system-copy = सिस्टम कॉपी
+paste-chooser-system-move = सिस्टम मूव
+paste-chooser-system-hint = तेज़ सादा स्थानांतरण, बिना सत्यापन
+paste-chooser-freally-copy = Freally कॉपी
+paste-chooser-freally-move = Freally मूव
+paste-chooser-freally-hint = सत्यापित बाइट-सटीक स्थानांतरण
+paste-chooser-replace-older = Freally — पुरानी फ़ाइलें बदलें
+paste-chooser-replace-older-hint = सत्यापित; केवल तभी अधिलेखित करता है जब स्रोत नया हो
+paste-chooser-more = अधिक विकल्प…
+toast-system-paste-done = { $items } आइटम पेस्ट किए गए
+
+# FFM-M02 — transactional undo.
+undo-title-copy = कॉपी पूर्ववत करें — कॉपी की गई फ़ाइलें हटाएँ?
+undo-title-move = मूव पूर्ववत करें — फ़ाइलें वापस ले जाएँ?
+undo-summary = { $total } में से { $ready } आइटम पूर्ववत हो सकते हैं; बाकी बदल गए, गायब हैं या संघर्ष में हैं।
+undo-action-trash = ट्रैश में
+undo-action-move-back = वापस ले जाएँ
+undo-status-ready = तैयार
+undo-status-skip-missing = गायब — छोड़ा गया
+undo-status-skip-changed = बदला — छोड़ा गया
+undo-status-conflict = मूल पथ व्यस्त है
+undo-cancel = रद्द करें
+undo-confirm = { $count } आइटम पूर्ववत करें
+toast-undo-done = पूर्ववत पूर्ण: { $done } हुए, { $skipped } छोड़े गए, { $failed } विफल
+toast-undo-nothing = पूर्ववत करने को कुछ नहीं
+history-undo = पूर्ववत करें
+history-undo-hint = इस कार्य को उलटता है: कॉपी की गई फ़ाइलें ट्रैश में जाती हैं, मूव की गई फ़ाइलें अपने मूल स्थान पर लौटती हैं
+
+# FFM-M03 — trash-aware delete.
+menu-trash-source = स्रोत को ट्रैश में हटाएँ
+trash-confirm = रीसायकल बिन / ट्रैश में भेजें?
+{ $path }
+toast-trash-done = ट्रैश में ले जाया गया: { $trashed } आइटम, { $failed } विफल
+settings-safety-confirm-trash = ट्रैश में हटाने से पहले पुष्टि करें
+settings-safety-move-to-trash = मूव किए गए स्रोत फ़ाइलें ट्रैश में भेजें
+settings-safety-move-to-trash-hint = मूव करते समय स्रोत को हटाने के बजाय ट्रैश में भेजें — एक पुनर्प्राप्त करने योग्य मूव।
+
+# FFM-M04/M05 — eject + keep-awake.
+menu-eject-destination = गंतव्य वॉल्यूम निकालें
+toast-eject-done = वॉल्यूम निकाला गया — सुरक्षित रूप से हटाएँ
+toast-eject-failed = निकाल नहीं सका: { $error }
+settings-power-keep-awake = कार्य चलते समय कंप्यूटर को जगाए रखें
+settings-power-keep-awake-hint = जब तक कोई कार्य कॉपी कर रहा है, सिस्टम वेक-लॉक रखता है (न स्लीप, न स्क्रीनसेवर)।
+
+# FFM-M06 — content-aware collision policies.
+collision-policy-skip-identical-else-overwrite = केवल तभी अधिलेखित करें जब सामग्री भिन्न हो
+collision-policy-skip-identical-else-prompt = समान होने पर छोड़ें, अन्यथा पूछें
+
+# FFM-M07 — failed-file ledger + retry.
+history-retry-failed = विफल पुनः प्रयास
+history-retry-failed-hint = इस कार्य में विफल हुई केवल फ़ाइलें फिर से कॉपी करें
+history-export-failed = विफल निर्यात करें
+history-export-failed-hint = विफल फ़ाइल सूची को CSV / TXT / JSON के रूप में सहेजें
+toast-retry-failed-none = पुनः प्रयास के लिए कोई विफल फ़ाइल नहीं
+toast-retry-failed-queued = { $count } विफल फ़ाइलें फिर से क़तार में
+toast-failed-exported = विफल सूची निर्यात की गई
+
+# FFM-M08 — checksum sidecars.
+menu-create-checksums = चेकसम बनाएँ (SHA-256)
+toast-checksums-created = { $files } फ़ाइलों के लिए चेकसम लिखे गए
+sidecar-verify-clean-title = सभी फ़ाइलें सत्यापित
+sidecar-verify-bad-title = चेकसम सत्यापन विफल
+sidecar-verify-summary = { $ok } ठीक, { $failed } विफल, { $missing } अनुपस्थित
+sidecar-verify-failed = बेमेल
+sidecar-verify-missing = अनुपस्थित
+sidecar-verify-close = बंद करें

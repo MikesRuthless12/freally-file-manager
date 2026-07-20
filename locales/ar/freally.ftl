@@ -1347,3 +1347,88 @@ restore-toast-partial = تمت استعادة { $restored }، وتخطّي { $sk
 
 # More Freally apps (embedded Central panel) — host chrome
 moreapps-title = مزيد من تطبيقات Freally
+# First-run EULA acceptance gate.
+eula-title = اتفاقية ترخيص المستخدم النهائي
+eula-version = الإصدار { $version }
+eula-intro = يرجى مراجعة الاتفاقية أدناه. يجب قبولها قبل استخدام Freally File Manager.
+eula-scroll-hint = مرّر إلى النهاية لتفعيل "أوافق".
+eula-thanks = شكرًا لقراءتك.
+eula-agree = أوافق
+eula-decline = الرفض والخروج
+eula-error = تعذّر تسجيل القبول: { $error }
+
+# FFM-M01 — Explorer copy-verb takeover.
+settings-intercept-copy-unsupported = اعتراض النسخ متاح على Windows فقط.
+settings-intercept-copy-needs-menu = فعّل تكامل قائمة السياق أولاً — يجب تسجيل معالج النسخ قبل أن يتمكن الاعتراض من التولّي.
+settings-revert-copy-handler = الرجوع إلى معالج النسخ في Windows
+toast-copy-handler-reverted = تمت العودة إلى معالج النسخ في Windows
+settings-context-menu-hint = يسجّل أو يزيل قائمة Freally بالنقر الأيمن ومعالج النسخ في النظام (لكل مستخدم، بدون صلاحيات المسؤول).
+paste-chooser-title = نسخ ولصق
+paste-chooser-close = إغلاق
+paste-chooser-files = { $count } ملف(ات) — اختر وجهة
+paste-chooser-system-copy = نسخ النظام
+paste-chooser-system-move = نقل النظام
+paste-chooser-system-hint = نقل بسيط وسريع، بدون تحقق
+paste-chooser-freally-copy = نسخ Freally
+paste-chooser-freally-move = نقل Freally
+paste-chooser-freally-hint = نقل متحقق منه بايت ببايت
+paste-chooser-replace-older = Freally — استبدال الملفات الأقدم
+paste-chooser-replace-older-hint = متحقق منه؛ يستبدل فقط عندما يكون المصدر أحدث
+paste-chooser-more = خيارات إضافية…
+toast-system-paste-done = تم لصق { $items } عنصر(عناصر)
+
+# FFM-M02 — transactional undo.
+undo-title-copy = التراجع عن النسخ — إزالة الملفات المنسوخة؟
+undo-title-move = التراجع عن النقل — إعادة الملفات؟
+undo-summary = يمكن التراجع عن { $ready } من { $total } عنصرًا؛ الباقي تغيّر أو اختفى أو متعارض.
+undo-action-trash = إلى سلة المهملات
+undo-action-move-back = إعادة
+undo-status-ready = جاهز
+undo-status-skip-missing = مفقود — تم التخطي
+undo-status-skip-changed = تغيّر — تم التخطي
+undo-status-conflict = المسار الأصلي مشغول
+undo-cancel = إلغاء
+undo-confirm = التراجع عن { $count } عنصر(عناصر)
+toast-undo-done = اكتمل التراجع: { $done } تم، { $skipped } تم تخطيه، { $failed } فشل
+toast-undo-nothing = لا شيء للتراجع عنه
+history-undo = تراجع
+history-undo-hint = يعكس هذه المهمة: الملفات المنسوخة تذهب إلى سلة المهملات، والمنقولة تعود إلى موقعها الأصلي
+
+# FFM-M03 — trash-aware delete.
+menu-trash-source = حذف المصدر إلى سلة المهملات
+trash-confirm = الإرسال إلى سلة المهملات؟
+{ $path }
+toast-trash-done = تم النقل إلى سلة المهملات: { $trashed } عنصر(عناصر)، { $failed } فشل
+settings-safety-confirm-trash = التأكيد قبل الحذف إلى سلة المهملات
+settings-safety-move-to-trash = إرسال ملفات المصدر المنقولة إلى سلة المهملات
+settings-safety-move-to-trash-hint = عند النقل، أرسل المصدر إلى سلة المهملات بدلاً من حذفه — نقل قابل للاسترداد.
+
+# FFM-M04/M05 — eject + keep-awake.
+menu-eject-destination = إخراج وحدة تخزين الوجهة
+toast-eject-done = تم إخراج وحدة التخزين — يمكن إزالتها بأمان
+toast-eject-failed = تعذّر الإخراج: { $error }
+settings-power-keep-awake = إبقاء الجهاز مستيقظًا أثناء تشغيل المهام
+settings-power-keep-awake-hint = يحافظ على قفل النظام (بلا سكون ولا شاشة توقف) طالما هناك مهمة نسخ جارية.
+
+# FFM-M06 — content-aware collision policies.
+collision-policy-skip-identical-else-overwrite = الكتابة فوقه فقط إذا اختلف المحتوى
+collision-policy-skip-identical-else-prompt = التخطي إذا كان مطابقًا، وإلا اسأل
+
+# FFM-M07 — failed-file ledger + retry.
+history-retry-failed = إعادة محاولة الفاشلة
+history-retry-failed-hint = إعادة نسخ الملفات التي فشلت في هذه المهمة فقط
+history-export-failed = تصدير الفاشلة
+history-export-failed-hint = حفظ قائمة الملفات الفاشلة بصيغة CSV / TXT / JSON
+toast-retry-failed-none = لا توجد ملفات فاشلة لإعادة المحاولة
+toast-retry-failed-queued = تمت إعادة إدراج { $count } ملف(ات) فاشلة
+toast-failed-exported = تم تصدير قائمة الفاشلة
+
+# FFM-M08 — checksum sidecars.
+menu-create-checksums = إنشاء المجاميع الاختبارية (SHA-256)
+toast-checksums-created = تمت كتابة المجاميع لـ { $files } ملف(ات)
+sidecar-verify-clean-title = تم التحقق من جميع الملفات
+sidecar-verify-bad-title = فشل التحقق من المجاميع الاختبارية
+sidecar-verify-summary = { $ok } سليم، { $failed } فشل، { $missing } مفقود
+sidecar-verify-failed = عدم تطابق
+sidecar-verify-missing = مفقود
+sidecar-verify-close = إغلاق

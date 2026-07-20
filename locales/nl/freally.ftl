@@ -1347,3 +1347,88 @@ restore-toast-partial = { $restored } hersteld, { $skipped } overgeslagen, { $fa
 
 # More Freally apps (embedded Central panel) — host chrome
 moreapps-title = Meer Freally-apps
+# First-run EULA acceptance gate.
+eula-title = Licentieovereenkomst voor eindgebruikers
+eula-version = Versie { $version }
+eula-intro = Lees de onderstaande overeenkomst. U moet deze accepteren voordat u Freally File Manager kunt gebruiken.
+eula-scroll-hint = Scrol naar het einde om "Ik ga akkoord" in te schakelen.
+eula-thanks = Bedankt voor het lezen.
+eula-agree = Ik ga akkoord
+eula-decline = Weigeren & afsluiten
+eula-error = Kon acceptatie niet opslaan: { $error }
+
+# FFM-M01 — Explorer copy-verb takeover.
+settings-intercept-copy-unsupported = Kopie-onderschepping is alleen beschikbaar op Windows.
+settings-intercept-copy-needs-menu = Schakel eerst de contextmenu-integratie in — de kopie-handler moet geregistreerd zijn voordat onderschepping het kan overnemen.
+settings-revert-copy-handler = Terug naar Windows-kopieerhandler
+toast-copy-handler-reverted = Teruggezet naar de Windows-kopieerhandler
+settings-context-menu-hint = Registreert of verwijdert Freally's contextmenu en kopieerhandler in het besturingssysteem (per gebruiker, geen admin).
+paste-chooser-title = Kopiëren & plakken
+paste-chooser-close = Sluiten
+paste-chooser-files = { $count } bestand(en) — kies een bestemming
+paste-chooser-system-copy = Systeemkopie
+paste-chooser-system-move = Systeemverplaatsing
+paste-chooser-system-hint = Snelle eenvoudige overdracht, zonder verificatie
+paste-chooser-freally-copy = Freally-kopie
+paste-chooser-freally-move = Freally-verplaatsing
+paste-chooser-freally-hint = Geverifieerde byte-exacte overdracht
+paste-chooser-replace-older = Freally — oudere bestanden vervangen
+paste-chooser-replace-older-hint = Geverifieerd; overschrijft alleen als de bron nieuwer is
+paste-chooser-more = Meer opties…
+toast-system-paste-done = { $items } item(s) geplakt
+
+# FFM-M02 — transactional undo.
+undo-title-copy = Kopiëren ongedaan maken — gekopieerde bestanden verwijderen?
+undo-title-move = Verplaatsen ongedaan maken — bestanden terugzetten?
+undo-summary = { $ready } van { $total } item(s) kunnen ongedaan worden gemaakt; de rest is gewijzigd, verdwenen of conflicteert.
+undo-action-trash = Naar prullenbak
+undo-action-move-back = Terugzetten
+undo-status-ready = Gereed
+undo-status-skip-missing = Ontbreekt — overgeslagen
+undo-status-skip-changed = Gewijzigd — overgeslagen
+undo-status-conflict = Oorspronkelijk pad bezet
+undo-cancel = Annuleren
+undo-confirm = { $count } item(s) ongedaan maken
+toast-undo-done = Ongedaan maken voltooid: { $done } gedaan, { $skipped } overgeslagen, { $failed } mislukt
+toast-undo-nothing = Niets om ongedaan te maken
+history-undo = Ongedaan maken
+history-undo-hint = Keert deze taak om: gekopieerde bestanden gaan naar de prullenbak, verplaatste keren terug naar hun oorspronkelijke locatie
+
+# FFM-M03 — trash-aware delete.
+menu-trash-source = Bron naar prullenbak verwijderen
+trash-confirm = Naar de prullenbak sturen?
+{ $path }
+toast-trash-done = Naar prullenbak verplaatst: { $trashed } item(s), { $failed } mislukt
+settings-safety-confirm-trash = Bevestigen voor verwijderen naar prullenbak
+settings-safety-move-to-trash = Verplaatste bronbestanden naar prullenbak
+settings-safety-move-to-trash-hint = Bij een verplaatsing de bron naar de prullenbak sturen in plaats van te verwijderen — een herstelbare verplaatsing.
+
+# FFM-M04/M05 — eject + keep-awake.
+menu-eject-destination = Doelvolume uitwerpen
+toast-eject-done = Volume uitgeworpen — veilig te verwijderen
+toast-eject-failed = Uitwerpen mislukt: { $error }
+settings-power-keep-awake = Computer wakker houden terwijl taken lopen
+settings-power-keep-awake-hint = Houdt een systeemvergrendeling vast (geen slaapstand of screensaver) zolang een taak kopieert.
+
+# FFM-M06 — content-aware collision policies.
+collision-policy-skip-identical-else-overwrite = Alleen overschrijven als de inhoud verschilt
+collision-policy-skip-identical-else-prompt = Overslaan indien identiek, anders vragen
+
+# FFM-M07 — failed-file ledger + retry.
+history-retry-failed = Mislukte opnieuw
+history-retry-failed-hint = Kopieer alleen de bestanden die in deze taak mislukten
+history-export-failed = Mislukte exporteren
+history-export-failed-hint = Sla de lijst met mislukte bestanden op als CSV / TXT / JSON
+toast-retry-failed-none = Geen mislukte bestanden om opnieuw te proberen
+toast-retry-failed-queued = { $count } mislukt(e) bestand(en) opnieuw in wachtrij
+toast-failed-exported = Lijst met mislukte geëxporteerd
+
+# FFM-M08 — checksum sidecars.
+menu-create-checksums = Controlesommen maken (SHA-256)
+toast-checksums-created = Controlesommen geschreven voor { $files } bestand(en)
+sidecar-verify-clean-title = Alle bestanden geverifieerd
+sidecar-verify-bad-title = Verificatie van controlesommen mislukt
+sidecar-verify-summary = { $ok } OK, { $failed } mislukt, { $missing } ontbreekt
+sidecar-verify-failed = Komt niet overeen
+sidecar-verify-missing = Ontbreekt
+sidecar-verify-close = Sluiten

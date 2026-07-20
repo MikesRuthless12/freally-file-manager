@@ -1,7 +1,7 @@
 {
   "name": "freally-ui",
   "private": true,
-  "version": "0.19.85",
+  "version": "0.20.0",
   "description": "Freally File Manager v0.19.85 — Tauri 2.x + Svelte 5 shell",
   "type": "module",
   "scripts": {

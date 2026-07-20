@@ -24,7 +24,7 @@ slow-tests = []
 # Direction matches `freally-journal` and `freally-snapshot` so core
 # stays free of any runtime-adjacent concern (scheduling, clocks,
 # OS-specific metered/battery probes).
-freally-core = { path = "../freally-core", version = "0.19" }
+freally-core = { path = "../freally-core", version = "0.20" }
 # GCRA rate limiter. MIT. Accurate-to-a-quantum token bucket; the
 # standard Rust crate for "rate-limit this many ops per unit time".
 governor = "0.10"

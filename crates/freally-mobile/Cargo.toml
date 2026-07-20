@@ -17,7 +17,7 @@ workspace = true
 # freally-settings (stringly typed); this crate's `settings_bridge`
 # module maps between the persistence shape and the runtime
 # `MobileSettings`.
-freally-settings = { path = "../freally-settings", version = "0.19" }
+freally-settings = { path = "../freally-settings", version = "0.20" }
 
 # Phase 37 — X25519 ECDH for the SAS-emoji handshake. The shared
 # secret is derived once at pairing time and persisted alongside the

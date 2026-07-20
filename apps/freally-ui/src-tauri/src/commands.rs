@@ -251,6 +251,9 @@ fn parse_collision_policy(raw: Option<&str>) -> Result<freally_core::CollisionPo
         "overwrite-if-newer" => Ok(CollisionPolicy::OverwriteIfNewer),
         "keep-both" => Ok(CollisionPolicy::KeepBoth),
         "prompt" => Ok(CollisionPolicy::Prompt),
+        // FFM-M06 — content-aware auto-policies.
+        "skip-identical-else-prompt" => Ok(CollisionPolicy::SkipIdenticalElsePrompt),
+        "skip-identical-else-overwrite" => Ok(CollisionPolicy::SkipIdenticalElseOverwrite),
         other => Err(format!("unknown collision policy: {other}")),
     }
 }
@@ -1199,12 +1202,16 @@ pub fn update_settings(
     app: tauri::AppHandle,
     state: State<'_, AppState>,
 ) -> Result<crate::ipc::SettingsDto, String> {
-    let next = dto.into_settings();
+    let mut next = dto.into_settings();
     // Phase 34 — fingerprint both the prior and next settings for a
     // SettingsChanged audit record. The write-out happens whether
     // or not audit is enabled; the record call is a no-op when the
     // sink is idle.
     let prev_snapshot = state.settings_snapshot();
+    // The DTO deliberately does not carry the EULA group — acceptance
+    // is recorded only by `eula_accept`. Carry it across so a wholesale
+    // settings replace can never clear a recorded acceptance.
+    next.eula = prev_snapshot.eula.clone();
     let before_hash = crate::audit_commands::settings_fingerprint(&prev_snapshot);
     let after_hash = crate::audit_commands::settings_fingerprint(&next);
     // Persist first — we'd rather keep the old in-memory value if
@@ -1215,7 +1222,7 @@ pub fn update_settings(
     }
     // Snapshot the prior shortcut state *before* we swap — lets us
     // decide whether to rebind without racing with the live lock.
-    let (prev_enabled, prev_combo, prev_watcher_enabled) = {
+    let (prev_enabled, prev_combo, prev_watcher_enabled, prev_intercept_copy, prev_context_menu) = {
         let prev = state
             .settings
             .read()
@@ -1224,6 +1231,8 @@ pub fn update_settings(
             prev.general.paste_shortcut_enabled,
             prev.general.paste_shortcut.clone(),
             prev.general.clipboard_watcher_enabled,
+            prev.shell.intercept_default_copy,
+            prev.shell.context_menu_enabled,
         )
     };
     {
@@ -1264,6 +1273,29 @@ pub fn update_settings(
             }
         }
     }
+    // FFM-M01 — register / unregister the Explorer context-menu handler
+    // when its toggle flips, before the interceptor (which references
+    // the class this registers). Windows-only; failures are logged, not
+    // fatal — the setting is already persisted.
+    if prev_context_menu != next.shell.context_menu_enabled {
+        if let Err(e) =
+            crate::shell_commands::sync_context_menu_registration(next.shell.context_menu_enabled)
+        {
+            eprintln!("[shell-context-menu] {e}");
+        }
+    }
+    // Apply / revert the copy-verb interceptor when its toggle flips.
+    // A failure (e.g. the copy handler DLL isn't registered) is logged;
+    // it must not abort the save — the rest of the settings are on disk,
+    // and the Settings status line re-probes the true state.
+    if prev_intercept_copy != next.shell.intercept_default_copy {
+        if let Err(e) =
+            crate::shell_commands::sync_copy_interceptor(next.shell.intercept_default_copy)
+        {
+            eprintln!("[shell-intercept] {e}");
+        }
+    }
+
     // Phase 21 — re-apply the network settings to the live Shape and
     // emit `shape-rate-changed` so the header badge re-renders. The
     // schedule poller in `lib.rs` covers the minute-tick path; this
@@ -1399,7 +1431,12 @@ fn diff_setting_groups(
 /// Replace the live settings with `Settings::default()` and persist.
 #[tauri::command]
 pub fn reset_settings(state: State<'_, AppState>) -> Result<crate::ipc::SettingsDto, String> {
-    let next = freally_settings::Settings::default();
+    let next = freally_settings::Settings {
+        // A reset must not clear the recorded EULA acceptance — it is
+        // a legal record owned by `eula_accept`, not a preference.
+        eula: state.settings_snapshot().eula,
+        ..Default::default()
+    };
     let path = state.settings_path.as_ref();
     if !path.as_os_str().is_empty() {
         next.save_to(path).map_err(|e| e.to_string())?;
@@ -1999,7 +2036,10 @@ pub fn save_profile(
     name: String,
     state: State<'_, AppState>,
 ) -> Result<crate::ipc::ProfileInfoDto, String> {
-    let settings = state.settings_snapshot();
+    let mut settings = state.settings_snapshot();
+    // Profiles are shareable preference snapshots; the EULA acceptance
+    // is a per-install legal record and must never travel inside one.
+    settings.eula = Default::default();
     let info = state
         .profiles
         .save_replacing(&name, &settings)
@@ -2012,7 +2052,11 @@ pub fn load_profile(
     name: String,
     state: State<'_, AppState>,
 ) -> Result<crate::ipc::SettingsDto, String> {
-    let profile = state.profiles.load(&name).map_err(|e| e.to_string())?;
+    let mut profile = state.profiles.load(&name).map_err(|e| e.to_string())?;
+    // The EULA acceptance is a per-install legal record owned by
+    // `eula_accept` — a profile (possibly saved pre-acceptance or on
+    // another machine) neither clears nor grants it.
+    profile.eula = state.settings_snapshot().eula;
     // Loading a profile also activates it — persist + publish on the
     // live settings. Saves the caller a follow-up `update_settings`.
     let path = state.settings_path.as_ref();

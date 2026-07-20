@@ -24,14 +24,14 @@ path = "src/main.rs"
 # (CopyFileExW / copyfile / copy_file_range) which is what the
 # shipped Tauri app uses — without it we're racing a pure-async
 # byte loop against a kernel-tuned CopyFileEx.
-freally-core = { path = "../crates/freally-core", version = "0.19" }
-freally-platform = { path = "../crates/freally-platform", version = "0.19" }
+freally-core = { path = "../crates/freally-core", version = "0.20" }
+freally-platform = { path = "../crates/freally-platform", version = "0.20" }
 # `xtask bench-vs --secure-cleanup` uses our own secure-delete crate
 # to wipe the bench destination files after a run, exercising the
 # same shredder the UI drives.
-freally-secure-delete = { path = "../crates/freally-secure-delete", version = "0.19" }
+freally-secure-delete = { path = "../crates/freally-secure-delete", version = "0.20" }
 # `xtask gen-conformance` builds the CDR-0 conformance corpus straight from
 # the reference `CdrManifest`, so the fixtures always match the impl.
-freally-chunk = { path = "../crates/freally-chunk", version = "0.19" }
+freally-chunk = { path = "../crates/freally-chunk", version = "0.20" }
 tempfile = "3"
 tokio = { version = "1", features = ["fs", "macros", "rt", "rt-multi-thread", "sync"] }

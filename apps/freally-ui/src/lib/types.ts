@@ -96,7 +96,9 @@ export type CollisionPolicyWire =
   | "overwrite"
   | "overwrite-if-newer"
   | "keep-both"
-  | "prompt";
+  | "prompt"
+  | "skip-identical-else-overwrite"
+  | "skip-identical-else-prompt";
 
 export type ErrorPolicyDto =
   | { kind: "ask" }
@@ -345,7 +347,9 @@ export interface ContextMenuItem {
     | "trash"
     | "refresh"
     | "external-link"
-    | "info";
+    | "info"
+    | "upload"
+    | "file-text";
   tone?: "default" | "danger";
   disabled?: boolean;
   onClick: () => void;
@@ -540,6 +544,12 @@ export interface SecureDeleteSettingsDto {
   confirmTwice: boolean;
 }
 
+/// FFM-M03 — trash-aware delete + move-to-trash safety nets.
+export interface SafetySettingsDto {
+  confirmTrashDelete: boolean;
+  moveSourceToTrash: boolean;
+}
+
 export type LogLevelWire =
   | "off"
   | "trace"
@@ -604,6 +614,7 @@ export interface PowerPoliciesDto {
   presentation: PowerRuleDto;
   fullscreen: PowerRuleDto;
   thermal: ThermalRuleDto;
+  keepAwakeDuringJobs: boolean;
 }
 
 /** Phase 47 — one diagnostics sample, the `job-diag` event payload. The
@@ -627,6 +638,7 @@ export interface SettingsDto {
   transfer: TransferSettingsDto;
   shell: ShellSettingsDto;
   secureDelete: SecureDeleteSettingsDto;
+  safety: SafetySettingsDto;
   advanced: AdvancedSettingsDto;
   filters: FiltersDto;
   updater: UpdaterSettingsDto;
@@ -919,4 +931,44 @@ export interface DndSettingsDto {
   springLoadDelayMs: number;
   showDragThumbnails: boolean;
   highlightInvalidTargets: boolean;
+}
+
+/// First-run EULA gate status (`eula_status` command). Until `accepted`
+/// is true for the current `version`, App renders the EulaGate instead
+/// of the main UI.
+export interface EulaStatus {
+  version: string;
+  text: string;
+  accepted: boolean;
+}
+
+/// Payload of the `shell-enqueue` event — files arriving from the paste
+/// hotkey, the intercepted OS copy verb, or a CLI `--enqueue` without a
+/// destination. FFM-M01's paste chooser consumes it.
+export interface ShellEnqueueDto {
+  verb: "copy" | "move";
+  paths: string[];
+}
+
+/// FFM-M02 — one planned undo action (`undo_plan` / `undo_apply`).
+export interface UndoRowDto {
+  src: string;
+  dst: string;
+  size: number;
+  action: "trash-dst" | "move-back";
+  status: "ready" | "skip-missing" | "skip-changed" | "conflict";
+}
+
+export interface UndoPlanDto {
+  jobId: number;
+  kind: "copy" | "move";
+  rows: UndoRowDto[];
+  ready: number;
+  skipped: number;
+}
+
+export interface UndoReportDto {
+  done: number;
+  skipped: number;
+  failed: number;
 }

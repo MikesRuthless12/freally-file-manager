@@ -1424,3 +1424,179 @@ export async function repositoryForget(snapshotId: number): Promise<boolean> {
 export async function repositoryGc(): Promise<GcReportDto> {
   return invoke<GcReportDto>("repository_gc");
 }
+
+// ---------------------------------------------------------------------
+// First-run EULA acceptance gate.
+// ---------------------------------------------------------------------
+
+import type { EulaStatus } from "./types";
+
+/** The embedded EULA text + version and whether it is already accepted. */
+export async function eulaStatus(): Promise<EulaStatus> {
+  return invoke<EulaStatus>("eula_status");
+}
+
+/** Persist acceptance of the current EULA version. Idempotent. */
+export async function eulaAccept(): Promise<void> {
+  await invoke("eula_accept");
+}
+
+/** Decline the EULA: exit the app without touching settings. */
+export async function eulaDeclineQuit(): Promise<void> {
+  await invoke("eula_decline_quit");
+}
+
+// ---------------------------------------------------------------------
+// FFM-M01 — Explorer copy-verb takeover.
+// ---------------------------------------------------------------------
+
+/** Live state of the Windows copy-verb interceptor for the Settings UI. */
+export interface CopyInterceptStatus {
+  supported: boolean;
+  handlerRegistered: boolean;
+  active: boolean;
+}
+
+/** Probe whether the copy interceptor is supported / installed / active. */
+export async function shellCopyInterceptStatus(): Promise<CopyInterceptStatus> {
+  return invoke<CopyInterceptStatus>("shell_copy_intercept_status");
+}
+
+/** One-click revert to the OS copy handler (clears the stored flag too). */
+export async function shellRevertOsCopyHandler(): Promise<void> {
+  await invoke("shell_revert_os_copy_handler");
+}
+
+/** Completion report of a plain "System copy / move" paste. */
+export interface SystemPasteReport {
+  items: number;
+  bytes: number;
+}
+
+/** Plain, fast, unverified OS-style paste (the chooser's System row). */
+export async function systemPaste(
+  verb: "copy" | "move",
+  sources: string[],
+  destination: string,
+): Promise<SystemPasteReport> {
+  return invoke<SystemPasteReport>("system_paste", {
+    verb,
+    sources,
+    destination,
+  });
+}
+
+// ---------------------------------------------------------------------
+// FFM-M02 — transactional undo.
+// ---------------------------------------------------------------------
+
+import type { UndoPlanDto, UndoReportDto } from "./types";
+
+/** Preview what undoing a history job would touch. Read-only. */
+export async function undoPlan(jobId: number): Promise<UndoPlanDto> {
+  return invoke<UndoPlanDto>("undo_plan", { jobId });
+}
+
+/** Execute a previously previewed undo. */
+export async function undoApply(jobId: number): Promise<UndoReportDto> {
+  return invoke<UndoReportDto>("undo_apply", { jobId });
+}
+
+/** The newest succeeded copy/move job's plan (the Ctrl+Z target). */
+export async function undoLastCandidate(): Promise<UndoPlanDto | null> {
+  return invoke<UndoPlanDto | null>("undo_last_candidate");
+}
+
+// ---------------------------------------------------------------------
+// FFM-M03 — trash-aware delete.
+// ---------------------------------------------------------------------
+
+/** How many paths a trash-delete moved to the OS trash / failed. */
+export interface TrashReport {
+  trashed: number;
+  failed: number;
+}
+
+/** Send paths to the OS Recycle Bin / Trash (recoverable). */
+export async function trashDelete(paths: string[]): Promise<TrashReport> {
+  return invoke<TrashReport>("trash_delete", { paths });
+}
+
+// ---------------------------------------------------------------------
+// FFM-M04 — eject / safely-remove a destination volume.
+// ---------------------------------------------------------------------
+
+/** Flush + safely dismount the volume a path lives on. */
+export async function ejectVolume(path: string): Promise<void> {
+  await invoke("eject_volume", { path });
+}
+
+// ---------------------------------------------------------------------
+// FFM-M07 — failed-file ledger + retry-failed pass.
+// ---------------------------------------------------------------------
+
+/** One row of a job's failed-file ledger. */
+export interface FailedItemDto {
+  src: string;
+  dst: string;
+  errorCode: string | null;
+  errorMsg: string | null;
+}
+
+/** Every failed item of a history job. */
+export async function jobFailedItems(jobId: number): Promise<FailedItemDto[]> {
+  return invoke<FailedItemDto[]>("job_failed_items", { jobId });
+}
+
+/** Export a job's failed set to `dest` as txt / csv / json. */
+export async function exportFailedItems(
+  jobId: number,
+  format: "txt" | "csv" | "json",
+  dest: string,
+): Promise<void> {
+  await invoke("export_failed_items", { jobId, format, dest });
+}
+
+// ---------------------------------------------------------------------
+// FFM-M08 — checksum sidecar jobs.
+// ---------------------------------------------------------------------
+
+export interface SidecarCreateReport {
+  files: number;
+  sidecarPath: string;
+}
+
+export interface SidecarVerifyReport {
+  ok: number;
+  failed: number;
+  missing: number;
+  problems: { path: string; status: "failed" | "missing" }[];
+}
+
+/** File extensions Freally recognizes as checksum sidecars. */
+export const SIDECAR_EXTENSIONS = [
+  "sfv",
+  "md5",
+  "sha1",
+  "sha256",
+  "sha512",
+  "b3",
+  "xxh64",
+  "xxh128",
+] as const;
+
+/** Create a checksum sidecar for a tree/file. `style` = gnu|bsd|sfv. */
+export async function sidecarCreate(
+  root: string,
+  algo: string,
+  style: "gnu" | "bsd" | "sfv",
+): Promise<SidecarCreateReport> {
+  return invoke<SidecarCreateReport>("sidecar_create", { root, algo, style });
+}
+
+/** Verify a sidecar by re-hashing every file it references. */
+export async function sidecarVerify(
+  sidecar: string,
+): Promise<SidecarVerifyReport> {
+  return invoke<SidecarVerifyReport>("sidecar_verify", { sidecar });
+}

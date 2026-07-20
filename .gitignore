@@ -78,6 +78,12 @@ apps/freally-ui/src-tauri/Cargo.lock
 /freally-file-manager-Build-Prompts-Guide.md
 /freally-file-manager-Build-Prompts-Guide2.md
 /CT26.txt
+# The versioned feature roadmap + per-build human-verification tracker
+# reveal planned features — local-only, same policy as docs/ROADMAP.md.
+/Freally-File-Manager-Feature-Roadmap.md
+/Live-To-Do-List.md
+# Stray root icons dir (the real Tauri app lives at apps/freally-ui/src-tauri).
+/src-tauri/
 /docs/ARCHITECTURE.md
 # Phase 49b–50i implementation design docs (reveal planned features) — local-only.
 /docs/design/

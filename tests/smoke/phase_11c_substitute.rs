@@ -59,6 +59,51 @@ fn canned_args(key: &str) -> HashMap<&'static str, String> {
         "drop-dialog-subtitle" => {
             m.insert("count", "3".to_string());
         }
+        "eula-version" => {
+            m.insert("version", "2026-07-19".to_string());
+        }
+        "eula-error" => {
+            m.insert("error", "disk full".to_string());
+        }
+        "paste-chooser-files" => {
+            m.insert("count", "4".to_string());
+        }
+        "toast-system-paste-done" => {
+            m.insert("items", "4".to_string());
+        }
+        "undo-summary" => {
+            m.insert("ready", "3".to_string());
+            m.insert("total", "5".to_string());
+        }
+        "undo-confirm" => {
+            m.insert("count", "3".to_string());
+        }
+        "toast-undo-done" => {
+            m.insert("done", "3".to_string());
+            m.insert("skipped", "1".to_string());
+            m.insert("failed", "0".to_string());
+        }
+        "trash-confirm" => {
+            m.insert("path", r"C:\data\old.txt".to_string());
+        }
+        "toast-trash-done" => {
+            m.insert("trashed", "5".to_string());
+            m.insert("failed", "0".to_string());
+        }
+        "toast-eject-failed" => {
+            m.insert("error", "still in use".to_string());
+        }
+        "toast-retry-failed-queued" => {
+            m.insert("count", "3".to_string());
+        }
+        "toast-checksums-created" => {
+            m.insert("files", "42".to_string());
+        }
+        "sidecar-verify-summary" => {
+            m.insert("ok", "40".to_string());
+            m.insert("failed", "1".to_string());
+            m.insert("missing", "1".to_string());
+        }
         "toast-history-purged" => {
             m.insert("count", "42".to_string());
         }

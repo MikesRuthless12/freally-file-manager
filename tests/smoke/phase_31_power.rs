@@ -204,6 +204,7 @@ fn case6_settings_toml_round_trip() {
             presentation: PowerRuleChoice::Pause,
             fullscreen: PowerRuleChoice::Continue,
             thermal: ThermalRuleChoice::CapPercent { percent: 40 },
+            keep_awake_during_jobs: true,
         },
         ..Default::default()
     };

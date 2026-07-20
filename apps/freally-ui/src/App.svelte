@@ -34,6 +34,10 @@
   import TaskCenter from "./lib/components/TaskCenter.svelte";
   import RepositoryWizard from "./lib/components/RepositoryWizard.svelte";
   import Toast from "./lib/components/Toast.svelte";
+  import EulaGate from "./lib/components/EulaGate.svelte";
+  import PasteChooserModal from "./lib/components/PasteChooserModal.svelte";
+  import UndoPreviewModal from "./lib/components/UndoPreviewModal.svelte";
+  import SidecarVerifyModal from "./lib/components/SidecarVerifyModal.svelte";
 
   import { invoke } from "@tauri-apps/api/core";
 
@@ -48,21 +52,31 @@
     errorDisplayMode,
     initStores,
     initTaskListeners,
+    openUndoPreview,
     refreshRepos,
     jobs,
     openSettings,
+    pasteChooser,
     pushToast,
     setF2Mode,
+    sidecarVerifyResult,
     syncDrawerOpen,
+    undoPreview,
   } from "./lib/stores";
   import {
     cancelJob,
+    ejectVolume,
+    eulaStatus,
+    getSettings,
     pauseJob,
     removeJob,
     resumeJob,
     revealInFolder,
+    sidecarCreate,
+    trashDelete,
+    undoLastCandidate,
   } from "./lib/ipc";
-  import type { ContextMenuItem, JobDto, PendingResumeDto, SettingsDto } from "./lib/types";
+  import type { ContextMenuItem, EulaStatus, JobDto, PendingResumeDto, SettingsDto } from "./lib/types";
 
   let selectedId: number | null = $state(null);
   let detailsJob: JobDto | null = $state(null);
@@ -84,6 +98,12 @@
   let storesCleanup: (() => void) | null = null;
   let themeCleanup: (() => void) | null = null;
   let f2KeyCleanup: (() => void) | null = null;
+
+  // First-run EULA gate: `null` while the status loads, then the
+  // backend's answer. Until the current EULA version is accepted the
+  // main UI neither renders nor boots (no stores, no listeners, no
+  // backend chatter beyond `eula_status` itself).
+  let eula: EulaStatus | null = $state(null);
 
   // Phase 45.5 — F2 toggles `auto_enqueue_next` on the registry so
   // every subsequent enqueue piles into the running queue rather
@@ -113,14 +133,62 @@
     );
   }
 
+  // FFM-M02 — Ctrl+Z opens the undo preview for the newest succeeded
+  // copy/move job. Window-scoped; skipped while typing so a text-field
+  // undo is never hijacked.
+  let undoFetching = false;
+  async function onUndoKeydown(e: KeyboardEvent): Promise<void> {
+    if (e.key.toLowerCase() !== "z" || !(e.ctrlKey || e.metaKey)) return;
+    if (e.altKey || e.shiftKey) return;
+    if (isTypingTarget(e.target)) return;
+    e.preventDefault();
+    if (undoFetching) return;
+    undoFetching = true;
+    try {
+      const plan = await undoLastCandidate();
+      if (plan) openUndoPreview(plan);
+      else pushToast("info", "toast-undo-nothing");
+    } catch (err) {
+      pushToast("error", err instanceof Error ? err.message : String(err));
+    } finally {
+      undoFetching = false;
+    }
+  }
+
   onMount(async () => {
     themeCleanup = initTheme();
+    // Fire the gate-status fetch alongside i18n init — independent
+    // round-trips; the gate needs i18n only to *render*.
+    const eulaPromise = eulaStatus().catch((err) => {
+      console.error("[eula_status]", err);
+      return null;
+    });
     await initI18n();
+    // The `??` fallback covers only a missing backend (plain-browser
+    // dev). The e2e fixture mocks `eula_status` explicitly, and the
+    // shipped app always has the command registered — an error there
+    // is logged above rather than silently swallowed.
+    eula = (await eulaPromise) ?? { version: "", text: "", accepted: true };
+    if (eula.accepted) await bootMain();
+  });
+
+  function onEulaAccepted() {
+    if (eula) eula = { ...eula, accepted: true };
+    void bootMain();
+  }
+
+  // Everything that boots the main UI — stores, listeners, hotkeys,
+  // resume prompts — runs only after the EULA gate clears.
+  async function bootMain() {
     storesCleanup = await initStores();
     void initTaskListeners();
     void refreshRepos();
     window.addEventListener("keydown", onF2Keydown);
-    f2KeyCleanup = () => window.removeEventListener("keydown", onF2Keydown);
+    window.addEventListener("keydown", onUndoKeydown);
+    f2KeyCleanup = () => {
+      window.removeEventListener("keydown", onF2Keydown);
+      window.removeEventListener("keydown", onUndoKeydown);
+    };
     // Phase 20 — fetch the pending-resume list once at mount. The
     // Rust side populated `AppState::startup_unfinished` from the
     // journal during `lib.rs::run`. Failure surfaces an empty list
@@ -142,7 +210,7 @@
     } catch (err) {
       console.error("[pending_resumes]", err);
     }
-  });
+  }
 
   onDestroy(() => {
     storesCleanup?.();
@@ -190,6 +258,12 @@
       icon: "external-link",
       onClick: () => void revealInFolder(job.src),
     });
+    items.push({
+      id: "trash-src",
+      label: t("menu-trash-source"),
+      icon: "trash",
+      onClick: () => void trashJobSource(job),
+    });
     if (job.dst) {
       items.push({
         id: "reveal-dst",
@@ -197,8 +271,70 @@
         icon: "external-link",
         onClick: () => void revealInFolder(job.dst!),
       });
+      items.push({
+        id: "eject-dst",
+        label: t("menu-eject-destination"),
+        icon: "upload",
+        onClick: () => void ejectJobDestination(job),
+      });
+      items.push({
+        id: "sidecar-dst",
+        label: t("menu-create-checksums"),
+        icon: "file-text",
+        onClick: () => void createChecksums(job),
+      });
     }
     return items;
+  }
+
+  // FFM-M03 — send a job's source to the OS trash (recoverable),
+  // honoring the confirm-before-trash safety toggle.
+  async function trashJobSource(job: JobDto): Promise<void> {
+    try {
+      const settings = await getSettings();
+      if (
+        settings.safety?.confirmTrashDelete !== false &&
+        !confirm(t("trash-confirm", { path: job.src }))
+      ) {
+        return;
+      }
+      const report = await trashDelete([job.src]);
+      pushToast(
+        report.failed > 0 ? "error" : "success",
+        t("toast-trash-done", { trashed: report.trashed, failed: report.failed }),
+      );
+    } catch (err) {
+      pushToast("error", err instanceof Error ? err.message : String(err));
+    }
+  }
+
+  // FFM-M08 — write a SHA-256 (GNU-style) checksum sidecar for a
+  // completed job's destination tree.
+  async function createChecksums(job: JobDto): Promise<void> {
+    if (!job.dst) return;
+    try {
+      const report = await sidecarCreate(job.dst, "sha256", "gnu");
+      pushToast(
+        "success",
+        t("toast-checksums-created", { files: report.files }),
+      );
+    } catch (err) {
+      pushToast("error", err instanceof Error ? err.message : String(err));
+    }
+  }
+
+  // FFM-M04 — flush + safely eject the volume a job's destination
+  // lives on.
+  async function ejectJobDestination(job: JobDto): Promise<void> {
+    if (!job.dst) return;
+    try {
+      await ejectVolume(job.dst);
+      pushToast("success", "toast-eject-done");
+    } catch (err) {
+      pushToast("error", t("toast-eject-failed", {
+        error: err instanceof Error ? err.message : String(err),
+      }));
+    }
   }
 
   function openContextMenu(e: MouseEvent, job: JobDto) {
@@ -220,6 +356,11 @@
 </script>
 
 <main class="app" aria-label={t("window-title")}>
+  {#if eula && !eula.accepted}
+  <!-- First-run EULA gate: the main UI below stays unmounted until
+       the current version is accepted (or the app quits). -->
+  <EulaGate status={eula} onAccepted={onEulaAccepted} />
+  {:else if eula}
   <Header />
   <!-- Phase 45.3 — named-queue tab strip. Hides itself when the
        registry is empty (cold-launch UX), surfaces above the JobList
@@ -265,6 +406,21 @@
 
   {#if $dropped.length > 0}
     <DropStagingDialog paths={$dropped} />
+  {/if}
+
+  <!-- FFM-M01: paste-time engine chooser (System vs Freally). -->
+  {#if $pasteChooser}
+    <PasteChooserModal request={$pasteChooser} />
+  {/if}
+
+  <!-- FFM-M02: undo preview (Ctrl+Z / history-row Undo). -->
+  {#if $undoPreview}
+    <UndoPreviewModal plan={$undoPreview} />
+  {/if}
+
+  <!-- FFM-M08: checksum sidecar verify result (drag a sidecar in). -->
+  {#if $sidecarVerifyResult}
+    <SidecarVerifyModal report={$sidecarVerifyResult} />
   {/if}
 
   <!-- Phase 8 error prompt (modal or drawer) + Phase 22 aggregate
@@ -318,6 +474,7 @@
   <RepositoryWizard />
 
   <Toast />
+  {/if}
 </main>
 
 <style>
@@ -380,6 +537,27 @@
       --accent: #1f5bc8;
       --error: #a52020;
       --ok: #1e6b3c;
+    }
+  }
+
+  /* Modal background blur — the suite-wide Havoc standard, applied
+     once here so every dialog backdrop inherits it (every modal's
+     full-screen overlay carries the `backdrop` class). Each backdrop
+     blurs only what is beneath it, so when dialogs stack the
+     companion dialog above stays crisp while the app behind both is
+     blurred. No transition is attached, so reduced-motion needs no
+     special casing; browsers without backdrop-filter keep the plain
+     dim overlay. */
+  :global(.backdrop) {
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  /* Respect reduced transparency: keep the dim, drop the blur. */
+  @media (prefers-reduced-transparency: reduce) {
+    :global(.backdrop) {
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
     }
   }
 

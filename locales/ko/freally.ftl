@@ -1347,3 +1347,88 @@ restore-toast-partial = { $restored }개 복원, { $skipped }개 건너뜀, { $f
 
 # More Freally apps (embedded Central panel) — host chrome
 moreapps-title = 더 많은 Freally 앱
+# First-run EULA acceptance gate.
+eula-title = 최종 사용자 라이선스 계약
+eula-version = 버전 { $version }
+eula-intro = 아래 계약을 검토하세요. Freally File Manager를 사용하려면 먼저 동의해야 합니다.
+eula-scroll-hint = 끝까지 스크롤하면 "동의함"이 활성화됩니다.
+eula-thanks = 읽어 주셔서 감사합니다.
+eula-agree = 동의함
+eula-decline = 거부 후 종료
+eula-error = 동의를 저장할 수 없습니다: { $error }
+
+# FFM-M01 — Explorer copy-verb takeover.
+settings-intercept-copy-unsupported = 복사 가로채기는 Windows에서만 사용할 수 있습니다.
+settings-intercept-copy-needs-menu = 먼저 상황에 맞는 메뉴 통합을 켜세요 — 가로채기가 넘겨받으려면 복사 처리기가 등록되어 있어야 합니다.
+settings-revert-copy-handler = Windows 복사 처리기로 되돌리기
+toast-copy-handler-reverted = Windows 복사 처리기로 되돌렸습니다
+settings-context-menu-hint = OS에 Freally의 마우스 오른쪽 메뉴와 복사 처리기를 등록하거나 제거합니다(사용자별, 관리자 불필요).
+paste-chooser-title = 복사 및 붙여넣기
+paste-chooser-close = 닫기
+paste-chooser-files = { $count }개 파일 — 대상 선택
+paste-chooser-system-copy = 시스템 복사
+paste-chooser-system-move = 시스템 이동
+paste-chooser-system-hint = 빠른 일반 전송, 검증 없음
+paste-chooser-freally-copy = Freally 복사
+paste-chooser-freally-move = Freally 이동
+paste-chooser-freally-hint = 검증된 바이트 단위 정확한 전송
+paste-chooser-replace-older = Freally — 오래된 파일 교체
+paste-chooser-replace-older-hint = 검증됨; 원본이 더 새로울 때만 덮어씁니다
+paste-chooser-more = 추가 옵션…
+toast-system-paste-done = { $items }개 항목을 붙여넣었습니다
+
+# FFM-M02 — transactional undo.
+undo-title-copy = 복사 실행 취소 — 복사된 파일을 제거할까요?
+undo-title-move = 이동 실행 취소 — 파일을 되돌릴까요?
+undo-summary = { $total }개 중 { $ready }개 항목을 실행 취소할 수 있습니다. 나머지는 변경되었거나 없거나 충돌합니다.
+undo-action-trash = 휴지통으로
+undo-action-move-back = 되돌리기
+undo-status-ready = 준비됨
+undo-status-skip-missing = 없음 — 건너뜀
+undo-status-skip-changed = 변경됨 — 건너뜀
+undo-status-conflict = 원래 경로 사용 중
+undo-cancel = 취소
+undo-confirm = { $count }개 항목 실행 취소
+toast-undo-done = 실행 취소 완료: { $done }개 완료, { $skipped }개 건너뜀, { $failed }개 실패
+toast-undo-nothing = 실행 취소할 항목 없음
+history-undo = 실행 취소
+history-undo-hint = 이 작업을 되돌립니다. 복사된 파일은 휴지통으로, 이동된 파일은 원래 위치로 돌아갑니다
+
+# FFM-M03 — trash-aware delete.
+menu-trash-source = 원본을 휴지통으로 삭제
+trash-confirm = 휴지통으로 보낼까요?
+{ $path }
+toast-trash-done = 휴지통으로 이동: { $trashed }개 항목, { $failed }개 실패
+settings-safety-confirm-trash = 휴지통으로 삭제하기 전에 확인
+settings-safety-move-to-trash = 이동한 원본 파일을 휴지통으로 보내기
+settings-safety-move-to-trash-hint = 이동할 때 원본을 삭제하지 않고 휴지통으로 보냅니다 — 복구 가능한 이동.
+
+# FFM-M04/M05 — eject + keep-awake.
+menu-eject-destination = 대상 볼륨 꺼내기
+toast-eject-done = 볼륨을 꺼냈습니다 — 안전하게 제거 가능
+toast-eject-failed = 꺼낼 수 없음: { $error }
+settings-power-keep-awake = 작업 실행 중 컴퓨터를 켜 둔 상태로 유지
+settings-power-keep-awake-hint = 작업이 복사하는 동안 시스템 잠자기 방지 잠금을 유지합니다(절전 없음, 화면 보호기 없음).
+
+# FFM-M06 — content-aware collision policies.
+collision-policy-skip-identical-else-overwrite = 내용이 다를 때만 덮어쓰기
+collision-policy-skip-identical-else-prompt = 같으면 건너뛰고, 아니면 확인
+
+# FFM-M07 — failed-file ledger + retry.
+history-retry-failed = 실패 재시도
+history-retry-failed-hint = 이 작업에서 실패한 파일만 다시 복사
+history-export-failed = 실패 내보내기
+history-export-failed-hint = 실패한 파일 목록을 CSV / TXT / JSON으로 저장
+toast-retry-failed-none = 재시도할 실패 파일 없음
+toast-retry-failed-queued = 실패한 파일 { $count }개 다시 대기열에 추가
+toast-failed-exported = 실패 목록을 내보냈습니다
+
+# FFM-M08 — checksum sidecars.
+menu-create-checksums = 체크섬 만들기 (SHA-256)
+toast-checksums-created = { $files }개 파일의 체크섬을 작성했습니다
+sidecar-verify-clean-title = 모든 파일 검증됨
+sidecar-verify-bad-title = 체크섬 검증 실패
+sidecar-verify-summary = OK { $ok }개, 실패 { $failed }개, 없음 { $missing }개
+sidecar-verify-failed = 불일치
+sidecar-verify-missing = 없음
+sidecar-verify-close = 닫기

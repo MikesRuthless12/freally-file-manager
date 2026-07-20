@@ -302,3 +302,6 @@ footer a:hover {
   .doc-toc a{border-left:none;border-bottom:2px solid transparent;border-radius:6px;padding:.3rem .55rem;font-size:.85rem;}
   .doc-toc a:hover,.doc-toc a.active{border-left-color:transparent;border-bottom-color:var(--accent);}
 }
+
+/* Enlarged hero logo so the app icon is visible and readable (>= 284px). */
+.hero .logo { width: 288px; max-width: 72vw; height: auto; }

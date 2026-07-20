@@ -196,6 +196,17 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           fail_on_unmatched_files: false
+          # Auto-generate the release body from merged PRs/commits on
+          # creation. docs/CHANGELOG.md is deliberately untracked (IP
+          # policy), so the release body is the release-notes source of
+          # record — publish-updater-manifest snapshots it into
+          # latest.json `notes` (shown by the in-app update dialog) right
+          # after the build finishes. Note: that snapshot is taken from
+          # the body as it exists at build time, so to curate the notes
+          # users see, edit the tag's release *description* and re-run the
+          # "Publish updater manifest" job — a later manual edit alone
+          # does not refresh latest.json.
+          generate_release_notes: true
           files: |
             release-staging/*
 
@@ -244,10 +255,13 @@ jobs:
           tag = os.environ["TAG"]; repo = os.environ["REPO"]
           version = tag.lstrip("v")
 
-          # Real browser download URLs for every asset on the release.
-          assets = json.loads(subprocess.check_output(
-              ["gh", "release", "view", tag, "-R", repo, "--json", "assets"]))["assets"]
-          url_by_name = {a["name"]: a["url"] for a in assets}
+          # Real browser download URLs for every asset on the release,
+          # plus the release body + publish date for the manifest's
+          # `notes` / `pub_date` (the in-app update dialog shows both).
+          rel = json.loads(subprocess.check_output(
+              ["gh", "release", "view", tag, "-R", repo,
+               "--json", "assets,body,publishedAt"]))
+          url_by_name = {a["name"]: a["url"] for a in rel["assets"]}
 
           # The Tauri-updater download target per platform, matched by the tail of
           # the uploaded asset name (GitHub turns spaces into dots). Windows uses
@@ -287,10 +301,15 @@ jobs:
                     f"{sorted(platforms)}", file=sys.stderr)
               sys.exit(1)
 
+          # Carry the real release notes, not a canned string — a fresh
+          # release body can still be empty if generate_release_notes
+          # found nothing, so keep the generic line as the fallback.
+          notes = (rel.get("body") or "").strip() \
+              or f"Freally File Manager {tag}. See the GitHub release for details."
           out = {
               "version": version,
-              "notes": f"Freally File Manager {tag}. See CHANGELOG.md for details.",
-              "pub_date": "",
+              "notes": notes,
+              "pub_date": rel.get("publishedAt") or "",
               "platforms": platforms,
           }
           pathlib.Path("latest.json").write_text(json.dumps(out, indent=2))

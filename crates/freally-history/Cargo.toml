@@ -38,7 +38,7 @@ tokio = { version = "1", features = [
 # Phase 42 Part B smoke — exercises the retention math from
 # freally-core against the new `versions` table. Dev-only; the
 # runtime graph stays free of freally-core to avoid a cycle.
-freally-core = { path = "../freally-core", version = "0.19" }
+freally-core = { path = "../freally-core", version = "0.20" }
 
 # Phase 9 smoke test lives at the workspace root (same convention as
 # Phase 6/7a/7b/8).

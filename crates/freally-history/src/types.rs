@@ -25,7 +25,7 @@ impl JobRowId {
 /// One row in the `jobs` table. Carries the full lifecycle payload;
 /// `record_start` inserts it with `status = "running"` and
 /// `finished_at_ms = None`, `record_finish` updates the same row.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct JobSummary {
     /// Populated after `record_start` returns. Zero on insert-path
     /// input.

@@ -1347,3 +1347,88 @@ restore-toast-partial = { $restored } wiederhergestellt, { $skipped } übersprun
 
 # More Freally apps (embedded Central panel) — host chrome
 moreapps-title = Weitere Freally-Apps
+# First-run EULA acceptance gate.
+eula-title = Endbenutzer-Lizenzvereinbarung
+eula-version = Version { $version }
+eula-intro = Bitte lesen Sie die folgende Vereinbarung. Sie müssen ihr zustimmen, bevor Sie Freally File Manager verwenden können.
+eula-scroll-hint = Zum Ende scrollen, um „Ich stimme zu" zu aktivieren.
+eula-thanks = Danke fürs Lesen.
+eula-agree = Ich stimme zu
+eula-decline = Ablehnen & Beenden
+eula-error = Zustimmung konnte nicht gespeichert werden: { $error }
+
+# FFM-M01 — Explorer copy-verb takeover.
+settings-intercept-copy-unsupported = Kopie-Interception ist nur unter Windows verfügbar.
+settings-intercept-copy-needs-menu = Zuerst die Kontextmenü-Integration aktivieren — der Kopier-Handler muss registriert sein, bevor die Interception übernehmen kann.
+settings-revert-copy-handler = Auf Windows-Kopier-Handler zurücksetzen
+toast-copy-handler-reverted = Auf den Windows-Kopier-Handler zurückgesetzt
+settings-context-menu-hint = Registriert oder entfernt Freallys Rechtsklick-Menü und Kopier-Handler im Betriebssystem (pro Benutzer, ohne Admin).
+paste-chooser-title = Kopieren & Einfügen
+paste-chooser-close = Schließen
+paste-chooser-files = { $count } Datei(en) — Ziel wählen
+paste-chooser-system-copy = System-Kopie
+paste-chooser-system-move = System-Verschieben
+paste-chooser-system-hint = Schnelle einfache Übertragung, ohne Verifizierung
+paste-chooser-freally-copy = Freally-Kopie
+paste-chooser-freally-move = Freally-Verschieben
+paste-chooser-freally-hint = Verifizierte byte-genaue Übertragung
+paste-chooser-replace-older = Freally — ältere Dateien ersetzen
+paste-chooser-replace-older-hint = Verifiziert; überschreibt nur, wenn die Quelle neuer ist
+paste-chooser-more = Weitere Optionen…
+toast-system-paste-done = { $items } Element(e) eingefügt
+
+# FFM-M02 — transactional undo.
+undo-title-copy = Kopieren rückgängig — kopierte Dateien entfernen?
+undo-title-move = Verschieben rückgängig — Dateien zurückverschieben?
+undo-summary = { $ready } von { $total } Einträgen können rückgängig gemacht werden; der Rest wurde geändert, fehlt oder steht in Konflikt.
+undo-action-trash = In den Papierkorb
+undo-action-move-back = Zurückverschieben
+undo-status-ready = Bereit
+undo-status-skip-missing = Fehlt — übersprungen
+undo-status-skip-changed = Geändert — übersprungen
+undo-status-conflict = Ursprünglicher Pfad belegt
+undo-cancel = Abbrechen
+undo-confirm = { $count } Einträge rückgängig machen
+toast-undo-done = Rückgängig abgeschlossen: { $done } erledigt, { $skipped } übersprungen, { $failed } fehlgeschlagen
+toast-undo-nothing = Nichts rückgängig zu machen
+history-undo = Rückgängig
+history-undo-hint = Diesen Auftrag umkehren: kopierte Dateien wandern in den Papierkorb, verschobene kehren an ihren Ursprungsort zurück
+
+# FFM-M03 — trash-aware delete.
+menu-trash-source = Quelle in den Papierkorb
+trash-confirm = In den Papierkorb verschieben?
+{ $path }
+toast-trash-done = In den Papierkorb verschoben: { $trashed } Element(e), { $failed } fehlgeschlagen
+settings-safety-confirm-trash = Vor dem Löschen in den Papierkorb bestätigen
+settings-safety-move-to-trash = Verschobene Quelldateien in den Papierkorb
+settings-safety-move-to-trash-hint = Beim Verschieben die Quelle in den Papierkorb legen statt sie zu löschen — ein wiederherstellbares Verschieben.
+
+# FFM-M04/M05 — eject + keep-awake.
+menu-eject-destination = Ziellaufwerk auswerfen
+toast-eject-done = Laufwerk ausgeworfen — sicher entfernbar
+toast-eject-failed = Auswerfen fehlgeschlagen: { $error }
+settings-power-keep-awake = Computer wach halten, während Aufträge laufen
+settings-power-keep-awake-hint = Hält eine System-Wachsperre (kein Schlaf, kein Bildschirmschoner), solange ein Auftrag kopiert.
+
+# FFM-M06 — content-aware collision policies.
+collision-policy-skip-identical-else-overwrite = Nur überschreiben, wenn der Inhalt abweicht
+collision-policy-skip-identical-else-prompt = Überspringen, wenn identisch, sonst fragen
+
+# FFM-M07 — failed-file ledger + retry.
+history-retry-failed = Fehlgeschlagene wiederholen
+history-retry-failed-hint = Nur die in diesem Auftrag fehlgeschlagenen Dateien erneut kopieren
+history-export-failed = Fehlgeschlagene exportieren
+history-export-failed-hint = Die Liste fehlgeschlagener Dateien als CSV / TXT / JSON speichern
+toast-retry-failed-none = Keine fehlgeschlagenen Dateien zum Wiederholen
+toast-retry-failed-queued = { $count } fehlgeschlagene Datei(en) erneut eingereiht
+toast-failed-exported = Fehlerliste exportiert
+
+# FFM-M08 — checksum sidecars.
+menu-create-checksums = Prüfsummen erstellen (SHA-256)
+toast-checksums-created = Prüfsummen für { $files } Datei(en) geschrieben
+sidecar-verify-clean-title = Alle Dateien verifiziert
+sidecar-verify-bad-title = Prüfsummenüberprüfung fehlgeschlagen
+sidecar-verify-summary = { $ok } OK, { $failed } fehlgeschlagen, { $missing } fehlend
+sidecar-verify-failed = Abweichung
+sidecar-verify-missing = Fehlt
+sidecar-verify-close = Schließen

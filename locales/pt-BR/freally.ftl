@@ -1347,3 +1347,88 @@ restore-toast-partial = Restaurados { $restored }, ignorados { $skipped }, falha
 
 # More Freally apps (embedded Central panel) — host chrome
 moreapps-title = Mais apps Freally
+# First-run EULA acceptance gate.
+eula-title = Contrato de Licença de Usuário Final
+eula-version = Versão { $version }
+eula-intro = Leia o contrato abaixo. Você precisa aceitá-lo antes de usar o Freally File Manager.
+eula-scroll-hint = Role até o fim para habilitar "Aceito".
+eula-thanks = Obrigado pela leitura.
+eula-agree = Aceito
+eula-decline = Recusar e sair
+eula-error = Não foi possível registrar a aceitação: { $error }
+
+# FFM-M01 — Explorer copy-verb takeover.
+settings-intercept-copy-unsupported = A interceptação de cópia só está disponível no Windows.
+settings-intercept-copy-needs-menu = Ative primeiro a integração com o menu de contexto — o manipulador de cópia precisa estar registrado antes que a interceptação assuma.
+settings-revert-copy-handler = Reverter para o manipulador de cópia do Windows
+toast-copy-handler-reverted = Revertido para o manipulador de cópia do Windows
+settings-context-menu-hint = Registra ou remove o menu de contexto e o manipulador de cópia do Freally no sistema (por usuário, sem admin).
+paste-chooser-title = Copiar e colar
+paste-chooser-close = Fechar
+paste-chooser-files = { $count } arquivo(s) — escolha um destino
+paste-chooser-system-copy = Cópia do sistema
+paste-chooser-system-move = Mover do sistema
+paste-chooser-system-hint = Transferência simples e rápida, sem verificação
+paste-chooser-freally-copy = Cópia do Freally
+paste-chooser-freally-move = Mover com Freally
+paste-chooser-freally-hint = Transferência verificada byte a byte
+paste-chooser-replace-older = Freally — substituir arquivos mais antigos
+paste-chooser-replace-older-hint = Verificada; sobrescreve apenas quando a origem é mais recente
+paste-chooser-more = Mais opções…
+toast-system-paste-done = { $items } item(ns) colado(s)
+
+# FFM-M02 — transactional undo.
+undo-title-copy = Desfazer cópia — remover os arquivos copiados?
+undo-title-move = Desfazer movimentação — devolver os arquivos?
+undo-summary = { $ready } de { $total } item(ns) podem ser desfeitos; o resto mudou, sumiu ou está em conflito.
+undo-action-trash = Para a lixeira
+undo-action-move-back = Devolver
+undo-status-ready = Pronto
+undo-status-skip-missing = Ausente — ignorado
+undo-status-skip-changed = Alterado — ignorado
+undo-status-conflict = Caminho original ocupado
+undo-cancel = Cancelar
+undo-confirm = Desfazer { $count } item(ns)
+toast-undo-done = Desfazer concluído: { $done } feitos, { $skipped } ignorados, { $failed } falharam
+toast-undo-nothing = Nada para desfazer
+history-undo = Desfazer
+history-undo-hint = Reverte este trabalho: arquivos copiados vão para a lixeira, movidos voltam ao local original
+
+# FFM-M03 — trash-aware delete.
+menu-trash-source = Excluir origem para a lixeira
+trash-confirm = Enviar para a lixeira?
+{ $path }
+toast-trash-done = Movido para a lixeira: { $trashed } item(ns), { $failed } falharam
+settings-safety-confirm-trash = Confirmar antes de excluir para a lixeira
+settings-safety-move-to-trash = Enviar arquivos de origem movidos para a lixeira
+settings-safety-move-to-trash-hint = Ao mover, envie a origem para a lixeira em vez de excluí-la — uma movimentação recuperável.
+
+# FFM-M04/M05 — eject + keep-awake.
+menu-eject-destination = Ejetar volume de destino
+toast-eject-done = Volume ejetado — seguro para remover
+toast-eject-failed = Não foi possível ejetar: { $error }
+settings-power-keep-awake = Manter o computador ativo enquanto há tarefas
+settings-power-keep-awake-hint = Mantém um bloqueio do sistema (sem suspensão nem protetor de tela) enquanto uma tarefa copia.
+
+# FFM-M06 — content-aware collision policies.
+collision-policy-skip-identical-else-overwrite = Sobrescrever apenas se o conteúdo diferir
+collision-policy-skip-identical-else-prompt = Ignorar se idêntico; senão perguntar
+
+# FFM-M07 — failed-file ledger + retry.
+history-retry-failed = Repetir com falha
+history-retry-failed-hint = Recopiar apenas os arquivos que falharam neste trabalho
+history-export-failed = Exportar com falha
+history-export-failed-hint = Salvar a lista de arquivos com falha como CSV / TXT / JSON
+toast-retry-failed-none = Nenhum arquivo com falha para repetir
+toast-retry-failed-queued = { $count } arquivo(s) com falha na fila novamente
+toast-failed-exported = Lista de falhas exportada
+
+# FFM-M08 — checksum sidecars.
+menu-create-checksums = Criar somas de verificação (SHA-256)
+toast-checksums-created = Somas gravadas para { $files } arquivo(s)
+sidecar-verify-clean-title = Todos os arquivos verificados
+sidecar-verify-bad-title = Falha na verificação das somas
+sidecar-verify-summary = { $ok } OK, { $failed } falharam, { $missing } ausentes
+sidecar-verify-failed = Divergência
+sidecar-verify-missing = Ausente
+sidecar-verify-close = Fechar

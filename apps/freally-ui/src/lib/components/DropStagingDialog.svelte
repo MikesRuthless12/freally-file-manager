@@ -481,6 +481,12 @@
           <option value="overwrite-if-newer">
             {t("collision-policy-overwrite-if-newer")}
           </option>
+          <option value="skip-identical-else-overwrite">
+            {t("collision-policy-skip-identical-else-overwrite")}
+          </option>
+          <option value="skip-identical-else-prompt">
+            {t("collision-policy-skip-identical-else-prompt")}
+          </option>
           <option value="prompt">{t("collision-policy-prompt")}</option>
         </select>
       </label>

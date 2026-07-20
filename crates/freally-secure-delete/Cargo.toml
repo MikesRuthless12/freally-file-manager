@@ -25,7 +25,7 @@ workspace = true
 experimental-tcg-opal = []
 
 [dependencies]
-freally-core = { path = "../freally-core", version = "0.19" }
+freally-core = { path = "../freally-core", version = "0.20" }
 rand = "0.9"
 thiserror = "2"
 tokio = { version = "1", features = [
@@ -45,14 +45,14 @@ walkdir = "2"
 # the Phase 44.2 PSID argv-leak finding without forcing this crate
 # to drop its `#![forbid(unsafe_code)]` invariant. Unix-only.
 [target.'cfg(unix)'.dependencies]
-freally-platform = { path = "../freally-platform", version = "0.19" }
+freally-platform = { path = "../freally-platform", version = "0.20" }
 
 # Phase 44.3b — Windows-side IOCTL_STORAGE_QUERY_PROPERTY capability
 # probe + physical-drive enumeration via the same unsafe-confined-
 # to-platform seam. Replaces the Phase 44.2 stub
 # WindowsSanitizeHelper with real device-info reads.
 [target.'cfg(windows)'.dependencies]
-freally-platform = { path = "../freally-platform", version = "0.19" }
+freally-platform = { path = "../freally-platform", version = "0.20" }
 
 [dev-dependencies]
 tempfile = "3"

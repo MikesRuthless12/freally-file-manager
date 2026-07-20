@@ -1347,3 +1347,88 @@ restore-toast-partial = { $restored } dipulihkan, { $skipped } dilewati, { $fail
 
 # More Freally apps (embedded Central panel) — host chrome
 moreapps-title = Aplikasi Freally lainnya
+# First-run EULA acceptance gate.
+eula-title = Perjanjian Lisensi Pengguna Akhir
+eula-version = Versi { $version }
+eula-intro = Harap tinjau perjanjian di bawah ini. Anda harus menyetujuinya sebelum menggunakan Freally File Manager.
+eula-scroll-hint = Gulir sampai akhir untuk mengaktifkan "Saya Setuju".
+eula-thanks = Terima kasih telah membaca.
+eula-agree = Saya Setuju
+eula-decline = Tolak & Keluar
+eula-error = Tidak dapat menyimpan persetujuan: { $error }
+
+# FFM-M01 — Explorer copy-verb takeover.
+settings-intercept-copy-unsupported = Intersepsi salinan hanya tersedia di Windows.
+settings-intercept-copy-needs-menu = Aktifkan dulu integrasi menu konteks — penangan salin harus terdaftar sebelum intersepsi dapat mengambil alih.
+settings-revert-copy-handler = Kembalikan ke penangan salin Windows
+toast-copy-handler-reverted = Dikembalikan ke penangan salin Windows
+settings-context-menu-hint = Mendaftarkan atau menghapus menu klik kanan dan penangan salin Freally di OS (per pengguna, tanpa admin).
+paste-chooser-title = Salin & Tempel
+paste-chooser-close = Tutup
+paste-chooser-files = { $count } berkas — pilih tujuan
+paste-chooser-system-copy = Salin sistem
+paste-chooser-system-move = Pindah sistem
+paste-chooser-system-hint = Transfer polos yang cepat, tanpa verifikasi
+paste-chooser-freally-copy = Salin Freally
+paste-chooser-freally-move = Pindah Freally
+paste-chooser-freally-hint = Transfer terverifikasi byte demi byte
+paste-chooser-replace-older = Freally — ganti berkas lama
+paste-chooser-replace-older-hint = Terverifikasi; hanya menimpa jika sumber lebih baru
+paste-chooser-more = Opsi lainnya…
+toast-system-paste-done = { $items } item ditempel
+
+# FFM-M02 — transactional undo.
+undo-title-copy = Urungkan salin — hapus berkas yang disalin?
+undo-title-move = Urungkan pindah — kembalikan berkas?
+undo-summary = { $ready } dari { $total } item dapat diurungkan; sisanya berubah, hilang, atau konflik.
+undo-action-trash = Ke tempat sampah
+undo-action-move-back = Kembalikan
+undo-status-ready = Siap
+undo-status-skip-missing = Hilang — dilewati
+undo-status-skip-changed = Berubah — dilewati
+undo-status-conflict = Jalur asal terpakai
+undo-cancel = Batal
+undo-confirm = Urungkan { $count } item
+toast-undo-done = Pengurungan selesai: { $done } selesai, { $skipped } dilewati, { $failed } gagal
+toast-undo-nothing = Tidak ada yang bisa diurungkan
+history-undo = Urungkan
+history-undo-hint = Membalik pekerjaan ini: berkas yang disalin masuk tempat sampah, yang dipindah kembali ke lokasi asal
+
+# FFM-M03 — trash-aware delete.
+menu-trash-source = Hapus sumber ke tempat sampah
+trash-confirm = Kirim ke tempat sampah?
+{ $path }
+toast-trash-done = Dipindahkan ke tempat sampah: { $trashed } item, { $failed } gagal
+settings-safety-confirm-trash = Konfirmasi sebelum menghapus ke tempat sampah
+settings-safety-move-to-trash = Kirim berkas sumber yang dipindah ke tempat sampah
+settings-safety-move-to-trash-hint = Saat memindahkan, kirim sumber ke tempat sampah alih-alih menghapusnya — pemindahan yang dapat dipulihkan.
+
+# FFM-M04/M05 — eject + keep-awake.
+menu-eject-destination = Keluarkan volume tujuan
+toast-eject-done = Volume dikeluarkan — aman dicabut
+toast-eject-failed = Tidak dapat mengeluarkan: { $error }
+settings-power-keep-awake = Jaga komputer tetap aktif saat tugas berjalan
+settings-power-keep-awake-hint = Menahan kunci sistem (tanpa tidur, tanpa screensaver) selama ada tugas yang menyalin.
+
+# FFM-M06 — content-aware collision policies.
+collision-policy-skip-identical-else-overwrite = Timpa hanya jika isinya berbeda
+collision-policy-skip-identical-else-prompt = Lewati jika identik, jika tidak tanyakan
+
+# FFM-M07 — failed-file ledger + retry.
+history-retry-failed = Coba lagi yang gagal
+history-retry-failed-hint = Salin ulang hanya berkas yang gagal di tugas ini
+history-export-failed = Ekspor yang gagal
+history-export-failed-hint = Simpan daftar berkas gagal sebagai CSV / TXT / JSON
+toast-retry-failed-none = Tidak ada berkas gagal untuk dicoba lagi
+toast-retry-failed-queued = { $count } berkas gagal diantre ulang
+toast-failed-exported = Daftar gagal diekspor
+
+# FFM-M08 — checksum sidecars.
+menu-create-checksums = Buat checksum (SHA-256)
+toast-checksums-created = Checksum ditulis untuk { $files } berkas
+sidecar-verify-clean-title = Semua berkas terverifikasi
+sidecar-verify-bad-title = Verifikasi checksum gagal
+sidecar-verify-summary = { $ok } OK, { $failed } gagal, { $missing } hilang
+sidecar-verify-failed = Tidak cocok
+sidecar-verify-missing = Hilang
+sidecar-verify-close = Tutup

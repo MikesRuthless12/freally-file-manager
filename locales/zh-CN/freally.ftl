@@ -1347,3 +1347,88 @@ restore-toast-partial = 已还原 { $restored } 个，跳过 { $skipped } 个，
 
 # More Freally apps (embedded Central panel) — host chrome
 moreapps-title = 更多 Freally 应用
+# First-run EULA acceptance gate.
+eula-title = 最终用户许可协议
+eula-version = 版本 { $version }
+eula-intro = 请阅读以下协议。使用 Freally File Manager 前必须先接受。
+eula-scroll-hint = 滚动到底部以启用"我同意"。
+eula-thanks = 感谢阅读。
+eula-agree = 我同意
+eula-decline = 拒绝并退出
+eula-error = 无法保存接受记录：{ $error }
+
+# FFM-M01 — Explorer copy-verb takeover.
+settings-intercept-copy-unsupported = 复制拦截仅在 Windows 上可用。
+settings-intercept-copy-needs-menu = 请先启用右键菜单集成——拦截接管前必须先注册复制处理程序。
+settings-revert-copy-handler = 恢复为 Windows 复制处理程序
+toast-copy-handler-reverted = 已恢复为 Windows 复制处理程序
+settings-context-menu-hint = 在系统中注册或移除 Freally 的右键菜单和复制处理程序（按用户，无需管理员）。
+paste-chooser-title = 复制与粘贴
+paste-chooser-close = 关闭
+paste-chooser-files = { $count } 个文件 — 选择目标位置
+paste-chooser-system-copy = 系统复制
+paste-chooser-system-move = 系统移动
+paste-chooser-system-hint = 快速直接传输，不校验
+paste-chooser-freally-copy = Freally 复制
+paste-chooser-freally-move = Freally 移动
+paste-chooser-freally-hint = 经校验的逐字节精确传输
+paste-chooser-replace-older = Freally — 替换较旧文件
+paste-chooser-replace-older-hint = 经校验；仅当来源较新时才覆盖
+paste-chooser-more = 更多选项…
+toast-system-paste-done = 已粘贴 { $items } 个项目
+
+# FFM-M02 — transactional undo.
+undo-title-copy = 撤销复制 — 移除已复制的文件？
+undo-title-move = 撤销移动 — 将文件移回？
+undo-summary = { $total } 个项目中有 { $ready } 个可撤销；其余已更改、丢失或冲突。
+undo-action-trash = 移到回收站
+undo-action-move-back = 移回
+undo-status-ready = 就绪
+undo-status-skip-missing = 缺失 — 已跳过
+undo-status-skip-changed = 已更改 — 已跳过
+undo-status-conflict = 原路径已被占用
+undo-cancel = 取消
+undo-confirm = 撤销 { $count } 个项目
+toast-undo-done = 撤销完成：{ $done } 个完成，{ $skipped } 个跳过，{ $failed } 个失败
+toast-undo-nothing = 没有可撤销的操作
+history-undo = 撤销
+history-undo-hint = 反转此任务：复制的文件移入回收站，移动的文件返回原位置
+
+# FFM-M03 — trash-aware delete.
+menu-trash-source = 将源删除到回收站
+trash-confirm = 发送到回收站？
+{ $path }
+toast-trash-done = 已移到回收站：{ $trashed } 个项目，{ $failed } 个失败
+settings-safety-confirm-trash = 删除到回收站前确认
+settings-safety-move-to-trash = 将移动的源文件发送到回收站
+settings-safety-move-to-trash-hint = 移动时将源发送到回收站而非删除 — 可恢复的移动。
+
+# FFM-M04/M05 — eject + keep-awake.
+menu-eject-destination = 弹出目标卷
+toast-eject-done = 已弹出卷 — 可安全移除
+toast-eject-failed = 无法弹出：{ $error }
+settings-power-keep-awake = 任务运行时保持计算机唤醒
+settings-power-keep-awake-hint = 只要有任务正在复制，就保持系统唤醒锁（不休眠、不启动屏保）。
+
+# FFM-M06 — content-aware collision policies.
+collision-policy-skip-identical-else-overwrite = 仅当内容不同时覆盖
+collision-policy-skip-identical-else-prompt = 相同则跳过，否则询问
+
+# FFM-M07 — failed-file ledger + retry.
+history-retry-failed = 重试失败项
+history-retry-failed-hint = 仅重新复制此任务中失败的文件
+history-export-failed = 导出失败项
+history-export-failed-hint = 将失败文件列表另存为 CSV / TXT / JSON
+toast-retry-failed-none = 没有可重试的失败文件
+toast-retry-failed-queued = 已重新排队 { $count } 个失败文件
+toast-failed-exported = 失败列表已导出
+
+# FFM-M08 — checksum sidecars.
+menu-create-checksums = 创建校验和 (SHA-256)
+toast-checksums-created = 已为 { $files } 个文件写入校验和
+sidecar-verify-clean-title = 所有文件已验证
+sidecar-verify-bad-title = 校验和验证失败
+sidecar-verify-summary = { $ok } 个正常，{ $failed } 个失败，{ $missing } 个缺失
+sidecar-verify-failed = 不匹配
+sidecar-verify-missing = 缺失
+sidecar-verify-close = 关闭

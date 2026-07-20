@@ -149,6 +149,10 @@ pub struct AppState {
     /// drop / Goodbye / Exit so the screensaver isn't permanently
     /// suppressed.
     pub wake_lock: std::sync::Arc<Mutex<Option<freally_platform::WakeLock>>>,
+    /// FFM-M05 — reference-counted keep-awake for the duration of any
+    /// running job. Independent of `wake_lock` (the mobile toggle) so
+    /// neither releases the other. Armed/disarmed by the runner.
+    pub job_keep_awake: std::sync::Arc<crate::keep_awake::KeepAwake>,
     /// Phase 42 / Gap #14 — frontend-supplied per-job progress
     /// channels. Empty by default; populated when the UI invokes
     /// `register_progress_channel(jobId, channel)` after `start_copy`.
@@ -300,6 +304,8 @@ impl AppState {
             // The PWA's "Keep desktop awake" toggle acquires it on
             // demand.
             wake_lock: Arc::new(Mutex::new(None)),
+            // FFM-M05 — idle until the first job arms it.
+            job_keep_awake: Arc::new(crate::keep_awake::KeepAwake::new()),
             // Phase 42 / Gap #14 — empty channel registry; frontend
             // opts in per-job via the `register_progress_channel`
             // command (see `progress_channel.rs`).

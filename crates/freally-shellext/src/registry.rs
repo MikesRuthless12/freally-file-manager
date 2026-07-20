@@ -125,6 +125,12 @@ pub fn verb_registration_keys(
     out
 }
 
+/// The single HKCU key whose `DelegateExecute` value reroutes
+/// Explorer's built-in copy verb. Reverting the interceptor deletes
+/// exactly this key, restoring the OS handler (the built-in verb lives
+/// in HKLM/HKCR and is never touched).
+pub const COPY_INTERCEPTOR_KEY: &str = r"HKCU\Software\Classes\*\shell\copy";
+
 /// Copy-verb interceptor — opt-in TeraCopy-style override.
 ///
 /// Writes `HKCU\Software\Classes\*\shell\copy\DelegateExecute={clsid}`
@@ -133,9 +139,8 @@ pub fn verb_registration_keys(
 /// System-wide install is intentionally not supported — the
 /// interceptor is a per-user preference.
 pub fn copy_interceptor_keys(clsid: &str) -> Vec<(String, String, String)> {
-    let base = r"HKCU\Software\Classes\*\shell\copy".to_string();
     vec![(
-        base.clone(),
+        COPY_INTERCEPTOR_KEY.to_string(),
         "DelegateExecute".to_string(),
         clsid.to_string(),
     )]
@@ -272,6 +277,75 @@ mod windows_impl {
         result
     }
 
+    /// Read a `REG_SZ` value, returning `None` if the key or value is
+    /// absent. Used to probe whether the copy interceptor is active and
+    /// whether the target CLSID is class-registered before we point the
+    /// OS copy verb at it.
+    pub fn read_sz(key_path: &str, value_name: &str) -> Option<String> {
+        use windows::Win32::System::Registry::{RRF_RT_REG_SZ, RegGetValueW};
+        let (hive, subpath) = split_hive(key_path)?;
+        let wide_sub = to_wide(subpath);
+        let wide_name = to_wide(value_name);
+        // Query the size first (chars, incl. NUL), then read into a
+        // right-sized buffer. `RegGetValueW` opens + queries + closes.
+        let mut byte_len: u32 = 0;
+        // SAFETY: wide_sub / wide_name are NUL-terminated and outlive
+        // the call; a null data pointer with a live length pointer is
+        // the documented size-probe form.
+        let rc = unsafe {
+            RegGetValueW(
+                hive,
+                PCWSTR(wide_sub.as_ptr()),
+                PCWSTR(wide_name.as_ptr()),
+                RRF_RT_REG_SZ,
+                None,
+                None,
+                Some(&mut byte_len),
+            )
+        };
+        if rc.is_err() || byte_len == 0 {
+            return None;
+        }
+        let mut buf = vec![0u16; byte_len as usize / 2];
+        let mut have = byte_len;
+        // SAFETY: buf is sized to the length the probe reported and
+        // outlives the call; `have` is updated in place.
+        let rc = unsafe {
+            RegGetValueW(
+                hive,
+                PCWSTR(wide_sub.as_ptr()),
+                PCWSTR(wide_name.as_ptr()),
+                RRF_RT_REG_SZ,
+                None,
+                Some(buf.as_mut_ptr() as *mut core::ffi::c_void),
+                Some(&mut have),
+            )
+        };
+        if rc.is_err() {
+            return None;
+        }
+        // Trim the trailing NUL(s) the API includes in the char count.
+        let end = buf.iter().position(|&c| c == 0).unwrap_or(buf.len());
+        Some(String::from_utf16_lossy(&buf[..end]))
+    }
+
+    /// Whether a copy/move CLSID is class-registered (its
+    /// `InprocServer32` default value names a DLL) in either hive.
+    /// Guards [`super::apply_copy_interceptor`]: pointing Explorer's
+    /// copy verb at an unregistered CLSID would break Ctrl+C.
+    pub fn clsid_registered(clsid: &str) -> bool {
+        for scope in [
+            super::InstallScope::PerUser,
+            super::InstallScope::LocalMachine,
+        ] {
+            let path = super::inproc_server_path(scope, clsid);
+            if read_sz(&path, "").is_some_and(|dll| !dll.is_empty()) {
+                return true;
+            }
+        }
+        false
+    }
+
     /// Recursively delete a key and its subkeys. Missing keys are not
     /// an error — uninstall is idempotent.
     pub fn delete_tree(key_path: &str) -> WinResult<()> {
@@ -317,10 +391,48 @@ mod windows_impl {
         }
         Ok(())
     }
+
+    /// Turn on the copy-verb interceptor (the TeraCopy takeover).
+    ///
+    /// Refuses — with `E_FAIL` — unless the copy CLSID is already
+    /// class-registered, because writing the `DelegateExecute` override
+    /// while the handler DLL is absent would leave Explorer's Ctrl+C /
+    /// paste pointing at nothing. The context-menu integration
+    /// (`regsvr32` / the installer) registers that class; enabling
+    /// interception without it is the one way this feature could harm a
+    /// user, so it is blocked at the source.
+    pub fn apply_copy_interceptor() -> WinResult<()> {
+        use crate::consts::CLSID_COPY_STR;
+        if !clsid_registered(CLSID_COPY_STR) {
+            return Err(windows::core::Error::new(
+                windows::Win32::Foundation::E_FAIL,
+                "the Freally copy handler is not registered; enable context-menu integration first",
+            ));
+        }
+        apply_registration(&super::copy_interceptor_keys(CLSID_COPY_STR))
+    }
+
+    /// Revert to the OS copy handler by deleting the single HKCU
+    /// override key. Idempotent (a missing key is success), and it
+    /// never touches the built-in verb in HKLM/HKCR.
+    pub fn remove_copy_interceptor() -> WinResult<()> {
+        delete_tree(super::COPY_INTERCEPTOR_KEY)
+    }
+
+    /// Whether our interceptor is currently the active copy handler —
+    /// i.e. the override key's `DelegateExecute` names the copy CLSID.
+    pub fn copy_interceptor_active() -> bool {
+        use crate::consts::CLSID_COPY_STR;
+        read_sz(super::COPY_INTERCEPTOR_KEY, "DelegateExecute")
+            .is_some_and(|v| v.eq_ignore_ascii_case(CLSID_COPY_STR))
+    }
 }
 
 #[cfg(windows)]
-pub use windows_impl::{apply_registration, delete_registration, delete_tree, write_value};
+pub use windows_impl::{
+    apply_copy_interceptor, apply_registration, clsid_registered, copy_interceptor_active,
+    delete_registration, delete_tree, read_sz, remove_copy_interceptor, write_value,
+};
 
 #[cfg(test)]
 mod tests {
@@ -407,9 +519,18 @@ mod tests {
     fn copy_interceptor_writes_single_hkcu_key() {
         let keys = copy_interceptor_keys(CLSID_COPY_STR);
         assert_eq!(keys.len(), 1);
+        assert_eq!(keys[0].0, COPY_INTERCEPTOR_KEY);
         assert!(keys[0].0.starts_with(r"HKCU\Software\Classes\*\shell\copy"));
         assert_eq!(keys[0].1, "DelegateExecute");
         assert_eq!(keys[0].2, CLSID_COPY_STR);
+    }
+
+    #[test]
+    fn interceptor_key_is_per_user_and_targets_the_copy_verb() {
+        // Revert deletes exactly this key; it must be the HKCU override,
+        // never the machine-wide built-in verb.
+        assert!(COPY_INTERCEPTOR_KEY.starts_with(r"HKCU\"));
+        assert!(COPY_INTERCEPTOR_KEY.ends_with(r"\*\shell\copy"));
     }
 
     #[test]

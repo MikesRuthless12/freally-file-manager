@@ -19,9 +19,12 @@ import {
   queueList,
   queueSetF2Mode,
   repositoryList,
+  sidecarVerify,
+  SIDECAR_EXTENSIONS,
   startCopy,
   tasksList,
   type RepoEntryDto,
+  type SidecarVerifyReport,
   type TaskDto,
 } from "./ipc";
 import {
@@ -42,8 +45,10 @@ import {
   type JobProgressDto,
   type PinnedDestinationDto,
   type QueueSnapshotDto,
+  type ShellEnqueueDto,
   type ToastKind,
   type ToastMessage,
+  type UndoPlanDto,
 } from "./types";
 
 const jobsStore = writable<JobDto[]>([]);
@@ -195,6 +200,59 @@ export const globals: Readable<GlobalsDto> = {
 export const dropped: Readable<string[]> = {
   subscribe: droppedStore.subscribe,
 };
+
+// FFM-M01 — the paste chooser. Non-null while files that arrived via
+// the paste hotkey / intercepted OS copy verb / destination-less CLI
+// enqueue await the user's engine choice (System vs Freally).
+const pasteChooserStore = writable<ShellEnqueueDto | null>(null);
+export const pasteChooser: Readable<ShellEnqueueDto | null> = {
+  subscribe: pasteChooserStore.subscribe,
+};
+
+export function closePasteChooser(): void {
+  pasteChooserStore.set(null);
+}
+
+// FFM-M08 — checksum sidecar verify result modal.
+const sidecarVerifyStore = writable<SidecarVerifyReport | null>(null);
+export const sidecarVerifyResult: Readable<SidecarVerifyReport | null> = {
+  subscribe: sidecarVerifyStore.subscribe,
+};
+export function closeSidecarVerify(): void {
+  sidecarVerifyStore.set(null);
+}
+
+/** True when a path's extension is a recognized checksum sidecar. */
+export function isSidecarPath(path: string): boolean {
+  const dot = path.lastIndexOf(".");
+  if (dot < 0) return false;
+  const ext = path.slice(dot + 1).toLowerCase();
+  return (SIDECAR_EXTENSIONS as readonly string[]).includes(ext);
+}
+
+async function runSidecarVerify(sidecar: string): Promise<void> {
+  try {
+    const report = await sidecarVerify(sidecar);
+    sidecarVerifyStore.set(report);
+  } catch (err) {
+    pushToast("error", err instanceof Error ? err.message : String(err));
+  }
+}
+
+// FFM-M02 — the undo preview modal. Non-null while a plan awaits the
+// user's confirm; opened from Ctrl+Z (App) or a history row.
+const undoPreviewStore = writable<UndoPlanDto | null>(null);
+export const undoPreview: Readable<UndoPlanDto | null> = {
+  subscribe: undoPreviewStore.subscribe,
+};
+
+export function openUndoPreview(plan: UndoPlanDto): void {
+  undoPreviewStore.set(plan);
+}
+
+export function closeUndoPreview(): void {
+  undoPreviewStore.set(null);
+}
 export const toasts: Readable<ToastMessage[]> = {
   subscribe: toastStore.subscribe,
 };
@@ -1099,6 +1157,13 @@ export async function initStores(): Promise<() => void> {
         });
         return;
       }
+      // FFM-M08 — dragging a single checksum sidecar onto the window is
+      // a verify job, not a copy. Route it to the verifier + result
+      // modal instead of the staging dialog.
+      if (paths.length === 1 && isSidecarPath(paths[0])) {
+        void runSidecarVerify(paths[0]);
+        return;
+      }
       droppedStore.set(paths);
     }),
     // Phase 8: error / collision prompts + resolution echoes.
@@ -1197,6 +1262,12 @@ export async function initStores(): Promise<() => void> {
         pushToast("info", "toast-clipboard-files-detected");
       },
     ),
+    // FFM-M01 — files arriving from the paste hotkey, the intercepted
+    // OS copy verb, or a destination-less CLI enqueue open the paste
+    // chooser (System copy vs Freally verified copy vs replace-older).
+    onEvent<ShellEnqueueDto>(EVENTS.shellEnqueue, (dto) => {
+      if (dto.paths.length > 0) pasteChooserStore.set(dto);
+    }),
     // Phase 45.3 — registry events. `queue-added` / `queue-removed`
     // / `queue-merged` mutate the tab strip; `queue-job-routed` only
     // updates badge counts (the snapshot already captures who owns

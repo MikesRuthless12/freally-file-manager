@@ -39,13 +39,13 @@ winfsp = ["dep:winfsp_wrs", "dep:widestring", "dep:tokio"]
 # History + chunk-store references feed the virtual tree. The mount
 # crate consumes read-only — it never opens the DBs itself, the Tauri
 # runner passes live handles in.
-freally-history = { path = "../freally-history", version = "0.19" }
-freally-chunk = { path = "../freally-chunk", version = "0.19" }
+freally-history = { path = "../freally-history", version = "0.20" }
+freally-chunk = { path = "../freally-chunk", version = "0.20" }
 serde = { version = "1", features = ["derive"] }
 thiserror = "2"
 # Path sanitisation on mount roots reuses the same traversal guard
 # the engine's `safety::validate_path_no_traversal` enforces.
-freally-core = { path = "../freally-core", version = "0.19" }
+freally-core = { path = "../freally-core", version = "0.20" }
 
 # Phase 33c — `fuser` is the actively-maintained Rust FUSE binding.
 # MIT. Target-gated so a `cargo build --features fuse` on Windows

@@ -14,7 +14,7 @@ workspace = true
 
 [dependencies]
 # Phase 27 implements `freally_core::options::ChunkStoreSink`.
-freally-core = { path = "../freally-core", version = "0.19" }
+freally-core = { path = "../freally-core", version = "0.20" }
 # Full-file + chunk hashes share one algorithm. BLAKE3 is already in
 # the tree via Phase 3 (freally-hash) and Phase 20 (journal).
 blake3 = "1"
