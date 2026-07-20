@@ -251,7 +251,7 @@ getrandom = "0.2"
 # revert the Explorer copy-verb interceptor at runtime to match the
 # `intercept_default_copy` setting. Windows-only (the interceptor has
 # no macOS/Linux analogue).
-freally-shellext = { path = "../../../crates/freally-shellext" }
+freally-shellext = { path = "../../../crates/freally-shellext", version = "0.20" }
 
 [dependencies.trash]
 # FFM-M02/M03 — OS Recycle Bin / Trash integration: undo's safety net
