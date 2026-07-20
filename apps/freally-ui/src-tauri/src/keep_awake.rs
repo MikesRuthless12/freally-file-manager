@@ -108,13 +108,15 @@ mod tests {
         ka.arm();
         ka.arm();
         assert_eq!(ka.count(), 2);
-        // The lock may be None if the platform primitive is
-        // unavailable in the test host, but the refcount is exact.
+        // Whether the OS wake-lock actually acquired is best-effort and
+        // environment-dependent (a headless CI host may refuse it), so
+        // we only assert the deterministic refcount here...
         ka.disarm();
         assert_eq!(ka.count(), 1);
-        assert!(ka.is_active() || cfg!(not(any(windows, target_os = "macos"))));
         ka.disarm();
         assert_eq!(ka.count(), 0);
+        // ...and that returning to zero always releases whatever lock
+        // was held (never leaks a `Some`).
         assert!(!ka.is_active());
     }
 

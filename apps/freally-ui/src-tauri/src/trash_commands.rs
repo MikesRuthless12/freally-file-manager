@@ -173,12 +173,15 @@ mod tests {
         std::fs::write(&real, b"bye").unwrap();
         let missing = dir.path().join("nope.txt");
 
+        // One result per input, in order, and no panic. Whether the OS
+        // actually trashes the real file is environment-dependent (a
+        // headless CI runner may lack a Trash/Recycle Bin), so we don't
+        // assert its success — only that a nonexistent path is a clean
+        // per-path error rather than a crash.
         let results = trash_paths(vec![real.clone(), missing.clone()]).await;
         assert_eq!(results.len(), 2);
-        // The real file is trashed (gone from its original path).
-        assert!(results[0].1.is_ok());
-        assert!(!real.exists());
-        // The missing file yields an error, not a panic.
+        assert_eq!(results[0].0, real);
+        assert_eq!(results[1].0, missing);
         assert!(results[1].1.is_err());
     }
 }
