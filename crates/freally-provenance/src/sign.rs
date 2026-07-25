@@ -58,6 +58,34 @@ pub fn verifying_key_from_pem(pem: &str) -> Result<VerifyingKey, ProvenanceError
         .map_err(|e| ProvenanceError::Ed25519Key(format!("spki decode failed: {e}")))
 }
 
+/// Detached-sign arbitrary bytes, returning the raw 64-byte ed25519
+/// signature.
+///
+/// The manifest path signs canonical CBOR through
+/// [`crate::manifest_signing_bytes`]; this is the same primitive for
+/// callers that sign a document of their own (FFM-M10 signs an exported
+/// certificate file), so they need neither the `ed25519_dalek::Signer`
+/// trait nor a direct dependency on the crate.
+pub fn sign_detached(key: &SigningKey, message: &[u8]) -> [u8; 64] {
+    use ed25519_dalek::Signer;
+    key.sign(message).to_bytes()
+}
+
+/// Check a detached signature produced by [`sign_detached`]. `Err` on a
+/// malformed signature *or* a genuine mismatch — both mean "do not
+/// trust these bytes".
+pub fn verify_detached(
+    key: &VerifyingKey,
+    message: &[u8],
+    signature: &[u8],
+) -> Result<(), ProvenanceError> {
+    use ed25519_dalek::Verifier;
+    let signature = ed25519_dalek::Signature::from_slice(signature)
+        .map_err(|e| ProvenanceError::Ed25519Key(format!("malformed signature: {e}")))?;
+    key.verify(message, &signature)
+        .map_err(|e| ProvenanceError::Ed25519Key(format!("signature check failed: {e}")))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -84,5 +112,28 @@ mod tests {
         let err = signing_key_from_pem("-----BEGIN GARBAGE-----\nAAAA\n-----END GARBAGE-----\n")
             .unwrap_err();
         assert!(matches!(err, ProvenanceError::Ed25519Key(_)));
+    }
+
+    #[test]
+    fn detached_signature_round_trips() {
+        let sk = generate_signing_key();
+        let vk = sk.verifying_key();
+        let sig = sign_detached(&sk, b"certificate bytes");
+        assert!(verify_detached(&vk, b"certificate bytes", &sig).is_ok());
+    }
+
+    #[test]
+    fn detached_signature_rejects_tampered_bytes_and_wrong_key() {
+        let sk = generate_signing_key();
+        let sig = sign_detached(&sk, b"certificate bytes");
+        assert!(verify_detached(&sk.verifying_key(), b"tampered", &sig).is_err());
+        let other = generate_signing_key();
+        assert!(verify_detached(&other.verifying_key(), b"certificate bytes", &sig).is_err());
+    }
+
+    #[test]
+    fn detached_verify_rejects_a_malformed_signature() {
+        let sk = generate_signing_key();
+        assert!(verify_detached(&sk.verifying_key(), b"msg", b"too short").is_err());
     }
 }

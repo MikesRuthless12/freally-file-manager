@@ -54,17 +54,41 @@ pub enum ElevateError {
 /// (`ElevatedRetryOk` / `ElevatedRetryFailed` / `PathRejected` / …) so
 /// the caller maps it exactly like the in-process path.
 pub async fn elevated_retry(src: &Path, dst: &Path) -> Result<Response, ElevateError> {
+    let pairs = [(src.to_path_buf(), dst.to_path_buf())];
+    // One request in, one response out — `run_handshake` answers each
+    // pair positionally, so this is *the* response, not merely the last.
+    elevated_retry_batch(&pairs)
+        .await?
+        .into_iter()
+        .next()
+        .ok_or_else(|| ElevateError::Handshake("helper returned no response".into()))
+}
+
+/// FFM-M16 — run `ElevatedRetry` for **many** pairs across a single
+/// elevated spawn, so the user answers **one** consent prompt for the
+/// whole batch instead of one per file.
+///
+/// The helper's protocol is a request loop that runs until `Shutdown`
+/// or EOF, so batching is a property of the driver, not a new wire
+/// contract. Responses come back positionally: `responses[i]` answers
+/// `pairs[i]`.
+pub async fn elevated_retry_batch(
+    pairs: &[(std::path::PathBuf, std::path::PathBuf)],
+) -> Result<Vec<Response>, ElevateError> {
+    if pairs.is_empty() {
+        return Ok(Vec::new());
+    }
     #[cfg(windows)]
     {
-        elevated_retry_windows(src, dst).await
+        elevated_retry_windows(pairs).await
     }
     #[cfg(all(unix, not(windows)))]
     {
-        elevated_retry_unix(src, dst).await
+        elevated_retry_unix(pairs).await
     }
     #[cfg(not(any(windows, unix)))]
     {
-        let _ = (src, dst);
+        let _ = pairs;
         Err(ElevateError::Unavailable(
             "elevation unsupported on this platform".into(),
         ))
@@ -72,7 +96,9 @@ pub async fn elevated_retry(src: &Path, dst: &Path) -> Result<Response, ElevateE
 }
 
 #[cfg(windows)]
-async fn elevated_retry_windows(src: &Path, dst: &Path) -> Result<Response, ElevateError> {
+async fn elevated_retry_windows(
+    pairs: &[(std::path::PathBuf, std::path::PathBuf)],
+) -> Result<Vec<Response>, ElevateError> {
     use std::os::windows::process::CommandExt;
 
     // CREATE_NO_WINDOW: the relaunch shell shouldn't flash a console.
@@ -107,11 +133,13 @@ async fn elevated_retry_windows(src: &Path, dst: &Path) -> Result<Response, Elev
         .map_err(|_| ElevateError::Unavailable("connect timed out (consent cancelled?)".into()))?
         .map_err(|e| ElevateError::Unavailable(format!("connect: {e}")))?;
 
-    run_handshake(server, src, dst).await
+    run_handshake(server, pairs).await
 }
 
 #[cfg(all(unix, not(windows)))]
-async fn elevated_retry_unix(src: &Path, dst: &Path) -> Result<Response, ElevateError> {
+async fn elevated_retry_unix(
+    pairs: &[(std::path::PathBuf, std::path::PathBuf)],
+) -> Result<Vec<Response>, ElevateError> {
     use std::os::unix::fs::PermissionsExt;
     use tokio::net::UnixListener;
 
@@ -155,13 +183,22 @@ async fn elevated_retry_unix(src: &Path, dst: &Path) -> Result<Response, Elevate
     // Best-effort: drop the socket node once the helper has connected.
     let _ = std::fs::remove_file(&sock_path);
 
-    run_handshake(stream, src, dst).await
+    run_handshake(stream, pairs).await
 }
 
-/// Drive the four-step handshake over a connected duplex stream and
-/// return the helper's `ElevatedRetry` response. Generic over the stream
-/// type so the (Windows pipe) and (Unix socket) paths share one driver.
-async fn run_handshake<S>(stream: S, src: &Path, dst: &Path) -> Result<Response, ElevateError>
+/// Drive the handshake over a connected duplex stream and return one
+/// `ElevatedRetry` response per requested pair, in order. Generic over
+/// the stream type so the (Windows pipe) and (Unix socket) paths share
+/// one driver.
+///
+/// `Hello` and `GrantCapabilities` happen once; the `ElevatedRetry`
+/// step then repeats for every pair before the single `Shutdown`. That
+/// is what makes FFM-M16's one-consent-per-batch possible — the OS
+/// consent dialog belongs to the *spawn*, not to the request.
+async fn run_handshake<S>(
+    stream: S,
+    pairs: &[(std::path::PathBuf, std::path::PathBuf)],
+) -> Result<Vec<Response>, ElevateError>
 where
     S: AsyncRead + AsyncWrite,
 {
@@ -203,21 +240,24 @@ where
         }
     }
 
-    // 3. ElevatedRetry → capture whatever the helper returns.
-    write_request(
-        &mut write_half,
-        &Request::ElevatedRetry {
-            src: src.to_path_buf(),
-            dst: dst.to_path_buf(),
-        },
-    )
-    .await?;
-    let result = read_response(&mut reader).await?;
+    // 3. One ElevatedRetry per pair, over the same connection.
+    let mut results = Vec::with_capacity(pairs.len());
+    for (src, dst) in pairs {
+        write_request(
+            &mut write_half,
+            &Request::ElevatedRetry {
+                src: src.clone(),
+                dst: dst.clone(),
+            },
+        )
+        .await?;
+        results.push(read_response(&mut reader).await?);
+    }
 
     // 4. Shutdown — best-effort; the helper exits on the reply or EOF.
     let _ = write_request(&mut write_half, &Request::Shutdown).await;
 
-    Ok(result)
+    Ok(results)
 }
 
 /// Serialise a `Request` to one newline-terminated JSON line and write

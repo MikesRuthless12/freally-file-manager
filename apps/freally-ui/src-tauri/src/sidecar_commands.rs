@@ -83,7 +83,10 @@ fn bsd_tag(algo: HashAlgorithm) -> String {
 
 /// Forward-slash a relative path so a Windows-written sidecar verifies
 /// on Linux (matches `freally_hash::sidecar`).
-fn rel_display(p: &Path) -> String {
+///
+/// `pub(crate)` so the FFM-M11 re-audit and FFM-M12 doctor emit the
+/// same relative-path convention rather than each restating it.
+pub(crate) fn rel_display(p: &Path) -> String {
     let s = p.to_string_lossy();
     if cfg!(windows) {
         s.replace('\\', "/")
@@ -137,7 +140,10 @@ pub struct SidecarVerifyReport {
 
 /// Collect every regular file under `root` (recursively), returning
 /// paths relative to `root`. `root` itself may be a single file.
-fn collect_files(root: &Path) -> std::io::Result<Vec<PathBuf>> {
+///
+/// Shared with the FFM-M09 hash inspector, which expands a picked
+/// folder into the same file set a sidecar-create job would cover.
+pub(crate) fn collect_files(root: &Path) -> std::io::Result<Vec<PathBuf>> {
     let mut out = Vec::new();
     if root.is_file() {
         if let Some(name) = root.file_name() {

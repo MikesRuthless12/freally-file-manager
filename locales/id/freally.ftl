@@ -1432,3 +1432,92 @@ sidecar-verify-summary = { $ok } OK, { $failed } gagal, { $missing } hilang
 sidecar-verify-failed = Tidak cocok
 sidecar-verify-missing = Hilang
 sidecar-verify-close = Tutup
+
+# FFM-M09 — hash inspector + clipboard compare.
+footer-hash = Hash
+hash-inspector-title = Inspektur hash
+hash-inspector-algo-label = Algoritme
+hash-inspector-add-files = Tambah berkas…
+hash-inspector-add-folders = Tambah folder…
+hash-inspector-run = Hitung hash
+hash-inspector-hashing = Menghitung…
+hash-inspector-clear = Bersihkan
+hash-inspector-close = Tutup
+hash-inspector-empty = Pilih berkas atau folder, lalu hitung hash-nya.
+hash-inspector-compare-label = Bandingkan dengan sebuah hash
+hash-inspector-compare-placeholder = Tempel hash, baris checksum, atau baris SFV
+hash-inspector-compare-invalid = Itu tidak tampak seperti hash.
+hash-inspector-pair-identical = Kedua berkas identik
+hash-inspector-pair-different = Kedua berkas berbeda
+hash-inspector-truncated = Menampilkan { $rows } berkas pertama; sisa pilihan dilewati.
+
+# FFM-M10 — copy-verification certificate export.
+history-export-certificate = Sertifikat
+history-export-certificate-hint = Ekspor tugas ini sebagai sertifikat verifikasi HTML / CSV / JSON yang siap cetak
+certificate-sign-prompt = Tanda tangani sertifikat dengan kunci privat ed25519? Batal akan mengekspor tanpa tanda tangan.
+certificate-key-picker-title = Pilih kunci penanda tangan ed25519 (PKCS#8 PEM)
+toast-certificate-exported = Sertifikat diekspor ({ $files } berkas)
+toast-certificate-exported-signed = Sertifikat bertanda tangan diekspor ({ $files } berkas)
+
+# FFM-M11 — verify-only re-audit.
+footer-reaudit = Verifikasi ulang
+history-reverify = Verifikasi ulang
+history-reverify-hint = Meng-hash ulang sumber dan tujuan tugas ini dan melaporkan penyimpangan (tidak menulis apa pun)
+reaudit-title = Audit khusus verifikasi
+reaudit-hint = Meng-hash ulang pasangan sumber/tujuan dan melaporkan penyimpangan — tidak menulis apa pun
+reaudit-pick-source = Pilih folder sumber untuk diverifikasi ulang
+reaudit-pick-destination = Pilih folder tujuan untuk dibandingkan
+reaudit-clean-title = Tidak ada penyimpangan — kedua pohon cocok
+reaudit-drift-title = Penyimpangan terdeteksi
+reaudit-summary = { $ok } cocok, { $differs } berbeda, { $missing } hilang, { $extra } berlebih, { $errors } tidak terbaca ({ $algo })
+reaudit-status-differs = Berbeda
+reaudit-status-missing = Tidak ada di tujuan
+reaudit-status-extra = Hanya di tujuan
+reaudit-status-error = Tidak terbaca
+reaudit-close = Tutup
+
+# FFM-M12 — cross-filesystem filename doctor.
+doctor-title = Dokter nama berkas
+doctor-summary = { $flagged } dari { $scanned } nama yang tidak diterima tujuan { $target }
+doctor-issue-reserved-name = Nama perangkat yang dipesan
+doctor-issue-illegal-char = Karakter tidak sah
+doctor-issue-trailing-dot-space = Titik atau spasi di akhir
+doctor-issue-component-too-long = Nama terlalu panjang
+doctor-issue-path-too-long = Jalur terlalu panjang
+doctor-issue-case-collision = Tabrakan huruf besar/kecil
+doctor-no-rename = Tidak ada penggantian nama yang aman
+doctor-apply = Ganti nama { $count } berkas
+doctor-toast-applied = { $renamed } diganti nama, { $failed } gagal
+
+# FFM-M13 — file-list import as a copy source.
+action-import-list = Impor daftar…
+filelist-title = Impor daftar berkas
+filelist-hint = Gunakan daftar jalur TXT / CSV / JSON sebagai kumpulan sumber tugas
+filelist-picker-title = Pilih daftar berkas (TXT / CSV / JSON)
+filelist-summary = { $found } berkas ditemukan, { $missing } hilang
+filelist-missing-header = { $count } jalur dalam daftar sudah tidak ada
+filelist-preserve-structure = Pertahankan struktur folder relatif terhadap sebuah akar
+filelist-relative-root-placeholder = Akar relatif
+filelist-toast-queued = { $files } berkas dari daftar masuk antrean
+filelist-toast-empty = Daftar itu tidak berisi jalur
+
+# FFM-M14 — preflight / dry-run report export.
+preflight-report-action = Ekspor rencana
+preflight-report-hint = Simpan uji-coba ini sebagai HTML / CSV / JSON sebelum apa pun disalin
+preflight-report-toast = Rencana diekspor — { $files } berkas, { $findings } temuan nama
+
+# FFM-M15 — damaged-media salvage.
+footer-salvage = Selamatkan
+salvage-title = Selamatkan dari media rusak
+salvage-hint = Memulihkan semua yang terbaca dari berkas bermasalah, memetakan yang tak terbaca, dan lain kali hanya mencoba ulang celahnya
+salvage-pick-source = Pilih berkas yang akan diselamatkan
+salvage-pick-destination = Tempat menulis salinan hasil penyelamatan
+salvage-toast-complete = Penyelamatan selesai — { $bytes } bita, tanpa celah
+salvage-toast-gaps = { $bytes } bita diselamatkan; { $missing } bita tak terbaca pada { $gaps } celah
+
+# FFM-M16 — whole-job elevated batch with a consent ledger.
+history-elevate-batch = Naikkan semua
+history-elevate-batch-hint = Coba lagi semua jalur tugas ini yang izinnya ditolak dengan satu persetujuan
+elevate-batch-none = Tidak ada jalur dengan izin ditolak untuk dinaikkan
+elevate-batch-confirm = Berikan satu peningkatan hak untuk { $count } jalur? ({ $skipped } kegagalan lain tidak dapat diperbaiki dengan ini.) Pembantu akan menyalin jalur berikut:
+elevate-batch-toast = Batch dinaikkan — { $copied } tersalin, { $failed } gagal

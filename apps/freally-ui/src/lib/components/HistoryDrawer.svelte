@@ -25,6 +25,10 @@
     undoPlan,
     jobFailedItems,
     exportFailedItems,
+    elevateBatchApply,
+    elevateBatchLedger,
+    exportJobCertificate,
+    reauditRun,
     startCopy,
     startMove,
   } from "../ipc";
@@ -34,6 +38,7 @@
     historyDetailRow,
     historyDrawerOpen,
     openHistoryDetail,
+    openReauditResult,
     openUndoPreview,
     pushToast,
   } from "../stores";
@@ -192,6 +197,105 @@
       const format = ext === "txt" || ext === "json" ? ext : "csv";
       await exportFailedItems(row.rowId, format, dest);
       pushToast("success", "toast-failed-exported");
+    } catch (e) {
+      pushToast("error", e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  // FFM-M16 — one elevation consent for every permission-denied path
+  // of a job. The ledger is shown *before* anything escalates, so the
+  // user approves a concrete list of paths rather than a bare
+  // "run as administrator".
+  async function elevateBatch(row: HistoryJobDto) {
+    try {
+      const ledger = await elevateBatchLedger(row.rowId);
+      if (ledger.entries.length === 0) {
+        pushToast("info", "elevate-batch-none");
+        return;
+      }
+      // Show the exact paths the helper will touch. `confirm` keeps the
+      // approval on the OS's own modal path — the list is the consent.
+      const preview = ledger.entries
+        .slice(0, 20)
+        .map((e) => e.src)
+        .join("\n");
+      const more =
+        ledger.entries.length > 20
+          ? `\n… ${ledger.entries.length - 20} more`
+          : "";
+      const approved = confirm(
+        `${t("elevate-batch-confirm", {
+          count: ledger.entries.length,
+          skipped: ledger.notElevatable,
+        })}\n\n${preview}${more}`,
+      );
+      if (!approved) return;
+
+      const report = await elevateBatchApply(row.rowId, ledger.entries);
+      pushToast(
+        report.failed > 0 ? "error" : "success",
+        t("elevate-batch-toast", {
+          copied: report.copied,
+          failed: report.failed,
+        }),
+      );
+      await refresh();
+    } catch (e) {
+      pushToast("error", e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  // FFM-M11 — re-hash this job's source and destination trees and
+  // report any drift. Writes nothing, so it is safe on any row.
+  async function reverifyRow(row: HistoryJobDto) {
+    if (!row.dstRoot) return;
+    try {
+      openReauditResult(await reauditRun(row.srcRoot, row.dstRoot, "blake3"));
+    } catch (e) {
+      pushToast("error", e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  // FFM-M10 — export this job as a copy-verification certificate. The
+  // chosen extension picks the renderer (HTML for print/PDF, CSV for a
+  // spreadsheet, JSON for a pipeline); signing is opt-in per export and
+  // takes the Phase 43 ed25519 key (`freally provenance keygen`).
+  async function exportCertificate(row: HistoryJobDto) {
+    try {
+      const dest = await save({
+        defaultPath: `freally-certificate-${row.rowId}.html`,
+        filters: [
+          { name: "HTML", extensions: ["html"] },
+          { name: "CSV", extensions: ["csv"] },
+          { name: "JSON", extensions: ["json"] },
+        ],
+      });
+      if (!dest || typeof dest !== "string") return;
+      const ext = dest.slice(dest.lastIndexOf(".") + 1).toLowerCase();
+      const format = ext === "csv" || ext === "json" ? ext : "html";
+
+      let signingKey: string | null = null;
+      if (confirm(t("certificate-sign-prompt"))) {
+        const picked = await openDialog({
+          multiple: false,
+          directory: false,
+          title: t("certificate-key-picker-title"),
+        });
+        // Dismissing the key picker exports unsigned rather than
+        // aborting — the user already committed to a destination.
+        if (typeof picked === "string") signingKey = picked;
+      }
+
+      const report = await exportJobCertificate(row.rowId, format, dest, signingKey);
+      pushToast(
+        "success",
+        t(
+          report.signaturePath
+            ? "toast-certificate-exported-signed"
+            : "toast-certificate-exported",
+          { files: report.files },
+        ),
+      );
     } catch (e) {
       pushToast("error", e instanceof Error ? e.message : String(e));
     }
@@ -434,6 +538,27 @@
                   <Icon name="rotate-ccw" size={13} />
                   <span>{t("history-undo")}</span>
                 </button>
+                <button
+                  type="button"
+                  class="tiny"
+                  onclick={() => reverifyRow(row)}
+                  aria-label={t("history-reverify")}
+                  title={t("history-reverify-hint")}
+                  disabled={!row.dstRoot}
+                >
+                  <Icon name="check" size={13} />
+                  <span>{t("history-reverify")}</span>
+                </button>
+                <button
+                  type="button"
+                  class="tiny"
+                  onclick={() => exportCertificate(row)}
+                  aria-label={t("history-export-certificate")}
+                  title={t("history-export-certificate-hint")}
+                >
+                  <Icon name="file-text" size={13} />
+                  <span>{t("history-export-certificate")}</span>
+                </button>
                 {#if row.filesFailed > 0}
                   <button
                     type="button"
@@ -454,6 +579,17 @@
                   >
                     <Icon name="download" size={13} />
                     <span>{t("history-export-failed")}</span>
+                  </button>
+                  <!-- FFM-M16 — one consent for every denied path. -->
+                  <button
+                    type="button"
+                    class="tiny"
+                    onclick={() => elevateBatch(row)}
+                    aria-label={t("history-elevate-batch")}
+                    title={t("history-elevate-batch-hint")}
+                  >
+                    <Icon name="alert-triangle" size={13} />
+                    <span>{t("history-elevate-batch")}</span>
                   </button>
                 {/if}
               </td>

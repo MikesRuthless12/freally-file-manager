@@ -104,6 +104,62 @@ fn canned_args(key: &str) -> HashMap<&'static str, String> {
             m.insert("failed", "1".to_string());
             m.insert("missing", "1".to_string());
         }
+        "hash-inspector-truncated" => {
+            m.insert("rows", "2000".to_string());
+        }
+        "toast-certificate-exported" | "toast-certificate-exported-signed" => {
+            m.insert("files", "42".to_string());
+        }
+        "elevate-batch-confirm" => {
+            m.insert("count", "37".to_string());
+            m.insert("skipped", "4".to_string());
+        }
+        "elevate-batch-toast" => {
+            m.insert("copied", "35".to_string());
+            m.insert("failed", "2".to_string());
+        }
+        "salvage-toast-complete" => {
+            m.insert("bytes", "1048576".to_string());
+        }
+        "salvage-toast-gaps" => {
+            m.insert("bytes", "1040384".to_string());
+            m.insert("missing", "8192".to_string());
+            m.insert("gaps", "2".to_string());
+        }
+        "preflight-report-toast" => {
+            m.insert("files", "120".to_string());
+            m.insert("findings", "3".to_string());
+        }
+        "filelist-summary" => {
+            m.insert("found", "40".to_string());
+            m.insert("missing", "2".to_string());
+        }
+        "filelist-missing-header" => {
+            m.insert("count", "2".to_string());
+        }
+        "filelist-toast-queued" => {
+            m.insert("files", "40".to_string());
+        }
+        "doctor-summary" => {
+            m.insert("flagged", "3".to_string());
+            m.insert("scanned", "120".to_string());
+            m.insert("target", "windows".to_string());
+        }
+        "doctor-apply" => {
+            m.insert("count", "3".to_string());
+        }
+        "doctor-toast-applied" => {
+            m.insert("renamed", "3".to_string());
+            m.insert("failed", "0".to_string());
+        }
+        "reaudit-summary" => {
+            m.insert("ok", "120".to_string());
+            m.insert("differs", "2".to_string());
+            m.insert("missing", "1".to_string());
+            m.insert("extra", "3".to_string());
+            m.insert("errors", "0".to_string());
+            m.insert("algo", "blake3".to_string());
+        }
         "toast-history-purged" => {
             m.insert("count", "42".to_string());
         }

@@ -193,6 +193,9 @@ fn csv_detail(event: &AuditEvent) -> String {
             reason,
             ..
         } => format!("action={attempted_action}; reason={reason}"),
+        AuditEvent::ElevationGranted { job_id, paths, .. } => {
+            format!("job={job_id}; paths={paths}")
+        }
     }
 }
 
@@ -334,6 +337,7 @@ fn variant_sd_params(event: &AuditEvent) -> Vec<(&'static str, String)> {
             ("attemptedAction", attempted_action.clone()),
             ("reason", reason.clone()),
         ],
+        AuditEvent::ElevationGranted { paths, .. } => vec![("paths", paths.to_string())],
     }
 }
 
@@ -481,6 +485,12 @@ fn cef_extension(event: &AuditEvent, prev_hash_hex: &str) -> String {
             parts.push(("act", attempted_action.clone()));
             parts.push(("reason", reason.clone()));
             parts.push(("outcome", "denied".into()));
+        }
+        AuditEvent::ElevationGranted { job_id, paths, .. } => {
+            parts.push(("cs2Label", "jobId".into()));
+            parts.push(("cs2", job_id.clone()));
+            parts.push(("act", "elevation-granted".into()));
+            parts.push(("cnt", paths.to_string()));
         }
     }
     parts
@@ -635,6 +645,10 @@ fn leef_extension(event: &AuditEvent, prev_hash_hex: &str) -> String {
         } => {
             parts.push(("attemptedAction", attempted_action.clone()));
             parts.push(("reason", reason.clone()));
+        }
+        AuditEvent::ElevationGranted { job_id, paths, .. } => {
+            parts.push(("jobId", job_id.clone()));
+            parts.push(("paths", paths.to_string()));
         }
     }
     parts

@@ -19,6 +19,8 @@
 <script lang="ts">
   import { t } from "../i18n";
   import { computeTreeDiff, type TreeDiffDto } from "../ipc";
+  import FilenameDoctorPanel from "./FilenameDoctorPanel.svelte";
+  import PreflightReportButton from "./PreflightReportButton.svelte";
 
   let {
     src = "",
@@ -126,6 +128,10 @@
       {t("preview-bytes-to-transfer", { bytes: humanBytes(diff.bytesToTransfer) })}
     </p>
 
+    <!-- FFM-M12 — names the destination cannot hold. Renders nothing
+         when the tree is clean. -->
+    <FilenameDoctorPanel {src} dstRoot={dst} />
+
     {#if diff.additions.length > 0}
       <details class="preview-rows">
         <summary>{t("preview-category-additions", { count: diff.additions.length })}</summary>
@@ -170,6 +176,8 @@
     {/if}
 
     <div class="preview-actions">
+      <!-- FFM-M14 — keep the plan before running it. -->
+      <PreflightReportButton {src} {dst} opts={{ forceOverwrite, trustSizeMtime }} />
       <button
         type="button"
         class="primary"

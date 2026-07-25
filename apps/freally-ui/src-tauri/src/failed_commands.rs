@@ -79,7 +79,10 @@ fn render_failed(items: &[FailedItemDto], format: &str) -> Result<String, String
 
 /// RFC-4180 CSV field: quote when it contains a comma, quote, or
 /// newline; double any embedded quote.
-fn csv_field(s: &str) -> String {
+///
+/// `pub(crate)` so the FFM-M10 certificate and FFM-M14 preflight
+/// exporters share this one rule instead of restating it.
+pub(crate) fn csv_field(s: &str) -> String {
     if s.contains([',', '"', '\n', '\r']) {
         format!("\"{}\"", s.replace('"', "\"\""))
     } else {

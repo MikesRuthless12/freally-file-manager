@@ -17,7 +17,7 @@ use windows::core::{BOOL, GUID, IUnknown, Interface, Ref, Result as WinResult};
 use windows_core::ComObject;
 use windows_implement::implement;
 
-use crate::com::{CopyCommand, MoveCommand};
+use crate::com::{CopyCommand, HashCommand, MoveCommand};
 
 /// Class factory for the Copy verb.
 #[implement(IClassFactory)]
@@ -26,6 +26,10 @@ pub struct CopyFactory;
 /// Class factory for the Move verb.
 #[implement(IClassFactory)]
 pub struct MoveFactory;
+
+/// Class factory for the Hash verb (FFM-M09).
+#[implement(IClassFactory)]
+pub struct HashFactory;
 
 impl IClassFactory_Impl for CopyFactory_Impl {
     fn CreateInstance(
@@ -58,6 +62,26 @@ impl IClassFactory_Impl for MoveFactory_Impl {
             return Err(CLASS_E_NOAGGREGATION.into());
         }
         let unknown: IUnknown = ComObject::new(MoveCommand).to_interface();
+        qi(unknown, riid, ppvobject)
+    }
+
+    fn LockServer(&self, flock: BOOL) -> WinResult<()> {
+        crate::dll::lock_server(flock.as_bool());
+        Ok(())
+    }
+}
+
+impl IClassFactory_Impl for HashFactory_Impl {
+    fn CreateInstance(
+        &self,
+        punkouter: Ref<'_, IUnknown>,
+        riid: *const GUID,
+        ppvobject: *mut *mut c_void,
+    ) -> WinResult<()> {
+        if !punkouter.is_null() {
+            return Err(CLASS_E_NOAGGREGATION.into());
+        }
+        let unknown: IUnknown = ComObject::new(HashCommand).to_interface();
         qi(unknown, riid, ppvobject)
     }
 

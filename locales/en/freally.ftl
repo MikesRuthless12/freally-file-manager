@@ -1438,3 +1438,92 @@ sidecar-verify-summary = { $ok } OK, { $failed } failed, { $missing } missing
 sidecar-verify-failed = Mismatch
 sidecar-verify-missing = Missing
 sidecar-verify-close = Close
+
+# FFM-M09 — hash inspector + clipboard compare.
+footer-hash = Hash
+hash-inspector-title = Hash inspector
+hash-inspector-algo-label = Algorithm
+hash-inspector-add-files = Add files…
+hash-inspector-add-folders = Add folders…
+hash-inspector-run = Hash
+hash-inspector-hashing = Hashing…
+hash-inspector-clear = Clear
+hash-inspector-close = Close
+hash-inspector-empty = Pick files or folders, then hash them.
+hash-inspector-compare-label = Compare against a digest
+hash-inspector-compare-placeholder = Paste a digest, a checksum line, or an SFV row
+hash-inspector-compare-invalid = That does not look like a digest.
+hash-inspector-pair-identical = The two files are identical
+hash-inspector-pair-different = The two files differ
+hash-inspector-truncated = Showing the first { $rows } files; the rest of the selection was skipped.
+
+# FFM-M10 — copy-verification certificate export.
+history-export-certificate = Certificate
+history-export-certificate-hint = Export this job as a printable HTML / CSV / JSON verification certificate
+certificate-sign-prompt = Sign the certificate with an ed25519 private key? Cancel exports it unsigned.
+certificate-key-picker-title = Choose the ed25519 signing key (PKCS#8 PEM)
+toast-certificate-exported = Certificate exported ({ $files } file(s))
+toast-certificate-exported-signed = Signed certificate exported ({ $files } file(s))
+
+# FFM-M11 — verify-only re-audit.
+footer-reaudit = Re-verify
+history-reverify = Re-verify
+history-reverify-hint = Re-hash this job's source and destination and report any drift (writes nothing)
+reaudit-title = Verify-only re-audit
+reaudit-hint = Re-hash a source and destination pair and report drift — writes nothing
+reaudit-pick-source = Choose the source folder to re-verify
+reaudit-pick-destination = Choose the destination folder to compare against
+reaudit-clean-title = No drift — the trees match
+reaudit-drift-title = Drift detected
+reaudit-summary = { $ok } match, { $differs } differ, { $missing } missing, { $extra } extra, { $errors } unreadable ({ $algo })
+reaudit-status-differs = Differs
+reaudit-status-missing = Missing at destination
+reaudit-status-extra = Only at destination
+reaudit-status-error = Unreadable
+reaudit-close = Close
+
+# FFM-M12 — cross-filesystem filename doctor.
+doctor-title = Filename doctor
+doctor-summary = { $flagged } of { $scanned } name(s) the { $target } destination cannot hold
+doctor-issue-reserved-name = Reserved device name
+doctor-issue-illegal-char = Illegal character
+doctor-issue-trailing-dot-space = Trailing dot or space
+doctor-issue-component-too-long = Name too long
+doctor-issue-path-too-long = Path too long
+doctor-issue-case-collision = Case-fold collision
+doctor-no-rename = No safe rename
+doctor-apply = Rename { $count } file(s)
+doctor-toast-applied = Renamed { $renamed }, failed { $failed }
+
+# FFM-M13 — file-list import as a copy source.
+action-import-list = Import list…
+filelist-title = Import file list
+filelist-hint = Use a TXT / CSV / JSON list of paths as the job's source set
+filelist-picker-title = Choose a file list (TXT / CSV / JSON)
+filelist-summary = { $found } file(s) found, { $missing } missing
+filelist-missing-header = { $count } listed path(s) no longer exist
+filelist-preserve-structure = Preserve folder structure relative to a root
+filelist-relative-root-placeholder = Relative root
+filelist-toast-queued = Queued { $files } file(s) from the list
+filelist-toast-empty = That list contained no paths
+
+# FFM-M14 — preflight / dry-run report export.
+preflight-report-action = Export plan
+preflight-report-hint = Write this dry-run plan to HTML / CSV / JSON before anything is copied
+preflight-report-toast = Plan exported — { $files } file(s), { $findings } filename finding(s)
+
+# FFM-M15 — damaged-media salvage.
+footer-salvage = Salvage
+salvage-title = Salvage from damaged media
+salvage-hint = Recover everything readable from a failing file, map what it cannot read, and re-attempt only the gaps next time
+salvage-pick-source = Choose the file to salvage
+salvage-pick-destination = Where to write the salvaged copy
+salvage-toast-complete = Salvage complete — { $bytes } byte(s), no gaps
+salvage-toast-gaps = Salvaged { $bytes } byte(s); { $missing } byte(s) unreadable across { $gaps } gap(s)
+
+# FFM-M16 — whole-job elevated batch with a consent ledger.
+history-elevate-batch = Elevate all
+history-elevate-batch-hint = Retry every permission-denied path of this job with one elevation consent
+elevate-batch-none = No permission-denied paths to elevate
+elevate-batch-confirm = Grant one elevation for { $count } path(s)? ({ $skipped } other failure(s) cannot be fixed by elevating.) These paths will be copied by the helper:
+elevate-batch-toast = Elevated batch — { $copied } copied, { $failed } failed

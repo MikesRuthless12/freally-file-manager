@@ -1432,3 +1432,92 @@ sidecar-verify-summary = { $ok } OK, { $failed } thất bại, { $missing } thi�
 sidecar-verify-failed = Không khớp
 sidecar-verify-missing = Thiếu
 sidecar-verify-close = Đóng
+
+# FFM-M09 — hash inspector + clipboard compare.
+footer-hash = Băm
+hash-inspector-title = Trình kiểm tra mã băm
+hash-inspector-algo-label = Thuật toán
+hash-inspector-add-files = Thêm tệp…
+hash-inspector-add-folders = Thêm thư mục…
+hash-inspector-run = Tính mã băm
+hash-inspector-hashing = Đang tính…
+hash-inspector-clear = Xóa
+hash-inspector-close = Đóng
+hash-inspector-empty = Chọn tệp hoặc thư mục rồi tính mã băm.
+hash-inspector-compare-label = So sánh với một mã băm
+hash-inspector-compare-placeholder = Dán mã băm, dòng checksum hoặc dòng SFV
+hash-inspector-compare-invalid = Đó không giống một mã băm.
+hash-inspector-pair-identical = Hai tệp giống hệt nhau
+hash-inspector-pair-different = Hai tệp khác nhau
+hash-inspector-truncated = Hiển thị { $rows } tệp đầu tiên; phần còn lại của lựa chọn đã bị bỏ qua.
+
+# FFM-M10 — copy-verification certificate export.
+history-export-certificate = Chứng nhận
+history-export-certificate-hint = Xuất công việc này thành chứng nhận xác minh HTML / CSV / JSON có thể in
+certificate-sign-prompt = Ký chứng nhận bằng khóa riêng ed25519? Hủy sẽ xuất bản chưa ký.
+certificate-key-picker-title = Chọn khóa ký ed25519 (PKCS#8 PEM)
+toast-certificate-exported = Đã xuất chứng nhận ({ $files } tệp)
+toast-certificate-exported-signed = Đã xuất chứng nhận có chữ ký ({ $files } tệp)
+
+# FFM-M11 — verify-only re-audit.
+footer-reaudit = Xác minh lại
+history-reverify = Xác minh lại
+history-reverify-hint = Băm lại nguồn và đích của công việc này và báo cáo sai lệch (không ghi gì)
+reaudit-title = Kiểm tra chỉ xác minh
+reaudit-hint = Băm lại một cặp nguồn/đích và báo cáo sai lệch — không ghi gì
+reaudit-pick-source = Chọn thư mục nguồn để xác minh lại
+reaudit-pick-destination = Chọn thư mục đích để so sánh
+reaudit-clean-title = Không sai lệch — hai cây khớp nhau
+reaudit-drift-title = Phát hiện sai lệch
+reaudit-summary = { $ok } khớp, { $differs } khác, { $missing } thiếu, { $extra } dư, { $errors } không đọc được ({ $algo })
+reaudit-status-differs = Khác
+reaudit-status-missing = Thiếu ở đích
+reaudit-status-extra = Chỉ có ở đích
+reaudit-status-error = Không đọc được
+reaudit-close = Đóng
+
+# FFM-M12 — cross-filesystem filename doctor.
+doctor-title = Bác sĩ tên tệp
+doctor-summary = { $flagged } trong { $scanned } tên mà đích { $target } không chấp nhận
+doctor-issue-reserved-name = Tên thiết bị dành riêng
+doctor-issue-illegal-char = Ký tự không hợp lệ
+doctor-issue-trailing-dot-space = Dấu chấm hoặc khoảng trắng ở cuối
+doctor-issue-component-too-long = Tên quá dài
+doctor-issue-path-too-long = Đường dẫn quá dài
+doctor-issue-case-collision = Xung đột chữ hoa/thường
+doctor-no-rename = Không có cách đổi tên an toàn
+doctor-apply = Đổi tên { $count } tệp
+doctor-toast-applied = Đã đổi tên { $renamed }, thất bại { $failed }
+
+# FFM-M13 — file-list import as a copy source.
+action-import-list = Nhập danh sách…
+filelist-title = Nhập danh sách tệp
+filelist-hint = Dùng danh sách đường dẫn TXT / CSV / JSON làm tập nguồn của công việc
+filelist-picker-title = Chọn một danh sách tệp (TXT / CSV / JSON)
+filelist-summary = tìm thấy { $found } tệp, thiếu { $missing }
+filelist-missing-header = { $count } đường dẫn trong danh sách không còn tồn tại
+filelist-preserve-structure = Giữ cấu trúc thư mục tương đối với một gốc
+filelist-relative-root-placeholder = Gốc tương đối
+filelist-toast-queued = Đã xếp hàng { $files } tệp từ danh sách
+filelist-toast-empty = Danh sách đó không chứa đường dẫn nào
+
+# FFM-M14 — preflight / dry-run report export.
+preflight-report-action = Xuất kế hoạch
+preflight-report-hint = Lưu lần chạy thử này thành HTML / CSV / JSON trước khi sao chép bất cứ thứ gì
+preflight-report-toast = Đã xuất kế hoạch — { $files } tệp, { $findings } phát hiện về tên
+
+# FFM-M15 — damaged-media salvage.
+footer-salvage = Cứu dữ liệu
+salvage-title = Cứu dữ liệu từ phương tiện hỏng
+salvage-hint = Khôi phục mọi thứ đọc được từ tệp lỗi, lập bản đồ phần không đọc được, và lần sau chỉ thử lại các khoảng trống
+salvage-pick-source = Chọn tệp cần cứu
+salvage-pick-destination = Nơi ghi bản sao đã cứu
+salvage-toast-complete = Cứu xong — { $bytes } byte, không có khoảng trống
+salvage-toast-gaps = Đã cứu { $bytes } byte; { $missing } byte không đọc được trong { $gaps } khoảng trống
+
+# FFM-M16 — whole-job elevated batch with a consent ledger.
+history-elevate-batch = Nâng quyền tất cả
+history-elevate-batch-hint = Thử lại mọi đường dẫn bị từ chối quyền của công việc này với một lần đồng ý duy nhất
+elevate-batch-none = Không có đường dẫn bị từ chối quyền để nâng
+elevate-batch-confirm = Cấp một lần nâng quyền cho { $count } đường dẫn? ({ $skipped } lỗi khác không thể khắc phục bằng cách này.) Trình trợ giúp sẽ sao chép các đường dẫn sau:
+elevate-batch-toast = Lô đã nâng quyền — { $copied } đã chép, { $failed } thất bại

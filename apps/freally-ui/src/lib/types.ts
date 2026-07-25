@@ -130,6 +130,9 @@ export const EVENTS = {
   globalsTick: "globals-tick",
   dropReceived: "drop-received",
   shellEnqueue: "shell-enqueue",
+  // FFM-M09 — Explorer's "Hash with Freally File Manager" verb (or
+  // `freally --hash`) handed us paths to inspect.
+  hashInspect: "hash-inspect",
   // Phase 8
   errorRaised: "error-raised",
   errorResolved: "error-resolved",

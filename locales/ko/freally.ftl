@@ -1432,3 +1432,92 @@ sidecar-verify-summary = OK { $ok }개, 실패 { $failed }개, 없음 { $missing
 sidecar-verify-failed = 불일치
 sidecar-verify-missing = 없음
 sidecar-verify-close = 닫기
+
+# FFM-M09 — hash inspector + clipboard compare.
+footer-hash = 해시
+hash-inspector-title = 해시 검사기
+hash-inspector-algo-label = 알고리즘
+hash-inspector-add-files = 파일 추가…
+hash-inspector-add-folders = 폴더 추가…
+hash-inspector-run = 해시 계산
+hash-inspector-hashing = 계산 중…
+hash-inspector-clear = 지우기
+hash-inspector-close = 닫기
+hash-inspector-empty = 파일이나 폴더를 선택한 다음 해시를 계산하세요.
+hash-inspector-compare-label = 해시와 비교
+hash-inspector-compare-placeholder = 해시, 체크섬 줄 또는 SFV 줄을 붙여넣으세요
+hash-inspector-compare-invalid = 해시처럼 보이지 않습니다.
+hash-inspector-pair-identical = 두 파일이 동일합니다
+hash-inspector-pair-different = 두 파일이 다릅니다
+hash-inspector-truncated = 처음 { $rows }개 파일만 표시합니다. 나머지 선택 항목은 건너뛰었습니다.
+
+# FFM-M10 — copy-verification certificate export.
+history-export-certificate = 인증서
+history-export-certificate-hint = 이 작업을 인쇄 가능한 HTML / CSV / JSON 검증 인증서로 내보냅니다
+certificate-sign-prompt = ed25519 개인 키로 인증서에 서명할까요? 취소하면 서명 없이 내보냅니다.
+certificate-key-picker-title = ed25519 서명 키 선택 (PKCS#8 PEM)
+toast-certificate-exported = 인증서를 내보냈습니다 (파일 { $files }개)
+toast-certificate-exported-signed = 서명된 인증서를 내보냈습니다 (파일 { $files }개)
+
+# FFM-M11 — verify-only re-audit.
+footer-reaudit = 재검증
+history-reverify = 재검증
+history-reverify-hint = 이 작업의 원본과 대상을 다시 해시하고 차이를 보고합니다(아무것도 쓰지 않음)
+reaudit-title = 검증 전용 재감사
+reaudit-hint = 원본/대상 쌍을 다시 해시하고 차이를 보고합니다 — 아무것도 쓰지 않습니다
+reaudit-pick-source = 재검증할 원본 폴더 선택
+reaudit-pick-destination = 비교할 대상 폴더 선택
+reaudit-clean-title = 차이 없음 — 두 트리가 일치합니다
+reaudit-drift-title = 차이가 발견되었습니다
+reaudit-summary = 일치 { $ok }, 상이 { $differs }, 누락 { $missing }, 초과 { $extra }, 읽기 불가 { $errors } ({ $algo })
+reaudit-status-differs = 다름
+reaudit-status-missing = 대상에 없음
+reaudit-status-extra = 대상에만 있음
+reaudit-status-error = 읽을 수 없음
+reaudit-close = 닫기
+
+# FFM-M12 — cross-filesystem filename doctor.
+doctor-title = 파일 이름 진단
+doctor-summary = { $scanned }개 중 { $flagged }개는 { $target } 대상에서 사용할 수 없습니다
+doctor-issue-reserved-name = 예약된 장치 이름
+doctor-issue-illegal-char = 사용할 수 없는 문자
+doctor-issue-trailing-dot-space = 끝에 마침표 또는 공백
+doctor-issue-component-too-long = 이름이 너무 김
+doctor-issue-path-too-long = 경로가 너무 김
+doctor-issue-case-collision = 대소문자 충돌
+doctor-no-rename = 안전한 이름 변경 없음
+doctor-apply = 파일 { $count }개 이름 변경
+doctor-toast-applied = { $renamed }개 변경, { $failed }개 실패
+
+# FFM-M13 — file-list import as a copy source.
+action-import-list = 목록 가져오기…
+filelist-title = 파일 목록 가져오기
+filelist-hint = TXT / CSV / JSON 경로 목록을 작업의 원본 집합으로 사용합니다
+filelist-picker-title = 파일 목록 선택 (TXT / CSV / JSON)
+filelist-summary = { $found }개 찾음, { $missing }개 없음
+filelist-missing-header = 목록의 경로 { $count }개가 더 이상 존재하지 않습니다
+filelist-preserve-structure = 기준 폴더를 기준으로 폴더 구조 유지
+filelist-relative-root-placeholder = 기준 폴더
+filelist-toast-queued = 목록에서 { $files }개 파일을 대기열에 추가했습니다
+filelist-toast-empty = 그 목록에는 경로가 없었습니다
+
+# FFM-M14 — preflight / dry-run report export.
+preflight-report-action = 계획 내보내기
+preflight-report-hint = 아무것도 복사하기 전에 이 시험 실행을 HTML / CSV / JSON으로 저장합니다
+preflight-report-toast = 계획을 내보냈습니다 — 파일 { $files }개, 이름 지적 { $findings }건
+
+# FFM-M15 — damaged-media salvage.
+footer-salvage = 복구
+salvage-title = 손상된 미디어에서 복구
+salvage-hint = 불량 파일에서 읽을 수 있는 모든 것을 복구하고, 읽지 못한 범위를 기록해 다음에는 빈 구간만 다시 시도합니다
+salvage-pick-source = 복구할 파일 선택
+salvage-pick-destination = 복구본을 저장할 위치
+salvage-toast-complete = 복구 완료 — { $bytes }바이트, 빈 구간 없음
+salvage-toast-gaps = { $bytes }바이트 복구; { $gaps }개 구간에서 { $missing }바이트를 읽지 못했습니다
+
+# FFM-M16 — whole-job elevated batch with a consent ledger.
+history-elevate-batch = 모두 권한 상승
+history-elevate-batch-hint = 이 작업에서 권한이 거부된 모든 경로를 한 번의 동의로 다시 시도합니다
+elevate-batch-none = 권한을 상승할 거부된 경로가 없습니다
+elevate-batch-confirm = 경로 { $count }개에 대해 한 번의 권한 상승을 허용할까요? (다른 { $skipped }개 실패는 이것으로 해결되지 않습니다.) 도우미가 다음 경로를 복사합니다:
+elevate-batch-toast = 권한 상승 일괄 처리 — { $copied }개 복사, { $failed }개 실패

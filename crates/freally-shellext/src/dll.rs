@@ -25,8 +25,8 @@ use windows::Win32::System::SystemServices::DLL_PROCESS_ATTACH;
 use windows::core::{BOOL, GUID, HRESULT, Interface};
 use windows_core::ComObject;
 
-use crate::consts::{CLSID_COPY, CLSID_MOVE};
-use crate::factory::{CopyFactory, MoveFactory};
+use crate::consts::{CLSID_COPY, CLSID_HASH, CLSID_MOVE};
+use crate::factory::{CopyFactory, HashFactory, MoveFactory};
 use crate::registry::{
     InstallScope, all_registration_keys, apply_registration, copy_interceptor_keys,
     delete_registration,
@@ -112,6 +112,8 @@ pub unsafe extern "system" fn DllGetClassObject(
         ComObject::new(CopyFactory).into_interface()
     } else if clsid == CLSID_MOVE {
         ComObject::new(MoveFactory).into_interface()
+    } else if clsid == CLSID_HASH {
+        ComObject::new(HashFactory).into_interface()
     } else {
         return CLASS_E_CLASSNOTAVAILABLE;
     };

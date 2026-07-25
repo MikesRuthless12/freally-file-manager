@@ -26,6 +26,10 @@ pub enum CliAction {
     Run,
     /// Dispatch a shell-integration enqueue request.
     Enqueue(EnqueueArgs),
+    /// FFM-M09 — open the hash inspector over these paths. Deliberately
+    /// not an `--enqueue` verb: hashing produces no job, so it must not
+    /// travel the copy/move queue path.
+    Hash(Vec<PathBuf>),
     /// Print help and exit.
     PrintHelp,
     /// Print version and exit.
@@ -61,6 +65,12 @@ pub struct EnqueueArgs {
     /// When absent, the app emits a `shell-enqueue` event and the
     /// frontend reuses its drop-staging flow to pick a destination.
     pub destination: Option<PathBuf>,
+    /// FFM-M13 — read the source set from a TXT / CSV / JSON manifest
+    /// instead of (or in addition to) the argv paths.
+    pub files_from: Option<PathBuf>,
+    /// FFM-M13 — preserve each listed file's path relative to this
+    /// root under the destination, instead of flattening to basenames.
+    pub relative_to: Option<PathBuf>,
 }
 
 /// Errors encountered while parsing CLI arguments. User-facing
@@ -72,12 +82,16 @@ pub enum CliError {
     MissingVerb,
     #[error("unknown enqueue verb: {0}")]
     UnknownVerb(String),
-    #[error("--enqueue requires at least one path")]
+    #[error("at least one path is required")]
     NoPaths,
     #[error("unknown argument: {0}")]
     Unknown(String),
     #[error("--destination requires a path")]
     MissingDestination,
+    #[error("--files-from requires a path")]
+    MissingFilesFrom,
+    #[error("--relative-to requires a path")]
+    MissingRelativeTo,
 }
 
 /// Short CLI help text printed by `--help` / `-h`. Not localised; see
@@ -90,6 +104,12 @@ Usage:
     freally --enqueue copy <paths…>          Queue a copy job per path
     freally --enqueue move <paths…>          Queue a move job per path
                                               (optionally: --destination <dst>)
+    freally --enqueue copy --files-from <manifest> --destination <dst>
+                                              Queue every path listed in a
+                                              TXT / CSV / JSON manifest
+                                              (optionally: --relative-to <root>
+                                              to preserve the tree structure)
+    freally --hash <paths…>                  Open the hash inspector over the paths
     freally --help | -h
     freally --version | -V
 ";
@@ -108,6 +128,7 @@ pub fn parse_args(argv: Vec<OsString>) -> Result<CliAction, CliError> {
     let _ = iter.next();
 
     let mut enqueue: Option<EnqueueArgs> = None;
+    let mut hash_paths: Option<Vec<PathBuf>> = None;
     let mut help = false;
     let mut version = false;
 
@@ -132,41 +153,29 @@ pub fn parse_args(argv: Vec<OsString>) -> Result<CliAction, CliError> {
                         ));
                     }
                 };
-                let mut paths: Vec<PathBuf> = Vec::new();
-                let mut destination: Option<PathBuf> = None;
-                while let Some(next) = iter.next() {
-                    // Only inspect strings when it *looks* like a
-                    // flag; otherwise treat as a path to preserve
-                    // non-UTF-8 filenames byte-for-byte.
-                    if let Some(s) = next.to_str() {
-                        match s {
-                            "--destination" | "-d" => {
-                                let dst = iter.next().ok_or(CliError::MissingDestination)?;
-                                destination = Some(PathBuf::from(dst));
-                                continue;
-                            }
-                            "--" => {
-                                for rest in iter.by_ref() {
-                                    paths.push(PathBuf::from(rest));
-                                }
-                                break;
-                            }
-                            other if other.starts_with("--") => {
-                                return Err(CliError::Unknown(other.to_string()));
-                            }
-                            _ => {}
-                        }
-                    }
-                    paths.push(PathBuf::from(next));
-                }
-                if paths.is_empty() {
+                let mut flags = EnqueueFlags::default();
+                let paths = collect_paths(&mut iter, Some(&mut flags))?;
+                // A manifest supplies the source set on its own, so
+                // argv paths are only required without `--files-from`.
+                if paths.is_empty() && flags.files_from.is_none() {
                     return Err(CliError::NoPaths);
                 }
                 enqueue = Some(EnqueueArgs {
                     verb,
                     paths,
-                    destination,
+                    destination: flags.destination,
+                    files_from: flags.files_from,
+                    relative_to: flags.relative_to,
                 });
+            }
+            // FFM-M09 — hash inspector. Takes paths only; the enqueue
+            // flags are meaningless here and are rejected as unknown.
+            "--hash" => {
+                let paths = collect_paths(&mut iter, None)?;
+                if paths.is_empty() {
+                    return Err(CliError::NoPaths);
+                }
+                hash_paths = Some(paths);
             }
             other => return Err(CliError::Unknown(other.to_string())),
         }
@@ -181,7 +190,76 @@ pub fn parse_args(argv: Vec<OsString>) -> Result<CliAction, CliError> {
     if let Some(eq) = enqueue {
         return Ok(CliAction::Enqueue(eq));
     }
+    if let Some(paths) = hash_paths {
+        return Ok(CliAction::Hash(paths));
+    }
     Ok(CliAction::Run)
+}
+
+/// The flag slots only the `--enqueue` form accepts.
+#[derive(Debug, Default)]
+struct EnqueueFlags {
+    destination: Option<PathBuf>,
+    files_from: Option<PathBuf>,
+    relative_to: Option<PathBuf>,
+}
+
+/// Consume the rest of argv as a path list.
+///
+/// `--` terminates flag parsing so a file literally named `--help.txt`
+/// still round-trips; any other `--flag` is an error. When `flags` is
+/// `Some`, the `--enqueue`-only companion flags are accepted and write
+/// through it; when it is `None` they are rejected like any other
+/// unknown flag. Emptiness is the caller's rule to enforce — a
+/// `--files-from` enqueue legitimately has no argv paths.
+fn collect_paths(
+    iter: &mut impl Iterator<Item = OsString>,
+    mut flags: Option<&mut EnqueueFlags>,
+) -> Result<Vec<PathBuf>, CliError> {
+    let mut paths: Vec<PathBuf> = Vec::new();
+    while let Some(next) = iter.next() {
+        // Only inspect strings when it *looks* like a flag; otherwise
+        // treat as a path to preserve non-UTF-8 filenames byte-for-byte.
+        if let Some(s) = next.to_str() {
+            match s {
+                "--destination" | "-d" if flags.is_some() => {
+                    let dst = iter.next().ok_or(CliError::MissingDestination)?;
+                    if let Some(slot) = flags.as_deref_mut() {
+                        slot.destination = Some(PathBuf::from(dst));
+                    }
+                    continue;
+                }
+                // FFM-M13 — source set from a manifest, optionally
+                // laid out relative to a root instead of flattened.
+                "--files-from" if flags.is_some() => {
+                    let manifest = iter.next().ok_or(CliError::MissingFilesFrom)?;
+                    if let Some(slot) = flags.as_deref_mut() {
+                        slot.files_from = Some(PathBuf::from(manifest));
+                    }
+                    continue;
+                }
+                "--relative-to" if flags.is_some() => {
+                    let root = iter.next().ok_or(CliError::MissingRelativeTo)?;
+                    if let Some(slot) = flags.as_deref_mut() {
+                        slot.relative_to = Some(PathBuf::from(root));
+                    }
+                    continue;
+                }
+                "--" => {
+                    for rest in iter.by_ref() {
+                        paths.push(PathBuf::from(rest));
+                    }
+                    break;
+                }
+                other if other.starts_with("--") => {
+                    return Err(CliError::Unknown(other.to_string()));
+                }
+                _ => {}
+            }
+        }
+        paths.push(PathBuf::from(next));
+    }
+    Ok(paths)
 }
 
 /// Convenience for tests and for `std::env::args_os()` at runtime.
@@ -235,6 +313,8 @@ mod tests {
                 verb: EnqueueVerb::Copy,
                 paths: vec![PathBuf::from("/src/a")],
                 destination: None,
+                files_from: None,
+                relative_to: None,
             })
         );
     }
@@ -344,5 +424,129 @@ mod tests {
     fn verb_str_round_trips() {
         assert_eq!(EnqueueVerb::Copy.as_str(), "copy");
         assert_eq!(EnqueueVerb::Move.as_str(), "move");
+    }
+
+    // FFM-M09 — `--hash` opens the inspector instead of queueing work.
+
+    #[test]
+    fn hash_flag_collects_paths() {
+        assert_eq!(
+            parse_args(args(&["freally", "--hash", "/a", "/b"])).unwrap(),
+            CliAction::Hash(vec![PathBuf::from("/a"), PathBuf::from("/b")])
+        );
+    }
+
+    #[test]
+    fn hash_flag_honours_the_double_dash_terminator() {
+        assert_eq!(
+            parse_args(args(&["freally", "--hash", "--", "--weird.txt"])).unwrap(),
+            CliAction::Hash(vec![PathBuf::from("--weird.txt")])
+        );
+    }
+
+    #[test]
+    fn hash_flag_requires_a_path() {
+        assert_eq!(
+            parse_args(args(&["freally", "--hash"])).unwrap_err(),
+            CliError::NoPaths
+        );
+    }
+
+    // FFM-M13 — `--files-from` / `--relative-to`.
+
+    #[test]
+    fn files_from_supplies_the_source_set_without_argv_paths() {
+        let a = parse_args(args(&[
+            "freally",
+            "--enqueue",
+            "copy",
+            "--files-from",
+            "/lists/failed.txt",
+            "--destination",
+            "/dst",
+        ]))
+        .unwrap();
+        let CliAction::Enqueue(eq) = a else {
+            panic!("expected Enqueue");
+        };
+        assert!(eq.paths.is_empty());
+        assert_eq!(eq.files_from, Some(PathBuf::from("/lists/failed.txt")));
+        assert_eq!(eq.destination, Some(PathBuf::from("/dst")));
+        assert_eq!(eq.relative_to, None);
+    }
+
+    #[test]
+    fn files_from_composes_with_argv_paths_and_relative_to() {
+        let a = parse_args(args(&[
+            "freally",
+            "--enqueue",
+            "copy",
+            "/extra/one.txt",
+            "--files-from",
+            "/lists/l.csv",
+            "--relative-to",
+            "/root",
+        ]))
+        .unwrap();
+        let CliAction::Enqueue(eq) = a else {
+            panic!("expected Enqueue");
+        };
+        assert_eq!(eq.paths, vec![PathBuf::from("/extra/one.txt")]);
+        assert_eq!(eq.files_from, Some(PathBuf::from("/lists/l.csv")));
+        assert_eq!(eq.relative_to, Some(PathBuf::from("/root")));
+    }
+
+    #[test]
+    fn files_from_and_relative_to_require_a_value() {
+        assert_eq!(
+            parse_args(args(&["freally", "--enqueue", "copy", "--files-from"])).unwrap_err(),
+            CliError::MissingFilesFrom
+        );
+        assert_eq!(
+            parse_args(args(&[
+                "freally",
+                "--enqueue",
+                "copy",
+                "/a",
+                "--relative-to"
+            ]))
+            .unwrap_err(),
+            CliError::MissingRelativeTo
+        );
+    }
+
+    #[test]
+    fn enqueue_without_paths_or_a_manifest_still_errors() {
+        assert_eq!(
+            parse_args(args(&[
+                "freally",
+                "--enqueue",
+                "copy",
+                "--destination",
+                "/dst"
+            ]))
+            .unwrap_err(),
+            CliError::NoPaths
+        );
+    }
+
+    #[test]
+    fn hash_flag_rejects_the_enqueue_only_flags() {
+        // `--files-from` makes no sense for a hash run and must not
+        // silently swallow the next argument.
+        assert_eq!(
+            parse_args(args(&["freally", "--hash", "/a", "--files-from", "/l.txt"])).unwrap_err(),
+            CliError::Unknown("--files-from".to_string())
+        );
+    }
+
+    #[test]
+    fn hash_flag_rejects_destination() {
+        // Hashing writes nothing, so `--destination` is not a valid
+        // companion flag — it must not silently swallow the next arg.
+        assert_eq!(
+            parse_args(args(&["freally", "--hash", "/a", "--destination", "/d"])).unwrap_err(),
+            CliError::Unknown("--destination".to_string())
+        );
     }
 }

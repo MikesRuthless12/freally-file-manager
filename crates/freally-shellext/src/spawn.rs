@@ -19,14 +19,20 @@ use crate::consts::HOST_BIN;
 pub enum Verb {
     Copy,
     Move,
+    /// FFM-M09 — open the hash inspector. Queues no job, so it takes
+    /// the `--hash` flag rather than an `--enqueue` verb.
+    Hash,
 }
 
 impl Verb {
-    /// Wire name handed to `freally --enqueue`.
-    pub fn as_str(self) -> &'static str {
+    /// The argv flags this verb prefixes its paths with. Each verb owns
+    /// its own shape, so a future verb with a different one costs a
+    /// single line here rather than a branch in `build_argv`.
+    pub fn argv_flags(self) -> &'static [&'static str] {
         match self {
-            Verb::Copy => "copy",
-            Verb::Move => "move",
+            Verb::Copy => &["--enqueue", "copy"],
+            Verb::Move => &["--enqueue", "move"],
+            Verb::Hash => &["--hash"],
         }
     }
 }
@@ -43,6 +49,12 @@ impl Verb {
 /// argv[4..] = <paths>
 /// ```
 ///
+/// [`Verb::Hash`] queues nothing, so it drops the `--enqueue <verb>`
+/// pair for a single `--hash` flag:
+/// ```text
+/// argv = ["freally", "--hash", "--", <paths…>]
+/// ```
+///
 /// The `--` terminator is deliberate: selected items in Explorer can
 /// have names that begin with `--` (a user could rename a file to
 /// `--help.txt`), and we do not want that to flip the Phase 7a
@@ -50,8 +62,7 @@ impl Verb {
 pub fn build_argv(verb: Verb, paths: &[OsString]) -> Vec<OsString> {
     let mut argv = Vec::with_capacity(paths.len() + 4);
     argv.push(OsString::from(HOST_BIN));
-    argv.push(OsString::from("--enqueue"));
-    argv.push(OsString::from(verb.as_str()));
+    argv.extend(verb.argv_flags().iter().map(OsString::from));
     argv.push(OsString::from("--"));
     argv.extend(paths.iter().cloned());
     argv
@@ -149,8 +160,20 @@ mod tests {
     }
 
     #[test]
-    fn verb_str_round_trip() {
-        assert_eq!(Verb::Copy.as_str(), "copy");
-        assert_eq!(Verb::Move.as_str(), "move");
+    fn verb_argv_flags_round_trip() {
+        assert_eq!(Verb::Copy.argv_flags(), &["--enqueue", "copy"]);
+        assert_eq!(Verb::Move.argv_flags(), &["--enqueue", "move"]);
+        assert_eq!(Verb::Hash.argv_flags(), &["--hash"]);
+    }
+
+    #[test]
+    fn build_argv_hash_uses_the_hash_flag_not_enqueue() {
+        let paths = vec![os(r"C:\a\b.iso")];
+        let argv = build_argv(Verb::Hash, &paths);
+        assert_eq!(
+            argv,
+            vec![os("freally"), os("--hash"), os("--"), os(r"C:\a\b.iso"),]
+        );
+        assert!(!argv.contains(&os("--enqueue")));
     }
 }

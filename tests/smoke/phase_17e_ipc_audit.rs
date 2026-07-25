@@ -101,22 +101,50 @@ fn every_locale_carries_the_new_key() {
     assert_eq!(count, 18, "expected 18 locales, saw {count}");
 }
 
+/// Commands that take a path-typed argument but do not call a Phase 17e
+/// gate. Every one of these PRE-DATES the FFM-M09..M16 build that
+/// widened this sweep from `commands.rs` to the whole command surface;
+/// auditing them is its own workstream, so they are frozen here rather
+/// than silently skipped.
+///
+/// This list is a **ratchet**: it may shrink, never grow. Adding a new
+/// ungated path-taking command fails the test, and fixing one of these
+/// fails it too until the entry is removed.
+const PRE_EXISTING_UNGATED: &[(&str, &str)] = &[
+    ("backup_commands.rs", "sources_add"),
+    ("backup_commands.rs", "sources_update"),
+    ("dropstack.rs", "dropstack_remove"),
+    ("dropstack.rs", "dropstack_copy_all_to"),
+    ("offload_commands.rs", "smb_compression_state"),
+    ("offload_commands.rs", "render_offload_template"),
+    ("preview_commands.rs", "compute_tree_diff"),
+    ("queue_commands.rs", "queue_route_job"),
+    ("queue_commands.rs", "queue_pin_destination"),
+    ("repository_commands.rs", "repository_export_report"),
+    ("repository_commands.rs", "repository_create"),
+    ("repository_commands.rs", "repository_connect"),
+    ("repository_commands.rs", "restore_preview"),
+    ("repository_commands.rs", "restore_paths"),
+    ("scan_commands.rs", "scan_start"),
+    ("version_commands.rs", "list_versions"),
+    ("version_commands.rs", "select_versions_to_prune"),
+    ("version_commands.rs", "prune_versions"),
+];
+
 #[test]
-fn commands_rs_path_args_pass_through_the_gate() {
-    // Tripwire — walk commands.rs and assert that every
+fn command_path_args_pass_through_the_gate() {
+    // Tripwire — walk EVERY command module and assert that each
     // `#[tauri::command]` whose signature mentions a path-typed arg
     // (`path:`, `paths:`, `source:`, `destination:`, `src:`, `dst:`)
-    // also calls one of the Phase 17e helpers
-    // (`validate_ipc_path` / `validate_ipc_paths` /
-    // `validate_path_no_traversal`). The sweep is body-text-based;
-    // false positives are easy enough to fix with a one-line
-    // helper call.
-    let body = fs::read_to_string(repo_root().join("apps/freally-ui/src-tauri/src/commands.rs"))
-        .expect("commands.rs missing");
-
-    // Carve out the file by `#[tauri::command]` markers — each block
-    // is the attribute line plus everything up to the next attribute.
-    let blocks: Vec<&str> = body.split("#[tauri::command]").collect();
+    // also calls one of the Phase 17e helpers (`validate_ipc_path` /
+    // `validate_ipc_paths` / `validate_path_no_traversal`), or
+    // delegates to a helper that does.
+    //
+    // Sweeping the whole directory rather than `commands.rs` alone is
+    // deliberate: the FFM-M09..M16 build added 12 path-taking commands
+    // across 8 new modules, none of which a single-file sweep could
+    // see.
+    let src_dir = repo_root().join("apps/freally-ui/src-tauri/src");
     let suspicious_kw = ["path:", "paths:", "source:", "destination:", "src:", "dst:"];
     let gate_kw = [
         "validate_ipc_path",
@@ -126,40 +154,80 @@ fn commands_rs_path_args_pass_through_the_gate() {
     ];
 
     let mut audited = 0;
-    for block in blocks.iter().skip(1) {
-        // The signature is everything up to the first `{`. After the
-        // `{`, the body lives — gate calls can sit either in the
-        // signature's surrounding helper or in the body.
-        let sig_end = block.find('{').unwrap_or(block.len());
-        let signature = &block[..sig_end];
-        if !suspicious_kw.iter().any(|kw| signature.contains(kw)) {
+    let mut ungated: Vec<(String, String)> = Vec::new();
+    let mut files = 0;
+
+    for entry in fs::read_dir(&src_dir).expect("src dir missing") {
+        let path = entry.expect("dir entry").path();
+        if path.extension().is_none_or(|e| e != "rs") {
             continue;
         }
-        // Drill into the function body — but we need a balanced-brace
-        // walk to stop at this command's `}` rather than running into
-        // sibling code. Simple approach: stop at the next
-        // `#[tauri::command]` marker (already split above) or end.
-        let combined = block;
-        let has_gate = gate_kw.iter().any(|kw| combined.contains(kw));
-        // A few command bodies cross-reference path args via DTOs
-        // (`CopyOptionsDto`, `CollisionRule`) without exposing a raw
-        // `path:` arg — when the signature names the kw and the
-        // helper calls live in the body, that's covered. When the
-        // body delegates to another internal helper that gates
-        // (e.g. `enqueue` in this file), we accept the cross-call.
-        let delegates_to_audited_helper = combined.contains("enqueue(")
-            || combined.contains("enqueue_jobs(")
-            || combined.contains("dropstack_apply_to(")
-            || combined.contains("dropstack::");
-        assert!(
-            has_gate || delegates_to_audited_helper,
-            "command block accepts a path-typed arg without calling Phase 17e gate:\n{}",
-            &block[..sig_end.min(220)],
-        );
-        audited += 1;
+        files += 1;
+        let file_name = path
+            .file_name()
+            .expect("file name")
+            .to_string_lossy()
+            .into_owned();
+        let body = fs::read_to_string(&path).expect("read source");
+
+        for block in body.split("#[tauri::command]").skip(1) {
+            let sig_end = block.find('{').unwrap_or(block.len());
+            let signature = &block[..sig_end];
+            if !suspicious_kw.iter().any(|kw| signature.contains(kw)) {
+                continue;
+            }
+            audited += 1;
+
+            let has_gate = gate_kw.iter().any(|kw| block.contains(kw));
+            // Some bodies delegate to an internal helper that gates.
+            let delegates = block.contains("enqueue(")
+                || block.contains("enqueue_jobs(")
+                || block.contains("dropstack_apply_to(")
+                || block.contains("dropstack::")
+                // FFM-M16 — `elevate_batch_apply` re-derives its paths
+                // from the history DB via the ledger command, which
+                // gates them; the wire entries are only a selection.
+                || block.contains("elevate_batch_ledger(");
+            if has_gate || delegates {
+                continue;
+            }
+            let fn_name = signature
+                .split("fn ")
+                .nth(1)
+                .and_then(|rest| rest.split(['(', '<', ' ']).next())
+                .unwrap_or("<unknown>")
+                .to_string();
+            ungated.push((file_name.clone(), fn_name));
+        }
     }
+
     assert!(
-        audited >= 5,
-        "expected to audit at least 5 path-typed commands, saw {audited}",
+        files > 20,
+        "expected the full command surface, saw {files} files"
+    );
+    assert!(
+        audited >= 15,
+        "expected to audit at least 15 path-typed commands across the \
+         whole command surface, saw {audited}"
+    );
+
+    let mut found: Vec<(String, String)> = ungated;
+    found.sort();
+    let mut frozen: Vec<(String, String)> = PRE_EXISTING_UNGATED
+        .iter()
+        .map(|(f, n)| ((*f).to_string(), (*n).to_string()))
+        .collect();
+    frozen.sort();
+
+    let added: Vec<&(String, String)> = found.iter().filter(|f| !frozen.contains(f)).collect();
+    assert!(
+        added.is_empty(),
+        "new command(s) accept a path-typed arg without calling a Phase 17e gate: {added:#?}"
+    );
+    let fixed: Vec<&(String, String)> = frozen.iter().filter(|f| !found.contains(f)).collect();
+    assert!(
+        fixed.is_empty(),
+        "these commands now gate their paths — remove them from \
+         PRE_EXISTING_UNGATED so the ratchet keeps tightening: {fixed:#?}"
     );
 }

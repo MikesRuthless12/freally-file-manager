@@ -1432,3 +1432,92 @@ sidecar-verify-summary = OK { $ok } 件、失敗 { $failed } 件、欠落 { $mis
 sidecar-verify-failed = 不一致
 sidecar-verify-missing = 欠落
 sidecar-verify-close = 閉じる
+
+# FFM-M09 — hash inspector + clipboard compare.
+footer-hash = ハッシュ
+hash-inspector-title = ハッシュインスペクター
+hash-inspector-algo-label = アルゴリズム
+hash-inspector-add-files = ファイルを追加…
+hash-inspector-add-folders = フォルダーを追加…
+hash-inspector-run = ハッシュを計算
+hash-inspector-hashing = 計算中…
+hash-inspector-clear = クリア
+hash-inspector-close = 閉じる
+hash-inspector-empty = ファイルまたはフォルダーを選んでハッシュを計算します。
+hash-inspector-compare-label = ハッシュ値と比較
+hash-inspector-compare-placeholder = ハッシュ値、チェックサム行、または SFV 行を貼り付けてください
+hash-inspector-compare-invalid = ハッシュ値ではないようです。
+hash-inspector-pair-identical = 2 つのファイルは同一です
+hash-inspector-pair-different = 2 つのファイルは異なります
+hash-inspector-truncated = 最初の { $rows } 件のファイルを表示しています。残りの選択はスキップされました。
+
+# FFM-M10 — copy-verification certificate export.
+history-export-certificate = 証明書
+history-export-certificate-hint = このジョブを印刷可能な HTML / CSV / JSON の検証証明書として書き出します
+certificate-sign-prompt = 証明書を ed25519 秘密鍵で署名しますか？キャンセルすると署名なしで書き出します。
+certificate-key-picker-title = ed25519 署名鍵を選択（PKCS#8 PEM）
+toast-certificate-exported = 証明書を書き出しました（{ $files } 件）
+toast-certificate-exported-signed = 署名付き証明書を書き出しました（{ $files } 件）
+
+# FFM-M11 — verify-only re-audit.
+footer-reaudit = 再検証
+history-reverify = 再検証
+history-reverify-hint = このジョブのコピー元とコピー先を再ハッシュして差異を報告します（何も書き込みません）
+reaudit-title = 検証のみの再監査
+reaudit-hint = コピー元とコピー先のペアを再ハッシュして差異を報告します（何も書き込みません）
+reaudit-pick-source = 再検証するコピー元フォルダーを選択
+reaudit-pick-destination = 比較するコピー先フォルダーを選択
+reaudit-clean-title = 差異なし — ツリーは一致しています
+reaudit-drift-title = 差異を検出しました
+reaudit-summary = 一致 { $ok }、相違 { $differs }、欠落 { $missing }、余分 { $extra }、読取不可 { $errors }（{ $algo }）
+reaudit-status-differs = 相違
+reaudit-status-missing = コピー先に存在しません
+reaudit-status-extra = コピー先のみ
+reaudit-status-error = 読み取れません
+reaudit-close = 閉じる
+
+# FFM-M12 — cross-filesystem filename doctor.
+doctor-title = ファイル名ドクター
+doctor-summary = { $scanned } 件中 { $flagged } 件は { $target } のコピー先で使用できません
+doctor-issue-reserved-name = 予約済みデバイス名
+doctor-issue-illegal-char = 使用できない文字
+doctor-issue-trailing-dot-space = 末尾のピリオドまたは空白
+doctor-issue-component-too-long = 名前が長すぎます
+doctor-issue-path-too-long = パスが長すぎます
+doctor-issue-case-collision = 大文字小文字の衝突
+doctor-no-rename = 安全な変更名がありません
+doctor-apply = { $count } 件のファイル名を変更
+doctor-toast-applied = 変更 { $renamed } 件、失敗 { $failed } 件
+
+# FFM-M13 — file-list import as a copy source.
+action-import-list = リストを読み込む…
+filelist-title = ファイルリストの読み込み
+filelist-hint = TXT / CSV / JSON のパス一覧をジョブのコピー元として使います
+filelist-picker-title = ファイルリストを選択（TXT / CSV / JSON）
+filelist-summary = { $found } 件見つかりました、{ $missing } 件は見つかりません
+filelist-missing-header = リスト内の { $count } 件のパスは存在しません
+filelist-preserve-structure = 基準フォルダーからのフォルダー構造を保持する
+filelist-relative-root-placeholder = 基準フォルダー
+filelist-toast-queued = リストから { $files } 件をキューに追加しました
+filelist-toast-empty = このリストにパスはありませんでした
+
+# FFM-M14 — preflight / dry-run report export.
+preflight-report-action = 計画を書き出す
+preflight-report-hint = コピーを始める前に、この試験実行を HTML / CSV / JSON で保存します
+preflight-report-toast = 計画を書き出しました — { $files } 件、名前の指摘 { $findings } 件
+
+# FFM-M15 — damaged-media salvage.
+footer-salvage = サルベージ
+salvage-title = 破損メディアからのサルベージ
+salvage-hint = 不良ファイルから読める部分をすべて回収し、読めない範囲を記録して、次回は欠損部分だけを再試行します
+salvage-pick-source = サルベージするファイルを選択
+salvage-pick-destination = サルベージ結果の書き込み先
+salvage-toast-complete = サルベージ完了 — { $bytes } バイト、欠損なし
+salvage-toast-gaps = { $bytes } バイトを回収。{ $gaps } 箇所で { $missing } バイトが読み取れません
+
+# FFM-M16 — whole-job elevated batch with a consent ledger.
+history-elevate-batch = 一括昇格
+history-elevate-batch-hint = このジョブでアクセスを拒否されたすべてのパスを、1 回の昇格の同意で再試行します
+elevate-batch-none = 昇格が必要な拒否パスはありません
+elevate-batch-confirm = { $count } 件のパスに対して 1 回の権限昇格を許可しますか？（他の { $skipped } 件の失敗は昇格では解決しません。）ヘルパーは次のパスをコピーします:
+elevate-batch-toast = 昇格バッチ — コピー { $copied } 件、失敗 { $failed } 件

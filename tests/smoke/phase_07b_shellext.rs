@@ -17,7 +17,8 @@
 //! `regsvr32` + the COM runtime need (there).
 
 use freally_shellext::consts::{
-    CLSID_COPY_STR, CLSID_MOVE_STR, DISPLAY_COPY, DISPLAY_MOVE, HOST_BIN, VERB_COPY, VERB_MOVE,
+    CLSID_COPY_STR, CLSID_MOVE_STR, DISPLAY_COPY, DISPLAY_HASH, DISPLAY_MOVE, HOST_BIN, VERB_COPY,
+    VERB_MOVE,
 };
 use freally_shellext::registry::{
     InstallScope, SHELL_TARGETS, all_registration_keys, class_registration_keys,
@@ -75,10 +76,10 @@ fn per_user_registration_layout_has_expected_keys() {
     let dll = r"C:\Program Files\freally-file-manager\freally_shellext.dll";
     let keys = all_registration_keys(InstallScope::PerUser, dll);
 
-    // 2 classes × 3 tuples (default + InprocServer32 default + ThreadingModel)
-    // + 2 verbs × 2 targets × 3 tuples (default + MUIVerb + DelegateExecute)
-    // = 6 + 12 = 18
-    assert_eq!(keys.len(), 18);
+    // 3 classes × 3 tuples (default + InprocServer32 default + ThreadingModel)
+    // + 3 verbs × 2 targets × 3 tuples (default + MUIVerb + DelegateExecute)
+    // = 9 + 18 = 27  (copy, move, and the FFM-M09 hash verb)
+    assert_eq!(keys.len(), 27);
 
     // Every path must sit under HKCU (per-user scope).
     for (path, _, _) in &keys {
@@ -97,11 +98,12 @@ fn per_user_registration_layout_has_expected_keys() {
             path.ends_with(r"\InprocServer32") && name.is_empty() && value == dll
         })
         .count();
-    assert_eq!(inproc_hits, 2, "expected one InprocServer32 per CLSID");
+    assert_eq!(inproc_hits, 3, "expected one InprocServer32 per CLSID");
 
-    // Both display strings must show up.
+    // Every display string must show up.
     assert!(keys.iter().any(|(_, _, v)| v == DISPLAY_COPY));
     assert!(keys.iter().any(|(_, _, v)| v == DISPLAY_MOVE));
+    assert!(keys.iter().any(|(_, _, v)| v == DISPLAY_HASH));
 }
 
 #[test]

@@ -35,6 +35,11 @@ pub const EVENT_DROP_RECEIVED: &str = "drop-received";
 /// frontend listens for this event and routes the payload into its
 /// existing drop-staging dialog with the verb pre-selected.
 pub const EVENT_SHELL_ENQUEUE: &str = "shell-enqueue";
+/// FFM-M09 — the Explorer "Hash with Freally File Manager" verb (and
+/// `freally --hash <paths…>`) delivered paths to inspect. The frontend
+/// opens the hash inspector seeded with them. Payload is a
+/// [`DropReceivedDto`] — a bare path list is all this needs.
+pub const EVENT_HASH_INSPECT: &str = "hash-inspect";
 
 /// Phase 8 — the engine emitted `CopyEvent::ErrorPrompt` and the
 /// runner parked the oneshot in the `ErrorRegistry`. The frontend's

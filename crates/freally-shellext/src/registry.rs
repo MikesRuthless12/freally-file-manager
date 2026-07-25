@@ -18,7 +18,9 @@
 //!    makes the app intercept Explorer's default Ctrl-C / drag-copy
 //!    flow. Off by default; Phase 12 exposes the toggle in Settings.
 
-use crate::consts::{CLSID_COPY_STR, CLSID_MOVE_STR, VERB_COPY, VERB_MOVE};
+use crate::consts::{
+    CLSID_COPY_STR, CLSID_HASH_STR, CLSID_MOVE_STR, VERB_COPY, VERB_HASH, VERB_MOVE,
+};
 
 /// Where to write the registration keys.
 ///
@@ -146,8 +148,8 @@ pub fn copy_interceptor_keys(clsid: &str) -> Vec<(String, String, String)> {
     )]
 }
 
-/// All keys needed to register the full extension (both verbs, both
-/// targets, both CLSIDs). Call sites feed the output directly into
+/// All keys needed to register the full extension (every verb, both
+/// targets, every CLSID). Call sites feed the output directly into
 /// [`apply_registration`] / [`delete_registration`].
 pub fn all_registration_keys(scope: InstallScope, dll_path: &str) -> Vec<(String, String, String)> {
     let mut out = Vec::new();
@@ -163,6 +165,12 @@ pub fn all_registration_keys(scope: InstallScope, dll_path: &str) -> Vec<(String
         "Freally File Manager v0.19.85 — Move command",
         dll_path,
     ));
+    out.extend(class_registration_keys(
+        scope,
+        CLSID_HASH_STR,
+        "Freally File Manager v0.19.85 — Hash command",
+        dll_path,
+    ));
     out.extend(verb_registration_keys(
         scope,
         VERB_COPY,
@@ -174,6 +182,12 @@ pub fn all_registration_keys(scope: InstallScope, dll_path: &str) -> Vec<(String
         VERB_MOVE,
         CLSID_MOVE_STR,
         "Move with Freally File Manager",
+    ));
+    out.extend(verb_registration_keys(
+        scope,
+        VERB_HASH,
+        CLSID_HASH_STR,
+        "Hash with Freally File Manager",
     ));
     out
 }
@@ -534,17 +548,16 @@ mod tests {
     }
 
     #[test]
-    fn all_registration_keys_cover_both_verbs() {
+    fn all_registration_keys_cover_every_verb() {
         let keys = all_registration_keys(InstallScope::PerUser, r"C:\freally-shellext.dll");
-        // 2 classes × 3 tuples + 2 verbs × 6 tuples = 18.
-        assert_eq!(keys.len(), 18);
-        assert!(
-            keys.iter()
-                .any(|(_, _, v)| v == "Copy with Freally File Manager")
-        );
-        assert!(
-            keys.iter()
-                .any(|(_, _, v)| v == "Move with Freally File Manager")
-        );
+        // 3 classes × 3 tuples + 3 verbs × 6 tuples = 27.
+        assert_eq!(keys.len(), 27);
+        for display in [
+            "Copy with Freally File Manager",
+            "Move with Freally File Manager",
+            "Hash with Freally File Manager",
+        ] {
+            assert!(keys.iter().any(|(_, _, v)| v == display), "{display}");
+        }
     }
 }

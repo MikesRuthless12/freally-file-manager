@@ -1432,3 +1432,92 @@ sidecar-verify-summary = { $ok } OK, { $failed } fallidas, { $missing } faltante
 sidecar-verify-failed = No coincide
 sidecar-verify-missing = Falta
 sidecar-verify-close = Cerrar
+
+# FFM-M09 — hash inspector + clipboard compare.
+footer-hash = Hash
+hash-inspector-title = Inspector de hash
+hash-inspector-algo-label = Algoritmo
+hash-inspector-add-files = Añadir archivos…
+hash-inspector-add-folders = Añadir carpetas…
+hash-inspector-run = Calcular hash
+hash-inspector-hashing = Calculando…
+hash-inspector-clear = Limpiar
+hash-inspector-close = Cerrar
+hash-inspector-empty = Elige archivos o carpetas y calcula su hash.
+hash-inspector-compare-label = Comparar con un hash
+hash-inspector-compare-placeholder = Pega un hash, una línea de suma de verificación o una fila SFV
+hash-inspector-compare-invalid = Eso no parece un hash.
+hash-inspector-pair-identical = Los dos archivos son idénticos
+hash-inspector-pair-different = Los dos archivos son diferentes
+hash-inspector-truncated = Se muestran los primeros { $rows } archivos; el resto de la selección se omitió.
+
+# FFM-M10 — copy-verification certificate export.
+history-export-certificate = Certificado
+history-export-certificate-hint = Exporta este trabajo como certificado de verificación imprimible en HTML / CSV / JSON
+certificate-sign-prompt = ¿Firmar el certificado con una clave privada ed25519? Cancelar lo exporta sin firmar.
+certificate-key-picker-title = Elige la clave de firma ed25519 (PKCS#8 PEM)
+toast-certificate-exported = Certificado exportado ({ $files } archivo(s))
+toast-certificate-exported-signed = Certificado firmado exportado ({ $files } archivo(s))
+
+# FFM-M11 — verify-only re-audit.
+footer-reaudit = Reverificar
+history-reverify = Reverificar
+history-reverify-hint = Recalcula el hash del origen y el destino de este trabajo e informa de las diferencias (no escribe nada)
+reaudit-title = Auditoría de solo verificación
+reaudit-hint = Recalcula el hash de un par origen/destino e informa de las diferencias: no escribe nada
+reaudit-pick-source = Elige la carpeta de origen a reverificar
+reaudit-pick-destination = Elige la carpeta de destino con la que comparar
+reaudit-clean-title = Sin diferencias: los árboles coinciden
+reaudit-drift-title = Se detectaron diferencias
+reaudit-summary = { $ok } coinciden, { $differs } difieren, { $missing } faltan, { $extra } sobran, { $errors } ilegibles ({ $algo })
+reaudit-status-differs = Difiere
+reaudit-status-missing = Falta en el destino
+reaudit-status-extra = Solo en el destino
+reaudit-status-error = Ilegible
+reaudit-close = Cerrar
+
+# FFM-M12 — cross-filesystem filename doctor.
+doctor-title = Doctor de nombres
+doctor-summary = { $flagged } de { $scanned } nombre(s) que el destino { $target } no admite
+doctor-issue-reserved-name = Nombre de dispositivo reservado
+doctor-issue-illegal-char = Carácter no permitido
+doctor-issue-trailing-dot-space = Punto o espacio final
+doctor-issue-component-too-long = Nombre demasiado largo
+doctor-issue-path-too-long = Ruta demasiado larga
+doctor-issue-case-collision = Colisión por mayúsculas/minúsculas
+doctor-no-rename = Sin renombrado seguro
+doctor-apply = Renombrar { $count } archivo(s)
+doctor-toast-applied = { $renamed } renombrado(s), { $failed } fallido(s)
+
+# FFM-M13 — file-list import as a copy source.
+action-import-list = Importar lista…
+filelist-title = Importar lista de archivos
+filelist-hint = Usa una lista de rutas TXT / CSV / JSON como conjunto de origen del trabajo
+filelist-picker-title = Elige una lista de archivos (TXT / CSV / JSON)
+filelist-summary = { $found } archivo(s) encontrados, { $missing } no encontrados
+filelist-missing-header = { $count } ruta(s) de la lista ya no existen
+filelist-preserve-structure = Conservar la estructura de carpetas respecto a una raíz
+filelist-relative-root-placeholder = Raíz relativa
+filelist-toast-queued = { $files } archivo(s) de la lista en cola
+filelist-toast-empty = Esa lista no contenía rutas
+
+# FFM-M14 — preflight / dry-run report export.
+preflight-report-action = Exportar plan
+preflight-report-hint = Guarda esta simulación como HTML / CSV / JSON antes de copiar nada
+preflight-report-toast = Plan exportado: { $files } archivo(s), { $findings } hallazgo(s) de nombres
+
+# FFM-M15 — damaged-media salvage.
+footer-salvage = Rescatar
+salvage-title = Rescatar de un soporte dañado
+salvage-hint = Recupera todo lo legible de un archivo defectuoso, mapea lo ilegible y reintenta solo los huecos la próxima vez
+salvage-pick-source = Elige el archivo a rescatar
+salvage-pick-destination = Dónde escribir la copia rescatada
+salvage-toast-complete = Rescate completo: { $bytes } byte(s), sin huecos
+salvage-toast-gaps = Rescatados { $bytes } byte(s); { $missing } byte(s) ilegibles en { $gaps } hueco(s)
+
+# FFM-M16 — whole-job elevated batch with a consent ledger.
+history-elevate-batch = Elevar todo
+history-elevate-batch-hint = Reintenta con un solo consentimiento todas las rutas de este trabajo con permiso denegado
+elevate-batch-none = No hay rutas con permiso denegado que elevar
+elevate-batch-confirm = ¿Conceder una elevación para { $count } ruta(s)? ({ $skipped } fallo(s) más no se solucionan elevando.) El asistente copiará estas rutas:
+elevate-batch-toast = Lote elevado: { $copied } copiadas, { $failed } fallidas

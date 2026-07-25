@@ -425,6 +425,23 @@ pub fn record_settings_changed(
     registry.record(&evt);
 }
 
+/// FFM-M16 — one record for a batch elevation consent, written before
+/// the OS prompt fires so the audit log shows what was asked for even
+/// if the user then cancels.
+pub fn record_elevation_granted(registry: &AuditRegistry, job_id: &str, paths: u64) {
+    if !registry.is_active() {
+        return;
+    }
+    let evt = AuditEvent::ElevationGranted {
+        job_id: job_id.to_string(),
+        user: current_user(),
+        host: current_host(),
+        paths,
+        ts: Utc::now(),
+    };
+    registry.record(&evt);
+}
+
 pub fn record_login(registry: &AuditRegistry) {
     if !registry.is_active() {
         return;

@@ -1432,3 +1432,92 @@ sidecar-verify-summary = { $ok } ОК, { $failed } не удалось, { $missi
 sidecar-verify-failed = Несовпадение
 sidecar-verify-missing = Отсутствует
 sidecar-verify-close = Закрыть
+
+# FFM-M09 — hash inspector + clipboard compare.
+footer-hash = Хеш
+hash-inspector-title = Инспектор хешей
+hash-inspector-algo-label = Алгоритм
+hash-inspector-add-files = Добавить файлы…
+hash-inspector-add-folders = Добавить папки…
+hash-inspector-run = Вычислить хеш
+hash-inspector-hashing = Вычисление…
+hash-inspector-clear = Очистить
+hash-inspector-close = Закрыть
+hash-inspector-empty = Выберите файлы или папки и вычислите их хеши.
+hash-inspector-compare-label = Сравнить с хешем
+hash-inspector-compare-placeholder = Вставьте хеш, строку контрольной суммы или строку SFV
+hash-inspector-compare-invalid = Это не похоже на хеш.
+hash-inspector-pair-identical = Файлы идентичны
+hash-inspector-pair-different = Файлы различаются
+hash-inspector-truncated = Показаны первые { $rows } файлов; остальная часть выбора пропущена.
+
+# FFM-M10 — copy-verification certificate export.
+history-export-certificate = Сертификат
+history-export-certificate-hint = Экспортировать это задание как печатный сертификат проверки в HTML / CSV / JSON
+certificate-sign-prompt = Подписать сертификат закрытым ключом ed25519? Отмена — экспорт без подписи.
+certificate-key-picker-title = Выберите ключ подписи ed25519 (PKCS#8 PEM)
+toast-certificate-exported = Сертификат экспортирован (файлов: { $files })
+toast-certificate-exported-signed = Подписанный сертификат экспортирован (файлов: { $files })
+
+# FFM-M11 — verify-only re-audit.
+footer-reaudit = Перепроверить
+history-reverify = Перепроверить
+history-reverify-hint = Заново хеширует источник и приёмник этого задания и сообщает о расхождениях (ничего не записывает)
+reaudit-title = Проверка без записи
+reaudit-hint = Заново хеширует пару источник/приёмник и сообщает о расхождениях — ничего не записывает
+reaudit-pick-source = Выберите исходную папку для перепроверки
+reaudit-pick-destination = Выберите папку назначения для сравнения
+reaudit-clean-title = Расхождений нет — деревья совпадают
+reaudit-drift-title = Обнаружены расхождения
+reaudit-summary = совпало { $ok }, отличается { $differs }, отсутствует { $missing }, лишних { $extra }, нечитаемых { $errors } ({ $algo })
+reaudit-status-differs = Отличается
+reaudit-status-missing = Нет в назначении
+reaudit-status-extra = Только в назначении
+reaudit-status-error = Не читается
+reaudit-close = Закрыть
+
+# FFM-M12 — cross-filesystem filename doctor.
+doctor-title = Доктор имён файлов
+doctor-summary = { $flagged } из { $scanned } имён, которые не примет назначение ({ $target })
+doctor-issue-reserved-name = Зарезервированное имя устройства
+doctor-issue-illegal-char = Недопустимый символ
+doctor-issue-trailing-dot-space = Точка или пробел в конце
+doctor-issue-component-too-long = Слишком длинное имя
+doctor-issue-path-too-long = Слишком длинный путь
+doctor-issue-case-collision = Конфликт регистра
+doctor-no-rename = Нет безопасного переименования
+doctor-apply = Переименовать файлов: { $count }
+doctor-toast-applied = Переименовано { $renamed }, ошибок { $failed }
+
+# FFM-M13 — file-list import as a copy source.
+action-import-list = Импорт списка…
+filelist-title = Импорт списка файлов
+filelist-hint = Использовать список путей TXT / CSV / JSON как источник задания
+filelist-picker-title = Выберите список файлов (TXT / CSV / JSON)
+filelist-summary = найдено файлов: { $found }, отсутствует: { $missing }
+filelist-missing-header = путей из списка больше не существует: { $count }
+filelist-preserve-structure = Сохранять структуру папок относительно корня
+filelist-relative-root-placeholder = Относительный корень
+filelist-toast-queued = В очередь добавлено файлов из списка: { $files }
+filelist-toast-empty = В этом списке нет путей
+
+# FFM-M14 — preflight / dry-run report export.
+preflight-report-action = Экспорт плана
+preflight-report-hint = Сохранить этот пробный прогон как HTML / CSV / JSON до начала копирования
+preflight-report-toast = План экспортирован — файлов: { $files }, замечаний к именам: { $findings }
+
+# FFM-M15 — damaged-media salvage.
+footer-salvage = Спасение
+salvage-title = Спасение с повреждённого носителя
+salvage-hint = Извлекает всё читаемое из сбойного файла, отмечает нечитаемое и в следующий раз повторяет только пропуски
+salvage-pick-source = Выберите файл для спасения
+salvage-pick-destination = Куда записать спасённую копию
+salvage-toast-complete = Спасение завершено — байт: { $bytes }, пропусков нет
+salvage-toast-gaps = Спасено байт: { $bytes }; нечитаемо: { $missing } в пропусках: { $gaps }
+
+# FFM-M16 — whole-job elevated batch with a consent ledger.
+history-elevate-batch = Повысить все
+history-elevate-batch-hint = Повторить все пути этого задания с отказом в доступе, запросив согласие один раз
+elevate-batch-none = Нет путей с отказом в доступе
+elevate-batch-confirm = Предоставить одно повышение прав для путей: { $count }? (Другие ошибки — { $skipped } — так не исправить.) Помощник скопирует эти пути:
+elevate-batch-toast = Пакет с повышением прав — скопировано { $copied }, ошибок { $failed }

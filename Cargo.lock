@@ -3552,6 +3552,7 @@ dependencies = [
  "freally-platform",
  "freally-plugin",
  "freally-power",
+ "freally-provenance",
  "freally-recovery",
  "freally-secure-delete",
  "freally-server",

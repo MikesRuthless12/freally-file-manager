@@ -34,6 +34,7 @@
 pub mod audit_commands;
 #[cfg(windows)]
 pub mod broker_auth;
+pub mod certificate_commands;
 pub mod cli;
 pub mod clipboard;
 pub mod clipboard_watcher;
@@ -49,10 +50,14 @@ pub mod dropstack;
 pub mod backup_commands;
 pub mod eject;
 pub mod elevate;
+pub mod elevate_batch;
 pub mod errors;
 pub mod eula;
 pub mod failed_commands;
+pub mod filelist_commands;
+pub mod filename_doctor;
 pub mod global_paste;
+pub mod hash_commands;
 pub mod hashing;
 pub mod i18n;
 pub mod icon;
@@ -68,13 +73,17 @@ mod notifications;
 pub mod offload_commands;
 pub mod plugin_commands;
 pub mod power;
+pub mod preflight_report;
 pub mod preview_commands;
 pub mod progress_channel;
 pub mod queue_commands;
+pub mod reaudit_commands;
 pub mod recovery_commands;
+pub mod report_util;
 pub mod repository_commands;
 pub mod reveal;
 pub mod runner;
+pub mod salvage_commands;
 pub mod sanitize_commands;
 pub mod scan_commands;
 pub mod server_commands;
@@ -554,6 +563,26 @@ pub fn run() {
             // FFM-M08 — checksum sidecar create + verify.
             sidecar_commands::sidecar_create,
             sidecar_commands::sidecar_verify,
+            // FFM-M09 — hash inspector + clipboard compare.
+            hash_commands::hash_inspect,
+            hash_commands::hash_parse_digest,
+            // FFM-M10 — copy-verification certificate export.
+            certificate_commands::export_job_certificate,
+            // FFM-M11 — verify-only re-audit (writes nothing).
+            reaudit_commands::reaudit_run,
+            // FFM-M12 — cross-filesystem filename doctor.
+            filename_doctor::filename_doctor_scan,
+            filename_doctor::filename_doctor_apply,
+            // FFM-M13 — file-list import as a copy source.
+            filelist_commands::filelist_import,
+            filelist_commands::filelist_plan,
+            // FFM-M14 — preflight / dry-run report export.
+            preflight_report::export_preflight_report,
+            // FFM-M15 — damaged-media salvage (explicit, never automatic).
+            salvage_commands::salvage_copy,
+            // FFM-M16 — whole-job elevated batch with a consent ledger.
+            elevate_batch::elevate_batch_ledger,
+            elevate_batch::elevate_batch_apply,
             commands::start_copy,
             commands::start_move,
             commands::pause_job,

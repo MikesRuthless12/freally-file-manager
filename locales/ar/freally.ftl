@@ -1432,3 +1432,92 @@ sidecar-verify-summary = { $ok } سليم، { $failed } فشل، { $missing } م
 sidecar-verify-failed = عدم تطابق
 sidecar-verify-missing = مفقود
 sidecar-verify-close = إغلاق
+
+# FFM-M09 — hash inspector + clipboard compare.
+footer-hash = التجزئة
+hash-inspector-title = فاحص التجزئة
+hash-inspector-algo-label = الخوارزمية
+hash-inspector-add-files = إضافة ملفات…
+hash-inspector-add-folders = إضافة مجلدات…
+hash-inspector-run = احسب التجزئة
+hash-inspector-hashing = جارٍ الحساب…
+hash-inspector-clear = مسح
+hash-inspector-close = إغلاق
+hash-inspector-empty = اختر ملفات أو مجلدات ثم احسب تجزئتها.
+hash-inspector-compare-label = قارن بتجزئة
+hash-inspector-compare-placeholder = الصق تجزئة أو سطر مجموع تحقق أو سطر SFV
+hash-inspector-compare-invalid = هذا لا يبدو تجزئة.
+hash-inspector-pair-identical = الملفان متطابقان
+hash-inspector-pair-different = الملفان مختلفان
+hash-inspector-truncated = يتم عرض أول { $rows } ملفات؛ وتم تخطي بقية التحديد.
+
+# FFM-M10 — copy-verification certificate export.
+history-export-certificate = الشهادة
+history-export-certificate-hint = صدّر هذه المهمة كشهادة تحقق قابلة للطباعة بصيغة HTML / CSV / JSON
+certificate-sign-prompt = هل تريد توقيع الشهادة بمفتاح ed25519 خاص؟ الإلغاء يصدّرها دون توقيع.
+certificate-key-picker-title = اختر مفتاح التوقيع ed25519 (PKCS#8 PEM)
+toast-certificate-exported = تم تصدير الشهادة ({ $files } ملف)
+toast-certificate-exported-signed = تم تصدير الشهادة الموقَّعة ({ $files } ملف)
+
+# FFM-M11 — verify-only re-audit.
+footer-reaudit = إعادة التحقق
+history-reverify = إعادة التحقق
+history-reverify-hint = يعيد حساب تجزئة المصدر والوجهة لهذه المهمة ويبلّغ عن الفروق (لا يكتب شيئًا)
+reaudit-title = تدقيق للتحقق فقط
+reaudit-hint = يعيد حساب تجزئة زوج المصدر/الوجهة ويبلّغ عن الفروق — لا يكتب شيئًا
+reaudit-pick-source = اختر مجلد المصدر لإعادة التحقق
+reaudit-pick-destination = اختر مجلد الوجهة للمقارنة
+reaudit-clean-title = لا فروق — الشجرتان متطابقتان
+reaudit-drift-title = تم اكتشاف فروق
+reaudit-summary = { $ok } متطابق، { $differs } مختلف، { $missing } مفقود، { $extra } زائد، { $errors } غير مقروء ({ $algo })
+reaudit-status-differs = مختلف
+reaudit-status-missing = غير موجود في الوجهة
+reaudit-status-extra = في الوجهة فقط
+reaudit-status-error = غير مقروء
+reaudit-close = إغلاق
+
+# FFM-M12 — cross-filesystem filename doctor.
+doctor-title = طبيب أسماء الملفات
+doctor-summary = { $flagged } من { $scanned } اسمًا لا تقبلها الوجهة { $target }
+doctor-issue-reserved-name = اسم جهاز محجوز
+doctor-issue-illegal-char = محرف غير مسموح
+doctor-issue-trailing-dot-space = نقطة أو مسافة في النهاية
+doctor-issue-component-too-long = الاسم طويل جدًا
+doctor-issue-path-too-long = المسار طويل جدًا
+doctor-issue-case-collision = تعارض في حالة الأحرف
+doctor-no-rename = لا توجد إعادة تسمية آمنة
+doctor-apply = إعادة تسمية { $count } ملف
+doctor-toast-applied = تمت إعادة تسمية { $renamed }، وفشل { $failed }
+
+# FFM-M13 — file-list import as a copy source.
+action-import-list = استيراد قائمة…
+filelist-title = استيراد قائمة ملفات
+filelist-hint = استخدم قائمة مسارات TXT / CSV / JSON كمجموعة مصدر المهمة
+filelist-picker-title = اختر قائمة ملفات (TXT / CSV / JSON)
+filelist-summary = تم العثور على { $found } ملف، و{ $missing } مفقود
+filelist-missing-header = { $count } مسار في القائمة لم يعد موجودًا
+filelist-preserve-structure = حافظ على بنية المجلدات بالنسبة إلى جذر
+filelist-relative-root-placeholder = الجذر النسبي
+filelist-toast-queued = تمت إضافة { $files } ملف من القائمة إلى الطابور
+filelist-toast-empty = لم تحتوِ تلك القائمة على أي مسارات
+
+# FFM-M14 — preflight / dry-run report export.
+preflight-report-action = تصدير الخطة
+preflight-report-hint = احفظ هذا التشغيل التجريبي بصيغة HTML / CSV / JSON قبل نسخ أي شيء
+preflight-report-toast = تم تصدير الخطة — { $files } ملف، و{ $findings } ملاحظة على الأسماء
+
+# FFM-M15 — damaged-media salvage.
+footer-salvage = الإنقاذ
+salvage-title = الإنقاذ من وسائط تالفة
+salvage-hint = يستعيد كل ما يمكن قراءته من ملف معطوب، ويرسم خريطة لما تعذّرت قراءته، ويعيد المحاولة في المرة القادمة على الفجوات فقط
+salvage-pick-source = اختر الملف المراد إنقاذه
+salvage-pick-destination = أين تُكتب النسخة المنقذة
+salvage-toast-complete = اكتمل الإنقاذ — { $bytes } بايت، بلا فجوات
+salvage-toast-gaps = تم إنقاذ { $bytes } بايت؛ و{ $missing } بايت غير مقروء في { $gaps } فجوة
+
+# FFM-M16 — whole-job elevated batch with a consent ledger.
+history-elevate-batch = رفع الصلاحيات للكل
+history-elevate-batch-hint = أعد محاولة كل المسارات المرفوضة الصلاحية في هذه المهمة بموافقة رفع واحدة
+elevate-batch-none = لا توجد مسارات مرفوضة الصلاحية لرفعها
+elevate-batch-confirm = هل تمنح رفع صلاحيات واحدًا لـ { $count } مسارًا؟ ({ $skipped } إخفاقات أخرى لا يصلحها الرفع.) سينسخ المساعد هذه المسارات:
+elevate-batch-toast = دفعة مرفوعة الصلاحية — نُسخ { $copied }، وفشل { $failed }

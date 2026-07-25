@@ -10,7 +10,9 @@
     f2Mode,
     globals,
     openErrorLogDrawer,
+    openHashInspector,
     openHistoryDrawer,
+    openReauditResult,
     openLibraryDrawer,
     openTaskCenter,
     openSettings,
@@ -29,7 +31,13 @@
   // (and every `t(...)` call inside it) to re-evaluate on language
   // switch or initial hydration.
   import { formatBytes } from "../format";
-  import { postCompletionAction, type PostCompletionAction } from "../ipc";
+  import {
+    postCompletionAction,
+    reauditRun,
+    salvageCopy,
+    type PostCompletionAction,
+  } from "../ipc";
+  import { open as openDialog, save } from "@tauri-apps/plugin-dialog";
 
   let g = $derived($globals);
   let total = $derived(formatBytes(g.bytesTotal));
@@ -68,6 +76,60 @@
       pushToast("error", e instanceof Error ? e.message : String(e));
     });
   });
+
+  // FFM-M11 — standalone re-audit over any source/destination pair:
+  // pick both roots, re-hash them, report drift. Writes nothing.
+  async function onReaudit() {
+    try {
+      const src = await openDialog({
+        directory: true,
+        multiple: false,
+        title: t("reaudit-pick-source"),
+      });
+      if (typeof src !== "string") return;
+      const dst = await openDialog({
+        directory: true,
+        multiple: false,
+        title: t("reaudit-pick-destination"),
+      });
+      if (typeof dst !== "string") return;
+      openReauditResult(await reauditRun(src, dst, "blake3"));
+    } catch (e) {
+      pushToast("error", e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  // FFM-M15 — salvage a file off failing media. Explicit only: a
+  // healthy copy never takes this path. Re-running the same pair
+  // re-attempts just the gaps the last run mapped.
+  async function onSalvage() {
+    try {
+      const src = await openDialog({
+        directory: false,
+        multiple: false,
+        title: t("salvage-pick-source"),
+      });
+      if (typeof src !== "string") return;
+      const dst = await save({
+        title: t("salvage-pick-destination"),
+        defaultPath: src.slice(Math.max(src.lastIndexOf("\\"), src.lastIndexOf("/")) + 1),
+      });
+      if (!dst || typeof dst !== "string") return;
+      const report = await salvageCopy(src, dst);
+      pushToast(
+        report.complete ? "success" : "error",
+        report.complete
+          ? t("salvage-toast-complete", { bytes: report.recoveredBytes })
+          : t("salvage-toast-gaps", {
+              bytes: report.recoveredBytes,
+              missing: report.missingBytes,
+              gaps: report.gaps.length,
+            }),
+      );
+    } catch (e) {
+      pushToast("error", e instanceof Error ? e.message : String(e));
+    }
+  }
 
   function onAfterDoneChange(e: Event) {
     const target = e.target as HTMLSelectElement;
@@ -157,6 +219,41 @@
     >
       <Icon name="external-link" size={14} />
       {t("footer-history")}
+    </button>
+    <!-- FFM-M09 — hash inspector: hash any file/folder, compare against
+         a pasted digest or between two picked files. -->
+    <button
+      class="history"
+      type="button"
+      onclick={() => openHashInspector()}
+      aria-label={t("hash-inspector-title")}
+    >
+      <Icon name="file-text" size={14} />
+      {t("footer-hash")}
+    </button>
+    <!-- FFM-M11 — verify-only re-audit over any source/destination
+         pair. Re-hashes both trees and reports drift; writes nothing. -->
+    <button
+      class="history"
+      type="button"
+      onclick={onReaudit}
+      aria-label={t("reaudit-title")}
+      title={t("reaudit-hint")}
+    >
+      <Icon name="check" size={14} />
+      {t("footer-reaudit")}
+    </button>
+    <!-- FFM-M15 — salvage a file off failing media (explicit action;
+         a healthy copy never engages the salvage ladder). -->
+    <button
+      class="history"
+      type="button"
+      onclick={onSalvage}
+      aria-label={t("salvage-title")}
+      title={t("salvage-hint")}
+    >
+      <Icon name="alert-triangle" size={14} />
+      {t("footer-salvage")}
     </button>
     <!--
       Phase 25 — two-way sync pairs entry point. Opens the

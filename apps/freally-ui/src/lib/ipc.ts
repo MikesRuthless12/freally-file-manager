@@ -1600,3 +1600,283 @@ export async function sidecarVerify(
 ): Promise<SidecarVerifyReport> {
   return invoke<SidecarVerifyReport>("sidecar_verify", { sidecar });
 }
+
+// ---------------------------------------------------------------------
+// FFM-M09 — hash inspector + clipboard compare.
+// ---------------------------------------------------------------------
+
+/** The eight algorithms `HashAlgorithm::from_str` accepts, in the
+ *  order the inspector offers them (fast checks first, then the
+ *  cryptographic ones users are most likely to have a digest for). */
+export const HASH_ALGORITHMS = [
+  "crc32",
+  "xxh3-64",
+  "xxh3-128",
+  "md5",
+  "sha1",
+  "sha256",
+  "sha512",
+  "blake3",
+] as const;
+
+export interface HashRow {
+  path: string;
+  /** Lowercase hex digest; empty when `error` is set. */
+  hex: string;
+  size: number;
+  error: string | null;
+}
+
+export interface HashInspectReport {
+  algo: string;
+  rows: HashRow[];
+  /** The picked tree exceeded the row cap and the tail was dropped. */
+  truncated: boolean;
+}
+
+/** Hash every picked file (folders expand to their files) with `algo`. */
+export async function hashInspect(
+  paths: string[],
+  algo: string,
+): Promise<HashInspectReport> {
+  return invoke<HashInspectReport>("hash_inspect", { paths, algo });
+}
+
+/** Normalize a pasted digest (bare hex, GNU/BSD sidecar line, or SFV
+ *  row) to lowercase hex. `null` when the text holds no digest. */
+export async function hashParseDigest(text: string): Promise<string | null> {
+  return invoke<string | null>("hash_parse_digest", { text });
+}
+
+// ---------------------------------------------------------------------
+// FFM-M10 — copy-verification certificate export.
+// ---------------------------------------------------------------------
+
+export interface CertificateExportReport {
+  path: string;
+  /** Set when a signing key was supplied. */
+  signaturePath: string | null;
+  files: number;
+}
+
+/** Export a history job as a certificate. `signingKey` is an optional
+ *  path to a PKCS#8 PEM ed25519 key (`freally provenance keygen`);
+ *  when given, a detached `<report>.sig` lands beside the report. */
+export async function exportJobCertificate(
+  jobId: number,
+  format: "html" | "csv" | "json",
+  dest: string,
+  signingKey: string | null,
+): Promise<CertificateExportReport> {
+  return invoke<CertificateExportReport>("export_job_certificate", {
+    jobId,
+    format,
+    dest,
+    signingKey,
+  });
+}
+
+// ---------------------------------------------------------------------
+// FFM-M11 — verify-only re-audit.
+// ---------------------------------------------------------------------
+
+export interface ReauditRow {
+  rel: string;
+  status: "differs" | "missing" | "extra" | "error";
+  detail: string | null;
+}
+
+export interface ReauditReport {
+  algo: string;
+  srcRoot: string;
+  dstRoot: string;
+  ok: number;
+  differs: number;
+  missing: number;
+  extra: number;
+  errors: number;
+  /** Drifted rows only, bounded; the counts above stay exact. */
+  rows: ReauditRow[];
+}
+
+/** Re-hash a source/destination pair and report drift. Writes nothing. */
+export async function reauditRun(
+  src: string,
+  dst: string,
+  algo: string,
+): Promise<ReauditReport> {
+  return invoke<ReauditReport>("reaudit_run", { src, dst, algo });
+}
+
+// ---------------------------------------------------------------------
+// FFM-M12 — cross-filesystem filename doctor.
+// ---------------------------------------------------------------------
+
+export type DoctorTarget = "windows" | "macos" | "linux" | "auto";
+
+export interface DoctorRow {
+  rel: string;
+  issues: string[];
+  /** `null` when a rename alone cannot fix the finding. */
+  suggested: string | null;
+}
+
+export interface DoctorReport {
+  target: string;
+  scanned: number;
+  /** Flagged files only. */
+  rows: DoctorRow[];
+}
+
+export interface DoctorApplyReport {
+  renamed: number;
+  failed: number;
+  problems: { rel: string; reason: string }[];
+}
+
+/** Scan `src` for names `dstRoot`'s filesystem cannot hold. Read-only. */
+export async function filenameDoctorScan(
+  src: string,
+  dstRoot: string,
+  target: DoctorTarget,
+): Promise<DoctorReport> {
+  return invoke<DoctorReport>("filename_doctor_scan", { src, dstRoot, target });
+}
+
+/** Apply accepted rows as in-place renames under `root`. Never clobbers. */
+export async function filenameDoctorApply(
+  root: string,
+  renames: [string, string][],
+): Promise<DoctorApplyReport> {
+  return invoke<DoctorApplyReport>("filename_doctor_apply", { root, renames });
+}
+
+// ---------------------------------------------------------------------
+// FFM-M13 — file-list import as a copy source.
+// ---------------------------------------------------------------------
+
+export interface FileListDto {
+  paths: string[];
+  /** Listed paths that no longer exist — surfaced, never dropped. */
+  missing: string[];
+  /** Deepest common ancestor, offered as the relative root. */
+  commonRoot: string | null;
+}
+
+export interface ImportGroup {
+  /** Destination sub-path; empty means the destination root itself. */
+  relDir: string;
+  sources: string[];
+}
+
+/** Read a TXT / CSV / JSON manifest into a source set. */
+export async function filelistImport(manifest: string): Promise<FileListDto> {
+  return invoke<FileListDto>("filelist_import", { manifest });
+}
+
+/** Group an imported list into the jobs to enqueue. An empty
+ *  `relativeRoot` flattens everything into the destination root. */
+export async function filelistPlan(
+  paths: string[],
+  relativeRoot: string,
+): Promise<ImportGroup[]> {
+  return invoke<ImportGroup[]>("filelist_plan", { paths, relativeRoot });
+}
+
+// ---------------------------------------------------------------------
+// FFM-M14 — preflight / dry-run report export.
+// ---------------------------------------------------------------------
+
+export interface PreflightExportReport {
+  path: string;
+  totalFiles: number;
+  filenameFindings: number;
+}
+
+// ---------------------------------------------------------------------
+// FFM-M16 — whole-job elevated batch with a consent ledger.
+// ---------------------------------------------------------------------
+
+export interface LedgerEntry {
+  src: string;
+  dst: string;
+  errorCode: string;
+}
+
+export interface ConsentLedger {
+  jobId: number;
+  entries: LedgerEntry[];
+  /** Failed items elevation cannot fix, so excluded from the batch. */
+  notElevatable: number;
+}
+
+export interface BatchApplyReport {
+  copied: number;
+  failed: number;
+  bytes: number;
+  /** A consent prompt was actually needed. */
+  elevated: boolean;
+  rows: { src: string; dst: string; status: string; error: string | null }[];
+}
+
+/** Enumerate a job's permission-denied paths. Read-only. */
+export async function elevateBatchLedger(jobId: number): Promise<ConsentLedger> {
+  return invoke<ConsentLedger>("elevate_batch_ledger", { jobId });
+}
+
+/** Apply an approved ledger — one consent for the whole batch. */
+export async function elevateBatchApply(
+  jobId: number,
+  entries: LedgerEntry[],
+): Promise<BatchApplyReport> {
+  return invoke<BatchApplyReport>("elevate_batch_apply", { jobId, entries });
+}
+
+// ---------------------------------------------------------------------
+// FFM-M15 — damaged-media salvage.
+// ---------------------------------------------------------------------
+
+export interface SalvageGap {
+  offset: number;
+  len: number;
+}
+
+export interface SalvageReport {
+  source: string;
+  destination: string;
+  manifestPath: string;
+  size: number;
+  recoveredBytes: number;
+  missingBytes: number;
+  gaps: SalvageGap[];
+  /** This run re-attempted a prior run's gaps only. */
+  resumed: boolean;
+  complete: boolean;
+}
+
+/** Salvage `src` to `dst`, resuming from an existing gap manifest. */
+export async function salvageCopy(
+  src: string,
+  dst: string,
+): Promise<SalvageReport> {
+  return invoke<SalvageReport>("salvage_copy", { src, dst });
+}
+
+/** Write the dry-run plan for `src` → `dst` to `dest`. Reads only. */
+export async function exportPreflightReport(
+  src: string,
+  dst: string,
+  opts: DryRunOptionsDto,
+  target: DoctorTarget,
+  format: "html" | "csv" | "json",
+  dest: string,
+): Promise<PreflightExportReport> {
+  return invoke<PreflightExportReport>("export_preflight_report", {
+    src,
+    dst,
+    opts,
+    target,
+    format,
+    dest,
+  });
+}

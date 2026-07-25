@@ -23,6 +23,8 @@ import {
   SIDECAR_EXTENSIONS,
   startCopy,
   tasksList,
+  type FileListDto,
+  type ReauditReport,
   type RepoEntryDto,
   type SidecarVerifyReport,
   type TaskDto,
@@ -220,6 +222,45 @@ export const sidecarVerifyResult: Readable<SidecarVerifyReport | null> = {
 };
 export function closeSidecarVerify(): void {
   sidecarVerifyStore.set(null);
+}
+
+// FFM-M13 — file-list import. Non-null while the import modal is open.
+type FileListImportRequest = { list: FileListDto; manifest: string };
+const fileListImportStore = writable<FileListImportRequest | null>(null);
+export const fileListImport: Readable<FileListImportRequest | null> = {
+  subscribe: fileListImportStore.subscribe,
+};
+export function openFileListImport(list: FileListDto, manifest: string): void {
+  fileListImportStore.set({ list, manifest });
+}
+export function closeFileListImport(): void {
+  fileListImportStore.set(null);
+}
+
+// FFM-M11 — verify-only re-audit result. Non-null while the report
+// modal is open.
+const reauditResultStore = writable<ReauditReport | null>(null);
+export const reauditResult: Readable<ReauditReport | null> = {
+  subscribe: reauditResultStore.subscribe,
+};
+export function openReauditResult(report: ReauditReport): void {
+  reauditResultStore.set(report);
+}
+export function closeReauditResult(): void {
+  reauditResultStore.set(null);
+}
+
+// FFM-M09 — hash inspector. Non-null while the panel is open; the
+// array is the seed selection (empty when opened from the footer).
+const hashInspectorStore = writable<string[] | null>(null);
+export const hashInspectorPaths: Readable<string[] | null> = {
+  subscribe: hashInspectorStore.subscribe,
+};
+export function openHashInspector(paths: string[] = []): void {
+  hashInspectorStore.set(paths);
+}
+export function closeHashInspector(): void {
+  hashInspectorStore.set(null);
 }
 
 /** True when a path's extension is a recognized checksum sidecar. */
@@ -1267,6 +1308,12 @@ export async function initStores(): Promise<() => void> {
     // chooser (System copy vs Freally verified copy vs replace-older).
     onEvent<ShellEnqueueDto>(EVENTS.shellEnqueue, (dto) => {
       if (dto.paths.length > 0) pasteChooserStore.set(dto);
+    }),
+    // FFM-M09 — Explorer's "Hash with Freally File Manager" verb (or
+    // `freally --hash <paths…>`) opens the inspector on those paths.
+    onEvent<DropReceivedDto>(EVENTS.hashInspect, (dto) => {
+      const paths = dto.paths ?? [];
+      if (paths.length > 0) openHashInspector(paths);
     }),
     // Phase 45.3 — registry events. `queue-added` / `queue-removed`
     // / `queue-merged` mutate the tab strip; `queue-job-routed` only

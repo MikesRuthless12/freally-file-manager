@@ -1432,3 +1432,92 @@ sidecar-verify-summary = { $ok } ОК, { $failed } невдало, { $missing } 
 sidecar-verify-failed = Розбіжність
 sidecar-verify-missing = Відсутній
 sidecar-verify-close = Закрити
+
+# FFM-M09 — hash inspector + clipboard compare.
+footer-hash = Хеш
+hash-inspector-title = Інспектор хешів
+hash-inspector-algo-label = Алгоритм
+hash-inspector-add-files = Додати файли…
+hash-inspector-add-folders = Додати теки…
+hash-inspector-run = Обчислити хеш
+hash-inspector-hashing = Обчислення…
+hash-inspector-clear = Очистити
+hash-inspector-close = Закрити
+hash-inspector-empty = Виберіть файли або теки та обчисліть їхні хеші.
+hash-inspector-compare-label = Порівняти з хешем
+hash-inspector-compare-placeholder = Вставте хеш, рядок контрольної суми або рядок SFV
+hash-inspector-compare-invalid = Це не схоже на хеш.
+hash-inspector-pair-identical = Обидва файли ідентичні
+hash-inspector-pair-different = Файли відрізняються
+hash-inspector-truncated = Показано перші { $rows } файлів; решту вибору пропущено.
+
+# FFM-M10 — copy-verification certificate export.
+history-export-certificate = Сертифікат
+history-export-certificate-hint = Експортувати це завдання як придатний до друку сертифікат перевірки HTML / CSV / JSON
+certificate-sign-prompt = Підписати сертифікат закритим ключем ed25519? Скасування — експорт без підпису.
+certificate-key-picker-title = Виберіть ключ підпису ed25519 (PKCS#8 PEM)
+toast-certificate-exported = Сертифікат експортовано (файлів: { $files })
+toast-certificate-exported-signed = Підписаний сертифікат експортовано (файлів: { $files })
+
+# FFM-M11 — verify-only re-audit.
+footer-reaudit = Перевірити знову
+history-reverify = Перевірити знову
+history-reverify-hint = Заново хешує джерело та призначення цього завдання і повідомляє про розбіжності (нічого не записує)
+reaudit-title = Перевірка без запису
+reaudit-hint = Заново хешує пару джерело/призначення і повідомляє про розбіжності — нічого не записує
+reaudit-pick-source = Виберіть вихідну теку для повторної перевірки
+reaudit-pick-destination = Виберіть теку призначення для порівняння
+reaudit-clean-title = Розбіжностей немає — дерева збігаються
+reaudit-drift-title = Виявлено розбіжності
+reaudit-summary = збіглося { $ok }, відрізняється { $differs }, бракує { $missing }, зайвих { $extra }, нечитних { $errors } ({ $algo })
+reaudit-status-differs = Відрізняється
+reaudit-status-missing = Немає у призначенні
+reaudit-status-extra = Лише у призначенні
+reaudit-status-error = Не читається
+reaudit-close = Закрити
+
+# FFM-M12 — cross-filesystem filename doctor.
+doctor-title = Доктор імен файлів
+doctor-summary = { $flagged } з { $scanned } імен, які не прийме призначення ({ $target })
+doctor-issue-reserved-name = Зарезервоване ім'я пристрою
+doctor-issue-illegal-char = Неприпустимий символ
+doctor-issue-trailing-dot-space = Крапка або пробіл у кінці
+doctor-issue-component-too-long = Занадто довге ім'я
+doctor-issue-path-too-long = Занадто довгий шлях
+doctor-issue-case-collision = Конфлікт регістру
+doctor-no-rename = Немає безпечного перейменування
+doctor-apply = Перейменувати файлів: { $count }
+doctor-toast-applied = Перейменовано { $renamed }, помилок { $failed }
+
+# FFM-M13 — file-list import as a copy source.
+action-import-list = Імпорт списку…
+filelist-title = Імпорт списку файлів
+filelist-hint = Використати список шляхів TXT / CSV / JSON як джерело завдання
+filelist-picker-title = Виберіть список файлів (TXT / CSV / JSON)
+filelist-summary = знайдено файлів: { $found }, бракує: { $missing }
+filelist-missing-header = шляхів зі списку більше не існує: { $count }
+filelist-preserve-structure = Зберігати структуру тек відносно кореня
+filelist-relative-root-placeholder = Відносний корінь
+filelist-toast-queued = У чергу додано файлів зі списку: { $files }
+filelist-toast-empty = У цьому списку немає шляхів
+
+# FFM-M14 — preflight / dry-run report export.
+preflight-report-action = Експорт плану
+preflight-report-hint = Зберегти цей пробний прогін як HTML / CSV / JSON до початку копіювання
+preflight-report-toast = План експортовано — файлів: { $files }, зауважень до імен: { $findings }
+
+# FFM-M15 — damaged-media salvage.
+footer-salvage = Порятунок
+salvage-title = Порятунок із пошкодженого носія
+salvage-hint = Витягує все читабельне зі збійного файлу, позначає нечитабельне і наступного разу повторює лише прогалини
+salvage-pick-source = Виберіть файл для порятунку
+salvage-pick-destination = Куди записати врятовану копію
+salvage-toast-complete = Порятунок завершено — байтів: { $bytes }, прогалин немає
+salvage-toast-gaps = Врятовано байтів: { $bytes }; нечитабельно: { $missing } у прогалинах: { $gaps }
+
+# FFM-M16 — whole-job elevated batch with a consent ledger.
+history-elevate-batch = Підвищити всі
+history-elevate-batch-hint = Повторити всі шляхи цього завдання з відмовою в доступі, запитавши згоду один раз
+elevate-batch-none = Немає шляхів із відмовою в доступі
+elevate-batch-confirm = Надати одне підвищення прав для шляхів: { $count }? (Інші помилки — { $skipped } — так не виправити.) Помічник скопіює ці шляхи:
+elevate-batch-toast = Пакет із підвищенням прав — скопійовано { $copied }, помилок { $failed }

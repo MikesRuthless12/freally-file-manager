@@ -18,6 +18,10 @@ pub const CLSID_COPY_STR: &str = "{A7D2C001-C097-4C96-8F7A-5C970C097001}";
 /// `{A7D2C002-C097-4C96-8F7A-5C970C097002}`.
 pub const CLSID_MOVE_STR: &str = "{A7D2C002-C097-4C96-8F7A-5C970C097002}";
 
+/// FFM-M09 — CLSID for the "Hash with Freally File Manager"
+/// `IExplorerCommand`. `{A7D2C003-C097-4C96-8F7A-5C970C097003}`.
+pub const CLSID_HASH_STR: &str = "{A7D2C003-C097-4C96-8F7A-5C970C097003}";
+
 /// Canonical verb name used under `HKCU\Software\Classes\*\shell\…`.
 /// Explorer references this key via the verb registration; never
 /// rename it without bumping the DLL major version.
@@ -25,6 +29,9 @@ pub const VERB_COPY: &str = "Freally.Copy";
 
 /// Canonical verb name for the move command. See [`VERB_COPY`].
 pub const VERB_MOVE: &str = "Freally.Move";
+
+/// Canonical verb name for the hash command. See [`VERB_COPY`].
+pub const VERB_HASH: &str = "Freally.Hash";
 
 /// Display string Explorer shows in the context menu for the copy
 /// verb. English; Windows does not yet read a `MUIVerb` resource
@@ -34,6 +41,9 @@ pub const DISPLAY_COPY: &str = "Copy with Freally File Manager";
 
 /// Display string for the move verb. See [`DISPLAY_COPY`].
 pub const DISPLAY_MOVE: &str = "Move with Freally File Manager";
+
+/// Display string for the hash verb. See [`DISPLAY_COPY`].
+pub const DISPLAY_HASH: &str = "Hash with Freally File Manager";
 
 /// ProgID-style friendly names under `HKCR\CLSID\{guid}\(default)`.
 pub const PROG_COPY: &str = "Freally File Manager v0.19.85 — Copy command";
@@ -53,10 +63,11 @@ mod guids {
 
     pub const CLSID_COPY: GUID = GUID::from_u128(0xA7D2C001_C097_4C96_8F7A_5C970C097001);
     pub const CLSID_MOVE: GUID = GUID::from_u128(0xA7D2C002_C097_4C96_8F7A_5C970C097002);
+    pub const CLSID_HASH: GUID = GUID::from_u128(0xA7D2C003_C097_4C96_8F7A_5C970C097003);
 }
 
 #[cfg(windows)]
-pub use guids::{CLSID_COPY, CLSID_MOVE};
+pub use guids::{CLSID_COPY, CLSID_HASH, CLSID_MOVE};
 
 #[cfg(test)]
 mod tests {
@@ -67,7 +78,7 @@ mod tests {
         // Round-trip the textual CLSID through a dumb hex check so a
         // future editor cannot drift the two representations without
         // noticing. Format: `{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}`.
-        for s in [CLSID_COPY_STR, CLSID_MOVE_STR] {
+        for s in [CLSID_COPY_STR, CLSID_MOVE_STR, CLSID_HASH_STR] {
             assert!(s.starts_with('{') && s.ends_with('}'));
             let stripped = &s[1..s.len() - 1];
             let parts: Vec<&str> = stripped.split('-').collect();
@@ -87,7 +98,7 @@ mod tests {
     fn verb_names_are_registry_safe() {
         // Backslashes would break the `*\shell\<verb>` key path.
         // Whitespace would disagree with what Explorer expects.
-        for v in [VERB_COPY, VERB_MOVE] {
+        for v in [VERB_COPY, VERB_MOVE, VERB_HASH] {
             assert!(!v.contains(['\\', '/', ' ', '\t', '\n']));
         }
     }

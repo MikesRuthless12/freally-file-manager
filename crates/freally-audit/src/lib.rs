@@ -240,6 +240,18 @@ pub enum AuditEvent {
         reason: String,
         ts: DateTime<Utc>,
     },
+    /// FFM-M16 — the user approved one elevation consent covering a
+    /// whole batch of permission-denied paths. `paths` is the exact
+    /// count the ledger listed at approval time, so an auditor can
+    /// reconcile the consent against the `FileCopied` / `FileFailed`
+    /// records that follow it.
+    ElevationGranted {
+        job_id: String,
+        user: String,
+        host: String,
+        paths: u64,
+        ts: DateTime<Utc>,
+    },
 }
 
 impl AuditEvent {
@@ -255,6 +267,7 @@ impl AuditEvent {
             Self::SettingsChanged { .. } => "SettingsChanged",
             Self::LoginEvent { .. } => "LoginEvent",
             Self::UnauthorizedAccess { .. } => "UnauthorizedAccess",
+            Self::ElevationGranted { .. } => "ElevationGranted",
         }
     }
 
@@ -270,6 +283,7 @@ impl AuditEvent {
             Self::SettingsChanged { .. } => "Settings changed",
             Self::LoginEvent { .. } => "Application login",
             Self::UnauthorizedAccess { .. } => "Unauthorized access",
+            Self::ElevationGranted { .. } => "Elevation granted for batch",
         }
     }
 
@@ -284,6 +298,9 @@ impl AuditEvent {
             Self::SettingsChanged { .. } => AuditSeverity::Notice,
             Self::LoginEvent { .. } => AuditSeverity::Info,
             Self::UnauthorizedAccess { .. } => AuditSeverity::Error,
+            // A privilege escalation the user approved is not an
+            // error, but it is never routine either.
+            Self::ElevationGranted { .. } => AuditSeverity::Notice,
         }
     }
 
@@ -297,7 +314,8 @@ impl AuditEvent {
             | Self::CollisionResolved { ts, .. }
             | Self::SettingsChanged { ts, .. }
             | Self::LoginEvent { ts, .. }
-            | Self::UnauthorizedAccess { ts, .. } => ts,
+            | Self::UnauthorizedAccess { ts, .. }
+            | Self::ElevationGranted { ts, .. } => ts,
         }
     }
 
@@ -317,7 +335,8 @@ impl AuditEvent {
             | Self::JobCompleted { job_id, .. }
             | Self::FileCopied { job_id, .. }
             | Self::FileFailed { job_id, .. }
-            | Self::CollisionResolved { job_id, .. } => job_id.as_str(),
+            | Self::CollisionResolved { job_id, .. }
+            | Self::ElevationGranted { job_id, .. } => job_id.as_str(),
             Self::SettingsChanged { .. }
             | Self::LoginEvent { .. }
             | Self::UnauthorizedAccess { .. } => "",
@@ -331,7 +350,8 @@ impl AuditEvent {
             Self::JobStarted { user, .. }
             | Self::SettingsChanged { user, .. }
             | Self::LoginEvent { user, .. }
-            | Self::UnauthorizedAccess { user, .. } => user.as_str(),
+            | Self::UnauthorizedAccess { user, .. }
+            | Self::ElevationGranted { user, .. } => user.as_str(),
             _ => "",
         }
     }

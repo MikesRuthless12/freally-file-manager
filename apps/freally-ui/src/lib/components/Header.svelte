@@ -12,10 +12,12 @@
   import {
     globals,
     liveRateBps,
+    openFileListImport,
     openSettings,
     pushToast,
     setDropped,
   } from "../stores";
+  import { open as openDialog } from "@tauri-apps/plugin-dialog";
 
   // Bind `$locale.code` to the root's `data-locale` attribute below
   // so the template re-evaluates every `t(...)` call on language
@@ -26,6 +28,7 @@
     cancelAll,
     activeCloudTransferCount,
     currentShapeRate,
+    filelistImport,
     onEvent,
     pickFiles,
     pickFolders,
@@ -268,6 +271,30 @@
       pushToast("error", e instanceof Error ? e.message : String(e));
     }
   }
+
+  // FFM-M13 — take a job's source set from a TXT / CSV / JSON manifest
+  // (an FFM-M07 failed-list export included) instead of a picker.
+  async function onImportList() {
+    try {
+      const picked = await openDialog({
+        multiple: false,
+        directory: false,
+        title: t("filelist-picker-title"),
+        filters: [
+          { name: "File lists", extensions: ["txt", "csv", "json"] },
+        ],
+      });
+      if (typeof picked !== "string") return;
+      const list = await filelistImport(picked);
+      if (list.paths.length === 0 && list.missing.length === 0) {
+        pushToast("info", "filelist-toast-empty");
+        return;
+      }
+      openFileListImport(list, picked);
+    } catch (e) {
+      pushToast("error", e instanceof Error ? e.message : String(e));
+    }
+  }
 </script>
 
 <header class="header">
@@ -362,6 +389,17 @@
       >
         <Icon name="folder" size={16} />
         <span>{t("action-add-folders")}</span>
+      </button>
+      <!-- FFM-M13 — source set from a TXT / CSV / JSON manifest. -->
+      <button
+        type="button"
+        class="pill-btn"
+        aria-label={t("filelist-title")}
+        title={t("filelist-hint")}
+        onclick={onImportList}
+      >
+        <Icon name="file-text" size={16} />
+        <span>{t("action-import-list")}</span>
       </button>
       <span class="divider" aria-hidden="true"></span>
       <button

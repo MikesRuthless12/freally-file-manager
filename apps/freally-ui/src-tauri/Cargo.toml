@@ -29,6 +29,9 @@ freally-core = { path = "../../../crates/freally-core", version = "0.20" }
 freally-hash = { path = "../../../crates/freally-hash", version = "0.20" }
 freally-history = { path = "../../../crates/freally-history", version = "0.20" }
 freally-platform = { path = "../../../crates/freally-platform", version = "0.20" }
+# FFM-M10 — ed25519 detached signing for exported copy-verification
+# certificates, reusing the Phase 43 provenance keypair helpers.
+freally-provenance = { path = "../../../crates/freally-provenance", version = "0.20" }
 freally-secure-delete = { path = "../../../crates/freally-secure-delete", version = "0.20" }
 freally-settings = { path = "../../../crates/freally-settings", version = "0.20" }
 # Phase 19b — filesystem-snapshot bridge (VSS / ZFS / Btrfs / APFS)

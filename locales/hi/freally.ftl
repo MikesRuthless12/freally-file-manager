@@ -1432,3 +1432,92 @@ sidecar-verify-summary = { $ok } ठीक, { $failed } विफल, { $missing
 sidecar-verify-failed = बेमेल
 sidecar-verify-missing = अनुपस्थित
 sidecar-verify-close = बंद करें
+
+# FFM-M09 — hash inspector + clipboard compare.
+footer-hash = हैश
+hash-inspector-title = हैश निरीक्षक
+hash-inspector-algo-label = एल्गोरिद्म
+hash-inspector-add-files = फ़ाइलें जोड़ें…
+hash-inspector-add-folders = फ़ोल्डर जोड़ें…
+hash-inspector-run = हैश निकालें
+hash-inspector-hashing = गणना जारी…
+hash-inspector-clear = साफ़ करें
+hash-inspector-close = बंद करें
+hash-inspector-empty = फ़ाइलें या फ़ोल्डर चुनें, फिर उनका हैश निकालें।
+hash-inspector-compare-label = किसी हैश से तुलना करें
+hash-inspector-compare-placeholder = हैश, चेकसम पंक्ति या SFV पंक्ति चिपकाएँ
+hash-inspector-compare-invalid = यह हैश जैसा नहीं लगता।
+hash-inspector-pair-identical = दोनों फ़ाइलें समान हैं
+hash-inspector-pair-different = दोनों फ़ाइलें भिन्न हैं
+hash-inspector-truncated = पहली { $rows } फ़ाइलें दिखाई जा रही हैं; शेष चयन छोड़ दिया गया।
+
+# FFM-M10 — copy-verification certificate export.
+history-export-certificate = प्रमाणपत्र
+history-export-certificate-hint = इस कार्य को प्रिंट-योग्य HTML / CSV / JSON सत्यापन प्रमाणपत्र के रूप में निर्यात करें
+certificate-sign-prompt = प्रमाणपत्र को ed25519 निजी कुंजी से हस्ताक्षरित करें? रद्द करने पर बिना हस्ताक्षर के निर्यात होगा।
+certificate-key-picker-title = ed25519 हस्ताक्षर कुंजी चुनें (PKCS#8 PEM)
+toast-certificate-exported = प्रमाणपत्र निर्यात हुआ ({ $files } फ़ाइल)
+toast-certificate-exported-signed = हस्ताक्षरित प्रमाणपत्र निर्यात हुआ ({ $files } फ़ाइल)
+
+# FFM-M11 — verify-only re-audit.
+footer-reaudit = पुनः सत्यापित करें
+history-reverify = पुनः सत्यापित करें
+history-reverify-hint = इस कार्य के स्रोत और गंतव्य का हैश दोबारा निकालकर अंतर बताता है (कुछ नहीं लिखता)
+reaudit-title = केवल-सत्यापन ऑडिट
+reaudit-hint = स्रोत/गंतव्य जोड़ी का हैश दोबारा निकालकर अंतर बताता है — कुछ नहीं लिखता
+reaudit-pick-source = पुनः सत्यापित करने के लिए स्रोत फ़ोल्डर चुनें
+reaudit-pick-destination = तुलना के लिए गंतव्य फ़ोल्डर चुनें
+reaudit-clean-title = कोई अंतर नहीं — दोनों वृक्ष मेल खाते हैं
+reaudit-drift-title = अंतर मिला
+reaudit-summary = { $ok } मेल, { $differs } भिन्न, { $missing } अनुपस्थित, { $extra } अतिरिक्त, { $errors } अपठनीय ({ $algo })
+reaudit-status-differs = भिन्न
+reaudit-status-missing = गंतव्य में अनुपस्थित
+reaudit-status-extra = केवल गंतव्य में
+reaudit-status-error = अपठनीय
+reaudit-close = बंद करें
+
+# FFM-M12 — cross-filesystem filename doctor.
+doctor-title = फ़ाइल-नाम डॉक्टर
+doctor-summary = { $scanned } में से { $flagged } नाम { $target } गंतव्य स्वीकार नहीं करेगा
+doctor-issue-reserved-name = आरक्षित डिवाइस नाम
+doctor-issue-illegal-char = अमान्य वर्ण
+doctor-issue-trailing-dot-space = अंत में बिंदु या स्थान
+doctor-issue-component-too-long = नाम बहुत लंबा
+doctor-issue-path-too-long = पथ बहुत लंबा
+doctor-issue-case-collision = केस-टकराव
+doctor-no-rename = कोई सुरक्षित नाम-बदलाव नहीं
+doctor-apply = { $count } फ़ाइल का नाम बदलें
+doctor-toast-applied = { $renamed } बदले गए, { $failed } विफल
+
+# FFM-M13 — file-list import as a copy source.
+action-import-list = सूची आयात करें…
+filelist-title = फ़ाइल सूची आयात करें
+filelist-hint = TXT / CSV / JSON पथ सूची को कार्य के स्रोत के रूप में उपयोग करें
+filelist-picker-title = फ़ाइल सूची चुनें (TXT / CSV / JSON)
+filelist-summary = { $found } फ़ाइल मिलीं, { $missing } अनुपस्थित
+filelist-missing-header = सूची के { $count } पथ अब मौजूद नहीं हैं
+filelist-preserve-structure = किसी मूल फ़ोल्डर के सापेक्ष संरचना बनाए रखें
+filelist-relative-root-placeholder = सापेक्ष मूल फ़ोल्डर
+filelist-toast-queued = सूची से { $files } फ़ाइलें कतार में जोड़ी गईं
+filelist-toast-empty = उस सूची में कोई पथ नहीं था
+
+# FFM-M14 — preflight / dry-run report export.
+preflight-report-action = योजना निर्यात करें
+preflight-report-hint = कुछ भी कॉपी होने से पहले इस पूर्वाभ्यास को HTML / CSV / JSON में सहेजें
+preflight-report-toast = योजना निर्यात हुई — { $files } फ़ाइल, { $findings } नाम-निष्कर्ष
+
+# FFM-M15 — damaged-media salvage.
+footer-salvage = बचाव
+salvage-title = क्षतिग्रस्त मीडिया से बचाव
+salvage-hint = खराब फ़ाइल से पढ़ने योग्य सब कुछ पुनर्प्राप्त करता है, अपठनीय हिस्सों को दर्ज करता है, और अगली बार केवल उन्हीं को दोबारा आज़माता है
+salvage-pick-source = बचाने के लिए फ़ाइल चुनें
+salvage-pick-destination = बचाई गई प्रति कहाँ लिखें
+salvage-toast-complete = बचाव पूर्ण — { $bytes } बाइट, कोई अंतराल नहीं
+salvage-toast-gaps = { $bytes } बाइट बचाए; { $gaps } अंतरालों में { $missing } बाइट अपठनीय
+
+# FFM-M16 — whole-job elevated batch with a consent ledger.
+history-elevate-batch = सभी को उन्नत करें
+history-elevate-batch-hint = इस कार्य के अनुमति-अस्वीकृत सभी पथों को एक ही उन्नयन सहमति से पुनः आज़माएँ
+elevate-batch-none = उन्नत करने योग्य कोई अनुमति-अस्वीकृत पथ नहीं
+elevate-batch-confirm = { $count } पथों के लिए एक उन्नयन दें? ({ $skipped } अन्य विफलताएँ इससे ठीक नहीं होंगी।) सहायक इन पथों की प्रतिलिपि बनाएगा:
+elevate-batch-toast = उन्नत बैच — { $copied } प्रतिलिपित, { $failed } विफल

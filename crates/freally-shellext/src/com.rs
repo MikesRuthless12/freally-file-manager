@@ -23,7 +23,7 @@ use windows::Win32::UI::Shell::{
 use windows::core::{BOOL, GUID, PWSTR, Ref, Result as WinResult};
 use windows_implement::implement;
 
-use crate::consts::{CLSID_COPY, CLSID_MOVE, DISPLAY_COPY, DISPLAY_MOVE};
+use crate::consts::{CLSID_COPY, CLSID_HASH, CLSID_MOVE, DISPLAY_COPY, DISPLAY_HASH, DISPLAY_MOVE};
 use crate::spawn::{Verb, spawn_detached};
 
 /// "Copy with Freally File Manager" — queues a copy job per selected item.
@@ -33,6 +33,11 @@ pub struct CopyCommand;
 /// "Move with Freally File Manager" — queues a move job per selected item.
 #[implement(IExplorerCommand)]
 pub struct MoveCommand;
+
+/// FFM-M09 — "Hash with Freally File Manager" — opens the hash
+/// inspector over the selection. Reads only; queues nothing.
+#[implement(IExplorerCommand)]
+pub struct HashCommand;
 
 impl IExplorerCommand_Impl for CopyCommand_Impl {
     fn GetTitle(&self, _psiitemarray: Ref<'_, IShellItemArray>) -> WinResult<PWSTR> {
@@ -115,6 +120,48 @@ impl IExplorerCommand_Impl for MoveCommand_Impl {
         _pbc: Ref<'_, IBindCtx>,
     ) -> WinResult<()> {
         invoke_with_verb(Verb::Move, psiitemarray)
+    }
+
+    fn GetFlags(&self) -> WinResult<u32> {
+        Ok(0)
+    }
+
+    fn EnumSubCommands(&self) -> WinResult<IEnumExplorerCommand> {
+        Err(E_NOTIMPL.into())
+    }
+}
+
+impl IExplorerCommand_Impl for HashCommand_Impl {
+    fn GetTitle(&self, _psiitemarray: Ref<'_, IShellItemArray>) -> WinResult<PWSTR> {
+        alloc_pwstr(DISPLAY_HASH)
+    }
+
+    fn GetIcon(&self, _psiitemarray: Ref<'_, IShellItemArray>) -> WinResult<PWSTR> {
+        Err(E_NOTIMPL.into())
+    }
+
+    fn GetToolTip(&self, _psiitemarray: Ref<'_, IShellItemArray>) -> WinResult<PWSTR> {
+        Err(E_NOTIMPL.into())
+    }
+
+    fn GetCanonicalName(&self) -> WinResult<GUID> {
+        Ok(CLSID_HASH)
+    }
+
+    fn GetState(
+        &self,
+        _psiitemarray: Ref<'_, IShellItemArray>,
+        _foktobeslow: BOOL,
+    ) -> WinResult<u32> {
+        Ok(ECS_ENABLED.0 as u32)
+    }
+
+    fn Invoke(
+        &self,
+        psiitemarray: Ref<'_, IShellItemArray>,
+        _pbc: Ref<'_, IBindCtx>,
+    ) -> WinResult<()> {
+        invoke_with_verb(Verb::Hash, psiitemarray)
     }
 
     fn GetFlags(&self) -> WinResult<u32> {

@@ -94,8 +94,8 @@ pub use manifest::{
     validate_rel_path, write_manifest_cbor,
 };
 pub use sign::{
-    SigningKey, VerifyingKey, generate_signing_key, signing_key_from_pem, signing_key_to_pem,
-    verifying_key_from_pem, verifying_key_to_pem,
+    SigningKey, VerifyingKey, generate_signing_key, sign_detached, signing_key_from_pem,
+    signing_key_to_pem, verify_detached, verifying_key_from_pem, verifying_key_to_pem,
 };
 pub use sink::{FreallyProvenanceSink, SinkConfig};
 pub use verify::{VerificationOutcome, VerifyReport, verify_manifest};

@@ -1432,3 +1432,92 @@ sidecar-verify-summary = { $ok } OK, { $failed } mislukt, { $missing } ontbreekt
 sidecar-verify-failed = Komt niet overeen
 sidecar-verify-missing = Ontbreekt
 sidecar-verify-close = Sluiten
+
+# FFM-M09 — hash inspector + clipboard compare.
+footer-hash = Hash
+hash-inspector-title = Hash-inspecteur
+hash-inspector-algo-label = Algoritme
+hash-inspector-add-files = Bestanden toevoegen…
+hash-inspector-add-folders = Mappen toevoegen…
+hash-inspector-run = Hashen
+hash-inspector-hashing = Bezig met hashen…
+hash-inspector-clear = Wissen
+hash-inspector-close = Sluiten
+hash-inspector-empty = Kies bestanden of mappen en hash ze.
+hash-inspector-compare-label = Vergelijken met een hash
+hash-inspector-compare-placeholder = Plak een hash, een checksumregel of een SFV-regel
+hash-inspector-compare-invalid = Dat lijkt geen hash te zijn.
+hash-inspector-pair-identical = De twee bestanden zijn identiek
+hash-inspector-pair-different = De twee bestanden verschillen
+hash-inspector-truncated = De eerste { $rows } bestanden worden getoond; de rest van de selectie is overgeslagen.
+
+# FFM-M10 — copy-verification certificate export.
+history-export-certificate = Certificaat
+history-export-certificate-hint = Exporteer deze taak als afdrukbaar HTML-/CSV-/JSON-verificatiecertificaat
+certificate-sign-prompt = Het certificaat ondertekenen met een ed25519-privésleutel? Annuleren exporteert het zonder ondertekening.
+certificate-key-picker-title = Kies de ed25519-ondertekeningssleutel (PKCS#8 PEM)
+toast-certificate-exported = Certificaat geëxporteerd ({ $files } bestand(en))
+toast-certificate-exported-signed = Ondertekend certificaat geëxporteerd ({ $files } bestand(en))
+
+# FFM-M11 — verify-only re-audit.
+footer-reaudit = Opnieuw verifiëren
+history-reverify = Opnieuw verifiëren
+history-reverify-hint = Hasht de bron en bestemming van deze taak opnieuw en meldt afwijkingen (schrijft niets)
+reaudit-title = Alleen-verifiëren audit
+reaudit-hint = Hasht een bron/bestemming-paar opnieuw en meldt afwijkingen — schrijft niets
+reaudit-pick-source = Kies de bronmap om opnieuw te verifiëren
+reaudit-pick-destination = Kies de bestemmingsmap om mee te vergelijken
+reaudit-clean-title = Geen afwijking — de bomen komen overeen
+reaudit-drift-title = Afwijking gevonden
+reaudit-summary = { $ok } gelijk, { $differs } afwijkend, { $missing } ontbrekend, { $extra } extra, { $errors } onleesbaar ({ $algo })
+reaudit-status-differs = Wijkt af
+reaudit-status-missing = Ontbreekt op bestemming
+reaudit-status-extra = Alleen op bestemming
+reaudit-status-error = Onleesbaar
+reaudit-close = Sluiten
+
+# FFM-M12 — cross-filesystem filename doctor.
+doctor-title = Bestandsnaamdokter
+doctor-summary = { $flagged } van { $scanned } naam/namen die de bestemming ({ $target }) niet aankan
+doctor-issue-reserved-name = Gereserveerde apparaatnaam
+doctor-issue-illegal-char = Ongeldig teken
+doctor-issue-trailing-dot-space = Punt of spatie aan het einde
+doctor-issue-component-too-long = Naam te lang
+doctor-issue-path-too-long = Pad te lang
+doctor-issue-case-collision = Hoofdlettersbotsing
+doctor-no-rename = Geen veilige hernoeming
+doctor-apply = { $count } bestand(en) hernoemen
+doctor-toast-applied = { $renamed } hernoemd, { $failed } mislukt
+
+# FFM-M13 — file-list import as a copy source.
+action-import-list = Lijst importeren…
+filelist-title = Bestandslijst importeren
+filelist-hint = Gebruik een TXT-/CSV-/JSON-lijst met paden als bronset van de taak
+filelist-picker-title = Kies een bestandslijst (TXT / CSV / JSON)
+filelist-summary = { $found } bestand(en) gevonden, { $missing } ontbrekend
+filelist-missing-header = { $count } pad(en) uit de lijst bestaan niet meer
+filelist-preserve-structure = Mapstructuur behouden ten opzichte van een hoofdmap
+filelist-relative-root-placeholder = Relatieve hoofdmap
+filelist-toast-queued = { $files } bestand(en) uit de lijst in de wachtrij
+filelist-toast-empty = Die lijst bevatte geen paden
+
+# FFM-M14 — preflight / dry-run report export.
+preflight-report-action = Plan exporteren
+preflight-report-hint = Sla deze proefrun op als HTML / CSV / JSON voordat er iets wordt gekopieerd
+preflight-report-toast = Plan geëxporteerd — { $files } bestand(en), { $findings } naambevinding(en)
+
+# FFM-M15 — damaged-media salvage.
+footer-salvage = Redden
+salvage-title = Redden van beschadigde media
+salvage-hint = Herstelt alles wat leesbaar is uit een defect bestand, brengt het onleesbare in kaart en probeert de volgende keer alleen de gaten opnieuw
+salvage-pick-source = Kies het te redden bestand
+salvage-pick-destination = Waar de geredde kopie wordt geschreven
+salvage-toast-complete = Redding voltooid — { $bytes } byte(s), geen gaten
+salvage-toast-gaps = { $bytes } byte(s) gered; { $missing } byte(s) onleesbaar in { $gaps } gat(en)
+
+# FFM-M16 — whole-job elevated batch with a consent ledger.
+history-elevate-batch = Alles verhogen
+history-elevate-batch-hint = Probeer alle paden van deze taak met geweigerde rechten opnieuw met één toestemming
+elevate-batch-none = Geen paden met geweigerde rechten om te verhogen
+elevate-batch-confirm = Eén rechtenverhoging verlenen voor { $count } pad(en)? ({ $skipped } andere fout(en) zijn hiermee niet op te lossen.) De helper kopieert deze paden:
+elevate-batch-toast = Verhoogde batch — { $copied } gekopieerd, { $failed } mislukt

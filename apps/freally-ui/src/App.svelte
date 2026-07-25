@@ -38,6 +38,9 @@
   import PasteChooserModal from "./lib/components/PasteChooserModal.svelte";
   import UndoPreviewModal from "./lib/components/UndoPreviewModal.svelte";
   import SidecarVerifyModal from "./lib/components/SidecarVerifyModal.svelte";
+  import HashInspectorModal from "./lib/components/HashInspectorModal.svelte";
+  import ReauditResultModal from "./lib/components/ReauditResultModal.svelte";
+  import FileListImportModal from "./lib/components/FileListImportModal.svelte";
 
   import { invoke } from "@tauri-apps/api/core";
 
@@ -50,6 +53,8 @@
     currentF2Mode,
     dropped,
     errorDisplayMode,
+    fileListImport,
+    hashInspectorPaths,
     initStores,
     initTaskListeners,
     openUndoPreview,
@@ -58,6 +63,7 @@
     openSettings,
     pasteChooser,
     pushToast,
+    reauditResult,
     setF2Mode,
     sidecarVerifyResult,
     syncDrawerOpen,
@@ -421,6 +427,24 @@
   <!-- FFM-M08: checksum sidecar verify result (drag a sidecar in). -->
   {#if $sidecarVerifyResult}
     <SidecarVerifyModal report={$sidecarVerifyResult} />
+  {/if}
+
+  <!-- FFM-M09: hash inspector (footer button / Explorer hash verb). -->
+  {#if $hashInspectorPaths}
+    <HashInspectorModal seedPaths={$hashInspectorPaths} />
+  {/if}
+
+  <!-- FFM-M11: verify-only re-audit result. -->
+  {#if $reauditResult}
+    <ReauditResultModal report={$reauditResult} />
+  {/if}
+
+  <!-- FFM-M13: file-list import (Header → Import list…). -->
+  {#if $fileListImport}
+    <FileListImportModal
+      list={$fileListImport.list}
+      manifest={$fileListImport.manifest}
+    />
   {/if}
 
   <!-- Phase 8 error prompt (modal or drawer) + Phase 22 aggregate

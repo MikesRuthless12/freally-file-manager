@@ -1432,3 +1432,92 @@ sidecar-verify-summary = { $ok } tamam, { $failed } başarısız, { $missing } e
 sidecar-verify-failed = Uyuşmuyor
 sidecar-verify-missing = Eksik
 sidecar-verify-close = Kapat
+
+# FFM-M09 — hash inspector + clipboard compare.
+footer-hash = Özet
+hash-inspector-title = Özet denetleyicisi
+hash-inspector-algo-label = Algoritma
+hash-inspector-add-files = Dosya ekle…
+hash-inspector-add-folders = Klasör ekle…
+hash-inspector-run = Özet al
+hash-inspector-hashing = Hesaplanıyor…
+hash-inspector-clear = Temizle
+hash-inspector-close = Kapat
+hash-inspector-empty = Dosya veya klasör seçin, ardından özetlerini alın.
+hash-inspector-compare-label = Bir özetle karşılaştır
+hash-inspector-compare-placeholder = Bir özet, sağlama toplamı satırı veya SFV satırı yapıştırın
+hash-inspector-compare-invalid = Bu bir özete benzemiyor.
+hash-inspector-pair-identical = İki dosya aynı
+hash-inspector-pair-different = İki dosya farklı
+hash-inspector-truncated = İlk { $rows } dosya gösteriliyor; seçimin geri kalanı atlandı.
+
+# FFM-M10 — copy-verification certificate export.
+history-export-certificate = Sertifika
+history-export-certificate-hint = Bu işi yazdırılabilir HTML / CSV / JSON doğrulama sertifikası olarak dışa aktar
+certificate-sign-prompt = Sertifika bir ed25519 özel anahtarıyla imzalansın mı? İptal edilirse imzasız dışa aktarılır.
+certificate-key-picker-title = ed25519 imzalama anahtarını seçin (PKCS#8 PEM)
+toast-certificate-exported = Sertifika dışa aktarıldı ({ $files } dosya)
+toast-certificate-exported-signed = İmzalı sertifika dışa aktarıldı ({ $files } dosya)
+
+# FFM-M11 — verify-only re-audit.
+footer-reaudit = Yeniden doğrula
+history-reverify = Yeniden doğrula
+history-reverify-hint = Bu işin kaynağını ve hedefini yeniden özetler ve sapmaları bildirir (hiçbir şey yazmaz)
+reaudit-title = Yalnızca doğrulama denetimi
+reaudit-hint = Bir kaynak/hedef çiftini yeniden özetler ve sapmaları bildirir — hiçbir şey yazmaz
+reaudit-pick-source = Yeniden doğrulanacak kaynak klasörü seçin
+reaudit-pick-destination = Karşılaştırılacak hedef klasörü seçin
+reaudit-clean-title = Sapma yok — ağaçlar eşleşiyor
+reaudit-drift-title = Sapma bulundu
+reaudit-summary = { $ok } eşleşti, { $differs } farklı, { $missing } eksik, { $extra } fazla, { $errors } okunamadı ({ $algo })
+reaudit-status-differs = Farklı
+reaudit-status-missing = Hedefte yok
+reaudit-status-extra = Yalnızca hedefte
+reaudit-status-error = Okunamıyor
+reaudit-close = Kapat
+
+# FFM-M12 — cross-filesystem filename doctor.
+doctor-title = Dosya adı doktoru
+doctor-summary = { $scanned } addan { $flagged } tanesini { $target } hedefi kabul etmiyor
+doctor-issue-reserved-name = Ayrılmış aygıt adı
+doctor-issue-illegal-char = Geçersiz karakter
+doctor-issue-trailing-dot-space = Sonda nokta veya boşluk
+doctor-issue-component-too-long = Ad çok uzun
+doctor-issue-path-too-long = Yol çok uzun
+doctor-issue-case-collision = Büyük/küçük harf çakışması
+doctor-no-rename = Güvenli yeniden adlandırma yok
+doctor-apply = { $count } dosyayı yeniden adlandır
+doctor-toast-applied = { $renamed } yeniden adlandırıldı, { $failed } başarısız
+
+# FFM-M13 — file-list import as a copy source.
+action-import-list = Liste içe aktar…
+filelist-title = Dosya listesi içe aktar
+filelist-hint = TXT / CSV / JSON yol listesini işin kaynak kümesi olarak kullan
+filelist-picker-title = Bir dosya listesi seçin (TXT / CSV / JSON)
+filelist-summary = { $found } dosya bulundu, { $missing } eksik
+filelist-missing-header = Listedeki { $count } yol artık mevcut değil
+filelist-preserve-structure = Klasör yapısını bir köke göre koru
+filelist-relative-root-placeholder = Göreli kök
+filelist-toast-queued = Listeden { $files } dosya kuyruğa alındı
+filelist-toast-empty = Bu liste hiç yol içermiyordu
+
+# FFM-M14 — preflight / dry-run report export.
+preflight-report-action = Planı dışa aktar
+preflight-report-hint = Hiçbir şey kopyalanmadan önce bu prova çalışmasını HTML / CSV / JSON olarak kaydedin
+preflight-report-toast = Plan dışa aktarıldı — { $files } dosya, { $findings } ad bulgusu
+
+# FFM-M15 — damaged-media salvage.
+footer-salvage = Kurtar
+salvage-title = Hasarlı ortamdan kurtarma
+salvage-hint = Bozuk bir dosyadan okunabilen her şeyi kurtarır, okunamayanı haritalar ve bir sonraki seferde yalnızca boşlukları yeniden dener
+salvage-pick-source = Kurtarılacak dosyayı seçin
+salvage-pick-destination = Kurtarılan kopya nereye yazılsın
+salvage-toast-complete = Kurtarma tamamlandı — { $bytes } bayt, boşluk yok
+salvage-toast-gaps = { $bytes } bayt kurtarıldı; { $gaps } boşlukta { $missing } bayt okunamadı
+
+# FFM-M16 — whole-job elevated batch with a consent ledger.
+history-elevate-batch = Tümünü yükselt
+history-elevate-batch-hint = Bu işteki izin reddedilen tüm yolları tek bir yükseltme onayıyla yeniden dene
+elevate-batch-none = Yükseltilecek, izni reddedilmiş yol yok
+elevate-batch-confirm = { $count } yol için tek bir yetki yükseltmesi verilsin mi? (Diğer { $skipped } hata yükseltmeyle düzelmez.) Yardımcı şu yolları kopyalayacak:
+elevate-batch-toast = Yükseltilmiş toplu iş — { $copied } kopyalandı, { $failed } başarısız

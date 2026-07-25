@@ -1432,3 +1432,92 @@ sidecar-verify-summary = { $ok } 个正常，{ $failed } 个失败，{ $missing 
 sidecar-verify-failed = 不匹配
 sidecar-verify-missing = 缺失
 sidecar-verify-close = 关闭
+
+# FFM-M09 — hash inspector + clipboard compare.
+footer-hash = 哈希
+hash-inspector-title = 哈希检查器
+hash-inspector-algo-label = 算法
+hash-inspector-add-files = 添加文件…
+hash-inspector-add-folders = 添加文件夹…
+hash-inspector-run = 计算哈希
+hash-inspector-hashing = 计算中…
+hash-inspector-clear = 清空
+hash-inspector-close = 关闭
+hash-inspector-empty = 选择文件或文件夹，然后计算哈希。
+hash-inspector-compare-label = 与摘要比较
+hash-inspector-compare-placeholder = 粘贴摘要、校验和行或 SFV 行
+hash-inspector-compare-invalid = 这看起来不是摘要。
+hash-inspector-pair-identical = 两个文件相同
+hash-inspector-pair-different = 两个文件不同
+hash-inspector-truncated = 仅显示前 { $rows } 个文件；所选内容的其余部分已跳过。
+
+# FFM-M10 — copy-verification certificate export.
+history-export-certificate = 证书
+history-export-certificate-hint = 将此作业导出为可打印的 HTML / CSV / JSON 校验证书
+certificate-sign-prompt = 使用 ed25519 私钥为证书签名吗？取消将导出未签名的证书。
+certificate-key-picker-title = 选择 ed25519 签名密钥（PKCS#8 PEM）
+toast-certificate-exported = 已导出证书（{ $files } 个文件）
+toast-certificate-exported-signed = 已导出签名证书（{ $files } 个文件）
+
+# FFM-M11 — verify-only re-audit.
+footer-reaudit = 重新校验
+history-reverify = 重新校验
+history-reverify-hint = 重新计算此作业源和目标的哈希并报告差异（不写入任何内容）
+reaudit-title = 仅校验重新审计
+reaudit-hint = 重新计算源/目标对的哈希并报告差异 — 不写入任何内容
+reaudit-pick-source = 选择要重新校验的源文件夹
+reaudit-pick-destination = 选择用于比较的目标文件夹
+reaudit-clean-title = 无差异 — 两棵树一致
+reaudit-drift-title = 检测到差异
+reaudit-summary = 一致 { $ok }，不同 { $differs }，缺失 { $missing }，多余 { $extra }，不可读 { $errors }（{ $algo }）
+reaudit-status-differs = 不同
+reaudit-status-missing = 目标中缺失
+reaudit-status-extra = 仅存在于目标
+reaudit-status-error = 不可读
+reaudit-close = 关闭
+
+# FFM-M12 — cross-filesystem filename doctor.
+doctor-title = 文件名医生
+doctor-summary = { $scanned } 个名称中有 { $flagged } 个是 { $target } 目标无法接受的
+doctor-issue-reserved-name = 保留设备名
+doctor-issue-illegal-char = 非法字符
+doctor-issue-trailing-dot-space = 结尾的点或空格
+doctor-issue-component-too-long = 名称过长
+doctor-issue-path-too-long = 路径过长
+doctor-issue-case-collision = 大小写冲突
+doctor-no-rename = 无安全的重命名
+doctor-apply = 重命名 { $count } 个文件
+doctor-toast-applied = 已重命名 { $renamed } 个，失败 { $failed } 个
+
+# FFM-M13 — file-list import as a copy source.
+action-import-list = 导入列表…
+filelist-title = 导入文件列表
+filelist-hint = 使用 TXT / CSV / JSON 路径列表作为作业的源集合
+filelist-picker-title = 选择文件列表（TXT / CSV / JSON）
+filelist-summary = 找到 { $found } 个文件，缺失 { $missing } 个
+filelist-missing-header = 列表中有 { $count } 个路径已不存在
+filelist-preserve-structure = 相对于某个根目录保留文件夹结构
+filelist-relative-root-placeholder = 相对根目录
+filelist-toast-queued = 已从列表排入 { $files } 个文件
+filelist-toast-empty = 该列表不包含任何路径
+
+# FFM-M14 — preflight / dry-run report export.
+preflight-report-action = 导出计划
+preflight-report-hint = 在复制任何内容之前，将本次试运行保存为 HTML / CSV / JSON
+preflight-report-toast = 已导出计划 — { $files } 个文件，{ $findings } 项文件名问题
+
+# FFM-M15 — damaged-media salvage.
+footer-salvage = 抢救
+salvage-title = 从受损介质抢救
+salvage-hint = 从故障文件中恢复所有可读内容，标记不可读区域，下次只重试这些缺口
+salvage-pick-source = 选择要抢救的文件
+salvage-pick-destination = 抢救副本的写入位置
+salvage-toast-complete = 抢救完成 — { $bytes } 字节，无缺口
+salvage-toast-gaps = 已抢救 { $bytes } 字节；{ $gaps } 个缺口中有 { $missing } 字节不可读
+
+# FFM-M16 — whole-job elevated batch with a consent ledger.
+history-elevate-batch = 全部提权
+history-elevate-batch-hint = 用一次提权同意重试此作业中所有被拒绝访问的路径
+elevate-batch-none = 没有需要提权的被拒路径
+elevate-batch-confirm = 为 { $count } 个路径授予一次提权吗？（另外 { $skipped } 个失败无法通过提权解决。）助手将复制以下路径：
+elevate-batch-toast = 提权批处理 — 已复制 { $copied } 个，失败 { $failed } 个

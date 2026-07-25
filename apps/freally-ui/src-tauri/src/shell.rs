@@ -19,7 +19,9 @@ use freally_core::{
 use tauri::{AppHandle, Emitter, Manager};
 
 use crate::cli::{CliAction, EnqueueArgs, EnqueueVerb};
-use crate::ipc::{EVENT_SHELL_ENQUEUE, JobDto, ShellEnqueueDto};
+use crate::ipc::{
+    DropReceivedDto, EVENT_HASH_INSPECT, EVENT_SHELL_ENQUEUE, JobDto, ShellEnqueueDto,
+};
 use crate::runner::{RunJob, emit_job_added, run_job};
 use crate::state::AppState;
 
@@ -185,14 +187,48 @@ pub fn dispatch_cli_action(app: &AppHandle, action: CliAction) {
         CliAction::PrintHelp => println!("{}", crate::cli::HELP),
         CliAction::PrintVersion => println!("freally {}", crate::cli::VERSION),
         CliAction::Enqueue(args) => dispatch_enqueue(app, args),
+        // FFM-M09 — hashing writes nothing and creates no job, so the
+        // paths go straight to the frontend's hash inspector. The same
+        // lexical guard the enqueue path uses still applies: a hostile
+        // argv should not get a `..` escape read back to it.
+        CliAction::Hash(paths) => {
+            let dto = DropReceivedDto {
+                paths: paths
+                    .iter()
+                    .filter(|p| validate_path_no_traversal(p).is_ok())
+                    .map(|p| p.to_string_lossy().into_owned())
+                    .collect(),
+            };
+            if !dto.paths.is_empty() {
+                let _ = app.emit(EVENT_HASH_INSPECT, dto);
+            }
+        }
     }
 }
 
-fn dispatch_enqueue(app: &AppHandle, args: EnqueueArgs) {
+fn dispatch_enqueue(app: &AppHandle, mut args: EnqueueArgs) {
     let kind = match args.verb {
         EnqueueVerb::Copy => JobKind::Copy,
         EnqueueVerb::Move => JobKind::Move,
     };
+
+    // FFM-M13 — `--files-from` appends the manifest's entries to the
+    // argv paths. A missing listed path is reported and skipped rather
+    // than failing the whole run: a manifest is usually a *previous*
+    // run's output, so staleness is the normal case, not an error.
+    if let Some(manifest) = args.files_from.take() {
+        match read_manifest(&manifest) {
+            Ok(listed) => args.paths.extend(listed),
+            Err(e) => {
+                eprintln!("[cli enqueue] --files-from {}: {e}", manifest.display());
+                return;
+            }
+        }
+    }
+    if args.paths.is_empty() {
+        eprintln!("[cli enqueue] nothing to do — no paths and an empty manifest");
+        return;
+    }
 
     // Phase 17a — the CLI path bypasses `start_copy` / `start_move`,
     // so we run the same lexical safety guard here. A shell-extension
@@ -226,31 +262,44 @@ fn dispatch_enqueue(app: &AppHandle, args: EnqueueArgs) {
             fast_copy_hook: Some(std::sync::Arc::new(freally_platform::PlatformFastCopyHook)),
             ..CopyOptions::default()
         };
-        let _ = enqueue_jobs(
-            app,
-            &state,
-            kind,
-            args.paths,
-            &dst_root,
-            copy_opts,
-            None,
-            // Scripted enqueue inherits the engine default (Skip on
-            // collision, Abort on error) to stay deterministic; an
-            // interactive caller overrides via the commands layer.
-            CollisionPolicy::default(),
-            ErrorPolicy::default(),
-            // Phase 13c — scripted enqueue uses the engine default
-            // concurrency; the interactive commands layer threads in
-            // `Settings.transfer.concurrency` via `resolve_concurrency`.
-            None,
-            // Phase 14a — scripted / CLI enqueue does NOT apply the
-            // persisted filter set. The CLI is meant for "copy this
-            // exact list of paths" and a surprise `skip-hidden`
-            // leaking from Settings would silently drop files the
-            // user explicitly requested. The interactive commands
-            // layer applies filters instead.
-            None,
-        );
+        // FFM-M13 — `--relative-to` preserves each file's path relative
+        // to that root. The engine takes one destination root per job,
+        // so the plan becomes one enqueue per relative directory;
+        // without the flag it stays a single flat group.
+        let groups =
+            crate::filelist_commands::plan_import(&args.paths, args.relative_to.as_deref());
+        for (rel_dir, sources) in groups {
+            let dst = if rel_dir.is_empty() {
+                dst_root.clone()
+            } else {
+                dst_root.join(&rel_dir)
+            };
+            let _ = enqueue_jobs(
+                app,
+                &state,
+                kind,
+                sources,
+                &dst,
+                copy_opts.clone(),
+                None,
+                // Scripted enqueue inherits the engine default (Skip on
+                // collision, Abort on error) to stay deterministic; an
+                // interactive caller overrides via the commands layer.
+                CollisionPolicy::default(),
+                ErrorPolicy::default(),
+                // Phase 13c — scripted enqueue uses the engine default
+                // concurrency; the interactive commands layer threads in
+                // `Settings.transfer.concurrency` via `resolve_concurrency`.
+                None,
+                // Phase 14a — scripted / CLI enqueue does NOT apply the
+                // persisted filter set. The CLI is meant for "copy this
+                // exact list of paths" and a surprise `skip-hidden`
+                // leaking from Settings would silently drop files the
+                // user explicitly requested. The interactive commands
+                // layer applies filters instead.
+                None,
+            );
+        }
     } else {
         // Interactive: hand the paths to the frontend; it reuses the
         // drop-staging modal to pick a destination, then calls back
@@ -265,6 +314,17 @@ fn dispatch_enqueue(app: &AppHandle, args: EnqueueArgs) {
         };
         let _ = app.emit(EVENT_SHELL_ENQUEUE, dto);
     }
+}
+
+/// FFM-M13 — read a `--files-from` manifest into a path list, reusing
+/// the same TXT / CSV / JSON parser the IPC import uses.
+fn read_manifest(manifest: &Path) -> Result<Vec<PathBuf>, String> {
+    use crate::filelist_commands::{ListFormat, parse_list};
+    let text = std::fs::read_to_string(manifest).map_err(|e| e.to_string())?;
+    Ok(parse_list(&text, ListFormat::from_path(manifest))?
+        .into_iter()
+        .map(PathBuf::from)
+        .collect())
 }
 
 fn bring_to_front(app: &AppHandle) {

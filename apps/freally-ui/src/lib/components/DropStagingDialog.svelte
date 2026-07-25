@@ -9,6 +9,8 @@
 
   import Icon from "../icons/Icon.svelte";
   import PreflightModal from "./PreflightModal.svelte";
+  import FilenameDoctorPanel from "./FilenameDoctorPanel.svelte";
+  import PreflightReportButton from "./PreflightReportButton.svelte";
   import SubsetPickerModal from "./SubsetPickerModal.svelte";
   import { i18nVersion, t } from "../i18n";
   import { onEvent, pathMetadata, startCopy, startMove } from "../ipc";
@@ -522,8 +524,26 @@
       </button>
       {#if destination}
         <span class="path" title={destination}>{destination}</span>
+        <!-- FFM-M14 — export the plan for the first source before the
+             job runs (one report per source root; the primary root is
+             the one reviewers ask for). -->
+        {#if ordered.length > 0}
+          <PreflightReportButton
+            src={paths[ordered[0]]}
+            dst={destination}
+          />
+        {/if}
       {/if}
     </div>
+
+    <!-- FFM-M12 — once a destination is known, flag any source name it
+         cannot hold. Silent (renders nothing) on a clean tree; one
+         panel per dropped root. -->
+    {#if destination}
+      {#each ordered as srcIdx (srcIdx)}
+        <FilenameDoctorPanel src={paths[srcIdx]} dstRoot={destination} />
+      {/each}
+    {/if}
 
     <div class="actions">
       <button class="secondary" type="button" onclick={cancel} disabled={busy}>
