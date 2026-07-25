@@ -241,17 +241,39 @@ where
     }
 
     // 3. One ElevatedRetry per pair, over the same connection.
+    //
+    // A failure partway through must NOT discard the answers already
+    // collected: the helper has really copied those files, with
+    // elevation, and throwing the results away would report them as
+    // failures and tell the user to redo work that is already done.
+    // The remainder is filled with an unavailable marker so the vector
+    // stays 1:1 with `pairs` and the caller can attribute every row.
     let mut results = Vec::with_capacity(pairs.len());
     for (src, dst) in pairs {
-        write_request(
+        let sent = write_request(
             &mut write_half,
             &Request::ElevatedRetry {
                 src: src.clone(),
                 dst: dst.clone(),
             },
         )
-        .await?;
-        results.push(read_response(&mut reader).await?);
+        .await;
+        let outcome = match sent {
+            Ok(()) => read_response(&mut reader).await,
+            Err(e) => Err(e),
+        };
+        match outcome {
+            Ok(resp) => results.push(resp),
+            Err(e) => {
+                let reason = format!("elevated helper stopped responding: {e}");
+                while results.len() < pairs.len() {
+                    results.push(Response::CapabilityDenied {
+                        reason: reason.clone(),
+                    });
+                }
+                return Ok(results);
+            }
+        }
     }
 
     // 4. Shutdown — best-effort; the helper exits on the reply or EOF.

@@ -239,7 +239,15 @@ pub async fn export_preflight_report(
     let dest_path = validate_ipc_path(&dest).map_err(|e| e.to_string())?;
     let target = Target::parse(&target)?;
 
-    let diff = compute_tree_diff(src.clone(), dst.clone(), opts).await?;
+    // `compute_tree_diff` requires a directory source, but the button
+    // sits on whatever the user picked — and "Add files" selections are
+    // plain files. A single file's plan is trivially one row, so build
+    // it here rather than hard-erroring on a legitimate selection.
+    let diff = if src_path.is_dir() {
+        compute_tree_diff(src.clone(), dst.clone(), opts).await?
+    } else {
+        single_file_diff(&src_path, &dst_path)?
+    };
 
     // Same walk + rule set the FFM-M12 panel runs, so the paper report
     // and the on-screen gate always agree.
@@ -263,6 +271,43 @@ pub async fn export_preflight_report(
         path: dest_path.to_string_lossy().into_owned(),
         total_files: report.total_files,
         filename_findings: report.filename_findings.len(),
+    })
+}
+
+/// The plan for a single-file source: it either lands as an addition
+/// or replaces something already at the destination. Mirrors the
+/// engine's own layout rule — a file lands at `dst/<basename>`.
+fn single_file_diff(src: &Path, dst_root: &Path) -> Result<TreeDiffDto, String> {
+    let name = src
+        .file_name()
+        .ok_or_else(|| format!("source has no file name: {}", src.display()))?;
+    let rel = name.to_string_lossy().into_owned();
+    let size = std::fs::metadata(src)
+        .map_err(|e| format!("{}: {e}", src.display()))?
+        .len();
+    let replaces = dst_root.join(name).exists();
+
+    Ok(TreeDiffDto {
+        additions: if replaces {
+            Vec::new()
+        } else {
+            vec![rel.clone()]
+        },
+        replacements: if replaces {
+            vec![crate::preview_commands::ReplacementRowDto {
+                rel_path: rel,
+                reason: "content-different",
+            }]
+        } else {
+            Vec::new()
+        },
+        skips: Vec::new(),
+        conflicts: Vec::new(),
+        unchanged: Vec::new(),
+        bytes_to_transfer: size,
+        bytes_total: size,
+        total_files: 1,
+        has_blocking_conflicts: false,
     })
 }
 

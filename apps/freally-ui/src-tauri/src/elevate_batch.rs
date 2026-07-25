@@ -156,6 +156,29 @@ fn row_from_response(src: String, dst: String, resp: &Response) -> BatchRowDto {
     }
 }
 
+/// Check a submitted batch against the ledger the job actually
+/// produced. Pure, so the rule guarding a privileged operation is
+/// unit-tested rather than only reasoned about.
+///
+/// A submission is acceptable only when it is a **set** (no repeats)
+/// and every member is in `allowed`. Counting alone is not enough: a
+/// duplicated row keeps the length intact while silently displacing a
+/// different approved path out of the batch, so the user's consent and
+/// the executed work diverge without tripping the check.
+fn reconcile_against_ledger(
+    submitted: &[(PathBuf, PathBuf)],
+    allowed: &std::collections::BTreeSet<(PathBuf, PathBuf)>,
+) -> Result<(), String> {
+    let distinct: std::collections::BTreeSet<&(PathBuf, PathBuf)> = submitted.iter().collect();
+    if distinct.len() != submitted.len() {
+        return Err("elevate-batch-ledger-mismatch".to_string());
+    }
+    if !distinct.iter().all(|p| allowed.contains(*p)) {
+        return Err("elevate-batch-ledger-mismatch".to_string());
+    }
+    Ok(())
+}
+
 /// Roll the per-row outcomes into the report totals.
 fn summarize(rows: Vec<BatchRowDto>, elevated: bool) -> BatchApplyReport {
     let mut report = BatchApplyReport {
@@ -205,34 +228,49 @@ pub async fn elevate_batch_apply(
         return Ok(BatchApplyReport::default());
     }
 
-    // Re-derive what this job is actually allowed to escalate. The
-    // submitted list may be a *subset* (the user deselected rows) but
-    // never a superset: any row not in the derived ledger means the
-    // list was tampered with between consent and execution, so the
-    // whole batch is refused rather than silently escalating the rest.
+    // Gate every submitted path FIRST, and compare the *gated* forms
+    // against the *gated* ledger. `validate_ipc_path` trims, so
+    // comparing raw wire strings and then resolving would let a path
+    // that passed the consent check be rewritten into a different file
+    // before the helper ever saw it.
     let submitted = entries.len();
-    let authoritative = elevate_batch_ledger(job_id, state.clone()).await?;
-    let allowed: std::collections::BTreeSet<(String, String)> = authoritative
-        .entries
-        .into_iter()
-        .map(|e| (e.src, e.dst))
-        .collect();
-    let entries: Vec<LedgerEntryDto> = entries
-        .into_iter()
-        .filter(|e| allowed.contains(&(e.src.clone(), e.dst.clone())))
-        .collect();
-    if entries.len() != submitted {
-        return Err("elevate-batch-ledger-mismatch".to_string());
-    }
-
-    // Every path crosses the IPC boundary, so it gets the same lexical
-    // gate the single-file path applies — before any escalation.
-    let mut pairs: Vec<(PathBuf, PathBuf)> = Vec::with_capacity(entries.len());
+    let mut pairs: Vec<(PathBuf, PathBuf)> = Vec::with_capacity(submitted);
     for entry in &entries {
         let src = validate_ipc_path(&entry.src).map_err(|e| e.to_string())?;
         let dst = validate_ipc_path(&entry.dst).map_err(|e| e.to_string())?;
         pairs.push((src, dst));
     }
+
+    // Re-derive what this job is actually allowed to escalate. The
+    // submitted list may be a *subset* (the user deselected rows) but
+    // never a superset, and never a multiset: a duplicated row would
+    // otherwise keep the count intact while silently displacing a
+    // different approved path from the batch.
+    let authoritative = elevate_batch_ledger(job_id, state.clone()).await?;
+    let allowed: std::collections::BTreeSet<(PathBuf, PathBuf)> = authoritative
+        .entries
+        .iter()
+        .filter_map(|e| {
+            let src = validate_ipc_path(&e.src).ok()?;
+            let dst = validate_ipc_path(&e.dst).ok()?;
+            Some((src, dst))
+        })
+        .collect();
+    reconcile_against_ledger(&pairs, &allowed)?;
+    debug_assert_eq!(pairs.len(), submitted);
+
+    // From here on the *gated* paths are the record of what happened —
+    // the audit must name the file the helper actually touched, not the
+    // untrimmed string the wire carried.
+    let entries: Vec<LedgerEntryDto> = pairs
+        .iter()
+        .zip(entries.iter())
+        .map(|((src, dst), original)| LedgerEntryDto {
+            src: src.to_string_lossy().into_owned(),
+            dst: dst.to_string_lossy().into_owned(),
+            error_code: original.error_code.clone(),
+        })
+        .collect();
 
     // Tier 1 — unprivileged, on the blocking pool (the same
     // `handle_request` body `retry_elevated` uses).
@@ -258,13 +296,17 @@ pub async fn elevate_batch_apply(
     let mut responses = tier1;
     let elevated = !needs_elevation.is_empty();
     if elevated {
-        // The consent covers exactly the paths the ledger listed, so it
-        // is recorded *before* the prompt — an auditor sees what was
-        // asked for even if the user then cancels.
+        // The consent covers exactly the paths the ledger listed and
+        // the user approved — not the post-tier-1 remainder. The
+        // per-file records written below cover every approved entry, so
+        // recording the smaller number here would leave an auditor
+        // unable to tell the tier-1 successes from unauthorised
+        // activity. Recorded *before* the prompt, so what was asked for
+        // is on the record even if the user then cancels.
         crate::audit_commands::record_elevation_granted(
             &state.audit,
             &format!("job-{job_id}"),
-            needs_elevation.len() as u64,
+            entries.len() as u64,
         );
         let batch: Vec<(PathBuf, PathBuf)> =
             needs_elevation.iter().map(|i| pairs[*i].clone()).collect();
@@ -369,6 +411,53 @@ mod tests {
             },
         );
         assert_eq!(row.error.as_deref(), Some("retry-elevated-unavailable"));
+    }
+
+    fn ledger(pairs: &[(&str, &str)]) -> std::collections::BTreeSet<(PathBuf, PathBuf)> {
+        pairs
+            .iter()
+            .map(|(s, d)| (PathBuf::from(s), PathBuf::from(d)))
+            .collect()
+    }
+
+    fn submitted(pairs: &[(&str, &str)]) -> Vec<(PathBuf, PathBuf)> {
+        pairs
+            .iter()
+            .map(|(s, d)| (PathBuf::from(s), PathBuf::from(d)))
+            .collect()
+    }
+
+    #[test]
+    fn a_subset_of_the_ledger_is_accepted() {
+        // The user is allowed to deselect rows before approving.
+        let allowed = ledger(&[("/a", "/x"), ("/b", "/y"), ("/c", "/z")]);
+        assert!(reconcile_against_ledger(&submitted(&[("/a", "/x")]), &allowed).is_ok());
+        assert!(
+            reconcile_against_ledger(&submitted(&[("/a", "/x"), ("/c", "/z")]), &allowed).is_ok()
+        );
+    }
+
+    #[test]
+    fn a_path_outside_the_ledger_is_refused() {
+        let allowed = ledger(&[("/a", "/x")]);
+        assert!(
+            reconcile_against_ledger(
+                &submitted(&[("/a", "/x"), ("/etc/shadow", "/tmp/loot")]),
+                &allowed
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn a_duplicated_entry_is_refused_even_though_the_count_matches() {
+        // The regression this check exists for: ledger [A, B], caller
+        // submits [A, A]. A length-only comparison passes, B silently
+        // drops out of the batch, and A is escalated twice.
+        let allowed = ledger(&[("/a", "/x"), ("/b", "/y")]);
+        let err = reconcile_against_ledger(&submitted(&[("/a", "/x"), ("/a", "/x")]), &allowed)
+            .unwrap_err();
+        assert_eq!(err, "elevate-batch-ledger-mismatch");
     }
 
     #[test]

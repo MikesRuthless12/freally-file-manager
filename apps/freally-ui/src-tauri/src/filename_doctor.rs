@@ -314,46 +314,70 @@ pub async fn filename_doctor_apply(
     state: State<'_, AppState>,
 ) -> Result<DoctorApplyReport, String> {
     let root = validate_ipc_path(&root).map_err(|e| e.to_string())?;
+    let (report, applied) = apply_renames(&anchor_for(&root), &renames);
+    record_history(&state, &root, &report, &applied).await;
+    Ok(report)
+}
+
+/// The directory the scan's relative paths are anchored at.
+///
+/// Mirrors `reaudit_commands::walk_root`: a directory root anchors at
+/// itself, but a SINGLE-FILE root anchors at its **parent**, because
+/// `collect_files` returns just the file's basename for that case.
+/// Joining that basename back onto the file would target
+/// `<file>/<file>`, which is why every rename on a dropped file used
+/// to fail with NotFound.
+fn anchor_for(root: &Path) -> PathBuf {
+    if root.is_file() {
+        root.parent().map(Path::to_path_buf).unwrap_or_default()
+    } else {
+        root.to_path_buf()
+    }
+}
+
+/// Perform the renames. Split out from the command so the guards and
+/// the anchoring rule are testable against a real temp tree.
+///
+/// Returns the report plus the `(from, to)` pairs that actually
+/// happened, which the caller records per-file in history.
+fn apply_renames(
+    anchor: &Path,
+    renames: &[(String, String)],
+) -> (DoctorApplyReport, Vec<(PathBuf, PathBuf)>) {
     let mut report = DoctorApplyReport::default();
-    // Every rename that actually happened, so history records what
-    // changed rather than just how many did. A destructive batch that
-    // cannot be read back afterwards is not auditable.
     let mut applied: Vec<(PathBuf, PathBuf)> = Vec::new();
 
-    for (rel, new_name) in &renames {
+    for (rel, new_name) in renames {
         // `rel` must be genuinely *relative*. `Path::join` discards its
         // base when the joined component is absolute or carries a
-        // Windows prefix, so `root.join("C:\\Windows\\...")` escapes
-        // `root` entirely — and contains no `..`, so the traversal
-        // guard alone would wave it through.
-        if !is_contained_relative(Path::new(rel)) {
+        // Windows prefix, so `anchor.join("C:\Windows\...")` escapes
+        // the anchor entirely — and contains no `..`, so a traversal
+        // guard alone would wave it through. This check subsumes that,
+        // which is why the join below is NOT re-gated: routing it back
+        // through `validate_ipc_path` would `trim()` the result, and a
+        // name ending in a space — precisely the `trailing-dot-space`
+        // class this feature exists to fix — would silently resolve to
+        // a different, unflagged file and rename *that* instead.
+        if !is_contained_relative(Path::new(rel)) || rel.contains('\0') {
             push_problem(&mut report, rel, format!("not a relative path: {rel}"));
             continue;
         }
-        // Still gate it: the traversal / NUL / encoding checks every
-        // other path argument gets.
-        let from = match validate_ipc_path(&root.join(rel).to_string_lossy()) {
-            Ok(p) => p,
-            Err(e) => {
-                push_problem(&mut report, rel, e.to_string());
-                continue;
-            }
-        };
         // A suggested name is a *file name*, never a path. `C:evil` has
         // no separator and is not `..`, but it carries a drive prefix,
-        // so `parent.join` would relocate the rename off `root`.
-        if !is_single_component_name(new_name) {
+        // so `parent.join` would relocate the rename off the anchor.
+        if !is_single_component_name(new_name) || new_name.contains('\0') {
             push_problem(&mut report, rel, format!("invalid new name: {new_name}"));
             continue;
         }
+        let from = anchor.join(rel);
         let Some(parent) = from.parent() else {
             push_problem(&mut report, rel, "path has no parent".to_string());
             continue;
         };
         let to = parent.join(new_name);
         // Belt and braces: whatever the two guards above let through,
-        // both ends must still sit under the root the user named.
-        if !from.starts_with(&root) || !to.starts_with(&root) {
+        // both ends must still sit under the anchor.
+        if !from.starts_with(anchor) || !to.starts_with(anchor) {
             push_problem(&mut report, rel, format!("escapes the scanned root: {rel}"));
             continue;
         }
@@ -370,8 +394,7 @@ pub async fn filename_doctor_apply(
         }
     }
 
-    record_history(&state, &root, &report, &applied).await;
-    Ok(report)
+    (report, applied)
 }
 
 /// `true` when `p` is a relative path made only of ordinary
@@ -582,6 +605,90 @@ mod tests {
         assert_eq!(Target::parse("linux").unwrap(), Target::Linux);
         assert!(Target::parse("auto").is_ok());
         assert!(Target::parse("bsd").is_err());
+    }
+
+    // POSIX-only: Windows strips a trailing space at *creation*, so the
+    // flagged file and its sibling cannot coexist there — which is the
+    // very reason the doctor flags the class before copying to NTFS.
+    // The bug this pins is a source-side one, and the source is exactly
+    // the case-sensitive, space-tolerant filesystem this runs on.
+    #[cfg(unix)]
+    #[test]
+    fn a_trailing_space_name_renames_itself_not_its_sibling() {
+        // The doctor exists to fix `trailing-dot-space`. Re-gating the
+        // joined path through `validate_ipc_path` trims it, so
+        // `tree/notes ` resolved to `tree/notes` — the *unflagged*
+        // sibling — and that file got renamed instead.
+        let dir = tempfile::tempdir().unwrap();
+        let tree = dir.path().join("tree");
+        std::fs::create_dir_all(&tree).unwrap();
+        std::fs::write(tree.join("notes "), b"the broken one").unwrap();
+        std::fs::write(tree.join("notes"), b"the innocent sibling").unwrap();
+
+        let (report, applied) =
+            apply_renames(&tree, &[("notes ".to_string(), "notes-fixed".to_string())]);
+        assert_eq!(report.renamed, 1, "{:?}", report.problems);
+        assert_eq!(report.failed, 0);
+        assert_eq!(applied[0].0, tree.join("notes "));
+        // The flagged file moved; the sibling is untouched.
+        assert_eq!(
+            std::fs::read(tree.join("notes-fixed")).unwrap(),
+            b"the broken one"
+        );
+        assert_eq!(
+            std::fs::read(tree.join("notes")).unwrap(),
+            b"the innocent sibling"
+        );
+    }
+
+    #[test]
+    fn a_single_file_root_anchors_at_its_parent() {
+        // Dropping a single file is the common case, and `collect_files`
+        // returns just its basename — so apply has to anchor at the
+        // parent or every rename targets `<file>/<file>` and fails.
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("CON.txt");
+        std::fs::write(&file, b"x").unwrap();
+
+        assert_eq!(anchor_for(&file), dir.path());
+        let (report, _) = apply_renames(
+            &anchor_for(&file),
+            &[("CON.txt".to_string(), "CON_.txt".to_string())],
+        );
+        assert_eq!(report.renamed, 1, "{:?}", report.problems);
+        assert!(dir.path().join("CON_.txt").exists());
+        assert!(!file.exists());
+    }
+
+    #[test]
+    fn a_directory_root_anchors_at_itself() {
+        let dir = tempfile::tempdir().unwrap();
+        assert_eq!(anchor_for(dir.path()), dir.path());
+    }
+
+    #[test]
+    fn apply_refuses_to_clobber_and_to_escape() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("a.txt"), b"a").unwrap();
+        std::fs::write(dir.path().join("b.txt"), b"b").unwrap();
+
+        // Clobber refused.
+        let (report, _) = apply_renames(dir.path(), &[("a.txt".to_string(), "b.txt".to_string())]);
+        assert_eq!(report.renamed, 0);
+        assert_eq!(report.failed, 1);
+        assert_eq!(std::fs::read(dir.path().join("b.txt")).unwrap(), b"b");
+
+        // Escaping rel and escaping new-name both refused.
+        let (report, _) = apply_renames(
+            dir.path(),
+            &[
+                ("/etc/hosts".to_string(), "pwn".to_string()),
+                ("a.txt".to_string(), "../escaped".to_string()),
+            ],
+        );
+        assert_eq!(report.renamed, 0);
+        assert_eq!(report.failed, 2);
+        assert!(dir.path().join("a.txt").exists());
     }
 
     #[test]

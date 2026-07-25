@@ -268,6 +268,29 @@ fn manifest_path_for(dst: &Path) -> PathBuf {
     with_suffix(dst, MANIFEST_SUFFIX)
 }
 
+/// `true` when `a` and `b` name the same file on disk.
+///
+/// Canonicalizes so `D:\p\f.iso` and `D:\p\..\p\f.iso` (or a symlinked
+/// route to the same inode) are recognised as one file. The destination
+/// usually does not exist yet, so it is canonicalized as
+/// `canonical(parent)/file_name`; if even the parent cannot be resolved
+/// we fall back to a lexical compare rather than guessing.
+fn same_file(a: &Path, b: &Path) -> bool {
+    fn resolve(p: &Path) -> PathBuf {
+        if let Ok(c) = std::fs::canonicalize(p) {
+            return c;
+        }
+        match (p.parent(), p.file_name()) {
+            (Some(parent), Some(name)) => match std::fs::canonicalize(parent) {
+                Ok(c) => c.join(name),
+                Err(_) => p.to_path_buf(),
+            },
+            _ => p.to_path_buf(),
+        }
+    }
+    a == b || resolve(a) == resolve(b)
+}
+
 /// What one salvage run produced.
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -312,6 +335,18 @@ pub async fn salvage_copy(
 /// The blocking body: open both files, decide fresh-vs-resume, run the
 /// ladder, write the manifest.
 fn run_salvage(src: &Path, dst: &Path, opts: &SalvageOptions) -> Result<SalvageReportDto, String> {
+    // A fresh run truncates the destination BEFORE reading a byte of the
+    // source. If the two are the same file, that destroys the only copy
+    // on the failing media and every later read then succeeds against
+    // zeros — the run would report a clean, complete recovery of a file
+    // it had just erased. Refuse before opening anything.
+    if same_file(src, dst) {
+        return Err(format!(
+            "salvage source and destination are the same file: {}",
+            src.display()
+        ));
+    }
+
     let mut reader = std::fs::File::open(src).map_err(|e| format!("{}: {e}", src.display()))?;
     let size = reader
         .metadata()
@@ -319,14 +354,17 @@ fn run_salvage(src: &Path, dst: &Path, opts: &SalvageOptions) -> Result<SalvageR
         .len();
 
     let manifest_path = manifest_path_for(dst);
-    // Resume only when the manifest matches this source size *and* the
-    // destination is already the right length — otherwise the recorded
-    // offsets describe a different file and re-attempting them would
-    // write recovered bytes to the wrong places.
+    // Resume only when the manifest describes THIS source→destination
+    // pair at this size, and the destination is already that length.
+    // Size alone is not identity: two discs or card images of the same
+    // fixed length would otherwise splice, re-reading only the first
+    // run's gap ranges from the second source and certifying the
+    // mixture as byte-complete.
     let prior = std::fs::read_to_string(&manifest_path)
         .ok()
         .and_then(|text| serde_json::from_str::<SalvageManifest>(&text).ok())
         .filter(|m| m.size == size)
+        .filter(|m| Path::new(&m.source) == src && Path::new(&m.destination) == dst)
         .filter(|_| {
             std::fs::metadata(dst)
                 .map(|m| m.len() == size)
@@ -430,6 +468,10 @@ async fn record_history(state: &AppState, src: &Path, dst: &Path, report: &Salva
                 timestamp_ms: 0,
             })
             .await;
+        // Exactly one file was touched, so it is ok XOR failed — never
+        // both. The FFM-M10 certificate renders this pair verbatim as
+        // "Files OK / failed", and a document handed to a client must
+        // not claim one file did both.
         let _ = history
             .record_finish(
                 row,
@@ -439,7 +481,7 @@ async fn record_history(state: &AppState, src: &Path, dst: &Path, report: &Salva
                     "failed"
                 },
                 report.recovered_bytes,
-                1,
+                u64::from(report.complete),
                 u64::from(!report.complete),
             )
             .await;
@@ -662,6 +704,65 @@ mod tests {
             !Path::new(&report.manifest_path).exists(),
             "a clean recovery must not litter a gap manifest"
         );
+    }
+
+    #[test]
+    fn salvaging_a_file_onto_itself_is_refused_and_leaves_it_intact() {
+        // The nightmare case: a fresh run truncates the destination
+        // before reading the source, so if they are the same file the
+        // only copy on dying media is zeroed and the zeros then "read
+        // back" perfectly as a complete recovery.
+        let dir = tempfile::tempdir().unwrap();
+        let f = dir.path().join("only-copy.bin");
+        let data: Vec<u8> = (0..4096u32).map(|i| i as u8).collect();
+        std::fs::write(&f, &data).unwrap();
+
+        let err = run_salvage(&f, &f, &SalvageOptions::default()).unwrap_err();
+        assert!(err.contains("same file"), "{err}");
+        assert_eq!(std::fs::read(&f).unwrap(), data, "source must be untouched");
+
+        // Also via a non-canonical route to the same file.
+        let indirect = dir.path().join("sub").join("..").join("only-copy.bin");
+        std::fs::create_dir_all(dir.path().join("sub")).unwrap();
+        let err = run_salvage(&f, &indirect, &SalvageOptions::default()).unwrap_err();
+        assert!(err.contains("same file"), "{err}");
+        assert_eq!(std::fs::read(&f).unwrap(), data);
+    }
+
+    #[test]
+    fn a_manifest_from_a_different_source_does_not_resume() {
+        // Two sources of identical length sharing one destination must
+        // not splice: the second run has to start over, not re-read
+        // only the first run's gap ranges.
+        let dir = tempfile::tempdir().unwrap();
+        let src_a = dir.path().join("disc1.bin");
+        let src_b = dir.path().join("disc2.bin");
+        let dst = dir.path().join("out.bin");
+        std::fs::write(&src_a, vec![0xAAu8; 512]).unwrap();
+        std::fs::write(&src_b, vec![0xBBu8; 512]).unwrap();
+
+        // First run completes, so fake a manifest naming disc1 with a
+        // gap, plus a destination of the right length.
+        std::fs::write(&dst, vec![0xAAu8; 512]).unwrap();
+        let manifest = SalvageManifest {
+            source: src_a.to_string_lossy().into_owned(),
+            destination: dst.to_string_lossy().into_owned(),
+            size: 512,
+            gaps: vec![Gap { offset: 0, len: 64 }],
+            recovered_bytes: 448,
+            updated_at_ms: 0,
+        };
+        std::fs::write(
+            manifest_path_for(&dst),
+            serde_json::to_string(&manifest).unwrap(),
+        )
+        .unwrap();
+
+        let report = run_salvage(&src_b, &dst, &SalvageOptions::default()).unwrap();
+        assert!(!report.resumed, "a different source must not resume");
+        assert!(report.complete);
+        // Full pass, so the destination is entirely disc2 — not spliced.
+        assert_eq!(std::fs::read(&dst).unwrap(), vec![0xBBu8; 512]);
     }
 
     #[test]

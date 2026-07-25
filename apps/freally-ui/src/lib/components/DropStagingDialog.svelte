@@ -526,11 +526,14 @@
         <span class="path" title={destination}>{destination}</span>
         <!-- FFM-M14 — export the plan for the first source before the
              job runs (one report per source root; the primary root is
-             the one reviewers ask for). -->
+             the one reviewers ask for). The engine writes each source
+             into `destination/<basename>` (see `shell::destination_for`),
+             so the plan has to diff against THAT directory — diffing
+             the destination root would report the whole tree as new. -->
         {#if ordered.length > 0}
           <PreflightReportButton
             src={paths[ordered[0]]}
-            dst={destination}
+            dst={`${destination.replace(/[\\/]+$/, "")}/${basename(paths[ordered[0]])}`}
           />
         {/if}
       {/if}

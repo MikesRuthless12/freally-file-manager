@@ -43,7 +43,11 @@
       const ext = dest.slice(dest.lastIndexOf(".") + 1).toLowerCase();
       const format = ext === "csv" || ext === "json" ? ext : "html";
       busy = true;
-      const report = await exportPreflightReport(src, dst, opts, "auto", format, dest);
+      // `windows`, not `auto`, for the reason FilenameDoctorPanel
+      // documents: `auto` resolves to the host OS, so a cross-filesystem
+      // copy would silently report zero filename findings. The printed
+      // report and the on-screen panel must agree.
+      const report = await exportPreflightReport(src, dst, opts, "windows", format, dest);
       pushToast(
         "success",
         t("preflight-report-toast", {

@@ -58,12 +58,22 @@ impl ListFormat {
     }
 }
 
-/// Split one CSV record into fields, honouring RFC-4180 quoting.
-fn csv_fields(line: &str) -> Vec<String> {
-    let mut fields = Vec::new();
+/// Split a whole CSV document into records, honouring RFC-4180
+/// quoting — including fields that contain embedded newlines.
+///
+/// Record-oriented rather than line-oriented on purpose: `csv_field`
+/// (which writes the FFM-M07 exports this parser is documented to
+/// consume) quotes any field containing `\n`, so an OS error message
+/// spanning two lines produces a record spanning two physical lines.
+/// Splitting on lines first would tear it apart and turn the tail into
+/// a bogus "path".
+fn csv_records(text: &str) -> Vec<Vec<String>> {
+    let mut records = Vec::new();
+    let mut fields: Vec<String> = Vec::new();
     let mut current = String::new();
     let mut in_quotes = false;
-    let mut chars = line.chars().peekable();
+    let mut chars = text.chars().peekable();
+
     while let Some(c) = chars.next() {
         match c {
             '"' if in_quotes => {
@@ -77,11 +87,27 @@ fn csv_fields(line: &str) -> Vec<String> {
             }
             '"' => in_quotes = true,
             ',' if !in_quotes => fields.push(std::mem::take(&mut current)),
+            '\r' if !in_quotes => {
+                // CRLF or a lone CR both end the record.
+                if chars.peek() == Some(&'\n') {
+                    chars.next();
+                }
+                fields.push(std::mem::take(&mut current));
+                records.push(std::mem::take(&mut fields));
+            }
+            '\n' if !in_quotes => {
+                fields.push(std::mem::take(&mut current));
+                records.push(std::mem::take(&mut fields));
+            }
             _ => current.push(c),
         }
     }
-    fields.push(current);
-    fields
+    // Trailing record without a final newline.
+    if !current.is_empty() || !fields.is_empty() {
+        fields.push(current);
+        records.push(fields);
+    }
+    records
 }
 
 /// Extract the path list from a manifest's text.
@@ -95,12 +121,8 @@ pub fn parse_list(text: &str, format: ListFormat) -> Result<Vec<String>, String>
             .collect()),
         ListFormat::Csv => {
             let mut out = Vec::new();
-            for (i, line) in text.lines().enumerate() {
-                let line = line.trim();
-                if line.is_empty() {
-                    continue;
-                }
-                let first = csv_fields(line).into_iter().next().unwrap_or_default();
+            for (i, record) in csv_records(text).into_iter().enumerate() {
+                let first = record.into_iter().next().unwrap_or_default();
                 let first = first.trim().to_string();
                 if first.is_empty() {
                     continue;
@@ -182,12 +204,28 @@ pub fn plan_import(paths: &[PathBuf], relative_root: Option<&Path>) -> Vec<(Stri
 /// list is empty or the paths share no common ancestor (different
 /// drives).
 pub fn common_root(paths: &[PathBuf]) -> Option<PathBuf> {
+    // Windows paths are case-insensitive, so `C:\Users\…` and
+    // `C:\users\…` name the same directory. A case-sensitive
+    // `starts_with` would treat them as unrelated and pop the shared
+    // root all the way back to the drive, seeding "preserve structure"
+    // with a root that rebuilds the whole tree under the destination.
+    fn contains(root: &Path, candidate: &Path) -> bool {
+        if candidate.starts_with(root) {
+            return true;
+        }
+        cfg!(windows)
+            && candidate
+                .to_string_lossy()
+                .to_lowercase()
+                .starts_with(&root.to_string_lossy().to_lowercase())
+    }
+
     let mut iter = paths
         .iter()
         .map(|p| p.parent().map(Path::to_path_buf).unwrap_or_default());
     let mut root = iter.next()?;
     for candidate in iter {
-        while !candidate.starts_with(&root) {
+        while !contains(&root, &candidate) {
             if !root.pop() {
                 return None;
             }
@@ -282,6 +320,41 @@ mod tests {
                     /plain/two.bin,/dst/two.bin,,\n";
         let out = parse_list(text, ListFormat::Csv).unwrap();
         assert_eq!(out, vec![r"C:\a\file, one.txt", "/plain/two.bin"]);
+    }
+
+    #[test]
+    fn csv_keeps_a_quoted_embedded_newline_in_one_record() {
+        // `failed_commands::csv_field` quotes any field containing a
+        // newline, so a two-line OS error message is a legal record
+        // spanning two physical lines. Splitting on lines first turned
+        // the tail into a bogus extra "path".
+        let text = "src,dst,error_code,error_msg\n\
+                    /a/one.txt,/d/one.txt,io-other,\"Input/output error\nretry later\"\n\
+                    /b/two.bin,/d/two.bin,,\n";
+        let out = parse_list(text, ListFormat::Csv).unwrap();
+        assert_eq!(out, vec!["/a/one.txt", "/b/two.bin"]);
+    }
+
+    #[test]
+    fn csv_handles_crlf_and_a_missing_final_newline() {
+        let text = "/a/one.txt,x\r\n/b/two.txt,y";
+        let out = parse_list(text, ListFormat::Csv).unwrap();
+        assert_eq!(out, vec!["/a/one.txt", "/b/two.txt"]);
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn common_root_is_case_insensitive_on_windows() {
+        // A hand-made list mixing `C:\Users` and `C:\users` must still
+        // resolve to the real shared folder, not collapse to `C:\`.
+        let paths = paths(&[r"C:\Users\mike\Docs\a.txt", r"C:\users\mike\Docs\b.txt"]);
+        let root = common_root(&paths).unwrap();
+        assert_ne!(
+            root,
+            PathBuf::from(r"C:\"),
+            "must not collapse to the drive"
+        );
+        assert_eq!(root.to_string_lossy().to_lowercase(), r"c:\users\mike\docs");
     }
 
     #[test]

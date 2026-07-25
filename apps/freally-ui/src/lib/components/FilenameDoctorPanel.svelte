@@ -26,11 +26,23 @@
     src: string;
     /** Where the files will land — path length is judged against it. */
     dstRoot: string;
-    /** Destination filesystem's rules; `auto` uses the host's. */
+    /**
+     * Which filesystem's rules to check against.
+     *
+     * Defaults to `windows` — the strictest set — deliberately, NOT to
+     * `auto`. `auto` resolves to the *host* OS, which is the one thing
+     * this panel must not assume: on a Linux host copying to an
+     * exFAT/NTFS stick it skips the reserved-name, illegal-character,
+     * trailing-dot and case-collision checks entirely, so a tree full
+     * of names the destination cannot hold reports zero findings and
+     * the copy fails later. Over-flagging is per-row declinable;
+     * under-flagging is silent. On a Windows host this is what `auto`
+     * already resolved to, so nothing changes there.
+     */
     target?: DoctorTarget;
   }
 
-  let { src, dstRoot, target = "auto" }: Props = $props();
+  let { src, dstRoot, target = "windows" }: Props = $props();
 
   let report = $state<DoctorReport | null>(null);
   let busy = $state(false);

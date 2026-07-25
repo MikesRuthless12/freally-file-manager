@@ -55,14 +55,25 @@ pub struct HashInspectReport {
 /// on its own row instead of vanishing.
 fn expand_targets(roots: &[PathBuf]) -> (Vec<PathBuf>, bool) {
     let mut out: Vec<PathBuf> = Vec::new();
+    // De-duplicate the *expanded* files, not just the picked roots.
+    // Picking a folder and then a file inside it yields two distinct
+    // root strings that expand onto the same path, and the frontend
+    // keys its row list by path — a repeat makes Svelte throw
+    // `each_key_duplicate` and blanks the panel.
+    let mut seen: std::collections::BTreeSet<PathBuf> = std::collections::BTreeSet::new();
     let mut truncated = false;
+    let mut push = |p: PathBuf, out: &mut Vec<PathBuf>| {
+        if seen.insert(p.clone()) {
+            out.push(p);
+        }
+    };
     for root in roots {
         if out.len() >= MAX_ROWS {
             truncated = true;
             break;
         }
         if !root.is_dir() {
-            out.push(root.clone());
+            push(root.clone(), &mut out);
             continue;
         }
         match crate::sidecar_commands::collect_files(root) {
@@ -72,10 +83,10 @@ fn expand_targets(roots: &[PathBuf]) -> (Vec<PathBuf>, bool) {
                         truncated = true;
                         break;
                     }
-                    out.push(root.join(rel));
+                    push(root.join(rel), &mut out);
                 }
             }
-            Err(_) => out.push(root.clone()),
+            Err(_) => push(root.clone(), &mut out),
         }
     }
     (out, truncated)
@@ -253,6 +264,26 @@ mod tests {
         assert!(targets.contains(&tree.join("a.txt")));
         assert!(targets.contains(&tree.join("sub").join("b.txt")));
         assert!(targets.contains(&loose));
+    }
+
+    #[test]
+    fn expand_targets_never_emits_the_same_file_twice() {
+        // Picking a folder and then a file inside it: two distinct root
+        // strings, one shared expanded path. A repeat crashes the
+        // frontend's keyed row list.
+        let dir = tempfile::tempdir().unwrap();
+        let tree = dir.path().join("tree");
+        std::fs::create_dir_all(&tree).unwrap();
+        let inner = tree.join("a.txt");
+        std::fs::write(&inner, b"1").unwrap();
+
+        let (targets, _) = expand_targets(&[tree.clone(), inner.clone()]);
+        assert_eq!(targets.len(), 1, "{targets:?}");
+        assert_eq!(targets[0], inner);
+
+        // And the same root listed twice collapses too.
+        let (targets, _) = expand_targets(&[tree.clone(), tree]);
+        assert_eq!(targets.len(), 1);
     }
 
     #[test]
