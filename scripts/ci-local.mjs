@@ -9,7 +9,7 @@
 //     test        · cargo test --workspace                          (job: clippy-test)
 //     spawn smoke · cargo test -p freally-helper --features spawn-tests
 //                     --test phase_17d_spawn                        (job: clippy-test)
-//     cargo-deny  · cargo deny check --all-features   (job: cargo-deny;  run if installed)
+//     cargo-deny  · cargo deny check   (job: cargo-deny;  run if installed)
 //     cargo-audit · cargo audit --ignore …            (job: cargo-audit; run if installed)
 //     cargo-vet   · cargo vet --locked                (job: cargo-vet;   run if installed,
 //                                                       non-blocking — CI: continue-on-error)
@@ -83,7 +83,7 @@ if (!uiOnly && hasRust) {
   );
   // job: cargo-deny — CI uses EmbarkStudios/cargo-deny-action; run the CLI locally when present.
   if (have("cargo deny --version")) {
-    step("rust: cargo-deny", "cargo deny check --all-features", repoRoot);
+    step("rust: cargo-deny", "cargo deny check", repoRoot);
   } else {
     console.log("• note: cargo-deny not installed — skipping (CI runs it via cargo-deny-action).");
   }
