@@ -1,0 +1,27 @@
+# Freally File Manager — pinned Rust toolchain.
+#
+# An EXACT version rather than `stable`. On `stable`, a new Rust release
+# silently swaps the compiler under both local builds and CI, and a new
+# clippy's lints turn `-D warnings` red with zero code changes of yours.
+# That is not hypothetical: the 1.97.1 bump did exactly that to three
+# sibling repos in this suite (Freally AV needed seven lint fixes,
+# Sourcerer two, Capture one). Bump this deliberately, as its own
+# separately-validated change.
+#
+# `targets` matters for the release workflow, whose matrix cross-compiles
+# all four of these (linux-x86_64, macos-aarch64, macos-x86_64 built on the
+# Apple Silicon runner, windows-x86_64). CI installs Rust with
+# `dtolnay/rust-toolchain@stable`, but cargo obeys THIS file — so the
+# targets have to be declared here or a cross-compile would fail with
+# "target ... is not installed" despite the action having installed it
+# onto `stable`.
+[toolchain]
+channel = "1.97.1"
+components = ["rustfmt", "clippy"]
+targets = [
+    "x86_64-pc-windows-msvc",
+    "x86_64-apple-darwin",
+    "aarch64-apple-darwin",
+    "x86_64-unknown-linux-gnu",
+]
+profile = "default"
