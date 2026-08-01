@@ -1,5 +1,5 @@
-app-name = Freally File Manager v0.19.85
-window-title = Freally File Manager v0.19.85
+app-name = Freally File Manager v0.22.0
+window-title = Freally File Manager v0.22.0
 shred-ssd-advisory = Uyarı: bu hedef bir SSD üzerinde bulunuyor. Çok geçişli üzerine yazmalar flash belleği güvenilir şekilde temizlemez; çünkü aşınma dengeleme ve fazla yer ayırma, verileri mantıksal blok adresinin altından taşır. Katı hal ortamları için ATA SECURE ERASE, Güvenli Silmeli NVMe Format veya anahtarı imha edilen tam disk şifrelemesini tercih edin.
 
 # Global aggregate states (header pill)
@@ -1521,3 +1521,114 @@ history-elevate-batch-hint = Bu işteki izin reddedilen tüm yolları tek bir y�
 elevate-batch-none = Yükseltilecek, izni reddedilmiş yol yok
 elevate-batch-confirm = { $count } yol için tek bir yetki yükseltmesi verilsin mi? (Diğer { $skipped } hata yükseltmeyle düzelmez.) Yardımcı şu yolları kopyalayacak:
 elevate-batch-toast = Yükseltilmiş toplu iş — { $copied } kopyalandı, { $failed } başarısız
+
+# ===== Build 3 (FFM-M17..M24) =====
+
+# FFM-M23
+err-source-changed = Kaynak dosya okunurken değişti
+job-source-changed = Kopyalama sırasında kaynak değişti
+settings-source-stability-label = Kopyalama sırasında bir kaynak dosya değişirse
+settings-source-stability-description = Her kaynağın boyutunu ve zaman damgasını okuduktan sonra yeniden denetler. Doğrulama tek başına bunu yakalayamaz.
+settings-source-stability-off = Denetleme
+settings-source-stability-warn = Uyar ve dosyayı işaretle
+settings-source-stability-recopy = Dosyayı yeniden kopyala
+settings-source-stability-fail = Dosyayı başarısız say
+
+# FFM-M17
+err-schedule-id-invalid = Geçersiz zamanlama tanımlayıcısı
+err-schedule-label-invalid = Geçersiz zamanlama adı
+err-schedule-verb-invalid = Bir zamanlama yalnızca kopyalayabilir veya taşıyabilir
+err-schedule-trigger-invalid = Geçersiz zamanlama saati
+err-schedule-too-many = Çok fazla zamanlanmış görev
+err-schedule-install-failed = Sistem zamanlayıcısı bu zamanlamayı reddetti
+err-schedule-remove-failed = Sistem zamanlayıcısı bu zamanlamayı kaldıramadı
+err-schedule-no-program = Uygulamanın konumu belirlenemedi
+settings-schedules-title = Zamanlanmış görevler
+settings-schedules-empty = Henüz zamanlanmış görev yok.
+settings-schedule-add = Zamanlama ekle
+settings-schedule-trigger-hourly = Her saat
+settings-schedule-trigger-daily = Her gün
+settings-schedule-trigger-weekly = Her hafta
+settings-schedule-next-run = Sonraki çalışma
+settings-schedule-missed = Kaçırılan bir çalışmayı en kısa sürede yürüt
+settings-schedule-missed-unsupported = Bu sistem kaçırılan bir zamanlamayı uyanınca her zaman çalıştırır.
+settings-schedule-not-installed = Sistem zamanlayıcısında bulunmuyor
+
+# FFM-M18
+err-affinity-too-many = Çok fazla sürücü kuyruğu grubu
+err-affinity-name-invalid = Geçersiz grup adı
+err-affinity-name-duplicate = Bu adı kullanan başka bir grup zaten var
+err-affinity-prefixes-invalid = Bir grup en az bir klasör gerektirir
+err-affinity-workers-invalid = Geçersiz işleyici sayısı
+settings-affinity-title = Sürücü kuyrukları
+settings-affinity-description = Sürücü algılama yanıldığında hangi hedeflerin tek bir aktarım kuyruğunu paylaşacağını siz belirleyin.
+settings-affinity-add = Grup ekle
+settings-affinity-workers = İşleyiciler
+settings-affinity-workers-auto = Otomatik
+
+# FFM-M19
+err-queue-unknown = Bilinmeyen kuyruk
+action-run-next = Sıradaki olarak çalıştır
+action-boost = Önceliklendir
+action-clear-boost = Önceliği kaldır
+action-move-to-queue = Kuyruğa taşı
+
+# FFM-M20
+err-favorite-label-invalid = Geçersiz sık kullanılan adı
+err-favorite-kind-invalid = Geçersiz sık kullanılan türü
+err-favorite-hotkey-invalid = Geçersiz kısayol
+err-favorite-too-many = Çok fazla sık kullanılan
+settings-favorites-title = Sık kullanılanlar
+settings-favorites-empty = Henüz sık kullanılan yok.
+settings-favorites-add = Sık kullanılan ekle
+favorites-recent-title = Son çiftler
+favorites-kind-source = Kaynak
+favorites-kind-destination = Hedef
+favorites-kind-pair = Çift
+
+# FFM-M21
+err-shell-portable = Kabuk tümleştirmesi taşınabilir modda kullanılamaz
+settings-portable-title = Taşınabilir mod
+settings-portable-active = Taşınabilir mod etkin. Ayarlar, geçmiş ve günlükler { $path } içinde saklanıyor.
+settings-portable-keychain-warning = Uyarı: kaydedilen bulut kimlik bilgileri hâlâ taşınabilir sürücüde değil, bu bilgisayarın sistem anahtar zincirinde saklanıyor — sürücüyü çıkardıktan sonra da bu makinede kalır. Bilgisayarı geri vermeden önce eklediğiniz uzak konumları kaldırın.
+
+# FFM-M24
+err-autostart-portable = Oturum açılışında başlatma taşınabilir modda kullanılamaz
+err-autostart-failed = Oturum açılışında başlatma ayarı değiştirilemedi
+settings-autostart-label = Freally'yi oturum açılışında başlat
+settings-autostart-description = Kabuk tümleştirmesi, kısayollar, izleyiciler ve zamanlamalar oturum açılışından itibaren etkin olsun diye simge durumunda başlar.
+settings-autostart-unavailable-portable = Taşınabilir modda kullanılamaz — bir başlangıç kaydı bu çıkarılabilir sürücüyü gösterirdi.
+settings-autostart-unavailable-platform = Oturum açılışında başlatma bu sistemde kullanılamıyor.
+
+# ===== Build 3 panel labels =====
+
+action-edit = Düzenle
+action-remove = Kaldır
+action-save = Kaydet
+action-browse = Gözat…
+settings-tab-schedules = Zamanlamalar
+settings-tab-queues = Sürücü kuyrukları
+settings-tab-favorites = Sık kullanılanlar
+settings-schedule-name = Ad
+settings-schedule-verb = Eylem
+settings-schedule-verb-copy = Kopyala
+settings-schedule-verb-move = Taşı
+settings-schedule-manifest = Dosya listesi
+settings-schedule-destination = Hedef
+settings-schedule-when = Sıklık
+settings-schedule-weekday = Haftanın günü (0 = Pazar)
+settings-schedule-hour = Saat
+settings-schedule-minute = Dakika
+settings-affinity-name = Grup adı
+settings-affinity-paths = Klasörler
+settings-affinity-path-add = Klasör ekle…
+settings-favorites-name = Ad
+settings-favorites-kind = Tür
+settings-favorites-path = Klasör
+settings-favorites-destination = Hedef
+settings-favorites-hotkey = Kısayol
+
+# FFM-M22 — screen-reader queue announcement
+a11y-queue-status = { $running } çalışıyor, { $done } tamamlandı, { $failed } başarısız
+
+err-favorite-id-invalid = Geçersiz sık kullanılan tanımlayıcısı

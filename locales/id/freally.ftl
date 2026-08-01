@@ -1,5 +1,5 @@
-app-name = Freally File Manager v0.19.85
-window-title = Freally File Manager v0.19.85
+app-name = Freally File Manager v0.22.0
+window-title = Freally File Manager v0.22.0
 shred-ssd-advisory = Peringatan: target ini berada di SSD. Penimpaan multi-lintasan tidak dapat membersihkan memori flash secara andal karena wear-leveling dan over-provisioning memindahkan data keluar dari alamat blok logis. Untuk media solid-state, gunakan ATA SECURE ERASE, NVMe Format dengan Secure Erase, atau enkripsi seluruh disk dengan kunci yang dibuang.
 
 # Global aggregate states (header pill)
@@ -1521,3 +1521,114 @@ history-elevate-batch-hint = Coba lagi semua jalur tugas ini yang izinnya ditola
 elevate-batch-none = Tidak ada jalur dengan izin ditolak untuk dinaikkan
 elevate-batch-confirm = Berikan satu peningkatan hak untuk { $count } jalur? ({ $skipped } kegagalan lain tidak dapat diperbaiki dengan ini.) Pembantu akan menyalin jalur berikut:
 elevate-batch-toast = Batch dinaikkan — { $copied } tersalin, { $failed } gagal
+
+# ===== Build 3 (FFM-M17..M24) =====
+
+# FFM-M23
+err-source-changed = Berkas sumber berubah saat sedang dibaca
+job-source-changed = Sumber berubah selama penyalinan
+settings-source-stability-label = Jika berkas sumber berubah saat menyalin
+settings-source-stability-description = Memeriksa ulang ukuran dan tanda waktu setiap sumber setelah dibaca. Verifikasi saja tidak dapat mendeteksinya.
+settings-source-stability-off = Jangan periksa
+settings-source-stability-warn = Peringatkan dan tandai berkas
+settings-source-stability-recopy = Salin ulang berkas
+settings-source-stability-fail = Tandai berkas sebagai gagal
+
+# FFM-M17
+err-schedule-id-invalid = Pengenal jadwal tidak valid
+err-schedule-label-invalid = Nama jadwal tidak valid
+err-schedule-verb-invalid = Jadwal hanya dapat menyalin atau memindahkan
+err-schedule-trigger-invalid = Waktu jadwal tidak valid
+err-schedule-too-many = Terlalu banyak tugas terjadwal
+err-schedule-install-failed = Penjadwal sistem menolak jadwal ini
+err-schedule-remove-failed = Penjadwal sistem tidak dapat menghapus jadwal ini
+err-schedule-no-program = Tidak dapat menentukan lokasi aplikasi ini
+settings-schedules-title = Tugas terjadwal
+settings-schedules-empty = Belum ada tugas terjadwal.
+settings-schedule-add = Tambah jadwal
+settings-schedule-trigger-hourly = Setiap jam
+settings-schedule-trigger-daily = Setiap hari
+settings-schedule-trigger-weekly = Setiap minggu
+settings-schedule-next-run = Jalan berikutnya
+settings-schedule-missed = Jalankan jadwal yang terlewat sesegera mungkin
+settings-schedule-missed-unsupported = Sistem ini selalu menjalankan jadwal yang terlewat saat bangun.
+settings-schedule-not-installed = Tidak ada di penjadwal sistem
+
+# FFM-M18
+err-affinity-too-many = Terlalu banyak grup antrean diska
+err-affinity-name-invalid = Nama grup tidak valid
+err-affinity-name-duplicate = Grup lain sudah memakai nama ini
+err-affinity-prefixes-invalid = Grup memerlukan setidaknya satu folder
+err-affinity-workers-invalid = Jumlah pekerja tidak valid
+settings-affinity-title = Antrean diska
+settings-affinity-description = Tentukan sendiri tujuan mana yang berbagi satu antrean transfer ketika deteksi diska keliru.
+settings-affinity-add = Tambah grup
+settings-affinity-workers = Pekerja
+settings-affinity-workers-auto = Otomatis
+
+# FFM-M19
+err-queue-unknown = Antrean tidak dikenal
+action-run-next = Jalankan berikutnya
+action-boost = Prioritaskan
+action-clear-boost = Hentikan prioritas
+action-move-to-queue = Pindahkan ke antrean
+
+# FFM-M20
+err-favorite-label-invalid = Nama favorit tidak valid
+err-favorite-kind-invalid = Jenis favorit tidak valid
+err-favorite-hotkey-invalid = Pintasan tidak valid
+err-favorite-too-many = Terlalu banyak favorit
+settings-favorites-title = Favorit
+settings-favorites-empty = Belum ada favorit.
+settings-favorites-add = Tambah favorit
+favorites-recent-title = Pasangan terbaru
+favorites-kind-source = Sumber
+favorites-kind-destination = Tujuan
+favorites-kind-pair = Pasangan
+
+# FFM-M21
+err-shell-portable = Integrasi shell tidak tersedia dalam mode portabel
+settings-portable-title = Mode portabel
+settings-portable-active = Mode portabel aktif. Pengaturan, riwayat, dan jurnal disimpan di { $path }.
+settings-portable-keychain-warning = Peringatan: kredensial awan yang disimpan tetap berada di gantungan kunci sistem komputer ini, bukan di diska portabel — kredensial tetap ada di mesin ini setelah dicabut. Hapus remote yang Anda tambahkan sebelum mengembalikan komputer.
+
+# FFM-M24
+err-autostart-portable = Mulai saat masuk tidak tersedia dalam mode portabel
+err-autostart-failed = Tidak dapat mengubah pengaturan mulai saat masuk
+settings-autostart-label = Mulai Freally saat masuk
+settings-autostart-description = Mulai terminimalkan ke baki agar integrasi shell, pintasan, pemantau, dan jadwal aktif sejak masuk.
+settings-autostart-unavailable-portable = Tidak tersedia dalam mode portabel — entri mulai akan menunjuk ke diska lepas-pasang ini.
+settings-autostart-unavailable-platform = Mulai saat masuk tidak tersedia di sistem ini.
+
+# ===== Build 3 panel labels =====
+
+action-edit = Ubah
+action-remove = Hapus
+action-save = Simpan
+action-browse = Telusuri…
+settings-tab-schedules = Jadwal
+settings-tab-queues = Antrean diska
+settings-tab-favorites = Favorit
+settings-schedule-name = Nama
+settings-schedule-verb = Tindakan
+settings-schedule-verb-copy = Salin
+settings-schedule-verb-move = Pindahkan
+settings-schedule-manifest = Daftar berkas
+settings-schedule-destination = Tujuan
+settings-schedule-when = Frekuensi
+settings-schedule-weekday = Hari dalam minggu (0 = Minggu)
+settings-schedule-hour = Jam
+settings-schedule-minute = Menit
+settings-affinity-name = Nama grup
+settings-affinity-paths = Folder
+settings-affinity-path-add = Tambah folder…
+settings-favorites-name = Nama
+settings-favorites-kind = Jenis
+settings-favorites-path = Folder
+settings-favorites-destination = Tujuan
+settings-favorites-hotkey = Pintasan
+
+# FFM-M22 — screen-reader queue announcement
+a11y-queue-status = { $running } berjalan, { $done } selesai, { $failed } gagal
+
+err-favorite-id-invalid = Pengenal favorit tidak valid

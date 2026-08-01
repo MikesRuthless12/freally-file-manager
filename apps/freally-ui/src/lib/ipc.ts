@@ -1880,3 +1880,136 @@ export async function exportPreflightReport(
     dest,
   });
 }
+
+// ---------------------------------------------------------------------
+// Build 3 — FFM-M17..M24
+// ---------------------------------------------------------------------
+
+import type {
+  AffinityGroupDto,
+  AutostartStatusDto,
+  FavoriteDto,
+  PortableStatusDto,
+  RecentPairDto,
+  ScheduleDto,
+} from "./types";
+
+/** FFM-M17 — every schedule, with live OS status + next-run preview. */
+export async function scheduleList(): Promise<ScheduleDto[]> {
+  return invoke<ScheduleDto[]>("schedule_list");
+}
+
+/** FFM-M17 — create or replace one schedule; installs the OS artifact. */
+export async function scheduleSave(dto: ScheduleDto): Promise<ScheduleDto[]> {
+  return invoke<ScheduleDto[]>("schedule_save", { dto });
+}
+
+/** FFM-M17 — uninstall + forget a schedule. Idempotent. */
+export async function scheduleRemove(id: string): Promise<ScheduleDto[]> {
+  return invoke<ScheduleDto[]>("schedule_remove", { id });
+}
+
+/** FFM-M18 — the queue-affinity groups currently in force. */
+export async function queueGetAffinity(): Promise<AffinityGroupDto[]> {
+  return invoke<AffinityGroupDto[]>("queue_get_affinity");
+}
+
+/** FFM-M18 — replace the whole group list and apply it live. */
+export async function queueSetAffinity(
+  groups: AffinityGroupDto[],
+): Promise<AffinityGroupDto[]> {
+  return invoke<AffinityGroupDto[]>("queue_set_affinity", { groups });
+}
+
+/** FFM-M19 — drag-to-reorder within one queue. */
+export async function queueReorderJob(
+  queueId: number,
+  jobId: number,
+  newIndex: number,
+): Promise<void> {
+  return invoke<void>("queue_reorder_job", { queueId, jobId, newIndex });
+}
+
+/** FFM-M19 — move a job to the head of the pending section. */
+export async function queueRunNext(
+  queueId: number,
+  jobId: number,
+): Promise<void> {
+  return invoke<void>("queue_run_next", { queueId, jobId });
+}
+
+/** FFM-M19 — move one pending job to a different drive queue. */
+export async function queueMoveJob(
+  jobId: number,
+  dstQueueId: number,
+): Promise<void> {
+  return invoke<void>("queue_move_job", { jobId, dstQueueId });
+}
+
+/** FFM-M19 — pause running siblings. Returns the ids actually paused,
+ *  which `queueClearBoost` needs so a job the user paused by hand
+ *  before the boost is not resumed with them. */
+export async function queueBoostJob(
+  queueId: number,
+  jobId: number,
+): Promise<number[]> {
+  return invoke<number[]>("queue_boost_job", { queueId, jobId });
+}
+
+/** FFM-M19 — resume exactly the jobs a boost paused. */
+export async function queueClearBoost(
+  queueId: number,
+  paused: number[],
+): Promise<void> {
+  return invoke<void>("queue_clear_boost", { queueId, paused });
+}
+
+/** FFM-M20 — bookmarks, in user order. */
+export async function favoritesList(): Promise<FavoriteDto[]> {
+  return invoke<FavoriteDto[]>("favorites_list");
+}
+
+/** FFM-M20 — create (blank id) or update a bookmark. */
+export async function favoritesSave(dto: FavoriteDto): Promise<FavoriteDto[]> {
+  return invoke<FavoriteDto[]>("favorites_save", { dto });
+}
+
+/** FFM-M20 — drop a bookmark. */
+export async function favoritesRemove(id: string): Promise<FavoriteDto[]> {
+  return invoke<FavoriteDto[]>("favorites_remove", { id });
+}
+
+/** FFM-M20 — the MRU source→destination ring, newest first. */
+export async function favoritesRecentPairs(): Promise<RecentPairDto[]> {
+  return invoke<RecentPairDto[]>("favorites_recent_pairs");
+}
+
+/** FFM-M20 — remember a pair the user just ran. */
+export async function favoritesRecordPair(
+  source: string,
+  destination: string,
+  usedAtMs: number,
+): Promise<RecentPairDto[]> {
+  return invoke<RecentPairDto[]>("favorites_record_pair", {
+    source,
+    destination,
+    usedAtMs,
+  });
+}
+
+/** FFM-M21 — where this install writes, and what it may therefore do. */
+export async function portableStatus(): Promise<PortableStatusDto> {
+  return invoke<PortableStatusDto>("portable_status");
+}
+
+/** FFM-M24 — the live OS state of the launch-at-login entry. */
+export async function autostartStatus(): Promise<AutostartStatusDto> {
+  return invoke<AutostartStatusDto>("autostart_status");
+}
+
+/** FFM-M24 — register or deregister the login item. */
+export async function autostartSet(
+  enabled: boolean,
+): Promise<AutostartStatusDto> {
+  return invoke<AutostartStatusDto>("autostart_set", { enabled });
+}

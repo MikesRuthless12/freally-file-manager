@@ -426,6 +426,15 @@ pub struct CopyOptions {
     /// doubles. Default `50` (50 ms / 100 ms / 200 ms — covers most
     /// short-lived AV / indexer locks).
     pub sharing_violation_base_delay_ms: u64,
+    /// FFM-M23 — what to do when the source file changed while it was
+    /// being read.
+    ///
+    /// Post-copy verify cannot see this: it re-hashes the *current*
+    /// source, which by then matches whatever bytes landed, so a torn
+    /// copy verifies green. Defaults to
+    /// [`SourceStability::Warn`](crate::stability::SourceStability::Warn)
+    /// — report it, keep the bytes.
+    pub source_stability: crate::stability::SourceStability,
     /// Phase 43 — opt out of the per-chunk progress callback in the
     /// platform fast paths.
     ///
@@ -779,6 +788,7 @@ impl Default for CopyOptions {
             paranoid_verify: false,
             sharing_violation_retries: 3,
             sharing_violation_base_delay_ms: 50,
+            source_stability: crate::stability::SourceStability::default(),
             disable_progress_callback: false,
             sparse_ops: None,
             preserve_security_metadata: true,

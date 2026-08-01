@@ -15,6 +15,7 @@
 -->
 <script lang="ts">
   import Icon from "../icons/Icon.svelte";
+  import { escapeToClose } from "../a11y";
   import BackupSourcesView from "./BackupSourcesView.svelte";
   import RestoreModal from "./RestoreModal.svelte";
   import { save } from "@tauri-apps/plugin-dialog";
@@ -320,7 +321,7 @@
 </script>
 
 {#if $libraryDrawerOpen}
-  <aside class="drawer" aria-label={t("library-title")}>
+  <aside class="drawer" aria-label={t("library-title")} use:escapeToClose={closeLibraryDrawer}>
     {#key $i18nVersion}
       <header>
         <h2>{t("library-title")}</h2>

@@ -33,7 +33,122 @@ const PROGRESS_MIN_INTERVAL: Duration = Duration::from_millis(50);
 /// See crate-level docs for the public contract; the loop is documented
 /// inline here. Returns `Ok(CopyReport)` on success, `Err(CopyError)`
 /// on I/O failure or caller-requested cancellation.
+///
+/// # FFM-M23 — source-stability guard
+///
+/// Wraps the copy in a before/after `stat` of the source. When they
+/// disagree the source was rewritten mid-read and the destination may
+/// be internally inconsistent — a tear that post-copy verify cannot
+/// detect, because verify re-hashes the *current* source and so
+/// compares the new contents against whatever bytes landed.
+///
+/// [`CopyOptions::source_stability`] chooses the response. `Off`
+/// skips both stats entirely, so a caller that cannot afford them
+/// keeps exactly the old behaviour and the old cost.
 pub async fn copy_file(
+    src: &Path,
+    dst: &Path,
+    opts: CopyOptions,
+    ctrl: CopyControl,
+    events: mpsc::Sender<CopyEvent>,
+) -> Result<CopyReport, CopyError> {
+    use crate::stability::{SourceStability, SourceStamp, StabilityVerdict, evaluate};
+
+    let policy = opts.source_stability;
+    if policy == SourceStability::Off {
+        return copy_file_once(src, dst, opts, ctrl, events).await;
+    }
+
+    let before = SourceStamp::of(src).await;
+    // Only `Recopy` can need the options a second time. `CopyOptions`
+    // is ~40 fields with eight `Option<Arc<dyn …>>` hooks, so cloning
+    // it unconditionally would add a per-file allocation and eight
+    // atomic bumps to every tree copy — under the default `Warn`
+    // policy, for a second attempt that never happens.
+    let (report, opts) = if policy == SourceStability::Recopy {
+        let report = copy_file_once(src, dst, opts.clone(), ctrl.clone(), events.clone()).await?;
+        (report, Some(opts))
+    } else {
+        (
+            copy_file_once(src, dst, opts, ctrl.clone(), events.clone()).await?,
+            None,
+        )
+    };
+    let after = SourceStamp::of(src).await;
+
+    match evaluate(before, after, policy) {
+        StabilityVerdict::Stable => Ok(report),
+        StabilityVerdict::Fail => {
+            let detail = describe(before, after);
+            Err(CopyError::source_changed(src, dst, &detail))
+        }
+        StabilityVerdict::Warn => {
+            let _ = events
+                .send(CopyEvent::SourceChanged {
+                    src: src.to_path_buf(),
+                    detail: describe(before, after),
+                    recopying: false,
+                })
+                .await;
+            Ok(report)
+        }
+        StabilityVerdict::Recopy => {
+            let _ = events
+                .send(CopyEvent::SourceChanged {
+                    src: src.to_path_buf(),
+                    detail: describe(before, after),
+                    recopying: true,
+                })
+                .await;
+            // One retry only. A source under continuous write would
+            // otherwise loop forever, and each pass rewrites the whole
+            // destination — an unbounded retry on a busy log file is a
+            // livelock, not a recovery.
+            let retry_before = SourceStamp::of(src).await;
+            let opts = opts.expect("the Recopy branch always carries the options forward");
+            let retry = copy_file_once(src, dst, opts, ctrl, events.clone()).await?;
+            let retry_after = SourceStamp::of(src).await;
+            if evaluate(retry_before, retry_after, policy) == StabilityVerdict::Stable {
+                Ok(retry)
+            } else {
+                // Still moving. Report and keep the second attempt's
+                // bytes rather than failing — the caller asked to
+                // re-copy, not to abort.
+                let _ = events
+                    .send(CopyEvent::SourceChanged {
+                        src: src.to_path_buf(),
+                        detail: describe(retry_before, retry_after),
+                        recopying: false,
+                    })
+                    .await;
+                Ok(retry)
+            }
+        }
+    }
+}
+
+/// Summarise the difference between two optional stamps for an event
+/// payload. Both are `Some` on every path that calls this (a `None`
+/// stamp yields `Stable`), so the fallback text is unreachable in
+/// practice and exists only to keep this total.
+fn describe(
+    before: Option<crate::stability::SourceStamp>,
+    after: Option<crate::stability::SourceStamp>,
+) -> String {
+    // A `None` on either side yields `Stable`, so this is only ever
+    // called with two `Some`s. The empty-string fallback keeps the
+    // function total without inventing an untranslated English
+    // sentence for an event payload in an app that runs every
+    // user-facing string through Fluent.
+    before
+        .zip(after)
+        .map_or_else(String::new, |(b, a)| b.describe_change(&a))
+}
+
+/// The copy proper. [`copy_file`] wraps this with the FFM-M23
+/// stability guard; everything else about the contract is documented
+/// there.
+async fn copy_file_once(
     src: &Path,
     dst: &Path,
     opts: CopyOptions,

@@ -1,5 +1,5 @@
-app-name = Freally File Manager v0.19.85
-window-title = Freally File Manager v0.19.85
+app-name = Freally File Manager v0.22.0
+window-title = Freally File Manager v0.22.0
 shred-ssd-advisory = Attenzione: questa destinazione si trova su un SSD. Le sovrascritture multi-passaggio non sanificano in modo affidabile la memoria flash, perché il wear-leveling e l'over-provisioning spostano i dati al di fuori dell'indirizzo del blocco logico. Per i supporti a stato solido, preferisci ATA SECURE ERASE, NVMe Format con Secure Erase oppure la crittografia dell'intero disco con eliminazione della chiave.
 
 # Global aggregate states (header pill)
@@ -1521,3 +1521,114 @@ history-elevate-batch-hint = Riprova con un unico consenso tutti i percorsi di q
 elevate-batch-none = Nessun percorso con permesso negato da elevare
 elevate-batch-confirm = Concedere un'elevazione per { $count } percorso/i? ({ $skipped } altro/i errore/i non si risolvono elevando.) L'helper copierà questi percorsi:
 elevate-batch-toast = Lotto elevato — { $copied } copiati, { $failed } non riusciti
+
+# ===== Build 3 (FFM-M17..M24) =====
+
+# FFM-M23
+err-source-changed = Il file di origine è cambiato durante la lettura
+job-source-changed = Origine modificata durante la copia
+settings-source-stability-label = Se un file di origine cambia durante la copia
+settings-source-stability-description = Ricontrolla dimensione e data di ogni origine dopo averla letta. La verifica da sola non è in grado di rilevarlo.
+settings-source-stability-off = Non controllare
+settings-source-stability-warn = Avvisa e contrassegna il file
+settings-source-stability-recopy = Copia di nuovo il file
+settings-source-stability-fail = Segna il file come non riuscito
+
+# FFM-M17
+err-schedule-id-invalid = Identificatore di pianificazione non valido
+err-schedule-label-invalid = Nome della pianificazione non valido
+err-schedule-verb-invalid = Una pianificazione può solo copiare o spostare
+err-schedule-trigger-invalid = Orario di pianificazione non valido
+err-schedule-too-many = Troppe esecuzioni pianificate
+err-schedule-install-failed = L'utilità di pianificazione del sistema ha rifiutato questa pianificazione
+err-schedule-remove-failed = L'utilità di pianificazione del sistema non ha potuto rimuovere questa pianificazione
+err-schedule-no-program = Impossibile determinare la posizione dell'applicazione
+settings-schedules-title = Esecuzioni pianificate
+settings-schedules-empty = Nessuna esecuzione pianificata.
+settings-schedule-add = Aggiungi pianificazione
+settings-schedule-trigger-hourly = Ogni ora
+settings-schedule-trigger-daily = Ogni giorno
+settings-schedule-trigger-weekly = Ogni settimana
+settings-schedule-next-run = Prossima esecuzione
+settings-schedule-missed = Recupera al più presto un'esecuzione mancata
+settings-schedule-missed-unsupported = Questo sistema recupera sempre un'esecuzione mancata alla riattivazione.
+settings-schedule-not-installed = Assente dall'utilità di pianificazione del sistema
+
+# FFM-M18
+err-affinity-too-many = Troppi gruppi di code delle unità
+err-affinity-name-invalid = Nome del gruppo non valido
+err-affinity-name-duplicate = Un altro gruppo usa già questo nome
+err-affinity-prefixes-invalid = Un gruppo richiede almeno una cartella
+err-affinity-workers-invalid = Numero di processi non valido
+settings-affinity-title = Code delle unità
+settings-affinity-description = Stabilisci quali destinazioni condividono una coda di trasferimento quando il rilevamento delle unità sbaglia.
+settings-affinity-add = Aggiungi gruppo
+settings-affinity-workers = Processi
+settings-affinity-workers-auto = Automatico
+
+# FFM-M19
+err-queue-unknown = Coda sconosciuta
+action-run-next = Esegui come prossimo
+action-boost = Dai priorità
+action-clear-boost = Rimuovi priorità
+action-move-to-queue = Sposta nella coda
+
+# FFM-M20
+err-favorite-label-invalid = Nome del preferito non valido
+err-favorite-kind-invalid = Tipo di preferito non valido
+err-favorite-hotkey-invalid = Scorciatoia non valida
+err-favorite-too-many = Troppi preferiti
+settings-favorites-title = Preferiti
+settings-favorites-empty = Nessun preferito.
+settings-favorites-add = Aggiungi preferito
+favorites-recent-title = Coppie recenti
+favorites-kind-source = Origine
+favorites-kind-destination = Destinazione
+favorites-kind-pair = Coppia
+
+# FFM-M21
+err-shell-portable = L'integrazione con la shell non è disponibile in modalità portatile
+settings-portable-title = Modalità portatile
+settings-portable-active = La modalità portatile è attiva. Impostazioni, cronologia e journal sono archiviati in { $path }.
+settings-portable-keychain-warning = Attenzione: le credenziali cloud salvate restano nel portachiavi di sistema di questo computer, non sull'unità portatile — rimangono su questa macchina dopo la rimozione. Elimina i remoti aggiunti prima di restituire il computer.
+
+# FFM-M24
+err-autostart-portable = L'avvio all'accesso non è disponibile in modalità portatile
+err-autostart-failed = Impossibile modificare l'avvio all'accesso
+settings-autostart-label = Avvia Freally all'accesso
+settings-autostart-description = Si avvia ridotto a icona nella barra delle applicazioni, così integrazione con la shell, scorciatoie, monitoraggi e pianificazioni sono attivi fin dall'accesso.
+settings-autostart-unavailable-portable = Non disponibile in modalità portatile: una voce di avvio punterebbe a questa unità rimovibile.
+settings-autostart-unavailable-platform = L'avvio all'accesso non è disponibile su questo sistema.
+
+# ===== Build 3 panel labels =====
+
+action-edit = Modifica
+action-remove = Rimuovi
+action-save = Salva
+action-browse = Sfoglia…
+settings-tab-schedules = Pianificazioni
+settings-tab-queues = Code delle unità
+settings-tab-favorites = Preferiti
+settings-schedule-name = Nome
+settings-schedule-verb = Azione
+settings-schedule-verb-copy = Copia
+settings-schedule-verb-move = Sposta
+settings-schedule-manifest = Elenco file
+settings-schedule-destination = Destinazione
+settings-schedule-when = Frequenza
+settings-schedule-weekday = Giorno della settimana (0 = domenica)
+settings-schedule-hour = Ora
+settings-schedule-minute = Minuto
+settings-affinity-name = Nome del gruppo
+settings-affinity-paths = Cartelle
+settings-affinity-path-add = Aggiungi cartella…
+settings-favorites-name = Nome
+settings-favorites-kind = Tipo
+settings-favorites-path = Cartella
+settings-favorites-destination = Destinazione
+settings-favorites-hotkey = Scorciatoia
+
+# FFM-M22 — screen-reader queue announcement
+a11y-queue-status = { $running } in corso, { $done } completati, { $failed } non riusciti
+
+err-favorite-id-invalid = Identificatore del preferito non valido

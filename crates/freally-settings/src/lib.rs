@@ -32,6 +32,9 @@ use serde::{Deserialize, Serialize};
 pub mod conflict_profile;
 pub mod defaults;
 pub mod error;
+/// FFM-M21 — portable mode: keep every written file beside the binary
+/// and refuse the OS integrations that would outlive the stick.
+pub mod portable;
 pub mod profiles;
 
 pub use conflict_profile::{
@@ -159,11 +162,149 @@ pub struct Settings {
     /// Phase 49k — the registered repositories + the active selection
     /// (the multi-repo "Repository" screen).
     pub repository: RepositorySettings,
+    /// FFM-M17 — installed scheduled runs. Backend-owned: written only
+    /// by the schedule commands, which also install/remove the matching
+    /// OS artifact. See [`ScheduleSettings`].
+    pub schedules: ScheduleSettings,
+    /// FFM-M20 — favorite sources / destinations / pairs and the
+    /// recent-pair ring. Backend-owned: written only by the favorites
+    /// commands. See [`FavoritesSettings`].
+    pub favorites: FavoritesSettings,
     /// First-run EULA acceptance (public-release gate). Recorded only
     /// by the `eula_accept` command — the Settings UI never writes it,
     /// and `update_settings` carries it across wholesale replaces. See
     /// [`EulaSettings`].
     pub eula: EulaSettings,
+}
+
+impl Settings {
+    /// Copy every **backend-owned** group from `prev` onto `self`.
+    ///
+    /// The Settings modal round-trips through a `SettingsDto` that
+    /// models only the groups the modal actually renders, and
+    /// `SettingsDto::into_settings` rebuilds from
+    /// [`Settings::default`]. Any group the DTO does not model would
+    /// therefore be reset to its default by an ordinary "Save" in the
+    /// modal — silently discarding the user's pinned tray
+    /// destinations, registered repositories, cloud remotes, sync
+    /// pairs, conflict profiles, schedules, and favorites.
+    ///
+    /// The groups below are the ones written by dedicated commands
+    /// rather than by the modal. Calling this immediately after
+    /// `into_settings` is what keeps a wholesale replace from
+    /// destroying them.
+    ///
+    /// **When adding a new backend-owned group to [`Settings`], add it
+    /// here too** — `backend_owned_groups_survive_a_wholesale_replace`
+    /// in this module's tests fails loudly if it is forgotten.
+    pub fn carry_backend_owned_from(&mut self, prev: &Settings) {
+        self.eula = prev.eula.clone();
+        self.queue = prev.queue.clone();
+        self.repository = prev.repository.clone();
+        self.remotes = prev.remotes.clone();
+        self.conflict_profiles = prev.conflict_profiles.clone();
+        self.sync = prev.sync.clone();
+        self.backup = prev.backup.clone();
+        self.chunk_store = prev.chunk_store.clone();
+        self.notifications = prev.notifications.clone();
+        self.drop_stack = prev.drop_stack.clone();
+        self.schedules = prev.schedules.clone();
+        self.favorites = prev.favorites.clone();
+    }
+}
+
+// ---------------------------------------------------------------------
+// FFM-M17 — scheduled runs
+// ---------------------------------------------------------------------
+
+/// FFM-M17 — the persisted record of every scheduled run this install
+/// has created. The OS scheduler holds the authoritative artifact; this
+/// list is what lets the app show, edit, and remove them without
+/// parsing localized `schtasks` / `systemctl` output.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(default, rename_all = "kebab-case")]
+pub struct ScheduleSettings {
+    /// One entry per scheduled run, in creation order.
+    pub entries: Vec<ScheduleEntry>,
+}
+
+/// One scheduled run. The command it installs is always this app's own
+/// binary invoked with its shipped `--enqueue` CLI, so a schedule can
+/// never name an arbitrary program.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(default, rename_all = "kebab-case")]
+pub struct ScheduleEntry {
+    /// Stable slug — `[a-z0-9-]{1,48}`; also the OS artifact's name.
+    pub id: String,
+    /// User-facing label, shown here and in the OS scheduler.
+    pub label: String,
+    /// `"copy"` or `"move"`.
+    pub verb: String,
+    /// Manifest (TXT / CSV / JSON) listing the source set, per FFM-M13.
+    pub files_from: String,
+    /// Destination root.
+    pub destination: String,
+    /// Optional root whose structure is preserved under the
+    /// destination instead of flattening to basenames.
+    pub relative_to: String,
+    /// `"hourly"`, `"daily"`, or `"weekly"`.
+    pub trigger: String,
+    /// Day of week for `"weekly"`, 0 = Sunday.
+    pub weekday: u32,
+    /// Hour of day for `"daily"` / `"weekly"`.
+    pub hour: u32,
+    /// Minutes past the hour.
+    pub minute: u32,
+    /// Run a firing missed while the machine was off, rather than
+    /// waiting for the next window.
+    pub run_when_available: bool,
+}
+
+// ---------------------------------------------------------------------
+// FFM-M20 — favorites & recent pairs
+// ---------------------------------------------------------------------
+
+/// FFM-M20 — bookmarked locations and pairs, plus the recently-used
+/// pair ring the drop dialog offers as one-click destinations.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(default, rename_all = "kebab-case")]
+pub struct FavoritesSettings {
+    /// Bookmarks, in user order.
+    pub entries: Vec<FavoriteEntry>,
+    /// Most-recently-used source→destination pairs, newest first.
+    /// Maintained automatically; capped by the commands that write it.
+    pub recent_pairs: Vec<RecentPair>,
+}
+
+/// One bookmark. `kind` is `"source"`, `"destination"`, or `"pair"`;
+/// `destination` is meaningful only for `"pair"`.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(default, rename_all = "kebab-case")]
+pub struct FavoriteEntry {
+    /// Stable id (uuid-ish slug) so a rename doesn't orphan hotkeys.
+    pub id: String,
+    /// User-facing label.
+    pub label: String,
+    /// `"source"` | `"destination"` | `"pair"`.
+    pub kind: String,
+    /// The bookmarked path (the *source* side of a pair).
+    pub path: String,
+    /// Destination side, for `kind == "pair"`.
+    pub destination: String,
+    /// Optional accelerator, e.g. `"CmdOrCtrl+Shift+1"`. Empty = none.
+    pub hotkey: String,
+}
+
+/// One remembered source→destination pair.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(default, rename_all = "kebab-case")]
+pub struct RecentPair {
+    /// Source root the user copied from.
+    pub source: String,
+    /// Destination root the user copied to.
+    pub destination: String,
+    /// Last use, ms since epoch — drives the newest-first ordering.
+    pub used_at_ms: i64,
 }
 
 /// First-run EULA acceptance state. `accepted_version` holds the exact
@@ -259,8 +400,9 @@ impl Settings {
     /// OS config dir. Errors only if `directories` can't resolve a
     /// home directory at all (very rare — sandboxed cron-ish envs).
     pub fn default_path() -> Result<PathBuf> {
-        let dirs = project_dirs()?;
-        Ok(dirs.config_dir().join("settings.toml"))
+        // FFM-M21 — under portable mode this resolves beside the binary
+        // instead of the OS config dir.
+        Ok(portable::config_root()?.join("settings.toml"))
     }
 
     /// Load from the default path (`Settings::default_path()`). Same
@@ -276,7 +418,7 @@ impl Settings {
     }
 }
 
-fn project_dirs() -> Result<directories::ProjectDirs> {
+pub(crate) fn project_dirs() -> Result<directories::ProjectDirs> {
     directories::ProjectDirs::from("dev", "freally", "freally-file-manager")
         .ok_or(SettingsError::NoConfigDir)
 }
@@ -541,6 +683,59 @@ pub struct TransferSettings {
     /// engine's historical timing.
     #[serde(default = "defaults::default_sharing_violation_base_delay_ms")]
     pub sharing_violation_base_delay_ms: u64,
+    /// FFM-M23 — what to do when a source file changes underneath a
+    /// copy. Defaults to [`SourceStabilityChoice::Warn`]: the torn copy
+    /// is reported and marked, but not deleted or retried behind the
+    /// user's back.
+    #[serde(default)]
+    pub source_stability: SourceStabilityChoice,
+}
+
+/// FFM-M23 — policy for a source file that changed while it was being
+/// read.
+///
+/// Verify-against-a-running-source cannot see this: re-hashing the
+/// source after the copy compares the *new* source against the
+/// destination, so a file rewritten mid-read hashes equal to whatever
+/// landed and the torn copy passes. Only re-stat'ing size + mtime
+/// across the read pass closes that window.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum SourceStabilityChoice {
+    /// Do not re-stat. Fastest; matches pre-FFM-M23 behaviour.
+    Off,
+    /// Record the mismatch, mark the item, and keep going.
+    #[default]
+    Warn,
+    /// Copy the file again once, then fall back to `Warn` if the
+    /// source is still moving.
+    Recopy,
+    /// Fail the item with a distinct error class.
+    Fail,
+}
+
+impl SourceStabilityChoice {
+    /// Stable wire name — used by the IPC DTO and the settings TOML.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Off => "off",
+            Self::Warn => "warn",
+            Self::Recopy => "recopy",
+            Self::Fail => "fail",
+        }
+    }
+
+    /// Parse a wire name; anything unknown falls back to the default
+    /// rather than erroring, matching how every other choice enum here
+    /// treats a value written by a newer build.
+    pub fn from_wire(s: &str) -> Self {
+        match s {
+            "off" => Self::Off,
+            "recopy" => Self::Recopy,
+            "fail" => Self::Fail,
+            _ => Self::Warn,
+        }
+    }
 }
 
 impl Default for TransferSettings {
@@ -570,6 +765,7 @@ impl Default for TransferSettings {
             paranoid_verify: false,
             sharing_violation_retries: defaults::default_sharing_violation_retries(),
             sharing_violation_base_delay_ms: defaults::default_sharing_violation_base_delay_ms(),
+            source_stability: SourceStabilityChoice::default(),
         }
     }
 }
@@ -2427,6 +2623,29 @@ pub struct QueueSettings {
     /// Tray destination targets. Order is significant — the tray menu
     /// renders them top-to-bottom in the same order. Empty by default.
     pub pinned_destinations: Vec<PinnedDestination>,
+    /// FFM-M18 — user overrides for physical-drive detection. Empty by
+    /// default, so routing behaves exactly as the probe says until the
+    /// user declares a group.
+    pub affinity_groups: Vec<AffinityGroupSetting>,
+}
+
+/// FFM-M18 — one persisted queue-affinity group.
+///
+/// A group is a **name plus a set of path prefixes that share one
+/// queue**. Two prefixes in one group force-merges them (the
+/// VHDX-on-`C:`-mounted-as-`T:` case); one prefix per group
+/// force-splits paths the probe wrongly lumped together.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(default, rename_all = "kebab-case")]
+pub struct AffinityGroupSetting {
+    /// Queue name shown in the tab strip.
+    pub name: String,
+    /// Path prefixes claimed by this group. Longest match wins.
+    pub prefixes: Vec<String>,
+    /// Worker count for this queue. `0` inherits the global
+    /// `transfer.concurrency`; `1` is HDD-mode (serialize to avoid
+    /// seek thrash).
+    pub workers: u32,
 }
 
 /// A single "drop here" target shown under the tray icon.
@@ -3119,6 +3338,144 @@ log-level = "debug"
         assert!(
             dumped.contains(r#"otel-endpoint = "http://localhost:4318/v1/traces""#),
             "{dumped}"
+        );
+    }
+
+    /// A `Settings` whose every **backend-owned** group carries a value
+    /// no default would produce. Used to prove the wholesale-replace
+    /// carry-over covers all of them.
+    fn settings_with_every_backend_owned_group_populated() -> Settings {
+        let mut s = Settings::default();
+        s.eula.accepted_version = Some("2026-07-31".to_string());
+        s.queue.pinned_destinations.push(PinnedDestination {
+            label: "Inbox".to_string(),
+            path: "/inbox".to_string(),
+        });
+        s.queue.affinity_groups.push(AffinityGroupSetting {
+            name: "One spindle".to_string(),
+            prefixes: vec!["/drive/A".to_string()],
+            workers: 1,
+        });
+        s.repository.repos.push(RepoEntry {
+            id: "r1".to_string(),
+            name: "Archive".to_string(),
+            path: "/repo".to_string(),
+            created_at_ms: 1,
+        });
+        s.repository.active = "r1".to_string();
+        s.remotes.default_backend = "s3-main".to_string();
+        s.conflict_profiles.active = Some("archive".to_string());
+        s.sync.pairs.push(SyncPairConfig {
+            id: "p1".to_string(),
+            label: "Documents ↔ NAS".to_string(),
+            ..SyncPairConfig::default()
+        });
+        s.backup.sources.push(SourceConfig {
+            id: "b1".to_string(),
+            label: "Photos".to_string(),
+            ..SourceConfig::default()
+        });
+        s.chunk_store.location_override = "/chunks".to_string();
+        s.notifications.on_success = !s.notifications.on_success;
+        s.drop_stack.always_on_top = !s.drop_stack.always_on_top;
+        s.schedules.entries.push(ScheduleEntry {
+            id: "nightly".to_string(),
+            label: "Nightly".to_string(),
+            ..ScheduleEntry::default()
+        });
+        s.favorites.entries.push(FavoriteEntry {
+            id: "f1".to_string(),
+            label: "Photos".to_string(),
+            ..FavoriteEntry::default()
+        });
+        s
+    }
+
+    /// The Settings modal round-trips through a DTO that models only
+    /// the groups it renders, and rebuilds the rest from
+    /// `Settings::default()`. Without the carry-over, an ordinary
+    /// "Save" in the modal silently discards the user's pinned
+    /// destinations, repositories, remotes, sync pairs, schedules, and
+    /// favorites.
+    ///
+    /// This is the regression guard: it simulates the wholesale replace
+    /// and asserts every backend-owned group survived. Adding a new
+    /// backend-owned group to `Settings` without adding it to
+    /// `carry_backend_owned_from` fails here as soon as it is added to
+    /// the fixture above.
+    #[test]
+    fn backend_owned_groups_survive_a_wholesale_replace() {
+        let prev = settings_with_every_backend_owned_group_populated();
+
+        // What `SettingsDto::into_settings()` produces: a fresh default
+        // carrying only the modal's own fields.
+        let mut next = Settings::default();
+        next.general.language = "fr".to_string();
+        next.carry_backend_owned_from(&prev);
+
+        assert_eq!(next.general.language, "fr", "the modal's edit must land");
+        assert_eq!(next.eula, prev.eula);
+        assert_eq!(next.queue, prev.queue);
+        assert_eq!(next.repository, prev.repository);
+        assert_eq!(next.remotes, prev.remotes);
+        assert_eq!(next.conflict_profiles, prev.conflict_profiles);
+        assert_eq!(next.sync, prev.sync);
+        assert_eq!(next.backup, prev.backup);
+        assert_eq!(next.chunk_store, prev.chunk_store);
+        assert_eq!(next.notifications, prev.notifications);
+        assert_eq!(next.drop_stack, prev.drop_stack);
+        assert_eq!(next.schedules, prev.schedules);
+        assert_eq!(next.favorites, prev.favorites);
+    }
+
+    #[test]
+    fn the_carry_over_never_touches_a_dto_owned_group() {
+        // The carry-over must not reach beyond backend-owned state and
+        // resurrect a preference the user just changed in the modal.
+        let mut prev = Settings::default();
+        prev.transfer.buffer_size_bytes = 4096;
+        prev.general.theme = ThemePreference::Dark;
+
+        let mut next = Settings::default();
+        next.transfer.buffer_size_bytes = 1 << 20;
+        next.general.theme = ThemePreference::Light;
+        next.carry_backend_owned_from(&prev);
+
+        assert_eq!(next.transfer.buffer_size_bytes, 1 << 20);
+        assert_eq!(next.general.theme, ThemePreference::Light);
+    }
+
+    #[test]
+    fn build_3_groups_round_trip_through_toml() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("settings.toml");
+        let s = settings_with_every_backend_owned_group_populated();
+        s.save_to(&path).unwrap();
+        let back = Settings::load_from(&path).unwrap();
+        assert_eq!(back.schedules, s.schedules);
+        assert_eq!(back.favorites, s.favorites);
+        assert_eq!(back.queue.affinity_groups, s.queue.affinity_groups);
+    }
+
+    #[test]
+    fn source_stability_defaults_to_warn_and_round_trips() {
+        assert_eq!(
+            Settings::default().transfer.source_stability,
+            SourceStabilityChoice::Warn
+        );
+        for choice in [
+            SourceStabilityChoice::Off,
+            SourceStabilityChoice::Warn,
+            SourceStabilityChoice::Recopy,
+            SourceStabilityChoice::Fail,
+        ] {
+            assert_eq!(SourceStabilityChoice::from_wire(choice.as_str()), choice);
+        }
+        // An unknown wire value from a newer build degrades to the
+        // default rather than erroring the whole settings load.
+        assert_eq!(
+            SourceStabilityChoice::from_wire("teleport"),
+            SourceStabilityChoice::Warn
         );
     }
 }

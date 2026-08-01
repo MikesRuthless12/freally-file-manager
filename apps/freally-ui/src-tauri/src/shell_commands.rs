@@ -77,6 +77,14 @@ fn shellext_dll_path() -> Option<std::path::PathBuf> {
 #[cfg(windows)]
 pub fn sync_context_menu_registration(enabled: bool) -> Result<(), String> {
     use freally_shellext::registry::{self, InstallScope};
+    // FFM-M21 — a portable install must not write its absolute path
+    // into HKCU. The stick gets unplugged and the host is left with
+    // context-menu entries pointing at a drive letter that now belongs
+    // to something else. Enabling is refused; disabling still runs, so
+    // a user who went portable *after* registering can still clean up.
+    if enabled && !freally_settings::portable::allows_os_integration() {
+        return Err("err-shell-portable".to_string());
+    }
     if enabled {
         let dll = shellext_dll_path()
             .ok_or("the Freally shell-extension DLL was not found next to the app")?;

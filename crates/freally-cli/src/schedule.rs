@@ -18,9 +18,8 @@
 //! actual installation is a follow-up: writing into a user's
 //! systemd / launchd directory means we're carrying a destructive
 //! action's blast radius (per the CLAUDE.md "executing actions
-//! with care" rule), so by default we render only and let the
-//! user paste the stanza in. The `--install` flag opts into the
-//! write.
+//! with care" rule), so we render only and let the user paste the
+//! stanza in. `freally schedule` never writes to disk.
 //!
 //! ## Threat model
 //!
@@ -116,8 +115,11 @@ pub enum ScheduleHostOs {
 
 /// Output of [`render_schedule`]. The `body` is the on-disk
 /// stanza the user installs; `suggested_install_path` is where it
-/// belongs on the chosen OS. The CLI prints both; the user opts
-/// in to actual installation via `--install`.
+/// belongs on the chosen OS. The Linux body carries *two* unit
+/// files (service + timer), so its suggested path names the
+/// containing directory and each stanza's own `# =====` marker
+/// names its file. The CLI prints both; installation is the
+/// user's own step.
 #[derive(Debug, Clone)]
 pub struct RenderedSchedule {
     pub host_os: ScheduleHostOs,
@@ -216,9 +218,10 @@ pub fn render_schedule(
         ScheduleHostOs::MacOs => {
             PathBuf::from("~/Library/LaunchAgents/app.freally.scheduled-job.plist")
         }
-        ScheduleHostOs::Linux => {
-            PathBuf::from("~/.config/systemd/user/freally-scheduled-job.timer")
-        }
+        // Two unit files, so point at the directory rather than one
+        // of them — writing the whole body into a single `.timer`
+        // would produce a unit systemd refuses to load.
+        ScheduleHostOs::Linux => PathBuf::from("~/.config/systemd/user/"),
     };
     Ok(RenderedSchedule {
         host_os: host,

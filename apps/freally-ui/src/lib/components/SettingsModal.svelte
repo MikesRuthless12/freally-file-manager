@@ -23,6 +23,7 @@
 -->
 <script lang="ts">
   import { save as saveDialog, open as openDialog } from "@tauri-apps/plugin-dialog";
+  import { escapeToClose } from "../a11y";
   import { invoke } from "@tauri-apps/api/core";
 
   import Icon from "../icons/Icon.svelte";
@@ -31,6 +32,13 @@
   import RemotesTab from "./RemotesTab.svelte";
   import SanitizeTab from "./SanitizeTab.svelte";
   import PluginsTab from "./PluginsTab.svelte";
+  // Build 3 — FFM-M17 / M18 / M20 each get their own tab; they are
+  // list editors, not single toggles, so folding them into an existing
+  // pane would bury them.
+  import SchedulerPanel from "./SchedulerPanel.svelte";
+  import QueueAffinityPanel from "./QueueAffinityPanel.svelte";
+  import FavoritesPanel from "./FavoritesPanel.svelte";
+  import { errorText } from "../errors";
   import { i18nVersion, locale, setLocale, t } from "../i18n";
   import {
     closeSettings,
@@ -59,7 +67,12 @@
     updateSettings,
     updaterCheckNow,
     updaterDismissVersion,
+    // Build 3 — FFM-M21 portable status, FFM-M24 launch at login.
+    autostartSet,
+    autostartStatus,
+    portableStatus,
   } from "../ipc";
+  import type { AutostartStatusDto, PortableStatusDto } from "../types";
   import type { CopyInterceptStatus } from "../ipc";
   import type { ServerStatusDto } from "../ipc";
   import type {
@@ -86,6 +99,9 @@
     | "sanitize"
     | "plugins"
     | "server"
+    | "schedules"
+    | "queues"
+    | "favorites"
     | "profiles";
 
   let activeTab: TabId = $state("general");
@@ -93,6 +109,38 @@
   let profiles = $state<ProfileInfoDto[]>([]);
   let profileNameInput = $state("");
   let busy = $state(false);
+
+  // FFM-M21 / FFM-M24 — both read live OS state, not the persisted
+  // preference, so the pane tells the truth after a login item was
+  // removed by hand or the app was launched from a portable stick.
+  let portable = $state<PortableStatusDto | null>(null);
+  let autostart = $state<AutostartStatusDto | null>(null);
+  let autostartError = $state("");
+
+  async function loadSystemStatus() {
+    try {
+      [portable, autostart] = await Promise.all([
+        portableStatus(),
+        autostartStatus(),
+      ]);
+    } catch (e) {
+      autostartError = errorText(e);
+    }
+  }
+
+  async function onAutostartToggle(event: Event) {
+    const wanted = (event.currentTarget as HTMLInputElement).checked;
+    autostartError = "";
+    try {
+      autostart = await autostartSet(wanted);
+      if (settings !== null) settings.general.startWithOs = autostart.enabled;
+    } catch (e) {
+      autostartError = errorText(e);
+      // Re-read so the checkbox snaps back to what the OS actually
+      // holds rather than showing a state we failed to reach.
+      autostart = await autostartStatus();
+    }
+  }
 
   // Native self-name (endonym) for each shipped locale — shown verbatim in
   // the picker so a user finds their language regardless of the active UI
@@ -176,7 +224,16 @@
   async function refresh() {
     busy = true;
     try {
-      const [s, p] = await Promise.all([getSettings(), listProfiles()]);
+      // FFM-M21 / FFM-M24 — the two status probes are independent of
+      // the settings read and of each other, so all four go out at
+      // once. The General pane then paints the portable banner and the
+      // real autostart state on first render rather than flashing a
+      // wrong checkbox.
+      const [s, p] = await Promise.all([
+        getSettings(),
+        listProfiles(),
+        loadSystemStatus(),
+      ]);
       settings = s;
       profiles = p;
     } catch (e) {
@@ -364,13 +421,6 @@
       advanced: { ...settings.advanced, errorPolicy: next },
     };
     void pushSettings();
-  }
-
-  function onKeydown(e: KeyboardEvent) {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      closeSettings();
-    }
   }
 
   // ---- Phase 45.6 — tray-pinned destinations ----------------------
@@ -606,12 +656,12 @@
 </script>
 
 {#if $settingsOpen}
-  <div
-    class="backdrop"
-    role="presentation"
-    onclick={closeSettings}
-    onkeydown={onKeydown}
-  >
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
+  <!-- Click-outside-to-dismiss. The keyboard equivalent is Escape,
+       registered at the window level by `use:escapeToClose` on the
+       dialog below, so it fires wherever focus happens to be — which
+       an `onkeydown` on this element could not do. -->
+  <div class="backdrop" role="presentation" onclick={closeSettings}>
     {#key $i18nVersion}
     <div
       class="modal"
@@ -619,8 +669,8 @@
       tabindex="-1"
       aria-modal="true"
       aria-labelledby="settings-title"
+      use:escapeToClose={closeSettings}
       onclick={(e) => e.stopPropagation()}
-      onkeydown={(e) => e.stopPropagation()}
     >
       <header>
         <h2 id="settings-title">{t("settings-title")}</h2>
@@ -639,7 +689,7 @@
       {:else}
         <div class="body">
           <div class="tabs" role="tablist" aria-label={t("settings-title")}>
-            {#each [["general", "settings-tab-general"], ["transfer", "settings-tab-transfer"], ["filters", "settings-tab-filters"], ["shell", "settings-tab-shell"], ["secure-delete", "settings-tab-secure-delete"], ["advanced", "settings-tab-advanced"], ["updater", "settings-tab-updater"], ["network", "settings-tab-network"], ["power", "settings-tab-power"], ["remotes", "settings-tab-remotes"], ["mobile", "settings-tab-mobile"], ["provenance", "provenance-settings-heading"], ["sanitize", "sanitize-heading"], ["plugins", "settings-tab-plugins"], ["server", "settings-tab-server"], ["profiles", "settings-tab-profiles"]] as const as [id, key] (id)}
+            {#each [["general", "settings-tab-general"], ["transfer", "settings-tab-transfer"], ["filters", "settings-tab-filters"], ["shell", "settings-tab-shell"], ["secure-delete", "settings-tab-secure-delete"], ["advanced", "settings-tab-advanced"], ["updater", "settings-tab-updater"], ["network", "settings-tab-network"], ["power", "settings-tab-power"], ["remotes", "settings-tab-remotes"], ["mobile", "settings-tab-mobile"], ["provenance", "provenance-settings-heading"], ["sanitize", "sanitize-heading"], ["plugins", "settings-tab-plugins"], ["server", "settings-tab-server"], ["schedules", "settings-tab-schedules"], ["queues", "settings-tab-queues"], ["favorites", "settings-tab-favorites"], ["profiles", "settings-tab-profiles"]] as const as [id, key] (id)}
               <button
                 type="button"
                 role="tab"
@@ -676,14 +726,40 @@
                 </select>
               </label>
 
+              <!-- FFM-M24 — this used to be a persisted preference with
+                   nothing behind it. It now registers a real login item
+                   through `autostart_set`, and reports the OS's own
+                   state rather than the stored flag. -->
               <label class="row check">
                 <input
                   type="checkbox"
-                  bind:checked={settings.general.startWithOs}
-                  onchange={pushSettings}
+                  checked={autostart?.enabled ?? settings.general.startWithOs}
+                  disabled={autostart !== null && !autostart.supported}
+                  onchange={onAutostartToggle}
                 />
-                <span class="label">{t("settings-start-with-os")}</span>
+                <span class="label">{t("settings-autostart-label")}</span>
               </label>
+              <p class="hint">{t("settings-autostart-description")}</p>
+              {#if autostart !== null && !autostart.supported && autostart.reasonKey}
+                <p class="hint warn" role="status">{t(autostart.reasonKey)}</p>
+              {/if}
+              {#if autostartError}
+                <p class="hint warn" role="alert">{autostartError}</p>
+              {/if}
+
+              <!-- FFM-M21 — portable installs write beside the binary
+                   and refuse the OS integrations that would outlive the
+                   stick. Say so plainly instead of leaving the user to
+                   wonder why toggles are disabled. -->
+              {#if portable?.portable}
+                <h4>{t("settings-portable-title")}</h4>
+                <p class="hint">
+                  {t("settings-portable-active", { path: portable.dataRoot })}
+                </p>
+                <p class="hint warn">
+                  {t("settings-portable-keychain-warning")}
+                </p>
+              {/if}
 
               <label class="row check">
                 <input
@@ -858,6 +934,33 @@
                 </label>
               {/if}
             {:else if activeTab === "transfer"}
+              <!-- FFM-M23 — verify re-hashes the *current* source, so a
+                   file rewritten mid-read verifies green. This is the
+                   only control that catches it. -->
+              <label class="row">
+                <span class="label">
+                  {t("settings-source-stability-label")}
+                </span>
+                <select
+                  bind:value={settings.transfer.sourceStability}
+                  onchange={pushSettings}
+                >
+                  <option value="off">
+                    {t("settings-source-stability-off")}
+                  </option>
+                  <option value="warn">
+                    {t("settings-source-stability-warn")}
+                  </option>
+                  <option value="recopy">
+                    {t("settings-source-stability-recopy")}
+                  </option>
+                  <option value="fail">
+                    {t("settings-source-stability-fail")}
+                  </option>
+                </select>
+              </label>
+              <p class="hint">{t("settings-source-stability-description")}</p>
+
               <label class="row">
                 <span class="label">{t("settings-buffer-size")}</span>
                 <select
@@ -1995,6 +2098,12 @@
                   <span class="muted">{serverState.metricsUrl}</span>
                 </div>
               {/if}
+            {:else if activeTab === "schedules"}
+              <SchedulerPanel />
+            {:else if activeTab === "queues"}
+              <QueueAffinityPanel />
+            {:else if activeTab === "favorites"}
+              <FavoritesPanel />
             {:else if activeTab === "profiles"}
               <p class="hint">{t("settings-profiles-hint")}</p>
               <div class="row">

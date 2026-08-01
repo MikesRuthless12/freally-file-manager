@@ -25,7 +25,7 @@
 use std::sync::atomic::Ordering;
 
 use freally_core::{JobKind, JobState, QueueId, QueueRegistry, QueueRegistryEvent};
-use freally_settings::{PinnedDestination, Settings};
+use freally_settings::{AffinityGroupSetting, PinnedDestination};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Runtime};
 use tokio::sync::broadcast::error::RecvError;
@@ -372,7 +372,7 @@ pub fn queue_pin_destination_impl(
         }
         s.queue.pinned_destinations.push(entry);
     }
-    save_settings(state, &s)?;
+    state.persist_settings(&s)?;
     Ok(s.queue
         .pinned_destinations
         .iter()
@@ -408,7 +408,7 @@ pub fn queue_unpin_destination_impl(
     // than every subsequent IPC call returning a stuck error.
     let mut s = state.settings.write().unwrap_or_else(|p| p.into_inner());
     s.queue.pinned_destinations.retain(|p| p != &target);
-    save_settings(state, &s)?;
+    state.persist_settings(&s)?;
     Ok(s.queue
         .pinned_destinations
         .iter()
@@ -432,14 +432,248 @@ fn job_kind_from_wire(s: &str) -> Result<JobKind, String> {
     })
 }
 
-fn save_settings(state: &AppState, s: &Settings) -> Result<(), String> {
-    let path = state.settings_path.as_path();
-    if path.as_os_str().is_empty() {
-        // Tests construct AppState with an empty path; skip the
-        // persistence step so they don't write into the OS config dir.
-        return Ok(());
+// =====================================================================
+// FFM-M18 — queue-affinity + concurrency overrides
+// =====================================================================
+
+/// Defensive caps: each group spawns a queue and each prefix is
+/// consulted on every route, so an unbounded list from a forged
+/// renderer call would be a routing-path DoS.
+const MAX_AFFINITY_GROUPS: usize = 32;
+const MAX_AFFINITY_PREFIXES: usize = 32;
+const MAX_AFFINITY_NAME_CHARS: usize = 48;
+/// The engine's own tree-concurrency ceiling; mirrors
+/// `ConcurrencyChoice::resolved`'s clamp.
+const MAX_QUEUE_WORKERS: u32 = 16;
+
+/// Wire shape for one affinity group.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AffinityGroupDto {
+    /// Queue name shown in the tab strip.
+    pub name: String,
+    /// Path prefixes claimed by this group.
+    pub prefixes: Vec<String>,
+    /// Worker count; `0` inherits the global setting, `1` is HDD-mode.
+    pub workers: u32,
+}
+
+impl From<&AffinityGroupSetting> for AffinityGroupDto {
+    fn from(g: &AffinityGroupSetting) -> Self {
+        Self {
+            name: g.name.clone(),
+            prefixes: g.prefixes.clone(),
+            workers: g.workers,
+        }
     }
-    s.save_to(path).map_err(|e| format!("save settings: {e}"))
+}
+
+/// Validate a list of groups from the renderer.
+///
+/// Every prefix goes through the standing Phase 17e IPC gate, so a
+/// traversal-laden or U+FFFD-poisoned prefix can never end up steering
+/// which physical queue a copy lands in.
+pub fn validate_affinity_groups(
+    dtos: &[AffinityGroupDto],
+) -> Result<Vec<AffinityGroupSetting>, String> {
+    if dtos.len() > MAX_AFFINITY_GROUPS {
+        return Err("err-affinity-too-many".to_string());
+    }
+    let mut out = Vec::with_capacity(dtos.len());
+    let mut seen: Vec<String> = Vec::new();
+    for dto in dtos {
+        let name = dto.name.trim();
+        if name.is_empty() || name.chars().count() > MAX_AFFINITY_NAME_CHARS {
+            return Err("err-affinity-name-invalid".to_string());
+        }
+        if pin_string_has_bad_chars(name) {
+            return Err("err-affinity-name-invalid".to_string());
+        }
+        if seen.iter().any(|s| s == name) {
+            // Bucket ids are derived from the name, so two groups
+            // sharing one would silently merge and the user would see
+            // an override they never asked for.
+            return Err("err-affinity-name-duplicate".to_string());
+        }
+        seen.push(name.to_string());
+
+        if dto.prefixes.is_empty() || dto.prefixes.len() > MAX_AFFINITY_PREFIXES {
+            return Err("err-affinity-prefixes-invalid".to_string());
+        }
+        let mut prefixes = Vec::with_capacity(dto.prefixes.len());
+        for raw in &dto.prefixes {
+            let p = validate_ipc_path(raw).map_err(err_string)?;
+            prefixes.push(p.to_string_lossy().into_owned());
+        }
+        if dto.workers > MAX_QUEUE_WORKERS {
+            return Err("err-affinity-workers-invalid".to_string());
+        }
+        out.push(AffinityGroupSetting {
+            name: name.to_string(),
+            prefixes,
+            workers: dto.workers,
+        });
+    }
+    Ok(out)
+}
+
+/// Translate persisted groups into the engine's shape.
+pub fn to_core_groups(groups: &[AffinityGroupSetting]) -> Vec<freally_core::AffinityGroup> {
+    groups
+        .iter()
+        .map(|g| freally_core::AffinityGroup {
+            name: g.name.clone(),
+            prefixes: g.prefixes.iter().map(std::path::PathBuf::from).collect(),
+            // `0` means "inherit the global setting"; the engine's
+            // `Option` says the same thing without a magic number.
+            workers: (g.workers > 0).then_some(g.workers),
+        })
+        .collect()
+}
+
+/// `queue_get_affinity()` — the groups currently in force.
+#[tauri::command]
+pub fn queue_get_affinity(state: tauri::State<'_, AppState>) -> Vec<AffinityGroupDto> {
+    state
+        .settings_snapshot()
+        .queue
+        .affinity_groups
+        .iter()
+        .map(AffinityGroupDto::from)
+        .collect()
+}
+
+/// `queue_set_affinity(groups)` — replace the whole list, persist it,
+/// and apply it to the live registry.
+#[tauri::command]
+pub fn queue_set_affinity(
+    state: tauri::State<'_, AppState>,
+    groups: Vec<AffinityGroupDto>,
+) -> Result<Vec<AffinityGroupDto>, String> {
+    queue_set_affinity_impl(state.inner(), &groups)
+}
+
+/// Implementation of [`queue_set_affinity`]. Public for tests.
+pub fn queue_set_affinity_impl(
+    state: &AppState,
+    groups: &[AffinityGroupDto],
+) -> Result<Vec<AffinityGroupDto>, String> {
+    let validated = validate_affinity_groups(groups)?;
+    state.queues.set_affinity_groups(to_core_groups(&validated));
+    let mut s = state.settings.write().unwrap_or_else(|p| p.into_inner());
+    s.queue.affinity_groups = validated;
+    state.persist_settings(&s)?;
+    Ok(s.queue
+        .affinity_groups
+        .iter()
+        .map(AffinityGroupDto::from)
+        .collect())
+}
+
+/// Push the persisted affinity groups into the live registry.
+///
+/// Called at startup — without it, a restart would silently drop every
+/// override until the user reopened the Queue settings pane.
+pub fn apply_persisted_affinity(state: &AppState) {
+    let groups = state.settings_snapshot().queue.affinity_groups;
+    state.queues.set_affinity_groups(to_core_groups(&groups));
+}
+
+// =====================================================================
+// FFM-M19 — per-job priority, reorder, and queue move
+// =====================================================================
+
+/// `queue_reorder_job(queue_id, job_id, new_index)` — drag-to-reorder
+/// within one queue.
+#[tauri::command]
+pub fn queue_reorder_job(
+    state: tauri::State<'_, AppState>,
+    queue_id: u64,
+    job_id: u64,
+    new_index: usize,
+) -> Result<(), String> {
+    let queue = state
+        .queues
+        .get(QueueId::from_u64(queue_id))
+        .ok_or("err-queue-unknown")?;
+    queue.reorder(freally_core::JobId::from_u64(job_id), new_index);
+    Ok(())
+}
+
+/// `queue_run_next(queue_id, job_id)` — move a job to the head of the
+/// pending section.
+#[tauri::command]
+pub fn queue_run_next(
+    state: tauri::State<'_, AppState>,
+    queue_id: u64,
+    job_id: u64,
+) -> Result<(), String> {
+    let queue = state
+        .queues
+        .get(QueueId::from_u64(queue_id))
+        .ok_or("err-queue-unknown")?;
+    queue.run_next(freally_core::JobId::from_u64(job_id));
+    Ok(())
+}
+
+/// `queue_move_job(job_id, dst_queue_id)` — move one pending job to a
+/// different drive queue.
+#[tauri::command]
+pub fn queue_move_job(
+    state: tauri::State<'_, AppState>,
+    job_id: u64,
+    dst_queue_id: u64,
+) -> Result<(), String> {
+    state
+        .queues
+        .move_job_to_queue(
+            freally_core::JobId::from_u64(job_id),
+            QueueId::from_u64(dst_queue_id),
+        )
+        .map_err(|e| e.to_string())
+}
+
+/// `queue_boost_job(queue_id, job_id)` — pause every running sibling so
+/// this job gets the bandwidth. Returns the ids paused, which the
+/// frontend hands back to [`queue_clear_boost`] so exactly those resume.
+#[tauri::command]
+pub fn queue_boost_job(
+    state: tauri::State<'_, AppState>,
+    queue_id: u64,
+    job_id: u64,
+) -> Result<Vec<u64>, String> {
+    let queue = state
+        .queues
+        .get(QueueId::from_u64(queue_id))
+        .ok_or("err-queue-unknown")?;
+    Ok(queue
+        .boost_job(freally_core::JobId::from_u64(job_id))
+        .into_iter()
+        .map(|id| id.as_u64())
+        .collect())
+}
+
+/// `queue_clear_boost(queue_id, paused)` — resume exactly the jobs a
+/// boost paused.
+///
+/// Takes the id list rather than "resume everything" so a job the user
+/// had paused by hand before the boost stays paused.
+#[tauri::command]
+pub fn queue_clear_boost(
+    state: tauri::State<'_, AppState>,
+    queue_id: u64,
+    paused: Vec<u64>,
+) -> Result<(), String> {
+    let queue = state
+        .queues
+        .get(QueueId::from_u64(queue_id))
+        .ok_or("err-queue-unknown")?;
+    let ids: Vec<freally_core::JobId> = paused
+        .into_iter()
+        .map(freally_core::JobId::from_u64)
+        .collect();
+    queue.clear_boost(&ids);
+    Ok(())
 }
 
 /// Subscribe to the registry's broadcast channel and forward every

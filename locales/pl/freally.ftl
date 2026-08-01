@@ -1,5 +1,5 @@
-app-name = Freally File Manager v0.19.85
-window-title = Freally File Manager v0.19.85
+app-name = Freally File Manager v0.22.0
+window-title = Freally File Manager v0.22.0
 shred-ssd-advisory = Ostrzeżenie: ten cel znajduje się na dysku SSD. Wielokrotne nadpisywanie nie czyści wiarygodnie pamięci flash, ponieważ wyrównywanie zużycia i nadmiarowa pojemność przenoszą dane spod logicznego adresu bloku. W przypadku nośników półprzewodnikowych użyj ATA SECURE ERASE, NVMe Format z bezpiecznym kasowaniem lub szyfrowania całego dysku z usunięciem klucza.
 
 # Global aggregate states (header pill)
@@ -1521,3 +1521,114 @@ history-elevate-batch-hint = Ponów wszystkie ścieżki tego zadania z odmową u
 elevate-batch-none = Brak ścieżek z odmową uprawnień do podniesienia
 elevate-batch-confirm = Udzielić jednego podniesienia uprawnień dla { $count } ścieżek? ({ $skipped } innych błędów to nie naprawi.) Pomocnik skopiuje te ścieżki:
 elevate-batch-toast = Podniesiona partia — skopiowano { $copied }, niepowodzeń { $failed }
+
+# ===== Build 3 (FFM-M17..M24) =====
+
+# FFM-M23
+err-source-changed = Plik źródłowy zmienił się podczas odczytu
+job-source-changed = Źródło zmieniło się podczas kopiowania
+settings-source-stability-label = Gdy plik źródłowy zmieni się podczas kopiowania
+settings-source-stability-description = Ponownie sprawdza rozmiar i datę każdego źródła po odczycie. Sama weryfikacja tego nie wykryje.
+settings-source-stability-off = Nie sprawdzaj
+settings-source-stability-warn = Ostrzeż i oznacz plik
+settings-source-stability-recopy = Skopiuj plik ponownie
+settings-source-stability-fail = Oznacz plik jako nieudany
+
+# FFM-M17
+err-schedule-id-invalid = Nieprawidłowy identyfikator harmonogramu
+err-schedule-label-invalid = Nieprawidłowa nazwa harmonogramu
+err-schedule-verb-invalid = Harmonogram może tylko kopiować lub przenosić
+err-schedule-trigger-invalid = Nieprawidłowa godzina harmonogramu
+err-schedule-too-many = Zbyt wiele zaplanowanych zadań
+err-schedule-install-failed = Harmonogram systemowy odrzucił to zadanie
+err-schedule-remove-failed = Harmonogram systemowy nie mógł usunąć tego zadania
+err-schedule-no-program = Nie udało się ustalić lokalizacji aplikacji
+settings-schedules-title = Zaplanowane zadania
+settings-schedules-empty = Brak zaplanowanych zadań.
+settings-schedule-add = Dodaj harmonogram
+settings-schedule-trigger-hourly = Co godzinę
+settings-schedule-trigger-daily = Codziennie
+settings-schedule-trigger-weekly = Co tydzień
+settings-schedule-next-run = Następne uruchomienie
+settings-schedule-missed = Uruchom pominięte zadanie tak szybko, jak to możliwe
+settings-schedule-missed-unsupported = Ten system zawsze uruchamia pominięte zadanie po wybudzeniu.
+settings-schedule-not-installed = Brak w harmonogramie systemowym
+
+# FFM-M18
+err-affinity-too-many = Zbyt wiele grup kolejek dysków
+err-affinity-name-invalid = Nieprawidłowa nazwa grupy
+err-affinity-name-duplicate = Inna grupa już używa tej nazwy
+err-affinity-prefixes-invalid = Grupa wymaga co najmniej jednego folderu
+err-affinity-workers-invalid = Nieprawidłowa liczba procesów
+settings-affinity-title = Kolejki dysków
+settings-affinity-description = Zdecyduj, które lokalizacje docelowe dzielą jedną kolejkę transferu, gdy wykrywanie dysków się myli.
+settings-affinity-add = Dodaj grupę
+settings-affinity-workers = Procesy
+settings-affinity-workers-auto = Automatycznie
+
+# FFM-M19
+err-queue-unknown = Nieznana kolejka
+action-run-next = Uruchom jako następne
+action-boost = Priorytetyzuj
+action-clear-boost = Zakończ priorytetyzację
+action-move-to-queue = Przenieś do kolejki
+
+# FFM-M20
+err-favorite-label-invalid = Nieprawidłowa nazwa ulubionego
+err-favorite-kind-invalid = Nieprawidłowy typ ulubionego
+err-favorite-hotkey-invalid = Nieprawidłowy skrót
+err-favorite-too-many = Zbyt wiele ulubionych
+settings-favorites-title = Ulubione
+settings-favorites-empty = Brak ulubionych.
+settings-favorites-add = Dodaj ulubione
+favorites-recent-title = Ostatnie pary
+favorites-kind-source = Źródło
+favorites-kind-destination = Cel
+favorites-kind-pair = Para
+
+# FFM-M21
+err-shell-portable = Integracja z powłoką jest niedostępna w trybie przenośnym
+settings-portable-title = Tryb przenośny
+settings-portable-active = Tryb przenośny jest aktywny. Ustawienia, historia i dzienniki są przechowywane w { $path }.
+settings-portable-keychain-warning = Ostrzeżenie: zapisane poświadczenia chmury nadal trafiają do pęku kluczy systemu tego komputera, a nie na dysk przenośny — pozostają na tej maszynie po jego odłączeniu. Usuń dodane zdalne lokalizacje przed oddaniem komputera.
+
+# FFM-M24
+err-autostart-portable = Uruchamianie przy logowaniu jest niedostępne w trybie przenośnym
+err-autostart-failed = Nie udało się zmienić uruchamiania przy logowaniu
+settings-autostart-label = Uruchamiaj Freally przy logowaniu
+settings-autostart-description = Uruchamia się zminimalizowany w zasobniku, aby integracja z powłoką, skróty, monitory i harmonogramy działały od chwili zalogowania.
+settings-autostart-unavailable-portable = Niedostępne w trybie przenośnym — wpis uruchamiania wskazywałby na ten dysk wymienny.
+settings-autostart-unavailable-platform = Uruchamianie przy logowaniu jest niedostępne w tym systemie.
+
+# ===== Build 3 panel labels =====
+
+action-edit = Edytuj
+action-remove = Usuń
+action-save = Zapisz
+action-browse = Przeglądaj…
+settings-tab-schedules = Harmonogramy
+settings-tab-queues = Kolejki dysków
+settings-tab-favorites = Ulubione
+settings-schedule-name = Nazwa
+settings-schedule-verb = Działanie
+settings-schedule-verb-copy = Kopiuj
+settings-schedule-verb-move = Przenieś
+settings-schedule-manifest = Lista plików
+settings-schedule-destination = Cel
+settings-schedule-when = Częstotliwość
+settings-schedule-weekday = Dzień tygodnia (0 = niedziela)
+settings-schedule-hour = Godzina
+settings-schedule-minute = Minuta
+settings-affinity-name = Nazwa grupy
+settings-affinity-paths = Foldery
+settings-affinity-path-add = Dodaj folder…
+settings-favorites-name = Nazwa
+settings-favorites-kind = Typ
+settings-favorites-path = Folder
+settings-favorites-destination = Cel
+settings-favorites-hotkey = Skrót
+
+# FFM-M22 — screen-reader queue announcement
+a11y-queue-status = { $running } w toku, { $done } ukończonych, { $failed } nieudanych
+
+err-favorite-id-invalid = Nieprawidłowy identyfikator ulubionego

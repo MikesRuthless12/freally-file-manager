@@ -1,5 +1,5 @@
-app-name = Freally File Manager v0.19.85
-window-title = Freally File Manager v0.19.85
+app-name = Freally File Manager v0.22.0
+window-title = Freally File Manager v0.22.0
 shred-ssd-advisory = Внимание: этот объект расположен на SSD. Многопроходная перезапись не обеспечивает надёжную очистку флеш-памяти, поскольку выравнивание износа и резервирование перемещают данные из-под логического адреса блока. Для твердотельных накопителей используйте ATA SECURE ERASE, NVMe Format с безопасным стиранием или полнодисковое шифрование с уничтожением ключа.
 
 # Global aggregate states (header pill)
@@ -1521,3 +1521,114 @@ history-elevate-batch-hint = Повторить все пути этого за�
 elevate-batch-none = Нет путей с отказом в доступе
 elevate-batch-confirm = Предоставить одно повышение прав для путей: { $count }? (Другие ошибки — { $skipped } — так не исправить.) Помощник скопирует эти пути:
 elevate-batch-toast = Пакет с повышением прав — скопировано { $copied }, ошибок { $failed }
+
+# ===== Build 3 (FFM-M17..M24) =====
+
+# FFM-M23
+err-source-changed = Исходный файл изменился во время чтения
+job-source-changed = Источник изменился во время копирования
+settings-source-stability-label = Если исходный файл меняется во время копирования
+settings-source-stability-description = Повторно проверяет размер и время изменения каждого источника после чтения. Одна лишь проверка это не обнаружит.
+settings-source-stability-off = Не проверять
+settings-source-stability-warn = Предупредить и отметить файл
+settings-source-stability-recopy = Скопировать файл заново
+settings-source-stability-fail = Считать файл неудачным
+
+# FFM-M17
+err-schedule-id-invalid = Недопустимый идентификатор расписания
+err-schedule-label-invalid = Недопустимое имя расписания
+err-schedule-verb-invalid = Расписание может только копировать или перемещать
+err-schedule-trigger-invalid = Недопустимое время расписания
+err-schedule-too-many = Слишком много запланированных задач
+err-schedule-install-failed = Планировщик системы отклонил это расписание
+err-schedule-remove-failed = Планировщику системы не удалось удалить это расписание
+err-schedule-no-program = Не удалось определить расположение приложения
+settings-schedules-title = Запланированные задачи
+settings-schedules-empty = Запланированных задач пока нет.
+settings-schedule-add = Добавить расписание
+settings-schedule-trigger-hourly = Каждый час
+settings-schedule-trigger-daily = Каждый день
+settings-schedule-trigger-weekly = Каждую неделю
+settings-schedule-next-run = Следующий запуск
+settings-schedule-missed = Выполнить пропущенный запуск при первой возможности
+settings-schedule-missed-unsupported = Эта система всегда выполняет пропущенный запуск после пробуждения.
+settings-schedule-not-installed = Отсутствует в планировщике системы
+
+# FFM-M18
+err-affinity-too-many = Слишком много групп очередей дисков
+err-affinity-name-invalid = Недопустимое имя группы
+err-affinity-name-duplicate = Другая группа уже использует это имя
+err-affinity-prefixes-invalid = Для группы нужна хотя бы одна папка
+err-affinity-workers-invalid = Недопустимое число рабочих процессов
+settings-affinity-title = Очереди дисков
+settings-affinity-description = Задайте вручную, какие приёмники делят одну очередь передачи, если определение дисков ошибается.
+settings-affinity-add = Добавить группу
+settings-affinity-workers = Рабочие процессы
+settings-affinity-workers-auto = Автоматически
+
+# FFM-M19
+err-queue-unknown = Неизвестная очередь
+action-run-next = Выполнить следующим
+action-boost = Повысить приоритет
+action-clear-boost = Снять приоритет
+action-move-to-queue = Переместить в очередь
+
+# FFM-M20
+err-favorite-label-invalid = Недопустимое имя избранного
+err-favorite-kind-invalid = Недопустимый тип избранного
+err-favorite-hotkey-invalid = Недопустимое сочетание клавиш
+err-favorite-too-many = Слишком много избранного
+settings-favorites-title = Избранное
+settings-favorites-empty = Избранного пока нет.
+settings-favorites-add = Добавить в избранное
+favorites-recent-title = Недавние пары
+favorites-kind-source = Источник
+favorites-kind-destination = Назначение
+favorites-kind-pair = Пара
+
+# FFM-M21
+err-shell-portable = Интеграция с оболочкой недоступна в переносном режиме
+settings-portable-title = Переносной режим
+settings-portable-active = Переносной режим активен. Настройки, история и журналы хранятся в { $path }.
+settings-portable-keychain-warning = Предупреждение: сохранённые облачные учётные данные по-прежнему помещаются в связку ключей этого компьютера, а не на съёмный диск — они останутся здесь после извлечения. Удалите добавленные подключения, прежде чем вернуть компьютер.
+
+# FFM-M24
+err-autostart-portable = Запуск при входе недоступен в переносном режиме
+err-autostart-failed = Не удалось изменить запуск при входе
+settings-autostart-label = Запускать Freally при входе в систему
+settings-autostart-description = Запускается свёрнутым в область уведомлений, чтобы интеграция с оболочкой, сочетания клавиш, наблюдатели и расписания работали с момента входа.
+settings-autostart-unavailable-portable = Недоступно в переносном режиме — запись автозапуска указывала бы на этот съёмный диск.
+settings-autostart-unavailable-platform = Запуск при входе недоступен в этой системе.
+
+# ===== Build 3 panel labels =====
+
+action-edit = Изменить
+action-remove = Удалить
+action-save = Сохранить
+action-browse = Обзор…
+settings-tab-schedules = Расписания
+settings-tab-queues = Очереди дисков
+settings-tab-favorites = Избранное
+settings-schedule-name = Имя
+settings-schedule-verb = Действие
+settings-schedule-verb-copy = Копировать
+settings-schedule-verb-move = Переместить
+settings-schedule-manifest = Список файлов
+settings-schedule-destination = Назначение
+settings-schedule-when = Периодичность
+settings-schedule-weekday = День недели (0 — воскресенье)
+settings-schedule-hour = Час
+settings-schedule-minute = Минута
+settings-affinity-name = Имя группы
+settings-affinity-paths = Папки
+settings-affinity-path-add = Добавить папку…
+settings-favorites-name = Имя
+settings-favorites-kind = Тип
+settings-favorites-path = Папка
+settings-favorites-destination = Назначение
+settings-favorites-hotkey = Сочетание клавиш
+
+# FFM-M22 — screen-reader queue announcement
+a11y-queue-status = выполняется: { $running }, готово: { $done }, с ошибкой: { $failed }
+
+err-favorite-id-invalid = Недопустимый идентификатор избранного

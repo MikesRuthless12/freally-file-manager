@@ -36,6 +36,13 @@ pub enum CopyErrorKind {
     /// is available via `CopyError::sparseness_mismatch()` on the
     /// returned error — the kind itself is the stable classifier.
     SparsenessMismatch,
+    /// FFM-M23 — the source file changed while it was being read, and
+    /// the configured policy is
+    /// [`SourceStability::Fail`](crate::stability::SourceStability::Fail).
+    /// The destination bytes may be internally inconsistent; they are
+    /// left in place (the source is evidently still being written, so
+    /// the partial copy may be the only rescued data).
+    SourceChanged,
     /// Catch-all for I/O failures that don't map to a more specific
     /// variant above. The wrapped `io::Error` source carries platform
     /// detail.
@@ -74,6 +81,7 @@ impl CopyErrorKind {
             Self::VerifyFailed => "err-verify-failed",
             Self::PathEscape => "err-path-escape",
             Self::SparsenessMismatch => "err-sparseness-mismatch",
+            Self::SourceChanged => "err-source-changed",
             Self::IoOther => "err-io-other",
         }
     }
@@ -164,6 +172,18 @@ impl CopyError {
             dst: dst.to_path_buf(),
             raw_os_error: None,
             message: reason.to_string(),
+        }
+    }
+
+    /// FFM-M23 — the source changed underneath the read pass and the
+    /// policy is `Fail`. `detail` names what differed.
+    pub(crate) fn source_changed(src: &Path, dst: &Path, detail: &str) -> Self {
+        Self {
+            kind: CopyErrorKind::SourceChanged,
+            src: src.to_path_buf(),
+            dst: dst.to_path_buf(),
+            raw_os_error: None,
+            message: format!("source changed while being read ({detail})"),
         }
     }
 

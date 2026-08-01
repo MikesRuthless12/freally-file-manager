@@ -1,5 +1,5 @@
-app-name = Freally File Manager v0.19.85
-window-title = Freally File Manager v0.19.85
+app-name = Freally File Manager v0.22.0
+window-title = Freally File Manager v0.22.0
 shred-ssd-advisory = Waarschuwing: dit doel staat op een SSD. Meerdere overschrijfdoorgangen wissen flashgeheugen niet betrouwbaar, omdat wear-leveling en over-provisioning gegevens onder het logische blokadres vandaan verplaatsen. Gebruik voor solid-state media liever ATA SECURE ERASE, NVMe Format met Secure Erase of volledige-schijfversleuteling met een weggegooide sleutel.
 
 # Global aggregate states (header pill)
@@ -1521,3 +1521,114 @@ history-elevate-batch-hint = Probeer alle paden van deze taak met geweigerde rec
 elevate-batch-none = Geen paden met geweigerde rechten om te verhogen
 elevate-batch-confirm = Eén rechtenverhoging verlenen voor { $count } pad(en)? ({ $skipped } andere fout(en) zijn hiermee niet op te lossen.) De helper kopieert deze paden:
 elevate-batch-toast = Verhoogde batch — { $copied } gekopieerd, { $failed } mislukt
+
+# ===== Build 3 (FFM-M17..M24) =====
+
+# FFM-M23
+err-source-changed = Het bronbestand is tijdens het lezen gewijzigd
+job-source-changed = Bron gewijzigd tijdens het kopiëren
+settings-source-stability-label = Als een bronbestand tijdens het kopiëren verandert
+settings-source-stability-description = Controleert grootte en tijdstempel van elke bron opnieuw na het lezen. Verificatie alleen kan dit niet ontdekken.
+settings-source-stability-off = Niet controleren
+settings-source-stability-warn = Waarschuwen en bestand markeren
+settings-source-stability-recopy = Bestand opnieuw kopiëren
+settings-source-stability-fail = Bestand als mislukt markeren
+
+# FFM-M17
+err-schedule-id-invalid = Ongeldige planningsidentificatie
+err-schedule-label-invalid = Ongeldige planningsnaam
+err-schedule-verb-invalid = Een planning kan alleen kopiëren of verplaatsen
+err-schedule-trigger-invalid = Ongeldig planningstijdstip
+err-schedule-too-many = Te veel geplande taken
+err-schedule-install-failed = De systeemplanner heeft deze planning geweigerd
+err-schedule-remove-failed = De systeemplanner kon deze planning niet verwijderen
+err-schedule-no-program = Kan de locatie van deze toepassing niet bepalen
+settings-schedules-title = Geplande taken
+settings-schedules-empty = Nog geen geplande taken.
+settings-schedule-add = Planning toevoegen
+settings-schedule-trigger-hourly = Elk uur
+settings-schedule-trigger-daily = Elke dag
+settings-schedule-trigger-weekly = Elke week
+settings-schedule-next-run = Volgende uitvoering
+settings-schedule-missed = Een gemiste uitvoering zo snel mogelijk alsnog uitvoeren
+settings-schedule-missed-unsupported = Dit systeem voert een gemiste planning altijd uit bij het ontwaken.
+settings-schedule-not-installed = Ontbreekt in de systeemplanner
+
+# FFM-M18
+err-affinity-too-many = Te veel schijfwachtrijgroepen
+err-affinity-name-invalid = Ongeldige groepsnaam
+err-affinity-name-duplicate = Een andere groep gebruikt deze naam al
+err-affinity-prefixes-invalid = Een groep heeft minstens één map nodig
+err-affinity-workers-invalid = Ongeldig aantal werkprocessen
+settings-affinity-title = Schijfwachtrijen
+settings-affinity-description = Bepaal zelf welke bestemmingen één overdrachtswachtrij delen wanneer schijfdetectie het mis heeft.
+settings-affinity-add = Groep toevoegen
+settings-affinity-workers = Werkprocessen
+settings-affinity-workers-auto = Automatisch
+
+# FFM-M19
+err-queue-unknown = Onbekende wachtrij
+action-run-next = Hierna uitvoeren
+action-boost = Voorrang geven
+action-clear-boost = Voorrang opheffen
+action-move-to-queue = Naar wachtrij verplaatsen
+
+# FFM-M20
+err-favorite-label-invalid = Ongeldige favorietnaam
+err-favorite-kind-invalid = Ongeldig favoriettype
+err-favorite-hotkey-invalid = Ongeldige sneltoets
+err-favorite-too-many = Te veel favorieten
+settings-favorites-title = Favorieten
+settings-favorites-empty = Nog geen favorieten.
+settings-favorites-add = Favoriet toevoegen
+favorites-recent-title = Recente paren
+favorites-kind-source = Bron
+favorites-kind-destination = Bestemming
+favorites-kind-pair = Paar
+
+# FFM-M21
+err-shell-portable = Shell-integratie is niet beschikbaar in draagbare modus
+settings-portable-title = Draagbare modus
+settings-portable-active = De draagbare modus is actief. Instellingen, geschiedenis en journaals worden opgeslagen in { $path }.
+settings-portable-keychain-warning = Waarschuwing: opgeslagen cloudgegevens staan nog steeds in de systeemsleutelhanger van deze computer, niet op de draagbare schijf — ze blijven achter nadat u de schijf loskoppelt. Verwijder toegevoegde remotes voordat u de computer teruggeeft.
+
+# FFM-M24
+err-autostart-portable = Starten bij aanmelden is niet beschikbaar in draagbare modus
+err-autostart-failed = Kan de instelling voor starten bij aanmelden niet wijzigen
+settings-autostart-label = Freally starten bij aanmelden
+settings-autostart-description = Start geminimaliseerd in het systeemvak, zodat shell-integratie, sneltoetsen, bewakingen en planningen vanaf het aanmelden actief zijn.
+settings-autostart-unavailable-portable = Niet beschikbaar in draagbare modus — een opstartvermelding zou naar deze verwisselbare schijf wijzen.
+settings-autostart-unavailable-platform = Starten bij aanmelden is niet beschikbaar op dit systeem.
+
+# ===== Build 3 panel labels =====
+
+action-edit = Bewerken
+action-remove = Verwijderen
+action-save = Opslaan
+action-browse = Bladeren…
+settings-tab-schedules = Planningen
+settings-tab-queues = Schijfwachtrijen
+settings-tab-favorites = Favorieten
+settings-schedule-name = Naam
+settings-schedule-verb = Actie
+settings-schedule-verb-copy = Kopiëren
+settings-schedule-verb-move = Verplaatsen
+settings-schedule-manifest = Bestandslijst
+settings-schedule-destination = Bestemming
+settings-schedule-when = Frequentie
+settings-schedule-weekday = Dag van de week (0 = zondag)
+settings-schedule-hour = Uur
+settings-schedule-minute = Minuut
+settings-affinity-name = Groepsnaam
+settings-affinity-paths = Mappen
+settings-affinity-path-add = Map toevoegen…
+settings-favorites-name = Naam
+settings-favorites-kind = Type
+settings-favorites-path = Map
+settings-favorites-destination = Bestemming
+settings-favorites-hotkey = Sneltoets
+
+# FFM-M22 — screen-reader queue announcement
+a11y-queue-status = { $running } bezig, { $done } klaar, { $failed } mislukt
+
+err-favorite-id-invalid = Ongeldige favoriet-id

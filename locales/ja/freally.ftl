@@ -1,5 +1,5 @@
-app-name = Freally File Manager v0.19.85
-window-title = Freally File Manager v0.19.85
+app-name = Freally File Manager v0.22.0
+window-title = Freally File Manager v0.22.0
 shred-ssd-advisory = 警告: この対象は SSD 上にあります。ウェアレベリングとオーバープロビジョニングによりデータが論理ブロックアドレスの下から移動するため、複数回の上書きではフラッシュメモリを確実に消去できません。ソリッドステートメディアには、ATA SECURE ERASE、NVMe Format（Secure Erase 付き）、または鍵を破棄した全ディスク暗号化を推奨します。
 
 # Global aggregate states (header pill)
@@ -1521,3 +1521,114 @@ history-elevate-batch-hint = このジョブでアクセスを拒否されたす
 elevate-batch-none = 昇格が必要な拒否パスはありません
 elevate-batch-confirm = { $count } 件のパスに対して 1 回の権限昇格を許可しますか？（他の { $skipped } 件の失敗は昇格では解決しません。）ヘルパーは次のパスをコピーします:
 elevate-batch-toast = 昇格バッチ — コピー { $copied } 件、失敗 { $failed } 件
+
+# ===== Build 3 (FFM-M17..M24) =====
+
+# FFM-M23
+err-source-changed = コピー元ファイルが読み取り中に変更されました
+job-source-changed = コピー中にコピー元が変更されました
+settings-source-stability-label = コピー中にコピー元ファイルが変更された場合
+settings-source-stability-description = 読み取り後に各コピー元のサイズとタイムスタンプを再確認します。検証だけでは検出できません。
+settings-source-stability-off = 確認しない
+settings-source-stability-warn = 警告してファイルに印を付ける
+settings-source-stability-recopy = ファイルをコピーし直す
+settings-source-stability-fail = ファイルを失敗として扱う
+
+# FFM-M17
+err-schedule-id-invalid = スケジュール ID が無効です
+err-schedule-label-invalid = スケジュール名が無効です
+err-schedule-verb-invalid = スケジュールで実行できるのはコピーまたは移動のみです
+err-schedule-trigger-invalid = スケジュールの時刻が無効です
+err-schedule-too-many = スケジュールが多すぎます
+err-schedule-install-failed = システムのスケジューラーがこのスケジュールを拒否しました
+err-schedule-remove-failed = システムのスケジューラーがこのスケジュールを削除できませんでした
+err-schedule-no-program = このアプリケーションの場所を特定できませんでした
+settings-schedules-title = スケジュール実行
+settings-schedules-empty = スケジュールはまだありません。
+settings-schedule-add = スケジュールを追加
+settings-schedule-trigger-hourly = 毎時
+settings-schedule-trigger-daily = 毎日
+settings-schedule-trigger-weekly = 毎週
+settings-schedule-next-run = 次回の実行
+settings-schedule-missed = 実行し損ねたスケジュールをできるだけ早く実行する
+settings-schedule-missed-unsupported = このシステムは、実行し損ねたスケジュールを復帰時に必ず実行します。
+settings-schedule-not-installed = システムのスケジューラーに存在しません
+
+# FFM-M18
+err-affinity-too-many = ドライブキューのグループが多すぎます
+err-affinity-name-invalid = グループ名が無効です
+err-affinity-name-duplicate = 同じ名前のグループが既にあります
+err-affinity-prefixes-invalid = グループにはフォルダーが 1 つ以上必要です
+err-affinity-workers-invalid = ワーカー数が無効です
+settings-affinity-title = ドライブキュー
+settings-affinity-description = ドライブの自動判定が誤る場合に、どの転送先が同じ転送キューを共有するかを指定します。
+settings-affinity-add = グループを追加
+settings-affinity-workers = ワーカー
+settings-affinity-workers-auto = 自動
+
+# FFM-M19
+err-queue-unknown = 不明なキューです
+action-run-next = 次に実行
+action-boost = 優先する
+action-clear-boost = 優先を解除
+action-move-to-queue = キューへ移動
+
+# FFM-M20
+err-favorite-label-invalid = お気に入り名が無効です
+err-favorite-kind-invalid = お気に入りの種類が無効です
+err-favorite-hotkey-invalid = ショートカットが無効です
+err-favorite-too-many = お気に入りが多すぎます
+settings-favorites-title = お気に入り
+settings-favorites-empty = お気に入りはまだありません。
+settings-favorites-add = お気に入りを追加
+favorites-recent-title = 最近のペア
+favorites-kind-source = コピー元
+favorites-kind-destination = コピー先
+favorites-kind-pair = ペア
+
+# FFM-M21
+err-shell-portable = ポータブルモードではシェル統合を利用できません
+settings-portable-title = ポータブルモード
+settings-portable-active = ポータブルモードが有効です。設定・履歴・ジャーナルは { $path } に保存されます。
+settings-portable-keychain-warning = 警告: 保存したクラウドの資格情報は、ポータブルドライブではなく、このコンピューターのシステムキーチェーンに保存されます。ドライブを取り外した後もこのマシンに残ります。コンピューターを返却する前に、追加したリモートを削除してください。
+
+# FFM-M24
+err-autostart-portable = ポータブルモードではログイン時の起動を利用できません
+err-autostart-failed = ログイン時の起動設定を変更できませんでした
+settings-autostart-label = ログイン時に Freally を起動する
+settings-autostart-description = トレイに最小化した状態で起動し、シェル統合・ショートカット・監視・スケジュールをログイン直後から有効にします。
+settings-autostart-unavailable-portable = ポータブルモードでは利用できません — 起動エントリがこのリムーバブルドライブを指してしまいます。
+settings-autostart-unavailable-platform = このシステムではログイン時の起動を利用できません。
+
+# ===== Build 3 panel labels =====
+
+action-edit = 編集
+action-remove = 削除
+action-save = 保存
+action-browse = 参照…
+settings-tab-schedules = スケジュール
+settings-tab-queues = ドライブキュー
+settings-tab-favorites = お気に入り
+settings-schedule-name = 名前
+settings-schedule-verb = 操作
+settings-schedule-verb-copy = コピー
+settings-schedule-verb-move = 移動
+settings-schedule-manifest = ファイル一覧
+settings-schedule-destination = コピー先
+settings-schedule-when = 実行間隔
+settings-schedule-weekday = 曜日 (0 = 日曜)
+settings-schedule-hour = 時
+settings-schedule-minute = 分
+settings-affinity-name = グループ名
+settings-affinity-paths = フォルダー
+settings-affinity-path-add = フォルダーを追加…
+settings-favorites-name = 名前
+settings-favorites-kind = 種類
+settings-favorites-path = フォルダー
+settings-favorites-destination = コピー先
+settings-favorites-hotkey = ショートカット
+
+# FFM-M22 — screen-reader queue announcement
+a11y-queue-status = 実行中 { $running } 件、完了 { $done } 件、失敗 { $failed } 件
+
+err-favorite-id-invalid = お気に入り ID が無効です

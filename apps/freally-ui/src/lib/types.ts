@@ -526,6 +526,74 @@ export interface TransferSettingsDto {
   /// Phase 24 — fall back to AppleDouble sidecar on incompatible
   /// destination filesystems.
   appledoubleFallback: boolean;
+  /** FFM-M23 — what to do when a source changes mid-read. */
+  sourceStability?: SourceStabilityWire;
+}
+
+/** FFM-M23 — source-stability policy, on the wire. */
+export type SourceStabilityWire = "off" | "warn" | "recopy" | "fail";
+
+/** FFM-M17 — one scheduled run, plus the derived fields the UI shows. */
+export interface ScheduleDto {
+  id: string;
+  label: string;
+  verb: "copy" | "move";
+  filesFrom: string;
+  destination: string;
+  relativeTo: string;
+  trigger: "hourly" | "daily" | "weekly";
+  weekday: number;
+  hour: number;
+  minute: number;
+  runWhenAvailable: boolean;
+  /** Whether the OS scheduler currently holds the artifact. */
+  installed?: boolean;
+  /** Next firing, Unix seconds. */
+  nextRunUnixSecs?: number | null;
+  /** Whether this host honours the requested missed-run policy. */
+  missedRunHonored?: boolean;
+}
+
+/** FFM-M18 — one queue-affinity group. */
+export interface AffinityGroupDto {
+  name: string;
+  prefixes: string[];
+  /** `0` inherits the global worker count; `1` is HDD mode. */
+  workers: number;
+}
+
+/** FFM-M20 — one bookmark. */
+export interface FavoriteDto {
+  /** Blank on create — the backend mints one. */
+  id: string;
+  label: string;
+  kind: "source" | "destination" | "pair";
+  path: string;
+  destination: string;
+  hotkey: string;
+}
+
+/** FFM-M20 — one remembered source→destination pair. */
+export interface RecentPairDto {
+  source: string;
+  destination: string;
+  usedAtMs: number;
+}
+
+/** FFM-M21 — where this install writes, and what it may therefore do. */
+export interface PortableStatusDto {
+  portable: boolean;
+  dataRoot: string;
+  osIntegrationAllowed: boolean;
+  osKeychainAllowed: boolean;
+}
+
+/** FFM-M24 — live OS state of the launch-at-login entry. */
+export interface AutostartStatusDto {
+  enabled: boolean;
+  supported: boolean;
+  /** Localisation key explaining an unsupported toggle. */
+  reasonKey: string;
 }
 
 export interface ShellSettingsDto {

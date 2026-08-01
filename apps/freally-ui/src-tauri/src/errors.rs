@@ -250,6 +250,10 @@ pub fn kind_name(kind: CopyErrorKind) -> &'static str {
         CopyErrorKind::VerifyFailed => "verify-failed",
         CopyErrorKind::PathEscape => "path-escape",
         CopyErrorKind::SparsenessMismatch => "sparseness-mismatch",
+        // FFM-M23 — distinct from every other class so reports and
+        // history can mark a torn copy rather than filing it under a
+        // generic I/O failure.
+        CopyErrorKind::SourceChanged => "source-changed",
         CopyErrorKind::IoOther => "io-other",
     }
 }

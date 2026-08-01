@@ -246,6 +246,15 @@ async fn run_async_fallback(
     let mut downgraded = opts;
     downgraded.fast_copy_hook = None;
     downgraded.strategy = CopyStrategy::AlwaysAsync;
+    // FFM-M23 — the *outer* `copy_file` that reached this dispatcher
+    // already brackets the whole read with its stability stats. Leaving
+    // the policy on here would run a second, nested guard inside that
+    // window: four stats per file instead of two, on what is the normal
+    // path for any pair where reflink and the OS-native copy both
+    // report `Unsupported` (cross-filesystem copies, external drives,
+    // network mounts). The outer guard's window strictly contains this
+    // one, so nothing is lost by turning the inner one off.
+    downgraded.source_stability = freally_core::stability::SourceStability::Off;
     let report = copy_file(src, dst, downgraded, ctrl, events).await?;
     Ok(FastCopyOutcome {
         strategy: ChosenStrategy::AsyncFallback,

@@ -63,6 +63,25 @@ pub enum CopyEvent {
         /// Typed error detail; see [`CopyError`].
         err: CopyError,
     },
+    /// FFM-M23 — the source file changed while the engine was reading
+    /// it, so the destination may be internally inconsistent (head from
+    /// the old contents, tail from the new).
+    ///
+    /// Fires under the `Warn` and `Recopy` policies; `Fail` surfaces a
+    /// [`crate::CopyErrorKind::SourceChanged`] error instead. A
+    /// destination flagged this way is deliberately **not** deleted —
+    /// when the source is a file something else is actively writing,
+    /// the partial copy is often the only rescued bytes there are.
+    SourceChanged {
+        /// The source whose size / mtime / identity moved.
+        src: PathBuf,
+        /// Human-readable summary of what differed, e.g.
+        /// `"size 100 → 200, mtime changed"`.
+        detail: String,
+        /// Whether the engine is about to copy the file again
+        /// (`Recopy` policy). `false` under `Warn`.
+        recopying: bool,
+    },
     // ---------- verify pipeline (Phase 3) ----------
     /// Post-copy verify pass started.
     VerifyStarted {
@@ -390,6 +409,15 @@ impl Clone for CopyEvent {
                 rate_bps: *rate_bps,
             },
             CopyEvent::Failed { err } => CopyEvent::Failed { err: err.clone() },
+            CopyEvent::SourceChanged {
+                src,
+                detail,
+                recopying,
+            } => CopyEvent::SourceChanged {
+                src: src.clone(),
+                detail: detail.clone(),
+                recopying: *recopying,
+            },
             CopyEvent::VerifyStarted {
                 algorithm,
                 total_bytes,

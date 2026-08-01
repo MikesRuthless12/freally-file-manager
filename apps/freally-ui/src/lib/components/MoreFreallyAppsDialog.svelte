@@ -5,6 +5,7 @@
 -->
 <script lang="ts">
   import type { Root } from "react-dom/client";
+  import { escapeToClose } from "../a11y";
   import { i18nVersion, t } from "../i18n";
 
   interface Props {
@@ -50,11 +51,14 @@
 </script>
 
 {#if open}
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
+  <!-- Click-outside-to-dismiss. The keyboard equivalent is Escape,
+       registered at the window level by `use:escapeToClose` on the
+       dialog below, so it fires wherever focus happens to be. -->
   <div
     class="backdrop"
     role="presentation"
     onclick={onClose}
-    onkeydown={(e) => e.key === "Escape" && onClose()}
   >
     <div
       class="modal"
@@ -63,7 +67,7 @@
       aria-modal="true"
       aria-label={t("moreapps-title")}
       onclick={(e) => e.stopPropagation()}
-      onkeydown={(e) => e.stopPropagation()}
+      use:escapeToClose={onClose}
     >
       <header class="head">
         <h2>{t("moreapps-title")}</h2>

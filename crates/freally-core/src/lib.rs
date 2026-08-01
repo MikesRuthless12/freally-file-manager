@@ -129,6 +129,8 @@ pub mod queue;
 pub mod safety;
 pub mod scan;
 pub mod sparse;
+/// FFM-M23 — detect a source file that changed underneath the copy.
+pub mod stability;
 pub mod translate;
 mod tree;
 pub mod verify;
@@ -160,8 +162,8 @@ pub use options::{
 };
 pub use provenance::{OutboardEncoder, ProvenancePolicy, ProvenanceSink};
 pub use queue::{
-    Job, JobId, JobKind, JobState, Queue, QueueEvent, QueueId, QueueMergeError, QueueRegistry,
-    QueueRegistryEvent, VolumeProbe,
+    AffinityGroup, Job, JobId, JobKind, JobState, Queue, QueueEvent, QueueId, QueueMergeError,
+    QueueRegistry, QueueRegistryEvent, VolumeProbe,
 };
 pub use safety::{
     PathSafetyError, is_no_follow_rejection, is_within_root, no_follow_open_flags, validate_all,

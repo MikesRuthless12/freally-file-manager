@@ -1,5 +1,5 @@
-app-name = Freally File Manager v0.19.85
-window-title = Freally File Manager v0.19.85
+app-name = Freally File Manager v0.22.0
+window-title = Freally File Manager v0.22.0
 shred-ssd-advisory = 경고: 이 대상은 SSD에 있습니다. 웨어 레벨링과 오버 프로비저닝으로 인해 데이터가 논리 블록 주소 밖으로 이동하기 때문에 다중 패스 덮어쓰기로는 플래시 메모리를 안정적으로 소거할 수 없습니다. 솔리드 스테이트 미디어에는 ATA SECURE ERASE, Secure Erase를 사용한 NVMe Format, 또는 키를 폐기하는 전체 디스크 암호화를 사용하세요.
 
 # Global aggregate states (header pill)
@@ -1521,3 +1521,114 @@ history-elevate-batch-hint = 이 작업에서 권한이 거부된 모든 경로�
 elevate-batch-none = 권한을 상승할 거부된 경로가 없습니다
 elevate-batch-confirm = 경로 { $count }개에 대해 한 번의 권한 상승을 허용할까요? (다른 { $skipped }개 실패는 이것으로 해결되지 않습니다.) 도우미가 다음 경로를 복사합니다:
 elevate-batch-toast = 권한 상승 일괄 처리 — { $copied }개 복사, { $failed }개 실패
+
+# ===== Build 3 (FFM-M17..M24) =====
+
+# FFM-M23
+err-source-changed = 읽는 중에 원본 파일이 변경되었습니다
+job-source-changed = 복사 중 원본이 변경됨
+settings-source-stability-label = 복사 중 원본 파일이 변경되면
+settings-source-stability-description = 읽은 후 각 원본의 크기와 타임스탬프를 다시 확인합니다. 검증만으로는 감지할 수 없습니다.
+settings-source-stability-off = 확인 안 함
+settings-source-stability-warn = 경고하고 파일 표시
+settings-source-stability-recopy = 파일 다시 복사
+settings-source-stability-fail = 파일을 실패로 처리
+
+# FFM-M17
+err-schedule-id-invalid = 예약 식별자가 잘못되었습니다
+err-schedule-label-invalid = 예약 이름이 잘못되었습니다
+err-schedule-verb-invalid = 예약은 복사 또는 이동만 할 수 있습니다
+err-schedule-trigger-invalid = 예약 시각이 잘못되었습니다
+err-schedule-too-many = 예약이 너무 많습니다
+err-schedule-install-failed = 시스템 스케줄러가 이 예약을 거부했습니다
+err-schedule-remove-failed = 시스템 스케줄러가 이 예약을 제거하지 못했습니다
+err-schedule-no-program = 이 응용 프로그램의 위치를 확인할 수 없습니다
+settings-schedules-title = 예약 실행
+settings-schedules-empty = 아직 예약이 없습니다.
+settings-schedule-add = 예약 추가
+settings-schedule-trigger-hourly = 매시간
+settings-schedule-trigger-daily = 매일
+settings-schedule-trigger-weekly = 매주
+settings-schedule-next-run = 다음 실행
+settings-schedule-missed = 놓친 예약을 가능한 한 빨리 실행
+settings-schedule-missed-unsupported = 이 시스템은 놓친 예약을 절전 해제 시 항상 실행합니다.
+settings-schedule-not-installed = 시스템 스케줄러에 없음
+
+# FFM-M18
+err-affinity-too-many = 드라이브 대기열 그룹이 너무 많습니다
+err-affinity-name-invalid = 그룹 이름이 잘못되었습니다
+err-affinity-name-duplicate = 다른 그룹이 이미 이 이름을 사용 중입니다
+err-affinity-prefixes-invalid = 그룹에는 폴더가 하나 이상 필요합니다
+err-affinity-workers-invalid = 작업자 수가 잘못되었습니다
+settings-affinity-title = 드라이브 대기열
+settings-affinity-description = 드라이브 감지가 틀릴 때 어떤 대상이 하나의 전송 대기열을 공유할지 직접 지정합니다.
+settings-affinity-add = 그룹 추가
+settings-affinity-workers = 작업자
+settings-affinity-workers-auto = 자동
+
+# FFM-M19
+err-queue-unknown = 알 수 없는 대기열
+action-run-next = 다음으로 실행
+action-boost = 우선 처리
+action-clear-boost = 우선 처리 해제
+action-move-to-queue = 대기열로 이동
+
+# FFM-M20
+err-favorite-label-invalid = 즐겨찾기 이름이 잘못되었습니다
+err-favorite-kind-invalid = 즐겨찾기 유형이 잘못되었습니다
+err-favorite-hotkey-invalid = 단축키가 잘못되었습니다
+err-favorite-too-many = 즐겨찾기가 너무 많습니다
+settings-favorites-title = 즐겨찾기
+settings-favorites-empty = 아직 즐겨찾기가 없습니다.
+settings-favorites-add = 즐겨찾기 추가
+favorites-recent-title = 최근 조합
+favorites-kind-source = 원본
+favorites-kind-destination = 대상
+favorites-kind-pair = 조합
+
+# FFM-M21
+err-shell-portable = 휴대용 모드에서는 셸 통합을 사용할 수 없습니다
+settings-portable-title = 휴대용 모드
+settings-portable-active = 휴대용 모드가 활성화되어 있습니다. 설정, 기록, 저널이 { $path }에 저장됩니다.
+settings-portable-keychain-warning = 경고: 저장된 클라우드 자격 증명은 휴대용 드라이브가 아니라 이 컴퓨터의 시스템 키체인에 저장됩니다. 드라이브를 분리한 뒤에도 이 컴퓨터에 남습니다. 컴퓨터를 반납하기 전에 추가한 원격 연결을 삭제하세요.
+
+# FFM-M24
+err-autostart-portable = 휴대용 모드에서는 로그인 시 시작을 사용할 수 없습니다
+err-autostart-failed = 로그인 시 시작 설정을 변경하지 못했습니다
+settings-autostart-label = 로그인할 때 Freally 시작
+settings-autostart-description = 트레이에 최소화된 상태로 시작하여 셸 통합, 단축키, 감시, 예약이 로그인 직후부터 동작합니다.
+settings-autostart-unavailable-portable = 휴대용 모드에서는 사용할 수 없습니다 — 시작 항목이 이 이동식 드라이브를 가리키게 됩니다.
+settings-autostart-unavailable-platform = 이 시스템에서는 로그인 시 시작을 사용할 수 없습니다.
+
+# ===== Build 3 panel labels =====
+
+action-edit = 편집
+action-remove = 제거
+action-save = 저장
+action-browse = 찾아보기…
+settings-tab-schedules = 예약
+settings-tab-queues = 드라이브 대기열
+settings-tab-favorites = 즐겨찾기
+settings-schedule-name = 이름
+settings-schedule-verb = 작업
+settings-schedule-verb-copy = 복사
+settings-schedule-verb-move = 이동
+settings-schedule-manifest = 파일 목록
+settings-schedule-destination = 대상
+settings-schedule-when = 주기
+settings-schedule-weekday = 요일 (0 = 일요일)
+settings-schedule-hour = 시
+settings-schedule-minute = 분
+settings-affinity-name = 그룹 이름
+settings-affinity-paths = 폴더
+settings-affinity-path-add = 폴더 추가…
+settings-favorites-name = 이름
+settings-favorites-kind = 종류
+settings-favorites-path = 폴더
+settings-favorites-destination = 대상
+settings-favorites-hotkey = 단축키
+
+# FFM-M22 — screen-reader queue announcement
+a11y-queue-status = 실행 중 { $running }개, 완료 { $done }개, 실패 { $failed }개
+
+err-favorite-id-invalid = 즐겨찾기 식별자가 잘못되었습니다

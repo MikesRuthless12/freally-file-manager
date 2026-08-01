@@ -1,4 +1,4 @@
-//! Freally File Manager v0.19.85 — Tauri 2.x application shell.
+//! Freally File Manager v0.22.0 — Tauri 2.x application shell.
 //!
 //! The Rust side wires the Phase 1–4 engines to the Svelte frontend:
 //!
@@ -54,6 +54,8 @@ pub mod elevate_batch;
 pub mod errors;
 pub mod eula;
 pub mod failed_commands;
+/// FFM-M20 — favorite sources / destinations / pairs + recent pairs.
+pub mod favorites_commands;
 pub mod filelist_commands;
 pub mod filename_doctor;
 pub mod global_paste;
@@ -86,12 +88,16 @@ pub mod runner;
 pub mod salvage_commands;
 pub mod sanitize_commands;
 pub mod scan_commands;
+/// FFM-M17 — install / list / remove user-level scheduled runs.
+pub mod schedule_commands;
 pub mod server_commands;
 pub mod shell;
 pub mod shell_commands;
 pub mod sidecar_commands;
 pub mod state;
 pub mod sync_commands;
+/// FFM-M21 + FFM-M24 — portable-mode status and launch-at-login.
+pub mod system_commands;
 mod tasks;
 pub mod thumbnail;
 pub mod trash_commands;
@@ -316,7 +322,19 @@ pub fn run() {
     // (Phase 34's `AuditLayer`) from panicking on a double-set.
     init_tracing_subscriber();
     let argv: Vec<std::ffi::OsString> = std::env::args_os().collect();
-    let action = cli::parse_args(argv).unwrap_or_else(|err| {
+
+    // FFM-M21 — decide portable mode *first*. `freally_settings::portable`
+    // caches its answer the first time anything asks for a path, and
+    // `Settings::default_path()` is reached well before argv dispatch —
+    // so setting this later would leave the app reading settings from
+    // one root and writing them to another.
+    if freally_settings::portable::init(cli::portable_requested(&argv))
+        && let Err(e) = freally_settings::portable::ensure_root()
+    {
+        eprintln!("freally: could not create the portable data directory: {e}");
+    }
+
+    let action = cli::parse_args(argv.clone()).unwrap_or_else(|err| {
         // Flag errors print the reason + the usage block and launch
         // normally, so a mis-typed shell extension argv never strands
         // the user with a silent no-op. The binary's primary purpose
@@ -366,6 +384,9 @@ pub fn run() {
     // a one-shot move-out on first call.
     let initial_action = Mutex::new(Some(action));
 
+    // FFM-M24 — captured for the setup hook below, which decides
+    // whether the main window is shown at all.
+    let start_minimized = cli::start_minimized_requested(&argv);
     let mut builder = tauri::Builder::default();
 
     // Single-instance plugin: routes a second launch's argv back to
@@ -813,6 +834,29 @@ pub fn run() {
             queue_commands::queue_pin_destination,
             queue_commands::queue_get_pinned,
             queue_commands::queue_unpin_destination,
+            // FFM-M18 — manual override of physical-drive detection.
+            queue_commands::queue_get_affinity,
+            queue_commands::queue_set_affinity,
+            // FFM-M19 — per-job priority, reorder, and queue move.
+            queue_commands::queue_reorder_job,
+            queue_commands::queue_run_next,
+            queue_commands::queue_move_job,
+            queue_commands::queue_boost_job,
+            queue_commands::queue_clear_boost,
+            // FFM-M17 — install / list / remove user-level schedules.
+            schedule_commands::schedule_list,
+            schedule_commands::schedule_save,
+            schedule_commands::schedule_remove,
+            // FFM-M20 — favorites & recent pairs.
+            favorites_commands::favorites_list,
+            favorites_commands::favorites_save,
+            favorites_commands::favorites_remove,
+            favorites_commands::favorites_recent_pairs,
+            favorites_commands::favorites_record_pair,
+            // FFM-M21 + FFM-M24 — portable status, launch at login.
+            system_commands::portable_status,
+            system_commands::autostart_status,
+            system_commands::autostart_set,
             // Phase 46.6 — Settings → Plugins UI. The plugin store
             // lives at `<config_dir>/plugins/`; these commands
             // round-trip enable/disable/grant state through
@@ -833,6 +877,23 @@ pub fn run() {
             // on Btrfs / ZFS / APFS / bcachefs / ReFS. First-set wins
             // per OnceLock; calling once at startup is correct.
             freally_secure_delete::set_cow_probe(freally_platform::is_cow_filesystem);
+
+            // FFM-M18 — push the persisted queue-affinity overrides into
+            // the live registry. Without this a restart silently drops
+            // every override until the user reopens the Queue pane, and
+            // the first copies after launch route by the very
+            // detection the user corrected.
+            if let Some(s) = app.try_state::<AppState>() {
+                crate::queue_commands::apply_persisted_affinity(s.inner());
+            }
+
+            // FFM-M24 — launch minimized when the login item started us.
+            // The window is created hidden-capable by Tauri; skipping the
+            // show keeps a login launch in the tray, which is the entire
+            // point of the feature.
+            if start_minimized && let Some(win) = app.get_webview_window("main") {
+                let _ = win.hide();
+            }
 
             // Phase 40 — start the named-pipe broker that future
             // `--enqueue` invocations talk to instead of booting a
@@ -855,7 +916,7 @@ pub fn run() {
             };
             let menu = build_tray_menu(&app.handle().clone(), &pinned_initial)?;
             let _tray = TrayIconBuilder::with_id(TRAY_ICON_ID)
-                .tooltip("Freally File Manager v0.19.85")
+                .tooltip("Freally File Manager v0.22.0")
                 .icon(app.default_window_icon().unwrap().clone())
                 .menu(&menu)
                 .show_menu_on_left_click(false)
@@ -1097,7 +1158,7 @@ pub fn run() {
             Ok(())
         })
         .run(tauri::generate_context!())
-        .expect("error while running Freally File Manager v0.19.85");
+        .expect("error while running Freally File Manager v0.22.0");
 }
 
 /// Wave-2 observability — install the process-wide tracing

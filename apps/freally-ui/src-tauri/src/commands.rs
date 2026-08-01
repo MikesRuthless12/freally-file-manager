@@ -132,7 +132,10 @@ async fn enqueue(
     let verifier = resolve_verifier(&options, &settings)?;
     let collision_policy = parse_collision_policy(options.collision.as_deref())?;
     let error_policy = parse_error_policy(options.on_error.as_ref(), &settings);
-    let tree_concurrency = resolve_concurrency(&settings);
+    // FFM-M18 — the destination decides the worker count, so a
+    // per-drive override actually reaches the engine.
+    let tree_concurrency =
+        resolve_concurrency_for(&settings, Some(&state.queues), Some(dst_root.as_path()));
     // Phase 14a: filters only make sense for Copy jobs (Move is
     // rename-with-copy-fallback; filtering the fallback copy while
     // the rename path ignored them would be a surprising split).
@@ -189,7 +192,35 @@ async fn enqueue(
 /// to avoid seek thrash). `Manual(n)` clamps to `[1, 16]` via the
 /// settings crate's own `resolved()`.
 fn resolve_concurrency(settings: &freally_settings::Settings) -> Option<usize> {
+    resolve_concurrency_for(settings, None, None)
+}
+
+/// Worker count for a job landing at `dst`.
+///
+/// FFM-M18 — a queue-affinity group whose `workers` is non-zero
+/// overrides the global `transfer.concurrency` for destinations it
+/// claims, which is what makes "this one is really a spinning disk,
+/// serialise it" (`workers = 1`) expressible per-drive rather than
+/// only globally.
+///
+/// The override is read from the **live registry** rather than
+/// re-derived from `settings.queue.affinity_groups`. `route()` already
+/// resolves the same longest-prefix rule there, and
+/// `set_affinity_groups` normalises the list on the way in (trimming
+/// names, dropping duplicates) — so a second implementation reading
+/// the raw TOML would silently disagree the moment normalisation
+/// dropped a group that is still on disk.
+pub fn resolve_concurrency_for(
+    settings: &freally_settings::Settings,
+    queues: Option<&freally_core::QueueRegistry>,
+    dst: Option<&Path>,
+) -> Option<usize> {
     use freally_settings::ConcurrencyChoice;
+    if let (Some(queues), Some(dst)) = (queues, dst)
+        && let Some((_, _, Some(workers))) = queues.affinity_match(dst)
+    {
+        return Some(workers as usize);
+    }
     let auto_hint = platform_auto_concurrency_hint();
     let n = match settings.transfer.concurrency {
         ConcurrencyChoice::Auto => auto_hint,
@@ -310,6 +341,21 @@ fn apply_options(
         paranoid_verify: settings.transfer.paranoid_verify,
         sharing_violation_retries: settings.transfer.sharing_violation_retries,
         sharing_violation_base_delay_ms: settings.transfer.sharing_violation_base_delay_ms,
+        // FFM-M23 — carry the source-stability policy into the engine.
+        source_stability: match settings.transfer.source_stability {
+            freally_settings::SourceStabilityChoice::Off => {
+                freally_core::stability::SourceStability::Off
+            }
+            freally_settings::SourceStabilityChoice::Warn => {
+                freally_core::stability::SourceStability::Warn
+            }
+            freally_settings::SourceStabilityChoice::Recopy => {
+                freally_core::stability::SourceStability::Recopy
+            }
+            freally_settings::SourceStabilityChoice::Fail => {
+                freally_core::stability::SourceStability::Fail
+            }
+        },
         preserve_security_metadata: settings.transfer.preserve_security_metadata,
         meta_policy: freally_core::MetaPolicy {
             preserve_motw: settings.transfer.preserve_motw,
@@ -1208,10 +1254,14 @@ pub fn update_settings(
     // or not audit is enabled; the record call is a no-op when the
     // sink is idle.
     let prev_snapshot = state.settings_snapshot();
-    // The DTO deliberately does not carry the EULA group — acceptance
-    // is recorded only by `eula_accept`. Carry it across so a wholesale
-    // settings replace can never clear a recorded acceptance.
-    next.eula = prev_snapshot.eula.clone();
+    // The DTO models only the groups the Settings modal renders, and
+    // `into_settings` rebuilds everything else from `Default`. Carry
+    // the backend-owned groups across so a wholesale replace can't
+    // clear a recorded EULA acceptance — or silently discard the
+    // user's pinned destinations, repositories, remotes, sync pairs,
+    // conflict profiles, schedules, and favorites, none of which the
+    // modal can see. See `Settings::carry_backend_owned_from`.
+    next.carry_backend_owned_from(&prev_snapshot);
     let before_hash = crate::audit_commands::settings_fingerprint(&prev_snapshot);
     let after_hash = crate::audit_commands::settings_fingerprint(&next);
     // Persist first — we'd rather keep the old in-memory value if
@@ -1431,12 +1481,13 @@ fn diff_setting_groups(
 /// Replace the live settings with `Settings::default()` and persist.
 #[tauri::command]
 pub fn reset_settings(state: State<'_, AppState>) -> Result<crate::ipc::SettingsDto, String> {
-    let next = freally_settings::Settings {
-        // A reset must not clear the recorded EULA acceptance — it is
-        // a legal record owned by `eula_accept`, not a preference.
-        eula: state.settings_snapshot().eula,
-        ..Default::default()
-    };
+    // "Reset to defaults" resets *preferences*. It must not clear the
+    // recorded EULA acceptance (a legal record owned by `eula_accept`)
+    // and it must not unregister the user's repositories, remotes, or
+    // schedules — orphaning an installed OS schedule the app has
+    // forgotten would leave it firing forever with nothing to manage it.
+    let mut next = freally_settings::Settings::default();
+    next.carry_backend_owned_from(&state.settings_snapshot());
     let path = state.settings_path.as_ref();
     if !path.as_os_str().is_empty() {
         next.save_to(path).map_err(|e| e.to_string())?;
@@ -2037,9 +2088,12 @@ pub fn save_profile(
     state: State<'_, AppState>,
 ) -> Result<crate::ipc::ProfileInfoDto, String> {
     let mut settings = state.settings_snapshot();
-    // Profiles are shareable preference snapshots; the EULA acceptance
-    // is a per-install legal record and must never travel inside one.
-    settings.eula = Default::default();
+    // Profiles are shareable preference snapshots. Backend-owned state
+    // is per-install and machine-specific — the EULA acceptance is a
+    // legal record, and repositories / remotes / schedules / favorites
+    // name paths and OS artifacts that do not exist on whoever opens
+    // the profile next. Strip all of it.
+    settings.carry_backend_owned_from(&freally_settings::Settings::default());
     let info = state
         .profiles
         .save_replacing(&name, &settings)
@@ -2053,10 +2107,13 @@ pub fn load_profile(
     state: State<'_, AppState>,
 ) -> Result<crate::ipc::SettingsDto, String> {
     let mut profile = state.profiles.load(&name).map_err(|e| e.to_string())?;
-    // The EULA acceptance is a per-install legal record owned by
+    // Symmetric with `save_profile`: a profile carries preferences
+    // only. The EULA acceptance is a per-install legal record owned by
     // `eula_accept` — a profile (possibly saved pre-acceptance or on
-    // another machine) neither clears nor grants it.
-    profile.eula = state.settings_snapshot().eula;
+    // another machine) neither clears nor grants it — and applying a
+    // profile must not deregister this install's repositories,
+    // remotes, or scheduled runs.
+    profile.carry_backend_owned_from(&state.settings_snapshot());
     // Loading a profile also activates it — persist + publish on the
     // live settings. Saves the caller a follow-up `update_settings`.
     let path = state.settings_path.as_ref();

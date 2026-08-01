@@ -8,6 +8,7 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
+  import { escapeToClose } from "../a11y";
   import { save } from "@tauri-apps/plugin-dialog";
 
   import Icon from "../icons/Icon.svelte";
@@ -84,7 +85,7 @@
 </script>
 
 {#if $errorLogDrawerOpen}
-  <aside class="drawer" aria-label={t("error-log-title")}>
+  <aside class="drawer" aria-label={t("error-log-title")} use:escapeToClose={closeErrorLogDrawer}>
     {#key $i18nVersion}
     <header>
       <h2>{t("error-log-title")}</h2>

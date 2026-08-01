@@ -1,5 +1,5 @@
-app-name = Freally File Manager v0.19.85
-window-title = Freally File Manager v0.19.85
+app-name = Freally File Manager v0.22.0
+window-title = Freally File Manager v0.22.0
 shred-ssd-advisory = चेतावनी: यह लक्ष्य एक SSD पर मौजूद है। मल्टी-पास ओवरराइट फ़्लैश मेमोरी को विश्वसनीय रूप से साफ़ नहीं करते क्योंकि वियर-लेवलिंग और ओवर-प्रोविज़निंग डेटा को लॉजिकल ब्लॉक एड्रेस के नीचे से हटा देते हैं। सॉलिड-स्टेट मीडिया के लिए ATA SECURE ERASE, NVMe Format with Secure Erase, या डिस्कार्डेड की के साथ फ़ुल-डिस्क एन्क्रिप्शन को प्राथमिकता दें।
 
 # Global aggregate states (header pill)
@@ -1521,3 +1521,114 @@ history-elevate-batch-hint = इस कार्य के अनुमति-�
 elevate-batch-none = उन्नत करने योग्य कोई अनुमति-अस्वीकृत पथ नहीं
 elevate-batch-confirm = { $count } पथों के लिए एक उन्नयन दें? ({ $skipped } अन्य विफलताएँ इससे ठीक नहीं होंगी।) सहायक इन पथों की प्रतिलिपि बनाएगा:
 elevate-batch-toast = उन्नत बैच — { $copied } प्रतिलिपित, { $failed } विफल
+
+# ===== Build 3 (FFM-M17..M24) =====
+
+# FFM-M23
+err-source-changed = पढ़ते समय स्रोत फ़ाइल बदल गई
+job-source-changed = कॉपी के दौरान स्रोत बदल गया
+settings-source-stability-label = यदि कॉपी करते समय स्रोत फ़ाइल बदल जाए
+settings-source-stability-description = पढ़ने के बाद हर स्रोत का आकार और समय-मुहर दोबारा जाँचता है। अकेली सत्यापन प्रक्रिया इसे नहीं पकड़ सकती।
+settings-source-stability-off = जाँच न करें
+settings-source-stability-warn = चेतावनी दें और फ़ाइल चिह्नित करें
+settings-source-stability-recopy = फ़ाइल दोबारा कॉपी करें
+settings-source-stability-fail = फ़ाइल को विफल मानें
+
+# FFM-M17
+err-schedule-id-invalid = अमान्य शेड्यूल पहचानकर्ता
+err-schedule-label-invalid = अमान्य शेड्यूल नाम
+err-schedule-verb-invalid = शेड्यूल केवल कॉपी या स्थानांतरित कर सकता है
+err-schedule-trigger-invalid = अमान्य शेड्यूल समय
+err-schedule-too-many = बहुत अधिक निर्धारित कार्य
+err-schedule-install-failed = सिस्टम शेड्यूलर ने इस शेड्यूल को अस्वीकार कर दिया
+err-schedule-remove-failed = सिस्टम शेड्यूलर इस शेड्यूल को हटा नहीं सका
+err-schedule-no-program = इस एप्लिकेशन का स्थान निर्धारित नहीं हो सका
+settings-schedules-title = निर्धारित कार्य
+settings-schedules-empty = अभी कोई निर्धारित कार्य नहीं है।
+settings-schedule-add = शेड्यूल जोड़ें
+settings-schedule-trigger-hourly = हर घंटे
+settings-schedule-trigger-daily = हर दिन
+settings-schedule-trigger-weekly = हर सप्ताह
+settings-schedule-next-run = अगला रन
+settings-schedule-missed = छूटे हुए शेड्यूल को जल्द से जल्द चलाएँ
+settings-schedule-missed-unsupported = यह सिस्टम छूटे हुए शेड्यूल को जागने पर हमेशा चलाता है।
+settings-schedule-not-installed = सिस्टम शेड्यूलर में मौजूद नहीं
+
+# FFM-M18
+err-affinity-too-many = ड्राइव कतार समूह बहुत अधिक हैं
+err-affinity-name-invalid = अमान्य समूह नाम
+err-affinity-name-duplicate = यह नाम पहले से किसी अन्य समूह के पास है
+err-affinity-prefixes-invalid = समूह के लिए कम से कम एक फ़ोल्डर चाहिए
+err-affinity-workers-invalid = अमान्य वर्कर संख्या
+settings-affinity-title = ड्राइव कतारें
+settings-affinity-description = जब ड्राइव पहचान गलत हो, तब स्वयं तय करें कि कौन-से गंतव्य एक ही स्थानांतरण कतार साझा करें।
+settings-affinity-add = समूह जोड़ें
+settings-affinity-workers = वर्कर
+settings-affinity-workers-auto = स्वचालित
+
+# FFM-M19
+err-queue-unknown = अज्ञात कतार
+action-run-next = अगला चलाएँ
+action-boost = प्राथमिकता दें
+action-clear-boost = प्राथमिकता हटाएँ
+action-move-to-queue = कतार में ले जाएँ
+
+# FFM-M20
+err-favorite-label-invalid = अमान्य पसंदीदा नाम
+err-favorite-kind-invalid = अमान्य पसंदीदा प्रकार
+err-favorite-hotkey-invalid = अमान्य शॉर्टकट
+err-favorite-too-many = बहुत अधिक पसंदीदा
+settings-favorites-title = पसंदीदा
+settings-favorites-empty = अभी कोई पसंदीदा नहीं है।
+settings-favorites-add = पसंदीदा जोड़ें
+favorites-recent-title = हाल की जोड़ियाँ
+favorites-kind-source = स्रोत
+favorites-kind-destination = गंतव्य
+favorites-kind-pair = जोड़ी
+
+# FFM-M21
+err-shell-portable = पोर्टेबल मोड में शेल एकीकरण उपलब्ध नहीं है
+settings-portable-title = पोर्टेबल मोड
+settings-portable-active = पोर्टेबल मोड सक्रिय है। सेटिंग्स, इतिहास और जर्नल { $path } में संग्रहीत हैं।
+settings-portable-keychain-warning = चेतावनी: सहेजे गए क्लाउड क्रेडेंशियल अब भी इस कंप्यूटर की सिस्टम कीचेन में संग्रहीत होते हैं, पोर्टेबल ड्राइव पर नहीं — ड्राइव निकालने के बाद भी वे इसी मशीन पर रहते हैं। कंप्यूटर लौटाने से पहले जोड़े गए रिमोट हटा दें।
+
+# FFM-M24
+err-autostart-portable = पोर्टेबल मोड में लॉगिन पर प्रारंभ उपलब्ध नहीं है
+err-autostart-failed = लॉगिन पर प्रारंभ की सेटिंग नहीं बदली जा सकी
+settings-autostart-label = लॉगिन पर Freally प्रारंभ करें
+settings-autostart-description = ट्रे में न्यूनतम अवस्था में प्रारंभ होता है ताकि शेल एकीकरण, शॉर्टकट, निगरानी और शेड्यूल लॉगिन से ही सक्रिय रहें।
+settings-autostart-unavailable-portable = पोर्टेबल मोड में उपलब्ध नहीं — प्रारंभ प्रविष्टि इसी हटाने योग्य ड्राइव की ओर संकेत करेगी।
+settings-autostart-unavailable-platform = इस सिस्टम पर लॉगिन पर प्रारंभ उपलब्ध नहीं है।
+
+# ===== Build 3 panel labels =====
+
+action-edit = संपादित करें
+action-remove = हटाएँ
+action-save = सहेजें
+action-browse = ब्राउज़ करें…
+settings-tab-schedules = शेड्यूल
+settings-tab-queues = ड्राइव कतारें
+settings-tab-favorites = पसंदीदा
+settings-schedule-name = नाम
+settings-schedule-verb = कार्रवाई
+settings-schedule-verb-copy = कॉपी करें
+settings-schedule-verb-move = स्थानांतरित करें
+settings-schedule-manifest = फ़ाइल सूची
+settings-schedule-destination = गंतव्य
+settings-schedule-when = आवृत्ति
+settings-schedule-weekday = सप्ताह का दिन (0 = रविवार)
+settings-schedule-hour = घंटा
+settings-schedule-minute = मिनट
+settings-affinity-name = समूह नाम
+settings-affinity-paths = फ़ोल्डर
+settings-affinity-path-add = फ़ोल्डर जोड़ें…
+settings-favorites-name = नाम
+settings-favorites-kind = प्रकार
+settings-favorites-path = फ़ोल्डर
+settings-favorites-destination = गंतव्य
+settings-favorites-hotkey = शॉर्टकट
+
+# FFM-M22 — screen-reader queue announcement
+a11y-queue-status = { $running } चल रहे, { $done } पूर्ण, { $failed } विफल
+
+err-favorite-id-invalid = अमान्य पसंदीदा पहचानकर्ता

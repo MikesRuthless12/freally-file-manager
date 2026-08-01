@@ -23,6 +23,7 @@
 -->
 <script lang="ts">
   import Icon from "../icons/Icon.svelte";
+  import { escapeToClose } from "../a11y";
   import { i18nVersion, t } from "../i18n";
   import { formatBytes } from "../format";
   import { destinationFreeBytes, pathTotalBytes } from "../ipc";
@@ -111,6 +112,7 @@
     {#key $i18nVersion}
       <div
         class="modal"
+        use:escapeToClose={() => onResolve({ proceed: false })}
         role="alertdialog"
         tabindex="-1"
         aria-modal="true"

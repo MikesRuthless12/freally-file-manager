@@ -156,19 +156,19 @@ pub fn all_registration_keys(scope: InstallScope, dll_path: &str) -> Vec<(String
     out.extend(class_registration_keys(
         scope,
         CLSID_COPY_STR,
-        "Freally File Manager v0.19.85 — Copy command",
+        "Freally File Manager v0.22.0 — Copy command",
         dll_path,
     ));
     out.extend(class_registration_keys(
         scope,
         CLSID_MOVE_STR,
-        "Freally File Manager v0.19.85 — Move command",
+        "Freally File Manager v0.22.0 — Move command",
         dll_path,
     ));
     out.extend(class_registration_keys(
         scope,
         CLSID_HASH_STR,
-        "Freally File Manager v0.19.85 — Hash command",
+        "Freally File Manager v0.22.0 — Hash command",
         dll_path,
     ));
     out.extend(verb_registration_keys(

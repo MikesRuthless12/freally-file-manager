@@ -487,6 +487,88 @@ impl Queue {
         });
     }
 
+    /// FFM-M19 — "run next": move `id` to the head of the *pending*
+    /// section.
+    ///
+    /// Deliberately not `reorder(id, 0)`: index 0 may be occupied by a
+    /// Running or Paused job, and shoving a pending job ahead of one
+    /// the runner already owns would reorder the display without
+    /// changing what runs next. Landing on the first Pending slot is
+    /// the position that actually means "next".
+    pub fn run_next(&self, id: JobId) {
+        let target = {
+            let guard = self.inner.lock().unwrap_or_else(|p| p.into_inner());
+            guard
+                .entries
+                .iter()
+                .position(|e| e.job.state == JobState::Pending)
+        };
+        if let Some(index) = target {
+            self.reorder(id, index);
+        }
+    }
+
+    /// FFM-M19 — temporary priority boost: pause every *other* Running
+    /// job in this queue so `id` gets the bandwidth to itself.
+    ///
+    /// Returns the ids actually paused, so [`clear_boost`](Self::clear_boost)
+    /// can resume exactly those. Resuming "everything" instead would
+    /// restart jobs the user had paused by hand before the boost.
+    pub fn boost_job(&self, id: JobId) -> Vec<JobId> {
+        let siblings: Vec<JobId> = {
+            let guard = self.inner.lock().unwrap_or_else(|p| p.into_inner());
+            guard
+                .entries
+                .iter()
+                .filter(|e| e.job.id != id && e.job.state == JobState::Running)
+                .map(|e| e.job.id)
+                .collect()
+        };
+        for sibling in &siblings {
+            self.pause_job(*sibling);
+        }
+        siblings
+    }
+
+    /// FFM-M19 — undo a [`boost_job`](Self::boost_job) by resuming the
+    /// exact set it paused.
+    pub fn clear_boost(&self, paused: &[JobId]) {
+        for id in paused {
+            self.resume_job(*id);
+        }
+    }
+
+    /// FFM-M19 — move one job into `dst`, preserving its id, control
+    /// handle, and state.
+    ///
+    /// Refuses a `Running` job: the runner holds its `CopyControl` and
+    /// sizes its worker pool from the owning queue, so re-parenting
+    /// mid-copy would silently change the concurrency of a transfer
+    /// already in flight. Returns `false` when the job is unknown here,
+    /// is Running, or `dst` is this same queue.
+    pub fn transfer_job_to(&self, id: JobId, dst: &Queue) -> bool {
+        if Arc::ptr_eq(&self.inner, &dst.inner) {
+            return false;
+        }
+        let entry = {
+            let mut guard = self.inner.lock().unwrap_or_else(|p| p.into_inner());
+            let Some(pos) = guard.entries.iter().position(|e| e.job.id == id) else {
+                return false;
+            };
+            if guard.entries[pos].job.state == JobState::Running {
+                return false;
+            }
+            guard.entries.remove(pos)
+        };
+        {
+            let mut dst_guard = dst.inner.lock().unwrap_or_else(|p| p.into_inner());
+            dst_guard.entries.push(entry);
+        }
+        let _ = self.tx.send(QueueEvent::JobRemoved(id));
+        let _ = dst.tx.send(QueueEvent::JobAdded(id));
+        true
+    }
+
     /// Remove the job from the queue. No-op if unknown. Cancels first
     /// if still active so the running engine stops before the record
     /// disappears.
@@ -741,6 +823,53 @@ struct RegistryEntry {
     drive_id: Option<u64>,
 }
 
+/// FFM-M18 — a user-declared queue affinity group.
+///
+/// Physical-drive detection is a heuristic and it is sometimes wrong:
+/// a VHDX mounted as `T:` is backed by `C:`, so the registry spawns two
+/// queues that then thrash one spindle against each other. Conversely
+/// two directories that *do* share a volume id may sit on genuinely
+/// independent hardware behind a storage controller, and deserve to run
+/// in parallel.
+///
+/// One rule shape covers both corrections: a group is a **name plus a
+/// set of path prefixes that share a single queue**. Listing two
+/// prefixes in one group force-merges them; giving each its own group
+/// force-splits them. The probe is bypassed entirely for a path a group
+/// claims, so no amount of probe error can reintroduce the wrong
+/// bucketing.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AffinityGroup {
+    /// Queue name to use when this group spawns a queue.
+    pub name: String,
+    /// Path prefixes claimed by the group. The longest matching prefix
+    /// across all groups wins, so a nested override beats its parent.
+    pub prefixes: Vec<PathBuf>,
+    /// Per-queue worker count. `None` inherits the global setting;
+    /// `Some(1)` is HDD-mode (serialize to avoid seek thrash).
+    pub workers: Option<u32>,
+}
+
+/// Bucket ids minted for affinity groups are tagged with the high bit
+/// so they can never collide with a real [`VolumeProbe::volume_id`],
+/// which is a Windows volume serial (32-bit) or a Unix `st_dev`.
+const AFFINITY_BUCKET_TAG: u64 = 1 << 63;
+
+/// Derive a stable bucket id from a group's name.
+///
+/// Name-derived rather than index-derived so reordering the groups in
+/// Settings doesn't silently re-bucket a queue the user is already
+/// looking at. FNV-1a — not for security, just a spread of the name
+/// across the 63 untagged bits.
+fn affinity_bucket_id(name: &str) -> u64 {
+    let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
+    for byte in name.as_bytes() {
+        hash ^= u64::from(*byte);
+        hash = hash.wrapping_mul(0x1000_0000_01b3);
+    }
+    (hash >> 1) | AFFINITY_BUCKET_TAG
+}
+
 struct RegistryInner {
     entries: Vec<RegistryEntry>,
 }
@@ -764,6 +893,10 @@ pub struct QueueRegistry {
     /// UI / Tauri command layer can flip it directly without going
     /// through a setter.
     pub auto_enqueue_next: Arc<AtomicBool>,
+    /// FFM-M18 — user overrides that win over the volume probe. Empty
+    /// by default, so detection behaves exactly as before until the
+    /// user declares a group.
+    affinity: Arc<Mutex<Vec<AffinityGroup>>>,
     tx: broadcast::Sender<QueueRegistryEvent>,
     capacity: usize,
 }
@@ -776,6 +909,7 @@ impl Clone for QueueRegistry {
             next_queue_id: Arc::clone(&self.next_queue_id),
             next_job_id: Arc::clone(&self.next_job_id),
             auto_enqueue_next: Arc::clone(&self.auto_enqueue_next),
+            affinity: Arc::clone(&self.affinity),
             tx: self.tx.clone(),
             capacity: self.capacity,
         }
@@ -823,6 +957,7 @@ impl QueueRegistry {
             next_queue_id: Arc::new(AtomicU64::new(1)),
             next_job_id: Arc::new(AtomicU64::new(1)),
             auto_enqueue_next: Arc::new(AtomicBool::new(false)),
+            affinity: Arc::new(Mutex::new(Vec::new())),
             tx,
             capacity,
         }
@@ -834,6 +969,73 @@ impl QueueRegistry {
     pub fn with_probe(mut self, probe: Arc<dyn VolumeProbe>) -> Self {
         self.probe = Some(probe);
         self
+    }
+
+    /// FFM-M18 — replace the user's queue-affinity groups.
+    ///
+    /// Takes effect on the next [`route`](Self::route); jobs already
+    /// sitting in a queue are not re-bucketed, because moving a
+    /// running job's queue mid-copy would change its concurrency under
+    /// it. Groups with an empty name or no prefixes are dropped, and
+    /// the first group wins on a duplicate name (bucket ids are
+    /// derived from the name, so two groups sharing one would silently
+    /// merge).
+    pub fn set_affinity_groups(&self, groups: Vec<AffinityGroup>) {
+        let mut seen: Vec<String> = Vec::new();
+        let cleaned: Vec<AffinityGroup> = groups
+            .into_iter()
+            .filter(|g| !g.name.trim().is_empty() && !g.prefixes.is_empty())
+            .filter(|g| {
+                let name = g.name.trim().to_string();
+                if seen.contains(&name) {
+                    false
+                } else {
+                    seen.push(name);
+                    true
+                }
+            })
+            .collect();
+        let mut guard = self.affinity.lock().unwrap_or_else(|p| p.into_inner());
+        *guard = cleaned;
+    }
+
+    /// The affinity groups currently in force.
+    pub fn affinity_groups(&self) -> Vec<AffinityGroup> {
+        self.affinity
+            .lock()
+            .unwrap_or_else(|p| p.into_inner())
+            .clone()
+    }
+
+    /// Resolve `path` against the affinity groups.
+    ///
+    /// Returns the forced bucket id, the queue name, and the group's
+    /// worker override. The **longest** matching prefix wins so a
+    /// nested rule (`D:\fast\scratch`) beats the rule for its parent
+    /// (`D:\`); ties keep the earlier group, making the result
+    /// independent of iteration luck.
+    pub fn affinity_match(&self, path: &Path) -> Option<(u64, String, Option<u32>)> {
+        let guard = self.affinity.lock().unwrap_or_else(|p| p.into_inner());
+        let mut best: Option<(usize, &AffinityGroup)> = None;
+        for group in guard.iter() {
+            for prefix in &group.prefixes {
+                if !path.starts_with(prefix) {
+                    continue;
+                }
+                let len = prefix.components().count();
+                match best {
+                    Some((best_len, _)) if best_len >= len => {}
+                    _ => best = Some((len, group)),
+                }
+            }
+        }
+        best.map(|(_, g)| {
+            (
+                affinity_bucket_id(g.name.trim()),
+                g.name.trim().to_string(),
+                g.workers,
+            )
+        })
     }
 
     /// Clone the shared job-id counter the registry mints
@@ -914,9 +1116,19 @@ impl QueueRegistry {
         // option is freely cloneable without `.as_deref()` (which
         // clippy::needless_option_as_deref flags as a no-op here).
         let probe_path = dst.as_deref().map(Self::probe_path);
-        let dst_drive = probe_path.and_then(|p| self.probe.as_ref().and_then(|pr| pr.volume_id(p)));
-        let dst_label =
-            probe_path.and_then(|p| self.probe.as_ref().and_then(|pr| pr.drive_label(p)));
+        // FFM-M18 — a user affinity group replaces the probe outright
+        // for any path it claims. The whole point of the override is
+        // that detection got this path wrong, so consulting it again
+        // would defeat the correction.
+        let forced = probe_path.and_then(|p| self.affinity_match(p));
+        let group_name = forced.as_ref().map(|(_, name, _)| name.clone());
+        let (dst_drive, dst_label) = match &forced {
+            Some((bucket, name, _workers)) => (Some(*bucket), Some(name.clone())),
+            None => (
+                probe_path.and_then(|p| self.probe.as_ref().and_then(|pr| pr.volume_id(p))),
+                probe_path.and_then(|p| self.probe.as_ref().and_then(|pr| pr.drive_label(p))),
+            ),
+        };
 
         // 3. Find or spawn the target queue under a single critical
         //    section so racing routes don't double-create.
@@ -928,10 +1140,13 @@ impl QueueRegistry {
             } else {
                 let new_qid_value = self.next_queue_id.fetch_add(1, Ordering::Relaxed);
                 let new_qid = QueueId(new_qid_value);
-                let name: Arc<str> = match (&dst_label, dst_drive) {
-                    (Some(label), _) => Arc::from(format!("{label} queue")),
-                    (None, Some(_)) => Arc::from(format!("queue {new_qid_value}")),
-                    (None, None) => Arc::from("default"),
+                let name: Arc<str> = match (&group_name, &dst_label, dst_drive) {
+                    // A group name is the user's own words — render it
+                    // verbatim rather than suffixing "queue" onto it.
+                    (Some(group), _, _) => Arc::from(group.as_str()),
+                    (None, Some(label), _) => Arc::from(format!("{label} queue")),
+                    (None, None, Some(_)) => Arc::from(format!("queue {new_qid_value}")),
+                    (None, None, None) => Arc::from("default"),
                 };
                 let queue = Queue::with_shared_counter(
                     new_qid,
@@ -961,6 +1176,43 @@ impl QueueRegistry {
             job_id,
         });
         (qid, job_id, control)
+    }
+
+    /// FFM-M19 — move one job from whichever queue currently holds it
+    /// into `dst`.
+    ///
+    /// The source queue is found by search rather than named by the
+    /// caller: the frontend knows the job id it dragged, and making it
+    /// also assert the source queue would let a stale tab index move a
+    /// job the user never touched.
+    pub fn move_job_to_queue(&self, job: JobId, dst: QueueId) -> Result<(), QueueMergeError> {
+        let (src_queue, dst_queue) = {
+            let inner = self.inner.lock().unwrap_or_else(|p| p.into_inner());
+            let dst_queue = inner
+                .entries
+                .iter()
+                .find(|e| e.queue.id() == dst)
+                .map(|e| e.queue.clone())
+                .ok_or(QueueMergeError::UnknownDst(dst))?;
+            let src_queue = inner
+                .entries
+                .iter()
+                .find(|e| e.queue.get(job).is_some())
+                .map(|e| e.queue.clone())
+                .ok_or(QueueMergeError::UnknownSrc(dst))?;
+            (src_queue, dst_queue)
+        };
+        if src_queue.id() == dst {
+            return Ok(());
+        }
+        if !src_queue.transfer_job_to(job, &dst_queue) {
+            return Err(QueueMergeError::UnknownSrc(src_queue.id()));
+        }
+        let _ = self.tx.send(QueueRegistryEvent::JobRouted {
+            queue_id: dst,
+            job_id: job,
+        });
+        Ok(())
     }
 
     /// Move every job from `src` queue into `dst` queue and remove

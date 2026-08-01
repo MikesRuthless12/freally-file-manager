@@ -28,6 +28,7 @@
 <script lang="ts">
   import { onDestroy, onMount, untrack } from "svelte";
 
+  import { escapeToClose } from "../a11y";
   import Icon from "../icons/Icon.svelte";
   import FileKindIcon from "../icons/FileKindIcon.svelte";
   import { i18nVersion, t } from "../i18n";
@@ -382,6 +383,7 @@
     {#key $i18nVersion}
       <div
         class="modal"
+        use:escapeToClose={closeDialog}
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="cbm-title"

@@ -97,7 +97,7 @@ pub enum CliError {
 /// Short CLI help text printed by `--help` / `-h`. Not localised; see
 /// [`CliError`] note above.
 pub const HELP: &str = "\
-Freally File Manager v0.19.85 — shell-integration CLI
+Freally File Manager v0.22.0 — shell-integration CLI
 
 Usage:
     freally                                  Launch the GUI
@@ -110,6 +110,9 @@ Usage:
                                               (optionally: --relative-to <root>
                                               to preserve the tree structure)
     freally --hash <paths…>                  Open the hash inspector over the paths
+    freally --portable                       Keep all settings/history/journal
+                                              beside the binary (FFM-M21)
+    freally --start-minimized                Launch straight to the tray (FFM-M24)
     freally --help | -h
     freally --version | -V
 ";
@@ -141,6 +144,13 @@ pub fn parse_args(argv: Vec<OsString>) -> Result<CliAction, CliError> {
         match flag {
             "--help" | "-h" => help = true,
             "--version" | "-V" => version = true,
+            // FFM-M21 / FFM-M24 — launch-mode flags. Both are read
+            // before `parse_args` runs (see [`portable_requested`] and
+            // [`start_minimized_requested`]), because path resolution
+            // and window creation happen earlier than argv dispatch.
+            // They are accepted-and-ignored here so they don't fall
+            // through to `CliError::Unknown`.
+            "--portable" | "--start-minimized" => {}
             "--enqueue" => {
                 let verb_raw = iter.next().ok_or(CliError::MissingVerb)?;
                 let verb = match verb_raw.to_str() {
@@ -194,6 +204,25 @@ pub fn parse_args(argv: Vec<OsString>) -> Result<CliAction, CliError> {
         return Ok(CliAction::Hash(paths));
     }
     Ok(CliAction::Run)
+}
+
+/// FFM-M21 — whether argv asks for portable mode.
+///
+/// Read before anything resolves a path: `freally_settings::portable`
+/// caches its answer on first use, so the environment variable it reads
+/// has to be set before the first `Settings::default_path()` call, which
+/// happens long before `parse_args` dispatches a `CliAction`.
+pub fn portable_requested(argv: &[OsString]) -> bool {
+    argv.iter().any(|a| a.to_str() == Some("--portable"))
+}
+
+/// FFM-M24 — whether argv asks for a minimized (tray-only) launch.
+///
+/// The registered login item always carries this flag: launch-at-login
+/// exists so the tray, shell hooks, hotkey, watcher, and schedules are
+/// live from login, not so a window appears every boot.
+pub fn start_minimized_requested(argv: &[OsString]) -> bool {
+    argv.iter().any(|a| a.to_str() == Some("--start-minimized"))
 }
 
 /// The flag slots only the `--enqueue` form accepts.

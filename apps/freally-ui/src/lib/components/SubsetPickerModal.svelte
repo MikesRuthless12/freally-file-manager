@@ -16,6 +16,7 @@
 -->
 <script lang="ts">
   import { i18nVersion, t } from "../i18n";
+  import { escapeToClose } from "../a11y";
   import { formatBytes } from "../format";
   import { pathSizesIndividual } from "../ipc";
 
@@ -101,6 +102,7 @@
   {#key $i18nVersion}
     <div
       class="modal"
+      use:escapeToClose={() => onResolve(null)}
       role="dialog"
       tabindex="-1"
       aria-modal="true"

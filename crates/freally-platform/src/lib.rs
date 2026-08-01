@@ -75,6 +75,9 @@
 #![warn(missing_docs)]
 
 pub mod attrs;
+/// FFM-M24 — user-level launch at login (HKCU Run key / LaunchAgent /
+/// XDG autostart), starting minimized to the tray.
+pub mod autostart;
 #[cfg(feature = "compio-experimental")]
 pub mod compio_overlapped;
 pub mod dedup;
@@ -93,6 +96,9 @@ pub mod presence;
 pub mod process;
 mod reflink_path;
 pub mod sanitize;
+/// FFM-M17 — install / remove user-level scheduled runs in the host's
+/// own scheduler (Task Scheduler, launchd, systemd `--user`).
+pub mod scheduler;
 /// Phase 17d — secure DACL-restricted named-pipe server for the
 /// privilege-escalation helper handshake (Windows only).
 #[cfg(windows)]

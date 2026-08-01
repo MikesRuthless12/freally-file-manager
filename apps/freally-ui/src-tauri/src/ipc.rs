@@ -1391,6 +1391,11 @@ pub struct TransferDto {
     /// `defaults::default_sharing_violation_base_delay_ms()` (50).
     #[serde(default = "default_sharing_violation_base_delay_ms")]
     pub sharing_violation_base_delay_ms: u64,
+    /// FFM-M23 — `"off"` | `"warn"` | `"recopy"` | `"fail"`. What to do
+    /// when a source file changes while it is being read. Defaults to
+    /// `"warn"`.
+    #[serde(default = "default_source_stability")]
+    pub source_stability: String,
 }
 
 fn default_dedup_mode() -> String {
@@ -1403,6 +1408,12 @@ fn default_dedup_hardlink_policy() -> String {
 
 fn default_sharing_violation_retries() -> u32 {
     freally_settings::defaults::default_sharing_violation_retries()
+}
+
+fn default_source_stability() -> String {
+    freally_settings::SourceStabilityChoice::default()
+        .as_str()
+        .to_string()
 }
 
 fn default_sharing_violation_base_delay_ms() -> u64 {
@@ -1904,6 +1915,7 @@ impl From<&freally_settings::Settings> for SettingsDto {
                 paranoid_verify: s.transfer.paranoid_verify,
                 sharing_violation_retries: s.transfer.sharing_violation_retries,
                 sharing_violation_base_delay_ms: s.transfer.sharing_violation_base_delay_ms,
+                source_stability: s.transfer.source_stability.as_str().to_string(),
             },
             shell: ShellDto {
                 context_menu_enabled: s.shell.context_menu_enabled,
@@ -2118,6 +2130,8 @@ impl SettingsDto {
         s.transfer.paranoid_verify = self.transfer.paranoid_verify;
         s.transfer.sharing_violation_retries = self.transfer.sharing_violation_retries;
         s.transfer.sharing_violation_base_delay_ms = self.transfer.sharing_violation_base_delay_ms;
+        s.transfer.source_stability =
+            SourceStabilityChoice::from_wire(&self.transfer.source_stability);
 
         s.shell.context_menu_enabled = self.shell.context_menu_enabled;
         s.shell.intercept_default_copy = self.shell.intercept_default_copy;

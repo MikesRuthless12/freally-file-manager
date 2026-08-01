@@ -8,6 +8,7 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
+  import { escapeToClose } from "../a11y";
   import { open as openDialog } from "@tauri-apps/plugin-dialog";
   import { t } from "../i18n";
   import { formatBytes } from "../format";
@@ -125,7 +126,7 @@
 </script>
 
 <div class="overlay backdrop" role="dialog" aria-modal="true" aria-label={t("restore-title")}>
-  <div class="modal">
+  <div class="modal" use:escapeToClose={onClose}>
     <header>
       <h3>{t("restore-title")}</h3>
       <button class="x" type="button" onclick={onClose} aria-label="close">✕</button>

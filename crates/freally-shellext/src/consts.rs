@@ -46,10 +46,10 @@ pub const DISPLAY_MOVE: &str = "Move with Freally File Manager";
 pub const DISPLAY_HASH: &str = "Hash with Freally File Manager";
 
 /// ProgID-style friendly names under `HKCR\CLSID\{guid}\(default)`.
-pub const PROG_COPY: &str = "Freally File Manager v0.19.85 — Copy command";
+pub const PROG_COPY: &str = "Freally File Manager v0.22.0 — Copy command";
 
 /// See [`PROG_COPY`].
-pub const PROG_MOVE: &str = "Freally File Manager v0.19.85 — Move command";
+pub const PROG_MOVE: &str = "Freally File Manager v0.22.0 — Move command";
 
 /// Name of the target binary the verbs invoke. Resolved via PATH;
 /// Phase 16 packaging puts `freally.exe` there (on Windows today,

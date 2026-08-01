@@ -1,5 +1,5 @@
-app-name = Freally File Manager v0.19.85
-window-title = Freally File Manager v0.19.85
+app-name = Freally File Manager v0.22.0
+window-title = Freally File Manager v0.22.0
 shred-ssd-advisory = Warning: this target lives on an SSD. Multi-pass overwrites do not reliably sanitize flash memory because wear-leveling and over-provisioning move data out from under the logical block address. For solid-state media, prefer ATA SECURE ERASE, NVMe Format with Secure Erase, or full-disk encryption with a discarded key.
 
 # Global aggregate states (header pill)
@@ -1527,3 +1527,114 @@ history-elevate-batch-hint = Retry every permission-denied path of this job with
 elevate-batch-none = No permission-denied paths to elevate
 elevate-batch-confirm = Grant one elevation for { $count } path(s)? ({ $skipped } other failure(s) cannot be fixed by elevating.) These paths will be copied by the helper:
 elevate-batch-toast = Elevated batch — { $copied } copied, { $failed } failed
+
+# ===== Build 3 (FFM-M17..M24) =====
+
+# FFM-M23 — source-stability guard
+err-source-changed = Source file changed while it was being read
+job-source-changed = Source changed during copy
+settings-source-stability-label = If a source file changes while copying
+settings-source-stability-description = Re-checks each source's size and timestamp after reading it. Verification alone cannot detect this.
+settings-source-stability-off = Don't check
+settings-source-stability-warn = Warn and mark the file
+settings-source-stability-recopy = Copy the file again
+settings-source-stability-fail = Fail the file
+
+# FFM-M17 — scheduled runs
+err-schedule-id-invalid = Invalid schedule identifier
+err-schedule-label-invalid = Invalid schedule name
+err-schedule-verb-invalid = A schedule can only copy or move
+err-schedule-trigger-invalid = Invalid schedule time
+err-schedule-too-many = Too many scheduled runs
+err-schedule-install-failed = The system scheduler rejected this schedule
+err-schedule-remove-failed = The system scheduler could not remove this schedule
+err-schedule-no-program = Could not determine this application's location
+settings-schedules-title = Scheduled runs
+settings-schedules-empty = No scheduled runs yet.
+settings-schedule-add = Add schedule
+settings-schedule-trigger-hourly = Every hour
+settings-schedule-trigger-daily = Every day
+settings-schedule-trigger-weekly = Every week
+settings-schedule-next-run = Next run
+settings-schedule-missed = Run a missed schedule as soon as possible
+settings-schedule-missed-unsupported = This system always runs a missed schedule when it wakes.
+settings-schedule-not-installed = Missing from the system scheduler
+
+# FFM-M18 — queue affinity
+err-affinity-too-many = Too many drive-queue groups
+err-affinity-name-invalid = Invalid group name
+err-affinity-name-duplicate = Another group already uses this name
+err-affinity-prefixes-invalid = A group needs at least one folder
+err-affinity-workers-invalid = Invalid worker count
+settings-affinity-title = Drive queues
+settings-affinity-description = Override which destinations share a transfer queue when drive detection gets it wrong.
+settings-affinity-add = Add group
+settings-affinity-workers = Workers
+settings-affinity-workers-auto = Automatic
+
+# FFM-M19 — job priority
+err-queue-unknown = Unknown queue
+action-run-next = Run next
+action-boost = Prioritize
+action-clear-boost = Stop prioritizing
+action-move-to-queue = Move to queue
+
+# FFM-M20 — favorites
+err-favorite-label-invalid = Invalid favorite name
+err-favorite-kind-invalid = Invalid favorite type
+err-favorite-hotkey-invalid = Invalid shortcut
+err-favorite-too-many = Too many favorites
+settings-favorites-title = Favorites
+settings-favorites-empty = No favorites yet.
+settings-favorites-add = Add favorite
+favorites-recent-title = Recent pairs
+favorites-kind-source = Source
+favorites-kind-destination = Destination
+favorites-kind-pair = Pair
+
+# FFM-M21 — portable mode
+err-shell-portable = Shell integration is unavailable in portable mode
+settings-portable-title = Portable mode
+settings-portable-active = Portable mode is active. Settings, history, and journals are stored in { $path }.
+settings-portable-keychain-warning = Warning: saved cloud credentials are still stored in this computer's system keychain, not on the portable drive — they remain on this machine after you unplug it. Remove any remotes you added before handing the computer back.
+
+# FFM-M24 — launch at login
+err-autostart-portable = Launch at login is unavailable in portable mode
+err-autostart-failed = Could not change the launch-at-login setting
+settings-autostart-label = Start Freally at login
+settings-autostart-description = Starts minimized to the tray so shell hooks, shortcuts, watchers, and schedules are active from login.
+settings-autostart-unavailable-portable = Unavailable in portable mode — a login entry would point at this removable drive.
+settings-autostart-unavailable-platform = Launch at login is not available on this system.
+
+# ===== Build 3 panel labels =====
+
+action-edit = Edit
+action-remove = Remove
+action-save = Save
+action-browse = Browse…
+settings-tab-schedules = Schedules
+settings-tab-queues = Drive queues
+settings-tab-favorites = Favorites
+settings-schedule-name = Name
+settings-schedule-verb = Action
+settings-schedule-verb-copy = Copy
+settings-schedule-verb-move = Move
+settings-schedule-manifest = File list
+settings-schedule-destination = Destination
+settings-schedule-when = Runs
+settings-schedule-weekday = Day of week (0 = Sunday)
+settings-schedule-hour = Hour
+settings-schedule-minute = Minute
+settings-affinity-name = Group name
+settings-affinity-paths = Folders
+settings-affinity-path-add = Add folder…
+settings-favorites-name = Name
+settings-favorites-kind = Type
+settings-favorites-path = Folder
+settings-favorites-destination = Destination
+settings-favorites-hotkey = Shortcut
+
+# FFM-M22 — screen-reader queue announcement
+a11y-queue-status = { $running } running, { $done } done, { $failed } failed
+
+err-favorite-id-invalid = Invalid favorite identifier

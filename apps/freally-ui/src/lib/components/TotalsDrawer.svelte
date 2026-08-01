@@ -22,6 +22,7 @@
 -->
 <script lang="ts">
   import Icon from "../icons/Icon.svelte";
+  import { escapeToClose } from "../a11y";
   import { i18nVersion, t } from "../i18n";
   import { formatBytes } from "../format";
   import {
@@ -202,7 +203,7 @@
 </script>
 
 {#if $totalsDrawerOpen}
-  <aside class="drawer" aria-label={t("totals-title")}>
+  <aside class="drawer" aria-label={t("totals-title")} use:escapeToClose={closeTotalsDrawer}>
     {#key $i18nVersion}
     <header>
       <h2>{t("totals-title")}</h2>

@@ -7,6 +7,7 @@
 <script lang="ts">
   import { open } from "@tauri-apps/plugin-dialog";
 
+  import { escapeToClose } from "../a11y";
   import Icon from "../icons/Icon.svelte";
   import PreflightModal from "./PreflightModal.svelte";
   import FilenameDoctorPanel from "./FilenameDoctorPanel.svelte";
@@ -359,13 +360,14 @@
   }
 </script>
 
+<!-- svelte-ignore a11y_click_events_have_key_events -->
+<!-- Click-outside-to-dismiss. The keyboard equivalent is Escape,
+     registered at the window level by `use:escapeToClose` on the
+     dialog below, so it fires wherever focus happens to be. -->
 <div
   class="backdrop"
   role="presentation"
   onclick={cancel}
-  onkeydown={(e) => {
-    if (e.key === "Escape") cancel();
-  }}
 >
   {#key $i18nVersion}
   <div
@@ -375,7 +377,7 @@
     aria-modal="true"
     aria-label={t("drop-dialog-title")}
     onclick={(e) => e.stopPropagation()}
-    onkeydown={(e) => e.stopPropagation()}
+    use:escapeToClose={cancel}
   >
     <header>
       <h2>{t("drop-dialog-title")}</h2>

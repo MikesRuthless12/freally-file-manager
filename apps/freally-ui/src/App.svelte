@@ -78,6 +78,10 @@
     removeJob,
     resumeJob,
     revealInFolder,
+    // FFM-M19 — per-job priority actions on the job context menu.
+    queueBoostJob,
+    queueClearBoost,
+    queueRunNext,
     sidecarCreate,
     trashDelete,
     undoLastCandidate,
@@ -224,6 +228,67 @@
     f2KeyCleanup?.();
   });
 
+  // FFM-M22 — the text a screen reader hears when the queue changes
+  // shape. Counts, not percentages: the *announcement* only changes on
+  // a state transition, so assistive tech doesn't talk over the user on
+  // every progress tick. (The derivation itself still recomputes with
+  // `$jobs`, which is why it is a single pass rather than three
+  // `.filter().length` traversals.)
+  const queueCounts = $derived.by(() => {
+    let running = 0;
+    let done = 0;
+    let failed = 0;
+    for (const j of $jobs) {
+      if (j.state === "running") running++;
+      else if (j.state === "succeeded") done++;
+      else if (j.state === "failed") failed++;
+    }
+    return { running, done, failed };
+  });
+  // Keyed on the three numbers, so the Fluent lookup runs only when one
+  // of them actually moves.
+  const queueAnnouncement = $derived(
+    queueCounts.running === 0 && queueCounts.done === 0 && queueCounts.failed === 0
+      ? ""
+      : t("a11y-queue-status", queueCounts),
+  );
+
+  // FFM-M19 — at most one job is boosted at a time, and we remember
+  // exactly which siblings the boost paused. Resuming "everything"
+  // instead would restart jobs the user had paused by hand before the
+  // boost, which is the failure the backend's `clear_boost(ids)`
+  // signature exists to prevent.
+  let boostedJobId = $state<number | null>(null);
+  let boostPaused = $state<number[]>([]);
+
+  async function runJobNext(job: JobDto): Promise<void> {
+    try {
+      await queueRunNext(job.queueId, job.id);
+    } catch (e) {
+      pushToast("error", e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  async function toggleBoost(job: JobDto): Promise<void> {
+    try {
+      if (boostedJobId === job.id) {
+        await queueClearBoost(job.queueId, boostPaused);
+        boostedJobId = null;
+        boostPaused = [];
+        return;
+      }
+      // Clear any prior boost first so its siblings don't stay paused
+      // behind a second one.
+      if (boostedJobId !== null) {
+        await queueClearBoost(job.queueId, boostPaused);
+      }
+      boostPaused = await queueBoostJob(job.queueId, job.id);
+      boostedJobId = job.id;
+    } catch (e) {
+      pushToast("error", e instanceof Error ? e.message : String(e));
+    }
+  }
+
   function contextItemsFor(job: JobDto): ContextMenuItem[] {
     const items: ContextMenuItem[] = [];
     const isRunning = job.state === "running";
@@ -257,6 +322,25 @@
       icon: "trash",
       onClick: () => void removeJob(job.id),
       tone: "danger",
+    });
+    // FFM-M19 — per-job priority. "Run next" moves the job to the head
+    // of the *pending* section (not index 0, which a running job owns),
+    // and the boost pauses running siblings so this one gets the
+    // bandwidth. Both are meaningless once a job has finished, so they
+    // follow the same `isActive` gate as cancel.
+    items.push({
+      id: "run-next",
+      label: t("action-run-next"),
+      icon: "play",
+      disabled: job.state !== "pending",
+      onClick: () => void runJobNext(job),
+    });
+    items.push({
+      id: "boost",
+      label: boostedJobId === job.id ? t("action-clear-boost") : t("action-boost"),
+      icon: "refresh",
+      disabled: !isActive,
+      onClick: () => void toggleBoost(job),
     });
     items.push({
       id: "reveal-src",
@@ -391,6 +475,18 @@
        sitting directly above the Footer counters. -->
   <ProgressBar />
   <Footer />
+
+  <!-- FFM-M22 — queue announcements for screen readers.
+
+       `ProgressBar` already carries proper `role="progressbar"`
+       semantics, but a live region on a continuously-changing
+       percentage would announce over everything else the user is
+       doing. This announces *discrete transitions* only — the counts
+       of running / done / failed jobs — so a blind user hears "3
+       running, 1 failed" when it changes and nothing in between. -->
+  <div class="sr-only" role="status" aria-live="polite" aria-atomic="true">
+    {queueAnnouncement}
+  </div>
 
   {#if detailsJob}
     <DetailsDrawer
@@ -562,6 +658,55 @@
       --error: #a52020;
       --ok: #1e6b3c;
     }
+
+    /* FFM-M22 — a high-contrast user needs the focus ring to be the
+       loudest thing on screen, not a 1px tint. */
+    :global(:focus-visible) {
+      outline: 3px solid var(--accent);
+      outline-offset: 2px;
+    }
+  }
+
+  /* FFM-M22 — accessibility stable-gate.
+
+     Before this, only the F2 tab pulse honored `prefers-reduced-motion`;
+     every other transition and animation ran regardless. Rather than
+     auditing each component's transitions one at a time — and having
+     the next one added quietly reintroduce the problem — kill motion
+     globally for users who ask for it. `0.01ms` rather than `0` so
+     `transitionend` / `animationend` handlers still fire and no
+     component waits forever for an event that never comes. */
+  @media (prefers-reduced-motion: reduce) {
+    :global(*),
+    :global(*::before),
+    :global(*::after) {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* FFM-M22 — a visible focus indicator everywhere the keyboard can
+     land. `:focus-visible` (not `:focus`) so a mouse click doesn't
+     paint a ring the pointer user never asked for. */
+  :global(:focus-visible) {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* FFM-M22 — screen-reader-only text: available to assistive tech,
+     invisible on screen, and still focusable (no `display: none`). */
+  :global(.sr-only) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 
   /* Modal background blur — the suite-wide Havoc standard, applied

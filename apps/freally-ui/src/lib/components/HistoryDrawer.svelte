@@ -10,6 +10,7 @@
 <script lang="ts">
   import { save } from "@tauri-apps/plugin-dialog";
 
+  import { escapeToClose } from "../a11y";
   import Icon from "../icons/Icon.svelte";
   import { i18nVersion, t } from "../i18n";
   import { open as openDialog } from "@tauri-apps/plugin-dialog";
@@ -385,7 +386,7 @@
 </script>
 
 {#if $historyDrawerOpen}
-  <aside class="drawer" aria-label={t("history-title")}>
+  <aside class="drawer" aria-label={t("history-title")} use:escapeToClose={closeHistoryDrawer}>
     {#key $i18nVersion}
     <header>
       <h2>{t("history-title")}</h2>

@@ -11,7 +11,7 @@ use std::str::FromStr;
 
 pub use freally_core::Hasher;
 
-/// The set of verification algorithms Freally File Manager v0.19.85 supports.
+/// The set of verification algorithms Freally File Manager v0.22.0 supports.
 ///
 /// Order and stability of this enum matter — it is serialised in
 /// `CopyOptions`, in sidecar filenames, and in the Phase 3 smoke test.

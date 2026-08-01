@@ -19,8 +19,8 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
+use crate::Settings;
 use crate::error::{Result, SettingsError};
-use crate::{Settings, project_dirs};
 
 const PROFILES_DIRNAME: &str = "settings-profiles";
 const PROFILE_EXT: &str = "json";
@@ -52,8 +52,10 @@ impl ProfileStore {
     /// `settings-profiles/` subfolder. Creates the directory on
     /// first write — no IO yet at construction.
     pub fn default_store() -> Result<Self> {
-        let dirs = project_dirs()?;
-        Ok(Self::new(dirs.config_dir().join(PROFILES_DIRNAME)))
+        // FFM-M21 — beside the binary under portable mode.
+        Ok(Self::new(
+            crate::portable::config_root()?.join(PROFILES_DIRNAME),
+        ))
     }
 
     pub fn root(&self) -> &Path {

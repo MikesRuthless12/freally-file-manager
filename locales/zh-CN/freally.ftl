@@ -1,5 +1,5 @@
-app-name = Freally File Manager v0.19.85
-window-title = Freally File Manager v0.19.85
+app-name = Freally File Manager v0.22.0
+window-title = Freally File Manager v0.22.0
 shred-ssd-advisory = 警告：此目标位于 SSD 上。多次覆写无法可靠清除闪存数据，因为磨损均衡和预留空间会将数据从逻辑块地址下移走。对于固态存储介质，请优先使用 ATA SECURE ERASE、带安全擦除的 NVMe Format，或使用全盘加密并丢弃密钥。
 
 # Global aggregate states (header pill)
@@ -1521,3 +1521,114 @@ history-elevate-batch-hint = 用一次提权同意重试此作业中所有被拒
 elevate-batch-none = 没有需要提权的被拒路径
 elevate-batch-confirm = 为 { $count } 个路径授予一次提权吗？（另外 { $skipped } 个失败无法通过提权解决。）助手将复制以下路径：
 elevate-batch-toast = 提权批处理 — 已复制 { $copied } 个，失败 { $failed } 个
+
+# ===== Build 3 (FFM-M17..M24) =====
+
+# FFM-M23
+err-source-changed = 读取过程中源文件已更改
+job-source-changed = 复制期间源已更改
+settings-source-stability-label = 复制过程中源文件发生更改时
+settings-source-stability-description = 读取后重新检查每个源的大小和时间戳。仅靠校验无法发现这种情况。
+settings-source-stability-off = 不检查
+settings-source-stability-warn = 警告并标记该文件
+settings-source-stability-recopy = 重新复制该文件
+settings-source-stability-fail = 将该文件标记为失败
+
+# FFM-M17
+err-schedule-id-invalid = 计划标识符无效
+err-schedule-label-invalid = 计划名称无效
+err-schedule-verb-invalid = 计划任务只能复制或移动
+err-schedule-trigger-invalid = 计划时间无效
+err-schedule-too-many = 计划任务过多
+err-schedule-install-failed = 系统计划程序拒绝了此计划
+err-schedule-remove-failed = 系统计划程序无法删除此计划
+err-schedule-no-program = 无法确定本应用程序的位置
+settings-schedules-title = 计划任务
+settings-schedules-empty = 尚无计划任务。
+settings-schedule-add = 添加计划
+settings-schedule-trigger-hourly = 每小时
+settings-schedule-trigger-daily = 每天
+settings-schedule-trigger-weekly = 每周
+settings-schedule-next-run = 下次运行
+settings-schedule-missed = 尽快补跑错过的计划
+settings-schedule-missed-unsupported = 此系统在唤醒时总会补跑错过的计划。
+settings-schedule-not-installed = 系统计划程序中不存在
+
+# FFM-M18
+err-affinity-too-many = 驱动器队列分组过多
+err-affinity-name-invalid = 分组名称无效
+err-affinity-name-duplicate = 已有其他分组使用该名称
+err-affinity-prefixes-invalid = 分组至少需要一个文件夹
+err-affinity-workers-invalid = 工作线程数无效
+settings-affinity-title = 驱动器队列
+settings-affinity-description = 当驱动器识别有误时，由你指定哪些目标共用同一个传输队列。
+settings-affinity-add = 添加分组
+settings-affinity-workers = 工作线程
+settings-affinity-workers-auto = 自动
+
+# FFM-M19
+err-queue-unknown = 未知队列
+action-run-next = 接下来运行
+action-boost = 优先处理
+action-clear-boost = 取消优先
+action-move-to-queue = 移到队列
+
+# FFM-M20
+err-favorite-label-invalid = 收藏名称无效
+err-favorite-kind-invalid = 收藏类型无效
+err-favorite-hotkey-invalid = 快捷键无效
+err-favorite-too-many = 收藏过多
+settings-favorites-title = 收藏
+settings-favorites-empty = 尚无收藏。
+settings-favorites-add = 添加收藏
+favorites-recent-title = 最近的组合
+favorites-kind-source = 源
+favorites-kind-destination = 目标
+favorites-kind-pair = 组合
+
+# FFM-M21
+err-shell-portable = 便携模式下无法使用外壳集成
+settings-portable-title = 便携模式
+settings-portable-active = 便携模式已启用。设置、历史记录和日志保存在 { $path }。
+settings-portable-keychain-warning = 警告：已保存的云凭据仍存放在本机的系统钥匙串中，而不是便携驱动器上——拔出驱动器后它们仍留在这台计算机上。归还计算机前请删除你添加的远程连接。
+
+# FFM-M24
+err-autostart-portable = 便携模式下无法使用登录时启动
+err-autostart-failed = 无法更改登录时启动的设置
+settings-autostart-label = 登录时启动 Freally
+settings-autostart-description = 以最小化到托盘的方式启动，使外壳集成、快捷键、监视器和计划任务从登录起即可用。
+settings-autostart-unavailable-portable = 便携模式下不可用 — 启动项会指向这个可移动驱动器。
+settings-autostart-unavailable-platform = 此系统不支持登录时启动。
+
+# ===== Build 3 panel labels =====
+
+action-edit = 编辑
+action-remove = 移除
+action-save = 保存
+action-browse = 浏览…
+settings-tab-schedules = 计划任务
+settings-tab-queues = 驱动器队列
+settings-tab-favorites = 收藏
+settings-schedule-name = 名称
+settings-schedule-verb = 操作
+settings-schedule-verb-copy = 复制
+settings-schedule-verb-move = 移动
+settings-schedule-manifest = 文件列表
+settings-schedule-destination = 目标
+settings-schedule-when = 运行频率
+settings-schedule-weekday = 星期几（0 = 星期日）
+settings-schedule-hour = 小时
+settings-schedule-minute = 分钟
+settings-affinity-name = 分组名称
+settings-affinity-paths = 文件夹
+settings-affinity-path-add = 添加文件夹…
+settings-favorites-name = 名称
+settings-favorites-kind = 类型
+settings-favorites-path = 文件夹
+settings-favorites-destination = 目标
+settings-favorites-hotkey = 快捷键
+
+# FFM-M22 — screen-reader queue announcement
+a11y-queue-status = 进行中 { $running } 个，已完成 { $done } 个，失败 { $failed } 个
+
+err-favorite-id-invalid = 收藏标识符无效

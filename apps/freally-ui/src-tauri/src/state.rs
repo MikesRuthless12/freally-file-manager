@@ -415,6 +415,23 @@ impl AppState {
             .expect("settings lock poisoned")
             .clone()
     }
+
+    /// Write `settings` to [`Self::settings_path`].
+    ///
+    /// A dozen command modules had each grown their own byte-identical
+    /// copy of this three-line body; this is the one place that knows
+    /// the rule. An **empty** path means "don't persist" — tests build
+    /// an `AppState` that way so they never write into the developer's
+    /// real OS config directory — so it is a success, not an error.
+    pub fn persist_settings(&self, settings: &Settings) -> Result<(), String> {
+        let path = self.settings_path.as_path();
+        if path.as_os_str().is_empty() {
+            return Ok(());
+        }
+        settings
+            .save_to(path)
+            .map_err(|e| format!("save settings: {e}"))
+    }
 }
 
 impl Default for AppState {

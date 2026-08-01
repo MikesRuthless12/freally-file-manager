@@ -1,5 +1,5 @@
-app-name = Freally File Manager v0.19.85
-window-title = Freally File Manager v0.19.85
+app-name = Freally File Manager v0.22.0
+window-title = Freally File Manager v0.22.0
 shred-ssd-advisory = Cảnh báo: ổ đích này là SSD. Ghi đè nhiều lượt không thể xóa sạch bộ nhớ flash một cách đáng tin cậy vì cơ chế cân bằng hao mòn và dự phòng dung lượng đẩy dữ liệu ra khỏi địa chỉ khối logic. Với ổ thể rắn, hãy dùng ATA SECURE ERASE, NVMe Format kèm Secure Erase, hoặc mã hóa toàn ổ rồi hủy khóa.
 
 # Global aggregate states (header pill)
@@ -1521,3 +1521,114 @@ history-elevate-batch-hint = Thử lại mọi đường dẫn bị từ chối 
 elevate-batch-none = Không có đường dẫn bị từ chối quyền để nâng
 elevate-batch-confirm = Cấp một lần nâng quyền cho { $count } đường dẫn? ({ $skipped } lỗi khác không thể khắc phục bằng cách này.) Trình trợ giúp sẽ sao chép các đường dẫn sau:
 elevate-batch-toast = Lô đã nâng quyền — { $copied } đã chép, { $failed } thất bại
+
+# ===== Build 3 (FFM-M17..M24) =====
+
+# FFM-M23
+err-source-changed = Tệp nguồn đã thay đổi trong khi đang đọc
+job-source-changed = Nguồn đã thay đổi trong khi sao chép
+settings-source-stability-label = Nếu tệp nguồn thay đổi trong khi sao chép
+settings-source-stability-description = Kiểm tra lại kích thước và dấu thời gian của từng nguồn sau khi đọc. Chỉ riêng việc xác minh không phát hiện được điều này.
+settings-source-stability-off = Không kiểm tra
+settings-source-stability-warn = Cảnh báo và đánh dấu tệp
+settings-source-stability-recopy = Sao chép lại tệp
+settings-source-stability-fail = Đánh dấu tệp là thất bại
+
+# FFM-M17
+err-schedule-id-invalid = Mã lịch trình không hợp lệ
+err-schedule-label-invalid = Tên lịch trình không hợp lệ
+err-schedule-verb-invalid = Lịch trình chỉ có thể sao chép hoặc di chuyển
+err-schedule-trigger-invalid = Thời điểm lịch trình không hợp lệ
+err-schedule-too-many = Quá nhiều tác vụ theo lịch
+err-schedule-install-failed = Bộ lập lịch của hệ thống đã từ chối lịch trình này
+err-schedule-remove-failed = Bộ lập lịch của hệ thống không thể xóa lịch trình này
+err-schedule-no-program = Không xác định được vị trí của ứng dụng
+settings-schedules-title = Tác vụ theo lịch
+settings-schedules-empty = Chưa có tác vụ theo lịch nào.
+settings-schedule-add = Thêm lịch trình
+settings-schedule-trigger-hourly = Mỗi giờ
+settings-schedule-trigger-daily = Mỗi ngày
+settings-schedule-trigger-weekly = Mỗi tuần
+settings-schedule-next-run = Lần chạy tiếp theo
+settings-schedule-missed = Chạy lịch trình bị bỏ lỡ ngay khi có thể
+settings-schedule-missed-unsupported = Hệ thống này luôn chạy lịch trình bị bỏ lỡ khi thức dậy.
+settings-schedule-not-installed = Không có trong bộ lập lịch của hệ thống
+
+# FFM-M18
+err-affinity-too-many = Quá nhiều nhóm hàng đợi ổ đĩa
+err-affinity-name-invalid = Tên nhóm không hợp lệ
+err-affinity-name-duplicate = Một nhóm khác đã dùng tên này
+err-affinity-prefixes-invalid = Nhóm cần ít nhất một thư mục
+err-affinity-workers-invalid = Số tiến trình không hợp lệ
+settings-affinity-title = Hàng đợi ổ đĩa
+settings-affinity-description = Tự quyết định đích nào dùng chung một hàng đợi truyền khi việc nhận diện ổ đĩa bị sai.
+settings-affinity-add = Thêm nhóm
+settings-affinity-workers = Tiến trình
+settings-affinity-workers-auto = Tự động
+
+# FFM-M19
+err-queue-unknown = Hàng đợi không xác định
+action-run-next = Chạy kế tiếp
+action-boost = Ưu tiên
+action-clear-boost = Bỏ ưu tiên
+action-move-to-queue = Chuyển sang hàng đợi
+
+# FFM-M20
+err-favorite-label-invalid = Tên mục ưa thích không hợp lệ
+err-favorite-kind-invalid = Loại mục ưa thích không hợp lệ
+err-favorite-hotkey-invalid = Phím tắt không hợp lệ
+err-favorite-too-many = Quá nhiều mục ưa thích
+settings-favorites-title = Ưa thích
+settings-favorites-empty = Chưa có mục ưa thích nào.
+settings-favorites-add = Thêm mục ưa thích
+favorites-recent-title = Cặp gần đây
+favorites-kind-source = Nguồn
+favorites-kind-destination = Đích
+favorites-kind-pair = Cặp
+
+# FFM-M21
+err-shell-portable = Tích hợp shell không khả dụng ở chế độ di động
+settings-portable-title = Chế độ di động
+settings-portable-active = Chế độ di động đang bật. Cài đặt, lịch sử và nhật ký được lưu trong { $path }.
+settings-portable-keychain-warning = Cảnh báo: thông tin đăng nhập đám mây đã lưu vẫn nằm trong chuỗi khóa hệ thống của máy tính này, không phải trên ổ đĩa di động — chúng vẫn ở lại sau khi bạn rút ổ. Hãy xóa các kết nối từ xa bạn đã thêm trước khi trả lại máy.
+
+# FFM-M24
+err-autostart-portable = Khởi động khi đăng nhập không khả dụng ở chế độ di động
+err-autostart-failed = Không thể thay đổi thiết lập khởi động khi đăng nhập
+settings-autostart-label = Khởi động Freally khi đăng nhập
+settings-autostart-description = Khởi động thu nhỏ xuống khay để tích hợp shell, phím tắt, bộ theo dõi và lịch trình hoạt động ngay từ khi đăng nhập.
+settings-autostart-unavailable-portable = Không khả dụng ở chế độ di động — mục khởi động sẽ trỏ tới ổ đĩa rời này.
+settings-autostart-unavailable-platform = Khởi động khi đăng nhập không khả dụng trên hệ thống này.
+
+# ===== Build 3 panel labels =====
+
+action-edit = Sửa
+action-remove = Xóa
+action-save = Lưu
+action-browse = Duyệt…
+settings-tab-schedules = Lịch trình
+settings-tab-queues = Hàng đợi ổ đĩa
+settings-tab-favorites = Ưa thích
+settings-schedule-name = Tên
+settings-schedule-verb = Hành động
+settings-schedule-verb-copy = Sao chép
+settings-schedule-verb-move = Di chuyển
+settings-schedule-manifest = Danh sách tệp
+settings-schedule-destination = Đích
+settings-schedule-when = Tần suất
+settings-schedule-weekday = Thứ trong tuần (0 = Chủ nhật)
+settings-schedule-hour = Giờ
+settings-schedule-minute = Phút
+settings-affinity-name = Tên nhóm
+settings-affinity-paths = Thư mục
+settings-affinity-path-add = Thêm thư mục…
+settings-favorites-name = Tên
+settings-favorites-kind = Loại
+settings-favorites-path = Thư mục
+settings-favorites-destination = Đích
+settings-favorites-hotkey = Phím tắt
+
+# FFM-M22 — screen-reader queue announcement
+a11y-queue-status = { $running } đang chạy, { $done } xong, { $failed } thất bại
+
+err-favorite-id-invalid = Mã mục ưa thích không hợp lệ

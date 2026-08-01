@@ -1,5 +1,5 @@
-app-name = Freally File Manager v0.19.85
-window-title = Freally File Manager v0.19.85
+app-name = Freally File Manager v0.22.0
+window-title = Freally File Manager v0.22.0
 shred-ssd-advisory = تحذير: هذا الهدف موجود على قرص SSD. عمليات الكتابة فوق البيانات متعددة المرات لا تمسح ذاكرة الفلاش بشكل موثوق، لأن موازنة التآكل والتخصيص الزائد ينقلان البيانات بعيدًا عن عنوان الكتلة المنطقي. بالنسبة لوسائط الحالة الصلبة، يُفضّل استخدام ATA SECURE ERASE أو NVMe Format مع المسح الآمن أو التشفير الكامل للقرص مع التخلص من المفتاح.
 
 # Global aggregate states (header pill)
@@ -1521,3 +1521,114 @@ history-elevate-batch-hint = أعد محاولة كل المسارات المر�
 elevate-batch-none = لا توجد مسارات مرفوضة الصلاحية لرفعها
 elevate-batch-confirm = هل تمنح رفع صلاحيات واحدًا لـ { $count } مسارًا؟ ({ $skipped } إخفاقات أخرى لا يصلحها الرفع.) سينسخ المساعد هذه المسارات:
 elevate-batch-toast = دفعة مرفوعة الصلاحية — نُسخ { $copied }، وفشل { $failed }
+
+# ===== Build 3 (FFM-M17..M24) =====
+
+# FFM-M23
+err-source-changed = تغيّر الملف المصدر أثناء قراءته
+job-source-changed = تغيّر المصدر أثناء النسخ
+settings-source-stability-label = إذا تغيّر ملف مصدر أثناء النسخ
+settings-source-stability-description = يعيد فحص حجم كل مصدر وطابعه الزمني بعد قراءته. التحقق وحده لا يكتشف ذلك.
+settings-source-stability-off = عدم الفحص
+settings-source-stability-warn = التحذير ووضع علامة على الملف
+settings-source-stability-recopy = نسخ الملف مرة أخرى
+settings-source-stability-fail = اعتبار الملف فاشلًا
+
+# FFM-M17
+err-schedule-id-invalid = معرّف جدولة غير صالح
+err-schedule-label-invalid = اسم جدولة غير صالح
+err-schedule-verb-invalid = يمكن للجدولة النسخ أو النقل فقط
+err-schedule-trigger-invalid = وقت جدولة غير صالح
+err-schedule-too-many = عدد المهام المجدولة كبير جدًا
+err-schedule-install-failed = رفض مجدول النظام هذه الجدولة
+err-schedule-remove-failed = تعذّر على مجدول النظام إزالة هذه الجدولة
+err-schedule-no-program = تعذّر تحديد موقع هذا التطبيق
+settings-schedules-title = المهام المجدولة
+settings-schedules-empty = لا توجد مهام مجدولة بعد.
+settings-schedule-add = إضافة جدولة
+settings-schedule-trigger-hourly = كل ساعة
+settings-schedule-trigger-daily = كل يوم
+settings-schedule-trigger-weekly = كل أسبوع
+settings-schedule-next-run = التشغيل التالي
+settings-schedule-missed = تشغيل الجدولة الفائتة في أقرب وقت ممكن
+settings-schedule-missed-unsupported = يشغّل هذا النظام دائمًا الجدولة الفائتة عند الاستيقاظ.
+settings-schedule-not-installed = غير موجودة في مجدول النظام
+
+# FFM-M18
+err-affinity-too-many = عدد مجموعات طوابير الأقراص كبير جدًا
+err-affinity-name-invalid = اسم مجموعة غير صالح
+err-affinity-name-duplicate = هناك مجموعة أخرى تستخدم هذا الاسم بالفعل
+err-affinity-prefixes-invalid = تحتاج المجموعة إلى مجلد واحد على الأقل
+err-affinity-workers-invalid = عدد العمليات غير صالح
+settings-affinity-title = طوابير الأقراص
+settings-affinity-description = حدّد بنفسك أي وجهات تشترك في طابور نقل واحد عندما يخطئ اكتشاف الأقراص.
+settings-affinity-add = إضافة مجموعة
+settings-affinity-workers = العمليات
+settings-affinity-workers-auto = تلقائي
+
+# FFM-M19
+err-queue-unknown = طابور غير معروف
+action-run-next = التشغيل تاليًا
+action-boost = إعطاء أولوية
+action-clear-boost = إلغاء الأولوية
+action-move-to-queue = النقل إلى الطابور
+
+# FFM-M20
+err-favorite-label-invalid = اسم مفضّلة غير صالح
+err-favorite-kind-invalid = نوع مفضّلة غير صالح
+err-favorite-hotkey-invalid = اختصار غير صالح
+err-favorite-too-many = عدد المفضّلات كبير جدًا
+settings-favorites-title = المفضّلة
+settings-favorites-empty = لا توجد مفضّلات بعد.
+settings-favorites-add = إضافة مفضّلة
+favorites-recent-title = الأزواج الأخيرة
+favorites-kind-source = المصدر
+favorites-kind-destination = الوجهة
+favorites-kind-pair = زوج
+
+# FFM-M21
+err-shell-portable = تكامل الصدفة غير متاح في الوضع المحمول
+settings-portable-title = الوضع المحمول
+settings-portable-active = الوضع المحمول مُفعّل. تُخزَّن الإعدادات والسجل ودفاتر اليومية في { $path }.
+settings-portable-keychain-warning = تحذير: لا تزال بيانات اعتماد السحابة المحفوظة تُخزَّن في سلسلة مفاتيح هذا الحاسوب، وليس على القرص المحمول — فهي تبقى على هذا الجهاز بعد فصله. احذف أي اتصالات بعيدة أضفتها قبل إعادة الحاسوب.
+
+# FFM-M24
+err-autostart-portable = التشغيل عند تسجيل الدخول غير متاح في الوضع المحمول
+err-autostart-failed = تعذّر تغيير إعداد التشغيل عند تسجيل الدخول
+settings-autostart-label = تشغيل Freally عند تسجيل الدخول
+settings-autostart-description = يبدأ مصغّرًا في شريط الإشعارات ليكون تكامل الصدفة والاختصارات والمراقبات والجداول فعّالة منذ تسجيل الدخول.
+settings-autostart-unavailable-portable = غير متاح في الوضع المحمول — سيشير عنصر بدء التشغيل إلى هذا القرص القابل للإزالة.
+settings-autostart-unavailable-platform = التشغيل عند تسجيل الدخول غير متاح على هذا النظام.
+
+# ===== Build 3 panel labels =====
+
+action-edit = تحرير
+action-remove = إزالة
+action-save = حفظ
+action-browse = استعراض…
+settings-tab-schedules = الجدولات
+settings-tab-queues = طوابير الأقراص
+settings-tab-favorites = المفضّلة
+settings-schedule-name = الاسم
+settings-schedule-verb = الإجراء
+settings-schedule-verb-copy = نسخ
+settings-schedule-verb-move = نقل
+settings-schedule-manifest = قائمة الملفات
+settings-schedule-destination = الوجهة
+settings-schedule-when = التكرار
+settings-schedule-weekday = يوم الأسبوع (0 = الأحد)
+settings-schedule-hour = الساعة
+settings-schedule-minute = الدقيقة
+settings-affinity-name = اسم المجموعة
+settings-affinity-paths = المجلدات
+settings-affinity-path-add = إضافة مجلد…
+settings-favorites-name = الاسم
+settings-favorites-kind = النوع
+settings-favorites-path = المجلد
+settings-favorites-destination = الوجهة
+settings-favorites-hotkey = الاختصار
+
+# FFM-M22 — screen-reader queue announcement
+a11y-queue-status = { $running } قيد التنفيذ، { $done } مكتملة، { $failed } فاشلة
+
+err-favorite-id-invalid = معرّف مفضّلة غير صالح

@@ -1,4 +1,4 @@
-//! Windows COM in-proc shell extension for Freally File Manager v0.19.85.
+//! Windows COM in-proc shell extension for Freally File Manager v0.22.0.
 //!
 //! Adds "Copy with Freally File Manager" and "Move with Freally File Manager" entries to
 //! the Windows Explorer right-click menu for files and folders. Each

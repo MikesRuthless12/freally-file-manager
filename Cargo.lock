@@ -3022,7 +3022,7 @@ dependencies = [
 
 [[package]]
 name = "freally-audit"
-version = "0.20.0"
+version = "0.22.0"
 dependencies = [
  "blake3",
  "chrono",
@@ -3045,7 +3045,7 @@ dependencies = [
 
 [[package]]
 name = "freally-chunk"
-version = "0.20.0"
+version = "0.22.0"
 dependencies = [
  "aes 0.8.4",
  "aes-gcm 0.10.3",
@@ -3080,7 +3080,7 @@ dependencies = [
 
 [[package]]
 name = "freally-cli"
-version = "0.20.0"
+version = "0.22.0"
 dependencies = [
  "assert_cmd",
  "chrono",
@@ -3106,7 +3106,7 @@ dependencies = [
 
 [[package]]
 name = "freally-cloud"
-version = "0.20.0"
+version = "0.22.0"
 dependencies = [
  "async-trait",
  "base64 0.22.1",
@@ -3138,7 +3138,7 @@ dependencies = [
 
 [[package]]
 name = "freally-core"
-version = "0.20.0"
+version = "0.22.0"
 dependencies = [
  "blake3",
  "criterion",
@@ -3162,7 +3162,7 @@ dependencies = [
 
 [[package]]
 name = "freally-crypt"
-version = "0.20.0"
+version = "0.22.0"
 dependencies = [
  "age",
  "freally-core",
@@ -3176,7 +3176,7 @@ dependencies = [
 
 [[package]]
 name = "freally-diag"
-version = "0.20.0"
+version = "0.22.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -3185,7 +3185,7 @@ dependencies = [
 
 [[package]]
 name = "freally-hash"
-version = "0.20.0"
+version = "0.22.0"
 dependencies = [
  "blake3",
  "crc32fast",
@@ -3204,7 +3204,7 @@ dependencies = [
 
 [[package]]
 name = "freally-helper"
-version = "0.20.0"
+version = "0.22.0"
 dependencies = [
  "freally-core",
  "freally-hash",
@@ -3220,7 +3220,7 @@ dependencies = [
 
 [[package]]
 name = "freally-history"
-version = "0.20.0"
+version = "0.22.0"
 dependencies = [
  "directories",
  "freally-core",
@@ -3232,11 +3232,11 @@ dependencies = [
 
 [[package]]
 name = "freally-i18n"
-version = "0.20.0"
+version = "0.22.0"
 
 [[package]]
 name = "freally-journal"
-version = "0.20.0"
+version = "0.22.0"
 dependencies = [
  "blake3",
  "directories",
@@ -3252,7 +3252,7 @@ dependencies = [
 
 [[package]]
 name = "freally-mobile"
-version = "0.20.0"
+version = "0.22.0"
 dependencies = [
  "async-trait",
  "base32",
@@ -3278,7 +3278,7 @@ dependencies = [
 
 [[package]]
 name = "freally-mount"
-version = "0.20.0"
+version = "0.22.0"
 dependencies = [
  "freally-chunk",
  "freally-core",
@@ -3294,7 +3294,7 @@ dependencies = [
 
 [[package]]
 name = "freally-perceptual"
-version = "0.20.0"
+version = "0.22.0"
 dependencies = [
  "image",
  "image_hasher",
@@ -3306,7 +3306,7 @@ dependencies = [
 
 [[package]]
 name = "freally-platform"
-version = "0.20.0"
+version = "0.22.0"
 dependencies = [
  "blake3",
  "compio",
@@ -3329,7 +3329,7 @@ dependencies = [
 
 [[package]]
 name = "freally-plugin"
-version = "0.20.0"
+version = "0.22.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -3342,7 +3342,7 @@ dependencies = [
 
 [[package]]
 name = "freally-power"
-version = "0.20.0"
+version = "0.22.0"
 dependencies = [
  "battery",
  "freally-platform",
@@ -3357,7 +3357,7 @@ dependencies = [
 
 [[package]]
 name = "freally-provenance"
-version = "0.20.0"
+version = "0.22.0"
 dependencies = [
  "bao",
  "blake3",
@@ -3378,7 +3378,7 @@ dependencies = [
 
 [[package]]
 name = "freally-recovery"
-version = "0.20.0"
+version = "0.22.0"
 dependencies = [
  "askama",
  "axum",
@@ -3403,7 +3403,7 @@ dependencies = [
 
 [[package]]
 name = "freally-secure-delete"
-version = "0.20.0"
+version = "0.22.0"
 dependencies = [
  "freally-core",
  "freally-platform",
@@ -3416,7 +3416,7 @@ dependencies = [
 
 [[package]]
 name = "freally-server"
-version = "0.20.0"
+version = "0.22.0"
 dependencies = [
  "axum",
  "base64 0.22.1",
@@ -3452,7 +3452,7 @@ dependencies = [
 
 [[package]]
 name = "freally-settings"
-version = "0.20.0"
+version = "0.22.0"
 dependencies = [
  "directories",
  "globset",
@@ -3465,7 +3465,7 @@ dependencies = [
 
 [[package]]
 name = "freally-shape"
-version = "0.20.0"
+version = "0.22.0"
 dependencies = [
  "arc-swap",
  "blake3",
@@ -3481,7 +3481,7 @@ dependencies = [
 
 [[package]]
 name = "freally-shellext"
-version = "0.20.0"
+version = "0.22.0"
 dependencies = [
  "tempfile",
  "windows 0.61.3",
@@ -3491,7 +3491,7 @@ dependencies = [
 
 [[package]]
 name = "freally-snapshot"
-version = "0.20.0"
+version = "0.22.0"
 dependencies = [
  "freally-core",
  "getrandom 0.3.4",
@@ -3510,7 +3510,7 @@ dependencies = [
 
 [[package]]
 name = "freally-sync"
-version = "0.20.0"
+version = "0.22.0"
 dependencies = [
  "blake3",
  "chrono",
@@ -3527,7 +3527,7 @@ dependencies = [
 
 [[package]]
 name = "freally-ui"
-version = "0.20.0"
+version = "0.22.0"
 dependencies = [
  "arboard",
  "async-trait",
@@ -3598,7 +3598,7 @@ dependencies = [
 
 [[package]]
 name = "freally-watch"
-version = "0.20.0"
+version = "0.22.0"
 dependencies = [
  "notify",
  "tempfile",
@@ -12165,7 +12165,7 @@ dependencies = [
 
 [[package]]
 name = "xtask"
-version = "0.20.0"
+version = "0.22.0"
 dependencies = [
  "freally-chunk",
  "freally-core",

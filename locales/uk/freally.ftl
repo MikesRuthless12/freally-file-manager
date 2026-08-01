@@ -1,5 +1,5 @@
-app-name = Freally File Manager v0.19.85
-window-title = Freally File Manager v0.19.85
+app-name = Freally File Manager v0.22.0
+window-title = Freally File Manager v0.22.0
 shred-ssd-advisory = Попередження: цей об'єкт розташований на SSD. Багатопрохідне перезаписування ненадійно очищає флеш-пам'ять, оскільки вирівнювання зносу та надмірне резервування переміщують дані з-під логічної адреси блоку. Для твердотільних носіїв надавайте перевагу ATA SECURE ERASE, NVMe Format із Secure Erase або повному шифруванню диска з відкинутим ключем.
 
 # Global aggregate states (header pill)
@@ -1521,3 +1521,114 @@ history-elevate-batch-hint = Повторити всі шляхи цього з�
 elevate-batch-none = Немає шляхів із відмовою в доступі
 elevate-batch-confirm = Надати одне підвищення прав для шляхів: { $count }? (Інші помилки — { $skipped } — так не виправити.) Помічник скопіює ці шляхи:
 elevate-batch-toast = Пакет із підвищенням прав — скопійовано { $copied }, помилок { $failed }
+
+# ===== Build 3 (FFM-M17..M24) =====
+
+# FFM-M23
+err-source-changed = Вихідний файл змінився під час читання
+job-source-changed = Джерело змінилося під час копіювання
+settings-source-stability-label = Якщо вихідний файл змінюється під час копіювання
+settings-source-stability-description = Повторно перевіряє розмір і час зміни кожного джерела після читання. Сама лише перевірка цього не виявить.
+settings-source-stability-off = Не перевіряти
+settings-source-stability-warn = Попередити й позначити файл
+settings-source-stability-recopy = Скопіювати файл знову
+settings-source-stability-fail = Вважати файл невдалим
+
+# FFM-M17
+err-schedule-id-invalid = Недійсний ідентифікатор розкладу
+err-schedule-label-invalid = Недійсна назва розкладу
+err-schedule-verb-invalid = Розклад може лише копіювати або переміщувати
+err-schedule-trigger-invalid = Недійсний час розкладу
+err-schedule-too-many = Забагато запланованих завдань
+err-schedule-install-failed = Планувальник системи відхилив цей розклад
+err-schedule-remove-failed = Планувальнику системи не вдалося вилучити цей розклад
+err-schedule-no-program = Не вдалося визначити розташування програми
+settings-schedules-title = Заплановані завдання
+settings-schedules-empty = Запланованих завдань ще немає.
+settings-schedule-add = Додати розклад
+settings-schedule-trigger-hourly = Щогодини
+settings-schedule-trigger-daily = Щодня
+settings-schedule-trigger-weekly = Щотижня
+settings-schedule-next-run = Наступний запуск
+settings-schedule-missed = Виконати пропущений запуск за першої нагоди
+settings-schedule-missed-unsupported = Ця система завжди виконує пропущений запуск після пробудження.
+settings-schedule-not-installed = Відсутній у планувальнику системи
+
+# FFM-M18
+err-affinity-too-many = Забагато груп черг дисків
+err-affinity-name-invalid = Недійсна назва групи
+err-affinity-name-duplicate = Інша група вже використовує цю назву
+err-affinity-prefixes-invalid = Групі потрібна хоча б одна тека
+err-affinity-workers-invalid = Недійсна кількість робочих процесів
+settings-affinity-title = Черги дисків
+settings-affinity-description = Визначте вручну, які призначення поділяють одну чергу передавання, якщо визначення дисків помиляється.
+settings-affinity-add = Додати групу
+settings-affinity-workers = Робочі процеси
+settings-affinity-workers-auto = Автоматично
+
+# FFM-M19
+err-queue-unknown = Невідома черга
+action-run-next = Виконати наступним
+action-boost = Підвищити пріоритет
+action-clear-boost = Зняти пріоритет
+action-move-to-queue = Перемістити до черги
+
+# FFM-M20
+err-favorite-label-invalid = Недійсна назва обраного
+err-favorite-kind-invalid = Недійсний тип обраного
+err-favorite-hotkey-invalid = Недійсне сполучення клавіш
+err-favorite-too-many = Забагато обраного
+settings-favorites-title = Обране
+settings-favorites-empty = Обраного ще немає.
+settings-favorites-add = Додати до обраного
+favorites-recent-title = Нещодавні пари
+favorites-kind-source = Джерело
+favorites-kind-destination = Призначення
+favorites-kind-pair = Пара
+
+# FFM-M21
+err-shell-portable = Інтеграція з оболонкою недоступна в портативному режимі
+settings-portable-title = Портативний режим
+settings-portable-active = Портативний режим активний. Налаштування, історія та журнали зберігаються в { $path }.
+settings-portable-keychain-warning = Попередження: збережені хмарні облікові дані досі потрапляють до в'язки ключів цього комп'ютера, а не на знімний диск — вони залишаться тут після вилучення. Вилучіть додані підключення, перш ніж повернути комп'ютер.
+
+# FFM-M24
+err-autostart-portable = Запуск під час входу недоступний у портативному режимі
+err-autostart-failed = Не вдалося змінити запуск під час входу
+settings-autostart-label = Запускати Freally під час входу
+settings-autostart-description = Запускається згорнутим у лоток, щоб інтеграція з оболонкою, сполучення клавіш, спостерігачі та розклади працювали від моменту входу.
+settings-autostart-unavailable-portable = Недоступно в портативному режимі — запис автозапуску вказував би на цей знімний диск.
+settings-autostart-unavailable-platform = Запуск під час входу недоступний у цій системі.
+
+# ===== Build 3 panel labels =====
+
+action-edit = Змінити
+action-remove = Вилучити
+action-save = Зберегти
+action-browse = Огляд…
+settings-tab-schedules = Розклади
+settings-tab-queues = Черги дисків
+settings-tab-favorites = Обране
+settings-schedule-name = Назва
+settings-schedule-verb = Дія
+settings-schedule-verb-copy = Копіювати
+settings-schedule-verb-move = Перемістити
+settings-schedule-manifest = Список файлів
+settings-schedule-destination = Призначення
+settings-schedule-when = Періодичність
+settings-schedule-weekday = День тижня (0 — неділя)
+settings-schedule-hour = Година
+settings-schedule-minute = Хвилина
+settings-affinity-name = Назва групи
+settings-affinity-paths = Теки
+settings-affinity-path-add = Додати теку…
+settings-favorites-name = Назва
+settings-favorites-kind = Тип
+settings-favorites-path = Тека
+settings-favorites-destination = Призначення
+settings-favorites-hotkey = Сполучення клавіш
+
+# FFM-M22 — screen-reader queue announcement
+a11y-queue-status = виконується: { $running }, готово: { $done }, з помилкою: { $failed }
+
+err-favorite-id-invalid = Недійсний ідентифікатор обраного

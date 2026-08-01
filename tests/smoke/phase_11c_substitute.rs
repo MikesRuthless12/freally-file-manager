@@ -59,6 +59,16 @@ fn canned_args(key: &str) -> HashMap<&'static str, String> {
         "drop-dialog-subtitle" => {
             m.insert("count", "3".to_string());
         }
+        // FFM-M21 — the portable-mode banner names the data root.
+        "settings-portable-active" => {
+            m.insert("path", "E:/FreallyData".to_string());
+        }
+        // FFM-M22 — the screen-reader queue announcement.
+        "a11y-queue-status" => {
+            m.insert("running", "3".to_string());
+            m.insert("done", "12".to_string());
+            m.insert("failed", "1".to_string());
+        }
         "eula-version" => {
             m.insert("version", "2026-07-19".to_string());
         }
