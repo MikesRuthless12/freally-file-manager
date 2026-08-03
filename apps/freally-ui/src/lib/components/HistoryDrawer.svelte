@@ -379,6 +379,10 @@
     return out.startsWith("{") ? kind : out;
   }
   function localizedStatus(status: string): string {
+    // FFM-M23 — the guard's label is already translated in all 18
+    // locales as `job-source-changed`; reuse it rather than add a
+    // second key saying the same thing.
+    if (status === "source-changed") return t("job-source-changed");
     const key = `status-${status}`;
     const out = t(key);
     return out.startsWith("{") ? status : out;
@@ -846,6 +850,13 @@
   .status[data-status="ok"] {
     background: rgba(63, 175, 106, 0.16);
     color: var(--ok, #2e7a4a);
+  }
+
+  /* FFM-M23 — the bytes landed but they are not a faithful copy, so
+     this must not read as a clean success or as an outright failure. */
+  .status[data-status="source-changed"] {
+    background: rgba(201, 138, 43, 0.18);
+    color: var(--warn, #8a5d13);
   }
 
   .status[data-status="failed"] {

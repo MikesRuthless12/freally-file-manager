@@ -113,6 +113,7 @@ pub async fn copy_tree_from_scan(
     let files_done = Arc::new(AtomicU64::new(0));
     let skipped = Arc::new(AtomicU64::new(0));
     let errored = Arc::new(AtomicU64::new(0));
+    let source_changed = Arc::new(AtomicU64::new(0));
 
     let on_error = opts.clamped_on_error();
     let semaphore = Arc::new(Semaphore::new(opts.clamped_concurrency()));
@@ -170,6 +171,7 @@ pub async fn copy_tree_from_scan(
                 let files_done_task = files_done.clone();
                 let skipped_task = skipped.clone();
                 let errored_task = errored.clone();
+                let source_changed_task = source_changed.clone();
                 let on_error_task = on_error;
                 let kind = scan_item.kind;
                 let entry_src_task = entry_src.clone();
@@ -224,6 +226,7 @@ pub async fn copy_tree_from_scan(
                                     &events_task,
                                     on_error_task,
                                     &errored_task,
+                                    &source_changed_task,
                                 )
                                 .await
                             }
@@ -319,6 +322,7 @@ pub async fn copy_tree_from_scan(
         rate_bps: rate,
         skipped: skipped.load(Ordering::Relaxed),
         errored: errored.load(Ordering::Relaxed),
+        source_changed: source_changed.load(Ordering::Relaxed),
     })
 }
 
@@ -377,9 +381,16 @@ pub async fn move_file(
                 bytes,
                 duration: Duration::ZERO,
                 rate_bps: 0,
+                // An atomic rename never reads the source, so there is
+                // no read window for it to change underneath.
+                source_changed: None,
             };
+            // Not routed through `copy_file`, so this path owns its
+            // own `Completed`. An atomic rename has no read window, so
+            // there is no stability verdict to wait for.
             let _ = events
                 .send(CopyEvent::Completed {
+                    src: src.to_path_buf(),
                     bytes,
                     duration: Duration::ZERO,
                     rate_bps: 0,
@@ -406,6 +417,16 @@ pub async fn move_file(
     let report = copy_file(src, dst, opts.copy.clone(), ctrl.clone(), events.clone()).await?;
     if ctrl.is_cancelled() {
         return Err(CopyError::cancelled(src, dst));
+    }
+    // FFM-M23 — the source-stability guard detected that something
+    // rewrote the source while we were reading it, so the destination
+    // is internally inconsistent: its head came from the old contents
+    // and its tail from the new. Under the default `Warn` policy that
+    // still returns `Ok`, and unlinking here would destroy the only
+    // coherent copy of the file that exists. Degrade the move to a
+    // copy and hand the verdict back to the caller, which reports it.
+    if report.source_changed.is_some() {
+        return Ok(report);
     }
     if let Err(e) = tokio::fs::remove_file(src).await {
         return Err(CopyError::from_io(src, dst, e));
@@ -442,6 +463,9 @@ pub async fn move_tree(
                 rate_bps: 0,
                 skipped: 0,
                 errored: 0,
+                // An atomic rename never reads the sources, so there
+                // is no read window for them to change underneath.
+                source_changed: 0,
             };
             let _ = events
                 .send(CopyEvent::TreeCompleted {
@@ -467,6 +491,28 @@ pub async fn move_tree(
     let report = copy_tree_inner(src_dir, dst_dir, tree_opts, ctrl.clone(), events.clone()).await?;
     if ctrl.is_cancelled() {
         return Err(CopyError::cancelled(src_dir, dst_dir));
+    }
+    // Degrade the move to a copy unless every single file actually
+    // transferred faithfully. The deletion walker below is path-driven
+    // and has no way to know *which* files are in doubt, so any doubt
+    // at all keeps the whole source tree. Losing the "move" semantics
+    // is recoverable; unlinking the only coherent copy is not.
+    //
+    // - `source_changed` (FFM-M23) — the source was rewritten
+    //   underneath its copy, so that destination file is internally
+    //   inconsistent.
+    // - `skipped` — the destination already existed and the collision
+    //   policy declined to overwrite it. **Zero bytes moved.** Deleting
+    //   the source here destroys the only copy of content that differs
+    //   from the destination that was kept. `TreeOptions::default()`
+    //   has `collision: Skip`, so this is the *common* case for a move
+    //   onto a partly-populated destination, not an exotic one.
+    // - `errored` — the copy failed and `on_error` absorbed it.
+    //
+    // This mirrors the same three-way check the GUI runner applies
+    // before trashing a source tree.
+    if report.source_changed > 0 || report.skipped > 0 || report.errored > 0 {
+        return Ok(report);
     }
 
     // Streaming bottom-up source deletion. `walkdir::contents_first`
@@ -626,6 +672,7 @@ async fn copy_tree_inner(
     let files_done = Arc::new(AtomicU64::new(0));
     let skipped = Arc::new(AtomicU64::new(0));
     let errored = Arc::new(AtomicU64::new(0));
+    let source_changed = Arc::new(AtomicU64::new(0));
     // Growing denominator. Each chunk received from the walker adds
     // its own `total_files` / `total_bytes` into these counters;
     // per-file TreeProgress events read them as the "total so far".
@@ -736,6 +783,7 @@ async fn copy_tree_inner(
             let files_done_task = files_done.clone();
             let skipped_task = skipped.clone();
             let errored_task = errored.clone();
+            let source_changed_task = source_changed.clone();
             let files_total_task = files_total_so_far.clone();
             let bytes_total_task = bytes_total_so_far.clone();
             let on_error_task = on_error;
@@ -783,6 +831,7 @@ async fn copy_tree_inner(
                                 &events_task,
                                 on_error_task,
                                 &errored_task,
+                                &source_changed_task,
                             )
                             .await
                         }
@@ -947,6 +996,7 @@ async fn copy_tree_inner(
         rate_bps: rate,
         skipped: skipped.load(Ordering::Relaxed),
         errored: errored.load(Ordering::Relaxed),
+        source_changed: source_changed.load(Ordering::Relaxed),
     };
     Ok(report)
 }
@@ -971,6 +1021,13 @@ enum FileOutcome {
 ///   `CopyControl` mid-attempt.
 /// - `Err(CopyError)` only on `ErrorPolicy::Abort` (fatal) or an
 ///   `ErrorAction::Abort` response.
+///
+/// `too_many_arguments`: this is a private helper split out of the task
+/// closure purely for readability, so every parameter is one the
+/// closure already had in scope. Bundling them into a struct would add
+/// a type that exists only to be destructured back at the single call
+/// site in each walker.
+#[allow(clippy::too_many_arguments)]
 async fn attempt_copy_with_policy(
     src: &Path,
     dst: &Path,
@@ -979,6 +1036,7 @@ async fn attempt_copy_with_policy(
     events: &mpsc::Sender<CopyEvent>,
     policy: ErrorPolicy,
     errored: &Arc<AtomicU64>,
+    source_changed: &Arc<AtomicU64>,
 ) -> Result<FileOutcome, CopyError> {
     let mut retries_left: u32 = match policy {
         ErrorPolicy::RetryN { max_attempts, .. } => max_attempts as u32,
@@ -992,7 +1050,15 @@ async fn attempt_copy_with_policy(
     loop {
         let result = copy_file(src, dst, opts_file.clone(), ctrl.clone(), events.clone()).await;
         match result {
-            Ok(report) => return Ok(FileOutcome::Done(report.bytes)),
+            Ok(report) => {
+                // FFM-M23 — a torn file still counts as copied (the
+                // bytes are there), but the tally has to reach
+                // `move_tree` so it does not unlink the sources.
+                if report.source_changed.is_some() {
+                    source_changed.fetch_add(1, Ordering::Relaxed);
+                }
+                return Ok(FileOutcome::Done(report.bytes));
+            }
             Err(err) if err.is_cancelled() => return Ok(FileOutcome::Aborted),
             Err(err) => {
                 match policy {

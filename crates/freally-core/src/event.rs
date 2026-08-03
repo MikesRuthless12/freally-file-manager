@@ -51,6 +51,14 @@ pub enum CopyEvent {
     Resumed,
     /// Per-file copy succeeded.
     Completed {
+        /// The source path this completion belongs to.
+        ///
+        /// Load-bearing in tree mode: several files are in flight at
+        /// once over one shared channel, so a consumer that pairs
+        /// `Completed` with the most recent `Started` (or with the
+        /// most recent [`CopyEvent::SourceChanged`]) attributes it to
+        /// the wrong file.
+        src: PathBuf,
         /// Total bytes copied (== source size on success).
         bytes: u64,
         /// Wall-clock duration end-to-end including verify (if any).
@@ -102,6 +110,15 @@ pub enum CopyEvent {
     /// Verify pass completed. The two hex strings are identical for
     /// the byte-exact path; differing strings imply mismatch.
     VerifyCompleted {
+        /// The source path this verify pass belongs to.
+        ///
+        /// Same reason as [`CopyEvent::Completed`]'s: in tree mode
+        /// several files verify concurrently over one channel, and a
+        /// consumer pairing this with the most recent `Started` stamps
+        /// one file's digest onto another file's history row — which is
+        /// then what the exported transfer certificate presents as that
+        /// file's hash.
+        src: PathBuf,
         /// Algorithm short name (e.g. `sha256`, `blake3`).
         algorithm: &'static str,
         /// Source hash, hex-encoded.
@@ -400,10 +417,12 @@ impl Clone for CopyEvent {
             CopyEvent::Paused => CopyEvent::Paused,
             CopyEvent::Resumed => CopyEvent::Resumed,
             CopyEvent::Completed {
+                src,
                 bytes,
                 duration,
                 rate_bps,
             } => CopyEvent::Completed {
+                src: src.clone(),
                 bytes: *bytes,
                 duration: *duration,
                 rate_bps: *rate_bps,
@@ -435,11 +454,13 @@ impl Clone for CopyEvent {
                 rate_bps: *rate_bps,
             },
             CopyEvent::VerifyCompleted {
+                src,
                 algorithm,
                 src_hex,
                 dst_hex,
                 duration,
             } => CopyEvent::VerifyCompleted {
+                src: src.clone(),
                 algorithm,
                 src_hex: src_hex.clone(),
                 dst_hex: dst_hex.clone(),
@@ -553,6 +574,17 @@ pub struct CopyReport {
     pub duration: Duration,
     /// Average throughput across the copy, bytes per second.
     pub rate_bps: u64,
+    /// FFM-M23 — `Some(detail)` when the source-stability guard saw
+    /// the source rewritten during the read pass, carrying the
+    /// human-readable summary of what differed. `None` means the
+    /// source held still, or the guard was `Off`.
+    ///
+    /// A **move must never unlink a source this is set on**: the
+    /// destination is internally inconsistent (head from the old
+    /// contents, tail from the new), so the source is the only
+    /// coherent copy of the file left. Callers that delete or trash a
+    /// source after a successful copy have to consult this first.
+    pub source_changed: Option<String>,
 }
 
 /// Final success record returned by `copy_tree` and `move_tree`.
@@ -577,6 +609,16 @@ pub struct TreeReport {
     /// `on_error` is `Abort` — that path bails before the counter
     /// can tick.
     pub errored: u64,
+    /// FFM-M23 — how many files the source-stability guard saw change
+    /// underneath the copy. Non-zero means at least one destination
+    /// file is internally inconsistent.
+    ///
+    /// [`crate::tree::move_tree`] refuses to delete the source tree
+    /// when this is non-zero: it cannot tell the deletion walker which
+    /// individual files were torn, so it keeps all of them and
+    /// degrades the move to a copy rather than destroy the only
+    /// coherent copy of any one of them.
+    pub source_changed: u64,
 }
 
 /// Destination-already-exists prompt. Consumers reply on the enclosed

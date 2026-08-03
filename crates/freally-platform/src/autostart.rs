@@ -80,7 +80,9 @@ pub fn render_desktop_entry(program: &Path, app_name: &str) -> String {
 /// `RunAtLoad` (not `StartCalendarInterval`) — this fires once, at
 /// login, which is the whole contract.
 pub fn render_launch_agent(program: &Path) -> String {
-    let escaped = xml_escape(&program.to_string_lossy());
+    // Same escaper the scheduler stanzas use — one copy, one
+    // definition of "well-formed plist text".
+    let escaped = crate::scheduler::xml_escape(&program.to_string_lossy());
     format!(
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\
          <!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n\
@@ -99,25 +101,13 @@ pub fn render_launch_agent(program: &Path) -> String {
 /// flag. Windows parses this value as a command line, so the quoting
 /// is what keeps `C:\Program Files\…` from splitting at the space.
 pub fn render_run_key_value(program: &Path) -> String {
+    // `win_quote` rather than a local wrap-and-double: it also escapes
+    // a trailing backslash, so a program path ending in one cannot
+    // absorb the `--start-minimized` flag that follows it.
     format!(
-        "\"{}\" {START_MINIMIZED_FLAG}",
-        program.to_string_lossy().replace('"', "\"\"")
+        "{} {START_MINIMIZED_FLAG}",
+        crate::scheduler::win_quote(&program.to_string_lossy())
     )
-}
-
-fn xml_escape(s: &str) -> String {
-    let mut out = String::with_capacity(s.len());
-    for ch in s.chars() {
-        match ch {
-            '&' => out.push_str("&amp;"),
-            '<' => out.push_str("&lt;"),
-            '>' => out.push_str("&gt;"),
-            '\'' => out.push_str("&apos;"),
-            '"' => out.push_str("&quot;"),
-            other => out.push(other),
-        }
-    }
-    out
 }
 
 #[cfg(unix)]
@@ -228,7 +218,7 @@ mod windows_impl {
     fn reg(args: &[&str]) -> Result<std::process::Output, AutostartError> {
         // Absolute path — see `scheduler::os_tool`. A `reg.exe` beside
         // a portable install would otherwise win over System32's.
-        Ok(std::process::Command::new(crate::scheduler::os_tool_pub("reg"))
+        Ok(std::process::Command::new(crate::scheduler::os_tool("reg"))
             .args(args)
             .output()?)
     }

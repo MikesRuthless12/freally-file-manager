@@ -65,31 +65,39 @@ async fn dispatcher_picks_a_fast_strategy() {
         .expect("fast_copy");
     let _events = drain(rx).await;
 
-    // We accept any path other than AsyncFallback here — reflink is the
-    // happy case on Btrfs / APFS / Dev Drive, native is the happy case
-    // everywhere else. AsyncFallback is allowed only if the runner is
-    // an exotic OS we don't have a backend for (caught by cfg above).
-    assert_eq!(outcome.bytes, SMALL as u64);
+    // On a supported OS a real fast path must apply — reflink is the
+    // happy case on Btrfs / APFS / Dev Drive, native everywhere else.
+    // On an exotic OS with no backend the dispatcher declines, and the
+    // engine (not the dispatcher) does the copy.
     if cfg!(any(
         target_os = "windows",
         target_os = "macos",
         target_os = "linux"
     )) {
-        assert_ne!(
-            outcome.strategy,
-            ChosenStrategy::AsyncFallback,
-            "expected reflink or native on supported OS, got AsyncFallback"
-        );
-    }
+        let outcome = outcome.expect("a fast path must apply on a supported OS");
+        assert_eq!(outcome.bytes, SMALL as u64);
+        assert_ne!(outcome.strategy, ChosenStrategy::AsyncFallback);
 
-    // Content matches.
-    let src_bytes = std::fs::read(&src).unwrap();
-    let dst_bytes = std::fs::read(&dst).unwrap();
-    assert_eq!(src_bytes, dst_bytes);
+        // Content matches.
+        let src_bytes = std::fs::read(&src).unwrap();
+        let dst_bytes = std::fs::read(&dst).unwrap();
+        assert_eq!(src_bytes, dst_bytes);
+    }
 }
 
+/// `AlwaysAsync` must make the dispatcher *decline* rather than run an
+/// async copy of its own.
+///
+/// It used to re-enter `freally_core::copy_file` here. That nested call
+/// owns per-file finalization — journal row, provenance record,
+/// `CopyEvent::Completed` — so it finalized the copy before the outer
+/// `copy_file` had evaluated its source-stability verdict, emitting a
+/// duplicate `Completed` ahead of `SourceChanged` and journalling a
+/// torn copy as complete. Declining keeps the copy (and its
+/// finalization) in the engine, which is the only layer that knows the
+/// verdict.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn always_async_returns_async_fallback() {
+async fn always_async_declines_and_copies_nothing() {
     let dir = tempdir().unwrap();
     let src = dir.path().join("src.bin");
     let dst = dir.path().join("dst.bin");
@@ -103,14 +111,23 @@ async fn always_async_returns_async_fallback() {
     let outcome = fast_copy(&src, &dst, opts, CopyControl::new(), tx)
         .await
         .expect("fast_copy");
-    let _ = drain(rx).await;
+    let events = drain(rx).await;
 
-    assert_eq!(outcome.strategy, ChosenStrategy::AsyncFallback);
-    assert_eq!(outcome.bytes, SMALL as u64);
-
-    let src_bytes = std::fs::read(&src).unwrap();
-    let dst_bytes = std::fs::read(&dst).unwrap();
-    assert_eq!(src_bytes, dst_bytes);
+    assert!(
+        outcome.is_none(),
+        "AlwaysAsync must decline so the engine's own loop runs",
+    );
+    assert!(
+        !dst.exists(),
+        "a declining dispatcher must not have written a destination",
+    );
+    assert!(
+        !events
+            .iter()
+            .any(|e| matches!(e, CopyEvent::Completed { .. })),
+        "a declining dispatcher must emit no Completed — the engine \
+         emits exactly one, after the stability verdict",
+    );
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -127,7 +144,8 @@ async fn no_reflink_strategy_skips_reflink() {
     };
     let outcome = fast_copy(&src, &dst, opts, CopyControl::new(), tx)
         .await
-        .expect("fast_copy");
+        .expect("fast_copy")
+        .expect("NoReflink still leaves the OS-native fast path available");
     let _ = drain(rx).await;
 
     // NoReflink must never report Reflink as the chosen strategy.
@@ -152,7 +170,8 @@ async fn native_path_is_invoked_on_supported_os() {
     };
     let outcome = fast_copy(&src, &dst, opts, CopyControl::new(), tx)
         .await
-        .expect("fast_copy");
+        .expect("fast_copy")
+        .expect("NoReflink still leaves the OS-native fast path available");
     let _ = drain(rx).await;
 
     let expected = expected_native_strategy();

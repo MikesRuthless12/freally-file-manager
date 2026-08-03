@@ -126,13 +126,16 @@ fn mint_id(label: &str, existing: &[FavoriteEntry]) -> String {
     if !existing.iter().any(|e| e.id == stem) {
         return stem;
     }
-    for n in 2..=u32::MAX {
+    // Bounded by the list length: with `n` entries, one of
+    // `stem-2 ..= stem-(n+2)` is always free, so there is no
+    // unreachable tail that could hand back a colliding id.
+    for n in 2..=(existing.len() as u32 + 2) {
         let candidate = format!("{stem}-{n}");
         if !existing.iter().any(|e| e.id == candidate) {
             return candidate;
         }
     }
-    stem
+    unreachable!("a free suffix exists within existing.len() + 1 candidates")
 }
 
 /// Validate a DTO and normalise it into a persistable entry.

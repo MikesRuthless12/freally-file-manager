@@ -101,9 +101,14 @@ async fn phase_06_smoke_sparse_round_trip() {
     });
 
     let started = std::time::Instant::now();
+    // `Ok(None)` means the dispatcher declined and copied nothing, so
+    // `copy_file`'s own async loop would do the work. For a regular
+    // file on a supported OS a real fast path always applies, and this
+    // smoke test exists to measure that path specifically.
     let outcome = fast_copy(&src, &dst, CopyOptions::default(), CopyControl::new(), tx)
         .await
-        .expect("fast_copy");
+        .expect("fast_copy")
+        .expect("a fast path must apply for a regular file on a supported OS");
     let _events = drain.await.unwrap();
     let elapsed = started.elapsed();
 

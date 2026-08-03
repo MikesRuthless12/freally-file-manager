@@ -40,6 +40,7 @@ import {
   type ErrorPromptDto,
   type ErrorResolvedDto,
   type FileActivityDto,
+  type FileActivityPhase,
   type GlobalsDto,
   type JobDto,
   type JobFailedDto,
@@ -156,13 +157,11 @@ const errorDisplayModeStore = writable<ErrorDisplayModeWire>("modal");
 // older completed rows age out so the pending / in-flight rows
 // always stay visible at the bottom.
 const ACTIVITY_LIMIT = 250_000;
-export type ActivityPhase =
-  | "pending"
-  | "start"
-  | "progress"
-  | "done"
-  | "error"
-  | "dir";
+// A row carries every phase the wire can deliver, plus "pending" — the
+// locally-seeded state for a file the engine has not reported on yet.
+// Derived rather than restated so a new wire phase can never be missed
+// here; the two were hand-copied before and had already drifted.
+export type ActivityPhase = FileActivityPhase | "pending";
 interface FileActivityRow {
   key: string;
   jobId: number;
@@ -798,10 +797,15 @@ function flushActivityQueue(): void {
         const bytesTotal =
           p.bytesTotal > 0 ? p.bytesTotal : existing.bytesTotal;
         const dst = p.dst || existing.dst;
-        // Monotonic: a stale Progress arriving after Done/Error
-        // must not re-open the row.
+        // Monotonic: a stale Progress arriving after a terminal phase
+        // must not re-open the row. "source-changed" is terminal too —
+        // the copy finished, it just isn't faithful — so a late
+        // Progress must not drag the row back to in-flight and hide
+        // the warning.
         if (
-          (existing.phase === "done" || existing.phase === "error") &&
+          (existing.phase === "done" ||
+            existing.phase === "error" ||
+            existing.phase === "source-changed") &&
           p.phase === "progress"
         ) {
           continue;

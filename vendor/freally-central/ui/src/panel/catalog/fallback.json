@@ -1,0 +1,102 @@
+{
+  "$comment": "Freally Central product catalog — the SOURCE OF TRUTH for the hub grid. Hosted on GitHub Pages (https://mikesruthless12.github.io/freally-central/freally-central.json) so the grid updates without shipping a new Central build. Central resolves LIVE data (latest version + date, per-OS download_count, installer URLs) from the GitHub Releases API against each app's `assets` patterns; this file holds only what the API cannot give (marketing copy, icon, start date, OS->asset rules, release status). `status`: 'available' (has releases / downloadable) or 'coming-soon' (listed as an upcoming release, not yet downloadable). `icon` points at Central's own Pages copy of each app's icon so the grid always resolves the big card image.",
+  "schemaVersion": 1,
+  "brand": "Freally",
+  "apps": [
+    {
+      "id": "freally-capture",
+      "name": "Freally Capture",
+      "tagline": "Record and stream like a studio — one clean app.",
+      "description": "A local-first, cross-platform live-streaming & recording studio (OBS-class): a real-time GPU scene compositor, multi-track recording, and multistream to every platform at once — entirely on your machine. No accounts, no telemetry, no cloud.",
+      "features": [
+        "Owned wgpu GPU scene compositor with per-source filters & transitions",
+        "Multi-track recording (hardware encoders + the owned lossless codec)",
+        "Multistream to Twitch/YouTube/Kick at once (RTMP/SRT/WHIP)",
+        "Virtual camera, replay buffer, downstream keyers, 3D transforms",
+        "18-language UI"
+      ],
+      "icon": "https://mikesruthless12.github.io/freally-central/apps/freally-capture/icon.png",
+      "startedDate": "2026-06-30",
+      "repo": "MikesRuthless12/freally-capture",
+      "site": "https://mikesruthless12.github.io/freally-capture/index.html",
+      "changelog": "https://mikesruthless12.github.io/freally-capture/changelog.html",
+      "status": "available",
+      "assets": {
+        "windows": "\\.(exe|msi)$",
+        "macos": "\\.dmg$",
+        "linux": "\\.(AppImage|deb|rpm)$"
+      }
+    },
+    {
+      "id": "freally-vault",
+      "name": "Freally Vault",
+      "tagline": "Your passwords, passkeys & secrets — encrypted, local-first, yours.",
+      "description": "A local-first, zero-knowledge, end-to-end-encrypted password, passkey & secrets manager. KeePass-compatible, memory-safe Rust core, completely free — your vault never leaves your machine.",
+      "features": [],
+      "icon": "https://mikesruthless12.github.io/freally-central/apps/freally-vault/icon.png",
+      "repo": "MikesRuthless12/freally-vault",
+      "status": "coming-soon",
+      "assets": {
+        "windows": "\\.(exe|msi)$",
+        "macos": "\\.dmg$",
+        "linux": "\\.(AppImage|deb|rpm)$"
+      }
+    },
+    {
+      "id": "freally-player",
+      "name": "Freally Player",
+      "tagline": "Plays anything. Beautifully. No ads, no spyware.",
+      "description": "A local-first, cross-platform media player that plays virtually anything with hardware acceleration — a modern UI, a real media library, and streaming, with no ads and no telemetry.",
+      "features": [],
+      "icon": "https://mikesruthless12.github.io/freally-central/apps/freally-player/icon.png",
+      "repo": "MikesRuthless12/freally-player",
+      "status": "coming-soon",
+      "assets": {
+        "windows": "\\.(exe|msi)$",
+        "macos": "\\.dmg$",
+        "linux": "\\.(AppImage|deb|rpm)$"
+      }
+    },
+    {
+      "id": "freally-av",
+      "name": "Freally AV",
+      "tagline": "Freally Anti-Virus — coming soon.",
+      "description": "Freally's local-first anti-virus for Windows, macOS, and Linux. On the way — not yet available to download.",
+      "features": [],
+      "icon": "https://mikesruthless12.github.io/freally-central/apps/freally-av/icon.png",
+      "repo": "MikesRuthless12/freally-av",
+      "status": "coming-soon"
+    },
+    {
+      "$comment": "Freally Studio is listed as an upcoming release but is otherwise excluded from the brand-wide download counter/rollout until its own roadmap exists (roadmap FC-51). It is a pre-release; no stable downloads yet.",
+      "id": "freally-studio",
+      "name": "Freally Studio",
+      "tagline": "An AI-assisted music studio — coming soon.",
+      "description": "A full-featured DAW with AI pattern generation across 35+ genres, an FL-style mixer, arrangement timeline, and audio-clip editor. Pre-release — not yet available to download.",
+      "features": [],
+      "icon": "https://mikesruthless12.github.io/freally-central/apps/freally-studio/icon.png",
+      "repo": "MikesRuthless12/freally-studio",
+      "status": "coming-soon"
+    },
+    {
+      "id": "freally-sourcerer",
+      "name": "Freally Sourcerer",
+      "tagline": "An upcoming Freally app.",
+      "description": "This Freally-brand app is on the way. Not yet available to download.",
+      "features": [],
+      "icon": "https://mikesruthless12.github.io/freally-central/apps/freally-sourcerer/icon.png",
+      "repo": "MikesRuthless12/freally-sourcerer",
+      "status": "coming-soon"
+    },
+    {
+      "id": "freally-file-manager",
+      "name": "Freally File Manager",
+      "tagline": "A cross-platform file manager — coming soon.",
+      "description": "This Freally-brand app is on the way. Not yet available to download.",
+      "features": [],
+      "icon": "https://mikesruthless12.github.io/freally-central/apps/freally-file-manager/icon.png",
+      "repo": "MikesRuthless12/freally-file-manager",
+      "status": "coming-soon"
+    }
+  ]
+}

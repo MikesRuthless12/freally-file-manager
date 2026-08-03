@@ -1,0 +1,19 @@
+{
+  "name": "freally-central",
+  "version": "0.7.0",
+  "private": true,
+  "description": "One hub for every Freally-brand app.",
+  "license": "SEE LICENSE IN LICENSE",
+  "author": "Mike Weaver (Havoc Software) <mythodikalone@gmail.com>",
+  "scripts": {
+    "tauri": "tauri",
+    "ci:local": "node scripts/ci-local.mjs"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.0"
+  },
+  "engines": {
+    "node": ">=22",
+    "npm": ">=10"
+  }
+}

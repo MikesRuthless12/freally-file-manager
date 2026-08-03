@@ -154,6 +154,22 @@ pub trait JournalSink: Send + Sync + std::fmt::Debug {
     /// the first byte is written.
     fn resume_plan(&self, file_idx: u64) -> ResumePlan;
 
+    /// Forget everything recorded about `file_idx`, so the next
+    /// [`Self::resume_plan`] for it returns [`ResumePlan::Restart`].
+    ///
+    /// The engine calls this when a copy produced untrustworthy bytes
+    /// (FFM-M23: the source was rewritten mid-read). Simply not calling
+    /// [`Self::finish_file`] does **not** make the file safe: the
+    /// periodic [`Self::checkpoint`] calls recorded `hash_so_far` over
+    /// the torn read stream, and the torn destination holds exactly
+    /// those bytes — so the next run's prefix check matches, resume is
+    /// accepted, the torn prefix survives, and the file is then
+    /// recorded complete and certified. Implementations MUST actually
+    /// drop the state; a no-op reintroduces that data-loss path.
+    ///
+    /// Must be idempotent.
+    fn invalidate_file(&self, file_idx: u64);
+
     /// Job-level terminator: succeeded — exactly one of the three
     /// `finish_job_*` methods fires per job lifecycle.
     fn finish_job_succeeded(&self);
@@ -752,9 +768,14 @@ pub enum FastCopyHookOutcome {
 /// Real implementations dispatch to the relevant syscall directly.
 pub trait FastCopyHook: Send + Sync + std::fmt::Debug {
     /// Try to copy `src` to `dst` using a fast path. Emits Started /
-    /// Progress / Completed events on `events` exactly like the async
-    /// engine would. Honours `ctrl` for pause / cancel where the
-    /// underlying syscall supports it (most do).
+    /// Progress events on `events` exactly like the async engine
+    /// would. Honours `ctrl` for pause / cancel where the underlying
+    /// syscall supports it (most do).
+    ///
+    /// Must **not** emit `CopyEvent::Completed`. [`crate::copy_file`]
+    /// emits it from the returned report once the source-stability
+    /// verdict is known; a hook that emits its own would put it on the
+    /// wire ahead of `CopyEvent::SourceChanged` and hide a torn copy.
     fn try_copy<'a>(
         &'a self,
         src: PathBuf,

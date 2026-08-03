@@ -1543,6 +1543,7 @@ err-schedule-too-many = बहुत अधिक निर्धारित �
 err-schedule-install-failed = सिस्टम शेड्यूलर ने इस शेड्यूल को अस्वीकार कर दिया
 err-schedule-remove-failed = सिस्टम शेड्यूलर इस शेड्यूल को हटा नहीं सका
 err-schedule-no-program = इस एप्लिकेशन का स्थान निर्धारित नहीं हो सका
+err-schedule-portable = पोर्टेबल मोड में शेड्यूलिंग उपलब्ध नहीं है
 settings-schedules-title = निर्धारित कार्य
 settings-schedules-empty = अभी कोई निर्धारित कार्य नहीं है।
 settings-schedule-add = शेड्यूल जोड़ें
@@ -1568,7 +1569,6 @@ settings-affinity-workers-auto = स्वचालित
 
 # FFM-M19
 err-queue-unknown = अज्ञात कतार
-action-run-next = अगला चलाएँ
 action-boost = प्राथमिकता दें
 action-clear-boost = प्राथमिकता हटाएँ
 action-move-to-queue = कतार में ले जाएँ

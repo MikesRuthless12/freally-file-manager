@@ -139,22 +139,62 @@ fn policy_of(entry: &ScheduleEntry) -> MissedRunPolicy {
     }
 }
 
-/// Seconds this machine is ahead of UTC, right now.
+/// Seconds this machine is ahead of UTC **at `unix_secs`**, according
+/// to the OS timezone database.
 ///
 /// The platform's `next_run_after` works in local wall-clock seconds
-/// with no timezone database; the caller supplies the offset. Reading
-/// it here (rather than baking it into the platform crate) keeps that
-/// function pure and exhaustively testable.
-fn utc_offset_secs() -> i64 {
-    use chrono::Offset;
-    i64::from(chrono::Local::now().offset().fix().local_minus_utc())
+/// with no timezone database; the caller supplies the offset. Reading it
+/// here (rather than baking it into the platform crate) keeps that
+/// function pure and exhaustively testable. Used as the `offset_at`
+/// resolver in production.
+fn offset_at_unix(unix_secs: i64) -> i64 {
+    use chrono::{DateTime, Offset, TimeZone};
+    let Some(utc) = DateTime::from_timestamp(unix_secs, 0) else {
+        return 0;
+    };
+    i64::from(
+        chrono::Local
+            .from_utc_datetime(&utc.naive_utc())
+            .offset()
+            .fix()
+            .local_minus_utc(),
+    )
 }
 
 /// Compute the next firing as Unix seconds.
-pub fn next_run_for(entry: &ScheduleEntry, now_unix_secs: i64, utc_offset: i64) -> Option<i64> {
+///
+/// `offset_at` gives the offset in effect at an arbitrary instant. It is
+/// the only clock input: the offset that places *now* on the local wall
+/// clock is just `offset_at(now_unix_secs)`, so taking it as a second
+/// parameter only created two values that had to agree.
+///
+/// The offset at *now* and the offset at the *firing* are still not
+/// interchangeable. Converting the firing back with today's offset is
+/// wrong for the whole week before a DST transition: on 2026-03-07 in
+/// America/New_York a "Sunday 03:00" job rendered as "Next run: 04:00",
+/// so the app contradicted the schedule it had itself installed.
+///
+/// The loop solves `t + offset_at(t) == next_local`. One refinement
+/// settles a standard transition; the second iteration re-tests and
+/// breaks on convergence, so a zone that needed only one step exits
+/// without applying a redundant correction.
+pub fn next_run_for(
+    entry: &ScheduleEntry,
+    now_unix_secs: i64,
+    offset_at: impl Fn(i64) -> i64,
+) -> Option<i64> {
     let trigger = trigger_of(entry)?;
+    let utc_offset = offset_at(now_unix_secs);
     let next_local = next_run_after(trigger, now_unix_secs + utc_offset);
-    Some(next_local - utc_offset)
+    let mut t = next_local - utc_offset;
+    for _ in 0..2 {
+        let settled = next_local - offset_at(t);
+        if settled == t {
+            break;
+        }
+        t = settled;
+    }
+    Some(t)
 }
 
 /// Build the OS-level job for `entry`.
@@ -295,7 +335,7 @@ pub fn entry_from_dto(
 pub fn decorate(
     entries: &[ScheduleEntry],
     now_unix_secs: i64,
-    utc_offset: i64,
+    offset_at: impl Fn(i64) -> i64,
     installed: impl Fn(&str) -> bool,
 ) -> Vec<ScheduleDto> {
     entries
@@ -303,7 +343,7 @@ pub fn decorate(
         .map(|e| {
             let mut dto = ScheduleDto::from(e);
             dto.installed = installed(&e.id);
-            dto.next_run_unix_secs = next_run_for(e, now_unix_secs, utc_offset);
+            dto.next_run_unix_secs = next_run_for(e, now_unix_secs, &offset_at);
             dto.missed_run_honored = policy_is_honored(policy_of(e));
             dto
         })
@@ -368,17 +408,36 @@ fn decorate_live(entries: &[ScheduleEntry]) -> Vec<ScheduleDto> {
     // quarter-second of blocked UI. `installed_ids` is a single
     // folder-scoped call regardless of row count.
     let installed = freally_platform::scheduler::installed_ids().unwrap_or_default();
-    decorate(entries, now_unix_secs(), utc_offset_secs(), |id| {
+    decorate(entries, now_unix_secs(), offset_at_unix, |id| {
         installed.contains(id)
     })
 }
 
 /// Implementation of [`schedule_save`]. Public for tests.
 ///
-/// Installs **before** persisting: a settings row for a schedule the
-/// OS rejected would show as "installed" in the list and offer a
-/// remove that has nothing to remove.
+/// Persists **before** installing, and rolls the settings row back if
+/// the install fails.
+///
+/// The opposite order was chosen originally to avoid the mirror-image
+/// orphan — a settings row for a task the OS rejected. But one of the
+/// two has to be transactional, and the OS artifact is the one that
+/// does damage unattended: `schtasks /Create` succeeding and then
+/// `save_to` failing (write-protected stick, disk full) left a task
+/// firing forever that no later run could even see, because the
+/// settings no longer contained it — no `schedule_list` row, no UI
+/// affordance to remove it. A stale settings row, by contrast, is
+/// visible, reads as "Missing from the system scheduler", and can be
+/// removed from the panel.
 pub fn schedule_save_impl(state: &AppState, dto: &ScheduleDto) -> Result<Vec<ScheduleDto>, String> {
+    // FFM-M21 — a schedule bakes `current_exe()` into host-global OS
+    // state. On a portable install that path is on the removable
+    // stick: unplug it and the host fires a task pointing at nothing,
+    // while the app that could have removed it left with the stick.
+    // `shell_commands` and `autostart` already honour this gate;
+    // `schedule_save` did not.
+    if !freally_settings::portable::allows_os_integration() {
+        return Err("err-schedule-portable".to_string());
+    }
     // The write lock is taken **first** and held across
     // validate → cap-check → install → push. This command is
     // `#[tauri::command(async)]`, so N forged invokes run concurrently;
@@ -394,16 +453,22 @@ pub fn schedule_save_impl(state: &AppState, dto: &ScheduleDto) -> Result<Vec<Sch
     }
 
     let job = scheduled_job_for(&entry)?;
-    freally_platform::scheduler::install(&job).map_err(|e| {
-        tracing::warn!(target: "freally::schedule", id = %entry.id, error = %e, "install failed");
-        format!("err-schedule-install-failed: {e}")
-    })?;
 
+    let previous = s.schedules.entries.clone();
     match s.schedules.entries.iter_mut().find(|e| e.id == entry.id) {
-        Some(existing) => *existing = entry,
-        None => s.schedules.entries.push(entry),
+        Some(existing) => *existing = entry.clone(),
+        None => s.schedules.entries.push(entry.clone()),
     }
     state.persist_settings(&s)?;
+
+    if let Err(e) = freally_platform::scheduler::install(&job) {
+        tracing::warn!(target: "freally::schedule", id = %entry.id, error = %e, "install failed");
+        // Undo the row we just wrote, so a rejected install leaves no
+        // trace rather than a phantom schedule.
+        s.schedules.entries = previous;
+        let _ = state.persist_settings(&s);
+        return Err(format!("err-schedule-install-failed: {e}"));
+    }
     Ok(decorate_live(&s.schedules.entries))
 }
 
@@ -607,8 +672,43 @@ mod tests {
         let entry = entry_from_dto(&dto(), &[]).unwrap(); // daily 03:30
         // 1970-01-01 00:00 UTC, host two hours ahead → local 02:00, so
         // the next 03:30 local is 90 minutes away, i.e. 01:30 UTC.
-        let next = next_run_for(&entry, 0, 2 * 3_600).expect("daily resolves");
+        let next = next_run_for(&entry, 0, |_| 2 * 3_600).expect("daily resolves");
         assert_eq!(next, 90 * 60);
+    }
+
+    #[test]
+    fn next_run_preview_uses_the_offset_at_the_firing_not_today() {
+        // A zone that springs forward by an hour at T+2h: UTC-5 before,
+        // UTC-4 after. Modelled exactly as the OS database would report
+        // it — offset as a function of the *instant*.
+        const SPRING_FORWARD: i64 = 2 * 3_600;
+        let zone = |t: i64| {
+            if t < SPRING_FORWARD {
+                -5 * 3_600
+            } else {
+                -4 * 3_600
+            }
+        };
+
+        let entry = entry_from_dto(&dto(), &[]).unwrap(); // daily 03:30
+        let now = 0;
+        let next = next_run_for(&entry, now, zone).expect("daily resolves");
+
+        // The job must fire when the local wall clock reads 03:30, and
+        // by then the zone is UTC-4 — so the instant is 07:30 UTC, not
+        // the 08:30 that today's UTC-5 offset would have produced.
+        assert_eq!(
+            next,
+            7 * 3_600 + 30 * 60,
+            "the preview must use the offset in effect at the firing",
+        );
+        // And it must genuinely land on 03:30 local when re-read
+        // through the zone — the property the old code violated.
+        assert_eq!(
+            next + zone(next),
+            3 * 3_600 + 30 * 60,
+            "round-tripping the answer through the zone must give 03:30",
+        );
     }
 
     #[test]
@@ -617,7 +717,7 @@ mod tests {
             trigger: "eclipse".to_string(),
             ..ScheduleEntry::default()
         };
-        assert_eq!(next_run_for(&entry, 0, 0), None);
+        assert_eq!(next_run_for(&entry, 0, |_| 0), None);
     }
 
     #[test]
@@ -636,7 +736,7 @@ mod tests {
                 ..ScheduleEntry::default()
             },
         ];
-        let dtos = decorate(&entries, 0, 0, |id| id == "present");
+        let dtos = decorate(&entries, 0, |_| 0, |id| id == "present");
         assert!(dtos[0].installed);
         assert!(
             !dtos[1].installed,

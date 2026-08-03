@@ -50,7 +50,10 @@ pub struct JobSummary {
 
 /// One row in the `items` table — covers both a successful per-file
 /// `Completed` event and a `FileError` that the policy absorbed.
-/// Status strings: `"ok"` / `"failed"` / `"skipped"` / `"cancelled"`.
+/// Status strings: `"ok"` / `"failed"` / `"skipped"` / `"cancelled"` /
+/// `"source-changed"` (FFM-M23 — copied, but the source was rewritten
+/// mid-read so the bytes are not faithful; terminal, and deliberately
+/// not `"ok"`, so consumers that filter on `"ok"` skip it).
 #[derive(Debug, Clone)]
 pub struct ItemRow {
     pub job_row_id: i64,

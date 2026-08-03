@@ -1543,6 +1543,7 @@ err-schedule-too-many = スケジュールが多すぎます
 err-schedule-install-failed = システムのスケジューラーがこのスケジュールを拒否しました
 err-schedule-remove-failed = システムのスケジューラーがこのスケジュールを削除できませんでした
 err-schedule-no-program = このアプリケーションの場所を特定できませんでした
+err-schedule-portable = ポータブルモードではスケジュールを利用できません
 settings-schedules-title = スケジュール実行
 settings-schedules-empty = スケジュールはまだありません。
 settings-schedule-add = スケジュールを追加
@@ -1568,7 +1569,6 @@ settings-affinity-workers-auto = 自動
 
 # FFM-M19
 err-queue-unknown = 不明なキューです
-action-run-next = 次に実行
 action-boost = 優先する
 action-clear-boost = 優先を解除
 action-move-to-queue = キューへ移動

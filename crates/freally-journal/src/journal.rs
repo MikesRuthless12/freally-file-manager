@@ -195,6 +195,29 @@ impl Journal {
         Ok(())
     }
 
+    /// Forget everything recorded about one file, so the next
+    /// [`Self::resume_plan`] for it returns [`ResumePlan::Restart`].
+    ///
+    /// Used when a copy is known to have produced untrustworthy bytes
+    /// (FFM-M23: the source was rewritten mid-read). Declining to call
+    /// `finish_file` is *not* sufficient on its own — the periodic
+    /// checkpoints left behind record `hash_so_far` over the torn read
+    /// stream, and the torn destination holds exactly those bytes, so
+    /// the next run's prefix check matches, resume is accepted, and the
+    /// torn prefix is kept and then certified as complete. Dropping the
+    /// row is what actually forces a full re-copy.
+    ///
+    /// Idempotent: a file with no row recorded is already "restart".
+    pub fn invalidate_file(&self, job: JobRowId, file_idx: u64) -> Result<()> {
+        let txn = self.inner.begin_write()?;
+        {
+            let mut t = txn.open_table(FILES)?;
+            t.remove((job.0, file_idx))?;
+        }
+        txn.commit()?;
+        Ok(())
+    }
+
     /// Mark a job as terminal — success / failure / cancellation.
     /// Terminal jobs no longer surface in [`Self::unfinished`].
     /// File checkpoints stay in the table so the UI can still render
@@ -428,6 +451,47 @@ mod tests {
             ResumePlan::AlreadyComplete { final_hash } => assert_eq!(final_hash, [42u8; 32]),
             other => panic!("expected AlreadyComplete, got {other:?}"),
         }
+    }
+
+    /// FFM-M23 §A — a torn copy's row must become `Restart`, not
+    /// `Resume`.
+    ///
+    /// Declining to call `finish_file` is not enough on its own: the
+    /// checkpoints left behind hash the torn read stream, and the torn
+    /// destination holds exactly those bytes, so the next run's prefix
+    /// check matches and resume is accepted onto the torn prefix. This
+    /// asserts the row is genuinely gone.
+    #[test]
+    fn invalidate_file_forces_a_restart() {
+        let (j, _d) = fresh_journal();
+        let id = j.begin_job(dummy_record()).unwrap();
+        let dst = std::path::Path::new("/dst/f0");
+        j.checkpoint(id, 0, dst, 1024, 4096, [9u8; 32]).unwrap();
+        assert!(matches!(
+            j.resume_plan(id, 0).unwrap(),
+            ResumePlan::Resume { .. }
+        ));
+
+        j.invalidate_file(id, 0).unwrap();
+        assert_eq!(j.resume_plan(id, 0).unwrap(), ResumePlan::Restart);
+    }
+
+    /// Also has to clear a row that was already finished, so a tear
+    /// detected after `finish_file` cannot leave `AlreadyComplete`
+    /// behind — that is the variant that skips the copy entirely.
+    #[test]
+    fn invalidate_file_clears_a_finished_row_and_is_idempotent() {
+        let (j, _d) = fresh_journal();
+        let id = j.begin_job(dummy_record()).unwrap();
+        let dst = std::path::Path::new("/dst/f0");
+        j.checkpoint(id, 0, dst, 4096, 4096, [9u8; 32]).unwrap();
+        j.finish_file(id, 0, [42u8; 32]).unwrap();
+
+        j.invalidate_file(id, 0).unwrap();
+        assert_eq!(j.resume_plan(id, 0).unwrap(), ResumePlan::Restart);
+        // Second call on an absent row must not error.
+        j.invalidate_file(id, 0).unwrap();
+        assert_eq!(j.resume_plan(id, 0).unwrap(), ResumePlan::Restart);
     }
 
     #[test]

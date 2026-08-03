@@ -1,0 +1,28 @@
+[package]
+name = "freally-central"
+version = "0.7.0"
+description = "One hub for every Freally-brand app."
+authors = ["Mike Weaver (Havoc Software)"]
+license = "SEE LICENSE IN LICENSE"
+repository = "https://github.com/MikesRuthless12/freally-central"
+edition = "2021"
+publish = false
+rust-version = "1.77"
+
+[lib]
+name = "freally_central_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+tauri-plugin-process = "2"
+tauri-plugin-updater = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# The detect/download/install/launch core, shared with host apps embedding the
+# "Central inside" panel (Phase 6 / FC-50).
+freally-central-engine = { path = "../crates/freally-central-engine" }

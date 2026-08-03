@@ -583,38 +583,9 @@ pub fn apply_persisted_affinity(state: &AppState) {
 // FFM-M19 — per-job priority, reorder, and queue move
 // =====================================================================
 
-/// `queue_reorder_job(queue_id, job_id, new_index)` — drag-to-reorder
-/// within one queue.
-#[tauri::command]
-pub fn queue_reorder_job(
-    state: tauri::State<'_, AppState>,
-    queue_id: u64,
-    job_id: u64,
-    new_index: usize,
-) -> Result<(), String> {
-    let queue = state
-        .queues
-        .get(QueueId::from_u64(queue_id))
-        .ok_or("err-queue-unknown")?;
-    queue.reorder(freally_core::JobId::from_u64(job_id), new_index);
-    Ok(())
-}
-
-/// `queue_run_next(queue_id, job_id)` — move a job to the head of the
-/// pending section.
-#[tauri::command]
-pub fn queue_run_next(
-    state: tauri::State<'_, AppState>,
-    queue_id: u64,
-    job_id: u64,
-) -> Result<(), String> {
-    let queue = state
-        .queues
-        .get(QueueId::from_u64(queue_id))
-        .ok_or("err-queue-unknown")?;
-    queue.run_next(freally_core::JobId::from_u64(job_id));
-    Ok(())
-}
+// No `queue_run_next` / `queue_reorder_job` commands: queue order is
+// display-only. See `freally_core::queue::Queue` for why, and for what
+// re-shipping them would need.
 
 /// `queue_move_job(job_id, dst_queue_id)` — move one pending job to a
 /// different drive queue.

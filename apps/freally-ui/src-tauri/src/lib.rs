@@ -837,9 +837,7 @@ pub fn run() {
             // FFM-M18 — manual override of physical-drive detection.
             queue_commands::queue_get_affinity,
             queue_commands::queue_set_affinity,
-            // FFM-M19 — per-job priority, reorder, and queue move.
-            queue_commands::queue_reorder_job,
-            queue_commands::queue_run_next,
+            // FFM-M19 — per-job priority and queue move.
             queue_commands::queue_move_job,
             queue_commands::queue_boost_job,
             queue_commands::queue_clear_boost,

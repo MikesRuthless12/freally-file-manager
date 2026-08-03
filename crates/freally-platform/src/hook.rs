@@ -34,18 +34,24 @@ impl FastCopyHook for PlatformFastCopyHook {
         Box<dyn std::future::Future<Output = Result<FastCopyHookOutcome, CopyError>> + Send + 'a>,
     > {
         Box::pin(async move {
-            // The dispatcher runs its own async fallback when both
-            // reflink and the OS-native path decline. Whichever path
-            // wins, the bytes are already moved — we always report
-            // Done back to the engine so it doesn't run its own loop
-            // and double-copy.
-            let outcome = fast_copy(&src, &dst, opts, ctrl, events).await?;
+            // `Ok(None)` means no fast path applied and nothing was
+            // copied — report `NotSupported` so the engine runs its own
+            // async loop. That loop finalizes the journal, the
+            // provenance record and `CopyEvent::Completed` behind the
+            // source-stability verdict; a hook that copied the bytes
+            // itself and reported `Done` would bypass all of that.
+            let Some(outcome) = fast_copy(&src, &dst, opts, ctrl, events).await? else {
+                return Ok(FastCopyHookOutcome::NotSupported);
+            };
             Ok(FastCopyHookOutcome::Done(CopyReport {
                 src,
                 dst,
                 bytes: outcome.bytes,
                 duration: outcome.duration,
                 rate_bps: outcome.rate_bps,
+                // `copy_file` owns the stability verdict and stamps it
+                // onto whatever report the hook hands back.
+                source_changed: None,
             }))
         })
     }

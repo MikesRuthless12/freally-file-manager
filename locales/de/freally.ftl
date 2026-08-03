@@ -1543,6 +1543,7 @@ err-schedule-too-many = Zu viele geplante Ausführungen
 err-schedule-install-failed = Die Systemaufgabenplanung hat diesen Zeitplan abgelehnt
 err-schedule-remove-failed = Die Systemaufgabenplanung konnte diesen Zeitplan nicht entfernen
 err-schedule-no-program = Speicherort der Anwendung konnte nicht ermittelt werden
+err-schedule-portable = Zeitpläne sind im portablen Modus nicht verfügbar
 settings-schedules-title = Geplante Ausführungen
 settings-schedules-empty = Noch keine geplanten Ausführungen.
 settings-schedule-add = Zeitplan hinzufügen
@@ -1568,7 +1569,6 @@ settings-affinity-workers-auto = Automatisch
 
 # FFM-M19
 err-queue-unknown = Unbekannte Warteschlange
-action-run-next = Als Nächstes ausführen
 action-boost = Bevorzugen
 action-clear-boost = Bevorzugung aufheben
 action-move-to-queue = In Warteschlange verschieben

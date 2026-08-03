@@ -56,41 +56,106 @@ pub async fn copy_file(
 
     let policy = opts.source_stability;
     if policy == SourceStability::Off {
-        return copy_file_once(src, dst, opts, ctrl, events).await;
+        let mut pending = PendingFinalize::default();
+        let report = copy_file_once(src, dst, opts, ctrl, events.clone(), &mut pending).await?;
+        return Ok(pending.commit(report, &events).await);
     }
 
-    let before = SourceStamp::of(src).await;
+    // Stamp the same file the copy will actually read: `copy_file_once`
+    // uses `symlink_metadata` when `follow_symlinks` is false, so
+    // following here would fingerprint a link's target instead of the
+    // link (FFM-M23 fix §1.5).
+    let follow = opts.follow_symlinks;
+    let keep_partial = opts.keep_partial;
+    let before = SourceStamp::of(src, follow).await;
     // Only `Recopy` can need the options a second time. `CopyOptions`
     // is ~40 fields with eight `Option<Arc<dyn …>>` hooks, so cloning
     // it unconditionally would add a per-file allocation and eight
     // atomic bumps to every tree copy — under the default `Warn`
     // policy, for a second attempt that never happens.
+    let mut pending = PendingFinalize::default();
     let (report, opts) = if policy == SourceStability::Recopy {
-        let report = copy_file_once(src, dst, opts.clone(), ctrl.clone(), events.clone()).await?;
+        let report = copy_file_once(
+            src,
+            dst,
+            opts.clone(),
+            ctrl.clone(),
+            events.clone(),
+            &mut pending,
+        )
+        .await?;
         (report, Some(opts))
     } else {
         (
-            copy_file_once(src, dst, opts, ctrl.clone(), events.clone()).await?,
+            copy_file_once(src, dst, opts, ctrl.clone(), events.clone(), &mut pending).await?,
             None,
         )
     };
-    let after = SourceStamp::of(src).await;
+    let after = SourceStamp::of(src, follow).await;
 
-    match evaluate(before, after, policy) {
-        StabilityVerdict::Stable => Ok(report),
+    // A path that read no source bytes has no read window to tear in;
+    // see `PendingFinalize::skipped_source_read` for why evaluating one
+    // anyway is actively harmful.
+    let verdict = if pending.skipped_source_read {
+        StabilityVerdict::Stable
+    } else {
+        evaluate(before, after, policy)
+    };
+
+    match verdict {
+        StabilityVerdict::Stable => Ok(pending.commit(report, &events).await),
         StabilityVerdict::Fail => {
+            // Route through the same exit as every other engine
+            // failure so the torn destination is removed (unless the
+            // caller asked to keep partials) and `CopyEvent::Failed`
+            // is delivered. Returning a bare `Err` left a full-size,
+            // correctly-dated, internally-inconsistent file at the
+            // destination — which the next run under skip-existing or
+            // newer-only would treat as already copied — and the
+            // single-file UI path never learned the job had failed,
+            // because it only sees failures via that event.
             let detail = describe(before, after);
-            Err(CopyError::source_changed(src, dst, &detail))
+            // Nothing is recorded: the destination is about to be
+            // deleted, so a finished journal row or a provenance entry
+            // would both be lies, and no `Completed` is owed for a copy
+            // that ends in `Failed`. The journal row is invalidated
+            // rather than just left alone — under `keep_partial` the
+            // torn destination survives and its checkpoints would be
+            // resumable onto torn bytes.
+            pending.discard();
+            finalize_error(
+                keep_partial,
+                &events,
+                CopyError::source_changed(src, dst, &detail),
+                dst,
+            )
+            .await
         }
         StabilityVerdict::Warn => {
+            let detail = describe(before, after);
             let _ = events
                 .send(CopyEvent::SourceChanged {
                     src: src.to_path_buf(),
-                    detail: describe(before, after),
+                    detail: detail.clone(),
                     recopying: false,
                 })
                 .await;
-            Ok(report)
+            // Carry the verdict out in the report. `Warn` keeps the
+            // bytes, but a caller that is about to delete or trash the
+            // source on the strength of this `Ok` — `move_file`'s slow
+            // path, the runner's move-to-trash path — has to be able
+            // to see that the destination is not a faithful copy.
+            //
+            // `Completed` goes out *after* the `SourceChanged` above —
+            // the whole point of deferring. The runner pairs the two
+            // by `src`, and a `Completed` that beat its
+            // `SourceChanged` onto the channel left the tear invisible
+            // to history.
+            let report = CopyReport {
+                source_changed: Some(detail),
+                ..report
+            };
+            Ok(pending.abandon(report, &events).await)
         }
         StabilityVerdict::Recopy => {
             let _ = events
@@ -104,27 +169,181 @@ pub async fn copy_file(
             // otherwise loop forever, and each pass rewrites the whole
             // destination — an unbounded retry on a busy log file is a
             // livelock, not a recovery.
-            let retry_before = SourceStamp::of(src).await;
-            let opts = opts.expect("the Recopy branch always carries the options forward");
-            let retry = copy_file_once(src, dst, opts, ctrl, events.clone()).await?;
-            let retry_after = SourceStamp::of(src).await;
+            let mut opts = opts.expect("the Recopy branch always carries the options forward");
+            // Throw away the first attempt's finalization: its bytes
+            // are the torn ones we are about to overwrite. Invalidating
+            // the row also clears the checkpoints it left behind, so
+            // nothing can later resume onto that torn prefix.
+            pending.discard();
+            // The retry must re-read the source from byte 0. The row
+            // was just invalidated, so the journal would already say
+            // `Restart` — but detach it anyway so the retry cannot
+            // resume even if a `JournalSink` implementation's
+            // `invalidate_file` is weaker than its contract. Belt and
+            // braces on the hottest data-loss path in the product.
+            //
+            // `fail_if_exists` goes with it: the destination we are
+            // deliberately overwriting is the one the first attempt
+            // created.
+            opts.journal = None;
+            opts.fail_if_exists = false;
+            // Suppress version snapshotting for the retry. Clearing
+            // `fail_if_exists` is what arms
+            // `maybe_snapshot_before_overwrite`, and the thing it would
+            // snapshot here is precisely the torn first attempt — the
+            // user's version history would gain an entry for bytes the
+            // engine just declared untrustworthy.
+            opts.versioning.enabled = false;
+            let retry_before = SourceStamp::of(src, follow).await;
+            let mut retry_pending = PendingFinalize::default();
+            let retry =
+                copy_file_once(src, dst, opts, ctrl, events.clone(), &mut retry_pending).await?;
+            let retry_after = SourceStamp::of(src, follow).await;
             if evaluate(retry_before, retry_after, policy) == StabilityVerdict::Stable {
-                Ok(retry)
+                Ok(retry_pending.commit(retry, &events).await)
             } else {
                 // Still moving. Report and keep the second attempt's
                 // bytes rather than failing — the caller asked to
-                // re-copy, not to abort.
+                // re-copy, not to abort — but mark the report so a
+                // move still refuses to unlink the source.
+                let detail = describe(retry_before, retry_after);
                 let _ = events
                     .send(CopyEvent::SourceChanged {
                         src: src.to_path_buf(),
-                        detail: describe(retry_before, retry_after),
+                        detail: detail.clone(),
                         recopying: false,
                     })
                     .await;
-                Ok(retry)
+                let retry = CopyReport {
+                    source_changed: Some(detail),
+                    ..retry
+                };
+                Ok(retry_pending.abandon(retry, &events).await)
             }
         }
     }
+}
+
+/// Finalization that must not happen until the source-stability
+/// verdict is in.
+///
+/// [`copy_file_once`] builds one of these instead of applying them,
+/// because a torn copy recorded as complete is unrecoverable:
+///
+/// - `finish_file` makes the *next* run's resume probe return
+///   `AlreadyComplete`, so it returns a clean synthetic report without
+///   ever opening the source — and a `move` on the strength of that
+///   report unlinks the source. That survives an app restart and is
+///   not trash-recoverable.
+/// - The provenance manifest would certify torn bytes, and under the
+///   `Fail` policy would reference a destination `finalize_error` then
+///   deletes.
+/// - `Completed` emitted before `SourceChanged` inverts the wire order
+///   the runner's per-file history bookkeeping depends on.
+///
+/// [`Self::commit`] is the single place in the engine that emits
+/// `CopyEvent::Completed` for a file copy.
+#[derive(Default)]
+struct PendingFinalize {
+    journal: Option<PendingJournalRow>,
+    provenance: Option<PendingProvenanceRecord>,
+    /// Set by the paths that never read a byte of the source, so
+    /// [`copy_file`] can skip the stability verdict entirely.
+    ///
+    /// Those paths have no read window for the source to tear in, so
+    /// any verdict is a false positive — and a false positive is not
+    /// harmless. Under `Fail` it routes a destination that
+    /// `decide_resume` had *just* re-hashed and confirmed byte-for-byte
+    /// into `finalize_error`, which unlinks it. The re-hash of a large
+    /// destination is a minutes-long window for an unrelated source
+    /// edit to land in. Under `Warn` it stamps a perfectly good copy
+    /// `source-changed` and makes every move refuse to remove its
+    /// source.
+    ///
+    /// Defaults to `false` (guard active) so a path that forgets to set
+    /// it merely keeps the guard, rather than silently disabling it.
+    skipped_source_read: bool,
+}
+
+/// `(sink, file_idx, final_hash)` — the journal row to close.
+type PendingJournalRow = (Arc<dyn crate::options::JournalSink>, u64, [u8; 32]);
+
+/// `(sink, blake3_root, bao_outboard)` — the provenance contribution
+/// to record. Byte count and paths come from the report.
+type PendingProvenanceRecord = (Arc<dyn crate::ProvenanceSink>, [u8; 32], Vec<u8>);
+
+impl PendingFinalize {
+    /// The copy is trustworthy. Apply the deferred finalization, then
+    /// emit `Completed` and hand the report back unchanged.
+    ///
+    /// Consumes `self` so the caller is forced to pick this or
+    /// [`Self::abandon`], and cannot emit `Completed` twice.
+    async fn commit(self, report: CopyReport, events: &mpsc::Sender<CopyEvent>) -> CopyReport {
+        if let Some((journal, file_idx, final_hash)) = self.journal {
+            journal.finish_file(file_idx, final_hash);
+        }
+        if let Some((sink, root, outboard)) = self.provenance {
+            sink.record_file(&report.src, &report.dst, report.bytes, root, outboard);
+        }
+        emit_completed(report, events).await
+    }
+
+    /// The copy is torn but its bytes are being kept (the `Warn`
+    /// policy). Record **nothing**, but still emit `Completed` so the
+    /// file's lifecycle closes — the `SourceChanged` that necessarily
+    /// precedes it is what marks the file, and `CopyReport`'s
+    /// `source_changed` is what every source-deleting caller reads.
+    ///
+    /// The journal row is actively **invalidated**, not merely left
+    /// unfinished. `finish_file` would make the next run's resume probe
+    /// return `AlreadyComplete` and hand back a clean synthetic report
+    /// *without opening the source*, on the strength of which a `move`
+    /// unlinks the user's only coherent copy — but declining to call it
+    /// is not enough on its own. The periodic checkpoints already on
+    /// the row recorded `hash_so_far` over the torn read stream, and
+    /// the torn destination holds exactly those bytes, so next run the
+    /// prefix check *matches*, resume is accepted, the torn prefix
+    /// survives, and the file is finalized and certified as clean.
+    /// Dropping the row is what actually forces a full re-copy.
+    ///
+    /// The provenance record is simply omitted: the manifest's whole
+    /// claim is "these destination bytes are the source's bytes", and
+    /// for a torn file that is false. The sink has no way to flag an
+    /// entry, so omitting it is the only honest option — a later verify
+    /// then reports the file as absent from the manifest rather than
+    /// passing it as certified.
+    async fn abandon(self, report: CopyReport, events: &mpsc::Sender<CopyEvent>) -> CopyReport {
+        self.discard();
+        emit_completed(report, events).await
+    }
+
+    /// Discard without emitting `Completed` — the copy either failed
+    /// outright (`Fail`) or is about to be redone (`Recopy`), and
+    /// neither owes a completion event.
+    ///
+    /// Still invalidates the journal row. Under `keep_partial` the torn
+    /// destination survives the failure, and a row carrying checkpoints
+    /// taken over those bytes is resumable straight onto them.
+    fn discard(self) {
+        if let Some((journal, file_idx, _)) = self.journal {
+            journal.invalidate_file(file_idx);
+        }
+    }
+}
+
+/// The engine's single `CopyEvent::Completed` emission point for a
+/// file copy (`tree.rs`'s atomic-rename path is the one exception, and
+/// it has no read window to tear in).
+async fn emit_completed(report: CopyReport, events: &mpsc::Sender<CopyEvent>) -> CopyReport {
+    let _ = events
+        .send(CopyEvent::Completed {
+            src: report.src.clone(),
+            bytes: report.bytes,
+            duration: report.duration,
+            rate_bps: report.rate_bps,
+        })
+        .await;
+    report
 }
 
 /// Summarise the difference between two optional stamps for an event
@@ -148,12 +367,19 @@ fn describe(
 /// The copy proper. [`copy_file`] wraps this with the FFM-M23
 /// stability guard; everything else about the contract is documented
 /// there.
+///
+/// Deliberately emits no `CopyEvent::Completed` and performs no
+/// journal / provenance finalization of its own. Both are handed to
+/// the caller through `pending` so they land *after* the stability
+/// verdict — see [`PendingFinalize`] for why that ordering is
+/// load-bearing.
 async fn copy_file_once(
     src: &Path,
     dst: &Path,
     opts: CopyOptions,
     ctrl: CopyControl,
     events: mpsc::Sender<CopyEvent>,
+    pending: &mut PendingFinalize,
 ) -> Result<CopyReport, CopyError> {
     let src_path = src.to_path_buf();
     let dst_path = dst.to_path_buf();
@@ -199,6 +425,8 @@ async fn copy_file_once(
     let src_metadata = metadata_result.map_err(|e| CopyError::from_io(&src_path, &dst_path, e))?;
 
     if !opts.follow_symlinks && src_metadata.file_type().is_symlink() {
+        // Cloning a link reads its target string, not the file's bytes.
+        pending.skipped_source_read = true;
         return copy_symlink(&src_path, &dst_path, &opts, &events).await;
     }
 
@@ -427,6 +655,13 @@ async fn copy_file_once(
     let resume_decision = decide_resume(&dst_path, total, &opts, &events).await?;
 
     if let ResumeDecision::AlreadyComplete { final_hash } = resume_decision {
+        // This branch confirms an existing destination and returns
+        // without ever opening the source, so the stability guard must
+        // not judge it — `decide_resume` may have spent minutes
+        // re-hashing a large destination, and an unrelated source edit
+        // inside that window would otherwise delete the very file it
+        // just verified.
+        pending.skipped_source_read = true;
         // dst already matches the journal's final hash — emit the
         // lifecycle events the caller expects, mark the journal
         // file as finished (idempotent), and return without
@@ -437,6 +672,14 @@ async fn copy_file_once(
         // probe miss the AlreadyComplete fast-path and re-hash the
         // whole dst again. Re-finalising on this branch closes
         // that loop.
+        //
+        // This is the one finalization deliberately *not* deferred
+        // behind the stability verdict (see `PendingFinalize`). It is
+        // a repair of a row that already said "complete", against a
+        // destination `decide_resume` just re-hashed and confirmed —
+        // not a new claim about bytes this run produced. Nothing was
+        // read from the source here, so there is no torn copy for it
+        // to launder.
         if let Some(journal) = opts.journal.as_ref() {
             journal.finish_file(opts.journal_file_idx, final_hash);
         }
@@ -447,19 +690,13 @@ async fn copy_file_once(
                 total_bytes: total,
             })
             .await;
-        let _ = events
-            .send(CopyEvent::Completed {
-                bytes: total,
-                duration: Duration::ZERO,
-                rate_bps: 0,
-            })
-            .await;
         return Ok(CopyReport {
             src: src_path,
             dst: dst_path,
             bytes: total,
             duration: Duration::ZERO,
             rate_bps: 0,
+            source_changed: None,
         });
     }
 
@@ -796,7 +1033,7 @@ async fn copy_file_once(
             )
             .await
             {
-                return finalize_error(&opts, &events, e, &dst_path).await;
+                return finalize_error(opts.keep_partial, &events, e, &dst_path).await;
             }
             // Snapshot lease can drop here — every metadata read
             // that needed the snapshot mount has now finished. We
@@ -824,44 +1061,40 @@ async fn copy_file_once(
                 {
                     Ok(()) => {}
                     Err(err) => {
-                        return finalize_error(&opts, &events, err, &dst_path).await;
+                        return finalize_error(opts.keep_partial, &events, err, &dst_path).await;
                     }
                 }
             }
 
-            // Phase 20 — finalize the journal entry for this file.
-            // Captures the final BLAKE3 so a future resume probe sees
-            // `AlreadyComplete` and can skip the copy entirely.
+            // Phase 20 — the journal entry for this file. Captures the
+            // final BLAKE3 so a future resume probe sees
+            // `AlreadyComplete` and can skip the copy entirely — which
+            // is exactly why it is *handed to the caller* rather than
+            // written here: recording a torn copy as complete makes
+            // the next run skip it and a later move unlink the source.
             if let (Some(journal), Some(h)) = (opts.journal.as_ref(), journal_hasher.take()) {
                 let final_hash: [u8; 32] = *h.finalize().as_bytes();
-                journal.finish_file(opts.journal_file_idx, final_hash);
+                pending.journal = Some((journal.clone(), opts.journal_file_idx, final_hash));
             }
 
             // Phase 43 — finalize the provenance encoder and hand the
-            // (root, outboard) pair to the sink. The sink derives the
+            // (root, outboard) pair up. The sink derives the
             // manifest's rel_path against the job-level src_root it
-            // was constructed with; we just feed it the absolutes.
+            // was constructed with; it gets the absolutes from the
+            // report.
             if let (Some(policy), Some(enc)) = (opts.provenance.as_ref(), provenance_encoder.take())
             {
                 let (root, outboard) = enc.finalize();
-                policy
-                    .sink
-                    .record_file(&src_path, &dst_path, copied, root, outboard);
+                pending.provenance = Some((policy.sink.clone(), root, outboard));
             }
 
-            let _ = events
-                .send(CopyEvent::Completed {
-                    bytes: copied,
-                    duration: elapsed,
-                    rate_bps: rate,
-                })
-                .await;
             Ok(CopyReport {
                 src: src_path,
                 dst: dst_path,
                 bytes: copied,
                 duration: elapsed,
                 rate_bps: rate,
+                source_changed: None,
             })
         }
         Err(err) => fail(&src_path, &dst_path, &opts, &events, err, writer, reader).await,
@@ -999,6 +1232,7 @@ async fn run_verify_pass(
     if src_digest == dst_digest {
         let _ = events
             .send(CopyEvent::VerifyCompleted {
+                src: src_path.to_path_buf(),
                 algorithm: algorithm_name,
                 src_hex,
                 dst_hex,
@@ -1055,16 +1289,24 @@ async fn fail(
 ) -> Result<CopyReport, CopyError> {
     drop(writer);
     drop(reader);
-    finalize_error(opts, events, err, dst).await
+    finalize_error(opts.keep_partial, events, err, dst).await
 }
 
+/// The single exit for every failed copy: drop the unusable
+/// destination unless the caller asked to keep partials, tell the
+/// consumer via `CopyEvent::Failed`, and return the error.
+///
+/// Takes `keep_partial` rather than the whole `CopyOptions` because
+/// that is the only field it reads, and because `copy_file`'s
+/// stability guard has already moved its options into the copy by the
+/// time it needs to fail an item.
 async fn finalize_error(
-    opts: &CopyOptions,
+    keep_partial: bool,
     events: &mpsc::Sender<CopyEvent>,
     err: CopyError,
     dst: &Path,
 ) -> Result<CopyReport, CopyError> {
-    if !opts.keep_partial {
+    if !keep_partial {
         let _ = tokio::fs::remove_file(dst).await;
     }
     let _ = events.send(CopyEvent::Failed { err: err.clone() }).await;
@@ -1459,19 +1701,13 @@ async fn copy_file_sparse_aware(
             rate_bps: rate,
         })
         .await;
-    let _ = events
-        .send(CopyEvent::Completed {
-            bytes: copied,
-            duration: elapsed,
-            rate_bps: rate,
-        })
-        .await;
     Ok(CopyReport {
         src: src_path,
         dst: dst_path,
         bytes: copied,
         duration: elapsed,
         rate_bps: rate,
+        source_changed: None,
     })
 }
 
@@ -1593,19 +1829,13 @@ async fn copy_file_to_cloud_sink(
             rate_bps,
         })
         .await;
-    let _ = events
-        .send(CopyEvent::Completed {
-            bytes: written,
-            duration: elapsed,
-            rate_bps,
-        })
-        .await;
     Ok(CopyReport {
         src: src_path,
         dst: dst_path,
         bytes: written,
         duration: elapsed,
         rate_bps,
+        source_changed: None,
     })
 }
 
@@ -1678,19 +1908,13 @@ async fn copy_file_to_transform(
             .await;
     }
 
-    let _ = events
-        .send(CopyEvent::Completed {
-            bytes: outcome.input_bytes,
-            duration: elapsed,
-            rate_bps,
-        })
-        .await;
     Ok(CopyReport {
         src: src_path,
         dst: dst_path,
         bytes: outcome.input_bytes,
         duration: elapsed,
         rate_bps,
+        source_changed: None,
     })
 }
 
@@ -1733,19 +1957,13 @@ async fn copy_symlink(
         return Err(err);
     }
     let elapsed = start.elapsed();
-    let _ = events
-        .send(CopyEvent::Completed {
-            bytes: 0,
-            duration: elapsed,
-            rate_bps: 0,
-        })
-        .await;
     Ok(CopyReport {
         src: src.to_path_buf(),
         dst: dst.to_path_buf(),
         bytes: 0,
         duration: elapsed,
         rate_bps: 0,
+        source_changed: None,
     })
 }
 

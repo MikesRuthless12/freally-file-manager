@@ -160,7 +160,13 @@ pub const EVENT_TASK_CANCELLED: &str = "task-cancelled";
 /// - `"progress"`: mid-copy tick; `bytesDone`/`bytesTotal` populated.
 /// - `"done"`: file finished successfully.
 /// - `"error"`: file failed (engine logged it, tree continues).
+/// - `"source-changed"`: FFM-M23 — the file copied, but its source was
+///   rewritten mid-read, so the bytes that landed are not a faithful
+///   copy. Terminal like `"done"`, but not a success.
 /// - `"dir"`: a directory was created at the destination.
+///
+/// Keep this list in step with `FileActivityPhase` in the frontend's
+/// `types.ts` — it is the only written spec of the wire vocabulary.
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FileActivityDto {

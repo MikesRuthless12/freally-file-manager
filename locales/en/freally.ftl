@@ -1549,6 +1549,7 @@ err-schedule-too-many = Too many scheduled runs
 err-schedule-install-failed = The system scheduler rejected this schedule
 err-schedule-remove-failed = The system scheduler could not remove this schedule
 err-schedule-no-program = Could not determine this application's location
+err-schedule-portable = Scheduling is unavailable in portable mode
 settings-schedules-title = Scheduled runs
 settings-schedules-empty = No scheduled runs yet.
 settings-schedule-add = Add schedule
@@ -1574,7 +1575,6 @@ settings-affinity-workers-auto = Automatic
 
 # FFM-M19 — job priority
 err-queue-unknown = Unknown queue
-action-run-next = Run next
 action-boost = Prioritize
 action-clear-boost = Stop prioritizing
 action-move-to-queue = Move to queue
