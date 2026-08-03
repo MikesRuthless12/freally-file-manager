@@ -532,6 +532,11 @@ fn systemd_unit_stem(id: &str) -> String {
     format!("freally-{id}")
 }
 
+/// Only `windows_impl` consumes this, and that module is itself
+/// `cfg(target_os = "windows")` — without the gate it is dead code
+/// everywhere else and fails the workspace's `-D warnings` clippy on
+/// the Linux and macOS CI legs.
+#[cfg(target_os = "windows")]
 fn windows_task_name(id: &str) -> String {
     format!("\\Freally\\{id}")
 }
