@@ -34,12 +34,15 @@
 //!    - Windows: `CopyFileExW` with progress callback; uses
 //!      `COPY_FILE_NO_BUFFERING` for files ≥256 MiB. Reports
 //!      [`ChosenStrategy::CopyFileExW`].
-//! 3. **Async fallback** — delegate to [`freally_core::copy_file`].
-//!    Reports [`ChosenStrategy::AsyncFallback`].
+//! 3. **Decline** — when no fast path applies, [`fast_copy`] returns
+//!    `Ok(None)` and copies nothing, so [`freally_core::copy_file`]
+//!    runs its own async loop.
 //!
-//! Each fast path emits the same `Started` / `Progress` / `Completed`
-//! events as the Phase 1 engine so a UI sees one timeline regardless
-//! of which path actually moved the bytes.
+//! Each fast path emits the same `Started` / `Progress` events as the
+//! Phase 1 engine so a UI sees one timeline regardless of which path
+//! actually moved the bytes. `Completed` is deliberately **not** among
+//! them: `copy_file` emits it once, after the source-stability verdict,
+//! so a torn copy can never be reported clean.
 //!
 //! # Wiring example
 //!

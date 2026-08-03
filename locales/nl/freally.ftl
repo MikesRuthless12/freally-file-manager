@@ -1543,6 +1543,7 @@ err-schedule-too-many = Te veel geplande taken
 err-schedule-install-failed = De systeemplanner heeft deze planning geweigerd
 err-schedule-remove-failed = De systeemplanner kon deze planning niet verwijderen
 err-schedule-no-program = Kan de locatie van deze toepassing niet bepalen
+err-schedule-portable = Planning is niet beschikbaar in draagbare modus
 settings-schedules-title = Geplande taken
 settings-schedules-empty = Nog geen geplande taken.
 settings-schedule-add = Planning toevoegen
@@ -1568,7 +1569,6 @@ settings-affinity-workers-auto = Automatisch
 
 # FFM-M19
 err-queue-unknown = Onbekende wachtrij
-action-run-next = Hierna uitvoeren
 action-boost = Voorrang geven
 action-clear-boost = Voorrang opheffen
 action-move-to-queue = Naar wachtrij verplaatsen

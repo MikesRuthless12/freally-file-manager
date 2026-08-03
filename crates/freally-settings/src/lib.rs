@@ -198,18 +198,62 @@ impl Settings {
     /// here too** — `backend_owned_groups_survive_a_wholesale_replace`
     /// in this module's tests fails loudly if it is forgotten.
     pub fn carry_backend_owned_from(&mut self, prev: &Settings) {
+        self.carry_install_records_from(prev);
+        // The rest are genuine user preferences that simply have no
+        // home in the modal's DTO. `update_settings` must keep them
+        // because the modal cannot round-trip them — but a *reset* or
+        // a profile load must not, which is what
+        // `carry_install_records_from` is for.
+        self.conflict_profiles = prev.conflict_profiles.clone();
+        self.chunk_store = prev.chunk_store.clone();
+        self.notifications = prev.notifications.clone();
+        self.drop_stack = prev.drop_stack.clone();
+        // Whole-struct, not field-by-field: the narrow carry above
+        // already took `sync.pairs`, and the remaining fields are all
+        // preferences the DTO cannot round-trip. Listing them
+        // individually meant a new `SyncSettings` field would be
+        // silently dropped by an ordinary modal Save, which is the
+        // exact bug this function exists to prevent.
+        self.sync = prev.sync.clone();
+    }
+
+    /// Copy only the **per-install records** from `prev` onto `self` —
+    /// the subset of backend-owned state that is a *record of what this
+    /// machine has* rather than a preference about how it behaves.
+    ///
+    /// This is the narrow carry that "Reset to defaults" and "Load
+    /// profile" need. [`Self::carry_backend_owned_from`] is
+    /// deliberately wider: it also preserves preference groups the
+    /// Settings modal's DTO cannot round-trip, which is correct for a
+    /// modal save and wrong for a reset — a user resetting to defaults
+    /// because their drop-stack geometry or notification webhooks are
+    /// broken must actually get those reset.
+    ///
+    /// What stays, and why each is a record rather than a preference:
+    ///
+    /// - `eula` — a legal acceptance recorded by `eula_accept`.
+    /// - `repository`, `remotes`, `backup.sources`, `sync.pairs` —
+    ///   registrations naming absolute paths, credentials and on-disk
+    ///   state DBs that exist on *this* machine. Dropping them orphans
+    ///   the state they point at.
+    /// - `schedules` — each row mirrors an installed OS artifact.
+    ///   Forgetting one leaves it firing forever with no UI to remove
+    ///   it, which is the same orphan class as §2.2/§2.4.
+    /// - `favorites`, `queue` — pinned destinations, affinity groups
+    ///   and the recent-pair ring, all keyed to local paths.
+    ///
+    /// Note `sync` and `backup` are split at field level: the *pairs*
+    /// and *sources* are records, while the sync defaults are
+    /// preferences and reset with everything else.
+    pub fn carry_install_records_from(&mut self, prev: &Settings) {
         self.eula = prev.eula.clone();
         self.queue = prev.queue.clone();
         self.repository = prev.repository.clone();
         self.remotes = prev.remotes.clone();
-        self.conflict_profiles = prev.conflict_profiles.clone();
-        self.sync = prev.sync.clone();
-        self.backup = prev.backup.clone();
-        self.chunk_store = prev.chunk_store.clone();
-        self.notifications = prev.notifications.clone();
-        self.drop_stack = prev.drop_stack.clone();
         self.schedules = prev.schedules.clone();
         self.favorites = prev.favorites.clone();
+        self.sync.pairs.clone_from(&prev.sync.pairs);
+        self.backup.sources.clone_from(&prev.backup.sources);
     }
 }
 
@@ -3370,6 +3414,13 @@ log-level = "debug"
             label: "Documents ↔ NAS".to_string(),
             ..SyncPairConfig::default()
         });
+        // `carry_backend_owned_from` copies `sync` field by field (the
+        // pairs are a record, the rest are preferences), so these have
+        // to be non-default or the wide-carry test would pass without
+        // ever proving they are carried. `conflict_suffix_format` has
+        // only one variant, so there is nothing to vary there.
+        s.sync.default_mode = SyncModeChoice::MirrorLeftToRight;
+        s.sync.host_label_override = "workstation".to_string();
         s.backup.sources.push(SourceConfig {
             id: "b1".to_string(),
             label: "Photos".to_string(),
@@ -3426,6 +3477,74 @@ log-level = "debug"
         assert_eq!(next.drop_stack, prev.drop_stack);
         assert_eq!(next.schedules, prev.schedules);
         assert_eq!(next.favorites, prev.favorites);
+    }
+
+    /// The narrow carry keeps every per-install *record* — the things
+    /// that name absolute paths, credentials, on-disk state DBs or
+    /// installed OS artifacts, and would be orphaned by dropping them.
+    #[test]
+    fn install_records_survive_a_reset() {
+        let prev = settings_with_every_backend_owned_group_populated();
+
+        let mut next = Settings::default();
+        next.carry_install_records_from(&prev);
+
+        assert_eq!(
+            next.eula, prev.eula,
+            "a legal acceptance is not a preference"
+        );
+        assert_eq!(next.queue, prev.queue);
+        assert_eq!(next.repository, prev.repository);
+        assert_eq!(next.remotes, prev.remotes);
+        assert_eq!(
+            next.schedules, prev.schedules,
+            "dropping a schedule row orphans the OS task it mirrors",
+        );
+        assert_eq!(next.favorites, prev.favorites);
+        assert_eq!(
+            next.sync.pairs, prev.sync.pairs,
+            "each pair owns an on-disk state DB",
+        );
+        assert_eq!(next.backup.sources, prev.backup.sources);
+    }
+
+    /// ...and resets everything that is merely a preference the modal's
+    /// DTO happens not to model. This is the actual §4.1 bug: "Reset to
+    /// defaults" reported success and left all of these untouched.
+    #[test]
+    fn a_reset_actually_resets_the_preference_groups() {
+        let prev = settings_with_every_backend_owned_group_populated();
+        let defaults = Settings::default();
+
+        let mut next = Settings::default();
+        next.carry_install_records_from(&prev);
+
+        assert_eq!(
+            next.conflict_profiles, defaults.conflict_profiles,
+            "a broken conflict profile must be resettable",
+        );
+        assert_eq!(
+            next.chunk_store, defaults.chunk_store,
+            "a bad chunk-store location must be resettable",
+        );
+        assert_eq!(
+            next.notifications, defaults.notifications,
+            "bad notification webhooks must be resettable",
+        );
+        assert_eq!(
+            next.drop_stack, defaults.drop_stack,
+            "a broken drop-stack geometry must be resettable",
+        );
+        assert_eq!(
+            next.sync.default_mode, defaults.sync.default_mode,
+            "sync *defaults* are preferences even though pairs are not",
+        );
+        // Sanity: the fixture really did differ, so the assertions
+        // above are not passing vacuously.
+        assert_ne!(prev.chunk_store, defaults.chunk_store);
+        assert_ne!(prev.notifications, defaults.notifications);
+        assert_ne!(prev.drop_stack, defaults.drop_stack);
+        assert_ne!(prev.conflict_profiles, defaults.conflict_profiles);
     }
 
     #[test]

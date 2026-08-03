@@ -70,10 +70,9 @@ jobs:
             rust-target: x86_64-pc-windows-msvc
             bundles: msi,nsis
     steps:
+      # vendor/freally-central (the "More Freally apps" panel) is committed
+      # in-tree, so no submodule fetch is needed.
       - uses: actions/checkout@v4
-        with:
-          # vendor/freally-central (the "More Freally apps" panel) is a submodule.
-          submodules: recursive
 
       - name: Install Linux Tauri prerequisites
         if: matrix.target.os == 'ubuntu-latest'

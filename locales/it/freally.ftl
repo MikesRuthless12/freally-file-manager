@@ -1543,6 +1543,7 @@ err-schedule-too-many = Troppe esecuzioni pianificate
 err-schedule-install-failed = L'utilità di pianificazione del sistema ha rifiutato questa pianificazione
 err-schedule-remove-failed = L'utilità di pianificazione del sistema non ha potuto rimuovere questa pianificazione
 err-schedule-no-program = Impossibile determinare la posizione dell'applicazione
+err-schedule-portable = La pianificazione non è disponibile in modalità portatile
 settings-schedules-title = Esecuzioni pianificate
 settings-schedules-empty = Nessuna esecuzione pianificata.
 settings-schedule-add = Aggiungi pianificazione
@@ -1568,7 +1569,6 @@ settings-affinity-workers-auto = Automatico
 
 # FFM-M19
 err-queue-unknown = Coda sconosciuta
-action-run-next = Esegui come prossimo
 action-boost = Dai priorità
 action-clear-boost = Rimuovi priorità
 action-move-to-queue = Sposta nella coda

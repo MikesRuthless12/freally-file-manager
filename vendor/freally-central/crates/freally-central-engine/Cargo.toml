@@ -1,0 +1,25 @@
+[package]
+name = "freally-central-engine"
+version = "0.7.0"
+description = "Detect/download/install/launch engine behind the Freally Central panel, reusable by any Freally host app."
+authors = ["Mike Weaver (Havoc Software)"]
+license = "SEE LICENSE IN LICENSE"
+repository = "https://github.com/MikesRuthless12/freally-central"
+edition = "2021"
+publish = false
+rust-version = "1.77"
+
+[lib]
+name = "freally_central_engine"
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+reqwest = { version = "0.13", features = ["stream"] }
+futures-util = "0.3"
+sha2 = "0.10"
+hex = "0.4"
+tokio = { version = "1", features = ["fs", "io-util", "process", "time", "macros"] }
+
+[target."cfg(windows)".dependencies]
+winreg = "0.56.0"

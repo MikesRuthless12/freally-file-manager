@@ -1,0 +1,12 @@
+# Pinned so the 3-OS builds are deterministic (FC-00e).
+# Bump deliberately; CI and local dev both read this file.
+[toolchain]
+channel = "1.96.1"
+profile = "minimal"
+components = ["rustfmt", "clippy"]
+targets = [
+  "x86_64-pc-windows-msvc",
+  "x86_64-apple-darwin",
+  "aarch64-apple-darwin",
+  "x86_64-unknown-linux-gnu",
+]

@@ -1,0 +1,349 @@
+/* Freally Central — dark/light theme + shell styles.
+ * The grid/detail/download/install panel's styles live with the panel itself
+ * (src/panel/panel.css, scoped under .fcp-root); this file styles Central's
+ * shell and maps Central's theme onto the panel's --fcp-* variables. */
+
+:root {
+  --bg: #0a0d14;
+  --bg-2: #0e1320;
+  --panel: #121826;
+  --card: #141a28;
+  --card-hover: #182034;
+  --text: #e7ebf3;
+  --muted: #8a93a6;
+  --border: rgba(255, 255, 255, 0.09);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --accent-1: #18d3c6;
+  --accent-2: #1c8ee0;
+  --accent: #19a7cf;
+  --ok: #46d998;
+  --warn: #e6ad4b;
+  --err: #ff8a8a;
+  --shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
+  --radius: 14px;
+
+  /* The embedded panel reads only --fcp-* — follow Central's theme. */
+  --fcp-bg: var(--bg);
+  --fcp-panel: var(--panel);
+  --fcp-card: var(--card);
+  --fcp-card-hover: var(--card-hover);
+  --fcp-text: var(--text);
+  --fcp-muted: var(--muted);
+  --fcp-border: var(--border);
+  --fcp-border-strong: var(--border-strong);
+  --fcp-accent-1: var(--accent-1);
+  --fcp-accent-2: var(--accent-2);
+  --fcp-accent: var(--accent);
+  /* Text/foreground on the accent gradient — dark in both themes, since the
+     accent stays a bright teal→blue. Mapped here so the theme owns it rather
+     than leaving the panel's built-in fallback to decide. */
+  --fcp-on-accent: #04121a;
+  --fcp-ok: var(--ok);
+  --fcp-warn: var(--warn);
+  --fcp-err: var(--err);
+  --fcp-shadow: var(--shadow);
+  --fcp-radius: var(--radius);
+}
+
+:root[data-theme="light"] {
+  --bg: #eef1f7;
+  --bg-2: #ffffff;
+  --panel: #ffffff;
+  --card: #ffffff;
+  --card-hover: #f4f7fc;
+  --text: #141a24;
+  --muted: #5c6678;
+  --border: rgba(15, 25, 45, 0.12);
+  --border-strong: rgba(15, 25, 45, 0.2);
+  --ok: #17915f;
+  --warn: #b7791f;
+  --err: #c0392b;
+  --shadow: 0 16px 40px rgba(20, 30, 60, 0.14);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+/* ---------- App shell ---------- */
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 20px;
+  background: color-mix(in srgb, var(--bg-2) 88%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-logo {
+  border-radius: 8px;
+}
+
+.brand-name {
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  font-size: 1.05rem;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.main {
+  flex: 1;
+  width: min(1200px, 100%);
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Buttons, modals, .icon-btn/.link-btn/.muted chrome: everything under #root
+   carries the fcp-root scope (ui/index.html), so the panel's own stylesheet
+   (src/panel/panel.css) styles the shared chrome once — no second copy here. */
+
+/* ---------- Settings / About / What's New / Updates ---------- */
+.settings {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.settings-row select {
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+}
+.settings-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+
+.about,
+.whatsnew,
+.updates {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 0.9rem;
+}
+.about-brand {
+  display: flex;
+  flex-direction: column;
+}
+.about-name {
+  font-size: 1.1rem;
+  font-weight: 800;
+  background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.about-tagline {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+.about-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 16px;
+  margin: 0;
+  font-size: 0.82rem;
+}
+.about-grid dt {
+  color: var(--muted);
+}
+.about-grid dd {
+  margin: 0;
+  font-family: ui-monospace, "Cascadia Code", monospace;
+}
+.about-note {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+.about-links,
+.row-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.about-foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+.about-copyright {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+.about-error,
+.err {
+  color: var(--err);
+  font-size: 0.82rem;
+}
+.ok {
+  color: var(--ok);
+}
+.mono {
+  font-family: ui-monospace, "Cascadia Code", monospace;
+}
+.notes-box {
+  width: 100%;
+  resize: none;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg) 60%, transparent);
+  color: var(--muted);
+  font-family: ui-monospace, "Cascadia Code", monospace;
+  font-size: 0.72rem;
+  padding: 10px;
+}
+.notes-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.notes-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.dl-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.dl-progress-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.bar {
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--border);
+}
+.bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+  transition: width 0.15s;
+}
+
+/* ---------- EULA gate ---------- */
+.eula-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: var(--bg);
+}
+.eula {
+  width: min(640px, 100%);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 22px;
+}
+.eula-title {
+  margin: 0 0 6px;
+}
+.eula-intro {
+  margin: 0 0 12px;
+  color: var(--muted);
+}
+.eula-body {
+  flex: 1;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  background: color-mix(in srgb, var(--bg) 60%, transparent);
+}
+.eula-text {
+  margin: 0;
+  white-space: pre-wrap;
+  font-family: ui-monospace, "Cascadia Code", monospace;
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+.eula-hint {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-align: center;
+}
+.eula-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+/* ---------- Footer ---------- */
+.footer {
+  padding: 20px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.8rem;
+  border-top: 1px solid var(--border);
+}

@@ -1,0 +1,47 @@
+# --- Rust / Cargo ---
+/target/
+**/target/
+# Cargo.lock is intentionally committed (this is an application, not a library).
+
+# --- Node / Vite / UI ---
+node_modules/
+dist/
+dist-ssr/
+.vite/
+*.tsbuildinfo
+
+# --- Tauri ---
+src-tauri/target/
+src-tauri/gen/
+src-tauri/WixTools/
+
+# --- Playwright / e2e ---
+test-results/
+playwright-report/
+playwright/.cache/
+
+# --- Env / secrets / signing keys (never commit) ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# --- OS cruft ---
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# --- Editors ---
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+
+# --- Logs ---
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

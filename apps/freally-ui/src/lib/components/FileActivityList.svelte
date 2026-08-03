@@ -68,6 +68,9 @@
   }
 
   function ratioFor(r: (typeof rows)[number]): number {
+    // No "source-changed" arm: that phase is caught by its own branch in
+    // the ring markup above and never reaches CircularProgress, so a
+    // clause here would be dead and would imply `rowStatus` is missing one.
     if (r.phase === "done") return 1;
     if (r.phase === "error") return 0;
     if (r.bytesTotal <= 0) return 0;
@@ -148,6 +151,8 @@
             <span class="ring" aria-hidden="true">
               {#if r.phase === "error"}
                 <span class="glyph err"><Icon name="x" size={12} /></span>
+              {:else if r.phase === "source-changed"}
+                <span class="glyph warn"><Icon name="alert-triangle" size={12} /></span>
               {:else if r.phase === "dir" || r.isDir}
                 <span class="glyph folder"><Icon name="folder" size={12} /></span>
               {:else}
@@ -174,6 +179,12 @@
             <span class="meta tabular">
               {#if r.phase === "error"}
                 <span class="pct err" title={r.message ?? ""}>error</span>
+              {:else if r.phase === "source-changed"}
+                {#key $i18nVersion}
+                  <span class="pct warn" title={r.message ?? ""}>
+                    {t("job-source-changed")}
+                  </span>
+                {/key}
               {:else if r.phase === "dir"}
                 <span class="pct muted">dir</span>
               {:else if r.phase === "done"}
@@ -371,6 +382,10 @@
     color: var(--error, #c24141);
   }
 
+  .glyph.warn {
+    color: var(--warn, #c98a2b);
+  }
+
   .glyph.folder {
     color: var(--fg-dim, #6a6a6a);
   }
@@ -433,6 +448,11 @@
 
   .pct.err {
     color: var(--error, #c24141);
+    font-weight: 600;
+  }
+
+  .pct.warn {
+    color: var(--warn, #c98a2b);
     font-weight: 600;
   }
 

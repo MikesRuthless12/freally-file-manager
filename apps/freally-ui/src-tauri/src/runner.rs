@@ -379,7 +379,11 @@ pub(crate) async fn run_job(job: RunJob) {
             // rather than move data the user didn't ask to move.
             let filters_active = filters.as_ref().is_some_and(|f| !f.is_empty());
             if state.settings_snapshot().safety.move_source_to_trash && !filters_active {
-                let copy_result = if source_is_dir {
+                // `Ok(false)` means the copy succeeded but the FFM-M23
+                // source-stability guard saw the source change during
+                // the read, so the destination is internally
+                // inconsistent and the source must not be trashed.
+                let copy_result: Result<bool, CopyError> = if source_is_dir {
                     let tree_opts = TreeOptions {
                         file: copy_opts_with_verify,
                         collision: collision_policy,
@@ -390,18 +394,33 @@ pub(crate) async fn run_job(job: RunJob) {
                     };
                     copy_tree(&src, &dst_path, tree_opts, ctrl, tx.clone())
                         .await
-                        .map(|_| ())
+                        // Every file must have landed faithfully before
+                        // the source tree may be trashed. `errored` and
+                        // `skipped` matter as much as `source_changed`:
+                        // `on_error: Skip`/`RetryN` lets a file fail
+                        // without aborting, and `collision: Skip` can
+                        // leave a *differing* destination in place
+                        // having copied nothing — in both cases the
+                        // bytes never transferred, and trashing the
+                        // whole tree on a report that only checked
+                        // tornness took the source with them.
+                        .map(|r| r.source_changed == 0 && r.errored == 0 && r.skipped == 0)
                 } else {
                     copy_file(&src, &dst_path, copy_opts_with_verify, ctrl, tx.clone())
                         .await
-                        .map(|_| ())
+                        .map(|r| r.source_changed.is_none())
                 };
                 // Trash the source only after a verified copy succeeds —
                 // and surface a trash failure as the job's failure, so a
                 // "move" that couldn't remove its source isn't reported
                 // as done with the source still in place.
                 match copy_result {
-                    Ok(()) => {
+                    // Not everything landed faithfully — torn, failed
+                    // or skipped. Keep the source. The job still
+                    // succeeds (whatever did copy is there) but it has
+                    // degraded to a copy.
+                    Ok(false) => Ok(()),
+                    Ok(true) => {
                         let src_for_trash = src.clone();
                         tauri::async_runtime::spawn_blocking(move || trash::delete(&src_for_trash))
                             .await
@@ -682,16 +701,17 @@ async fn forward_events(
     // The shared `files_failed` atomic is bumped from the
     // `CopyEvent::FileError` branch; `run_job` reads it after the
     // engine returns to populate `record_finish`.
-    // Phase 9 — per-file history bookkeeping. `Started` sets the
-    // in-flight item; `VerifyCompleted` stashes its hash;
-    // `Completed` flushes it as a successful row. NOTE: in tree
-    // mode with `tree_concurrency > 1`, `Started`/`Completed` can
-    // interleave across files, so this single slot tracks "most
-    // recent Started" — adequate for single-file mode and for
-    // tree mode at concurrency=1, best-effort at higher
-    // concurrency. A proper fix needs `Completed` to carry `src`
-    // (engine-API change pending).
-    let mut current_item: Option<ItemInFlight> = None;
+    // Phase 9 — per-file history bookkeeping. `Started` inserts the
+    // in-flight item; `VerifyCompleted` stashes its hash; `Completed`
+    // takes it back out and flushes it as a row.
+    //
+    // Keyed by source path because in tree mode several files are in
+    // flight at once over one shared channel, so `Started` /
+    // `Completed` interleave freely. `CopyEvent::Completed` now
+    // carries `src`, so the pairing is exact rather than
+    // most-recent-wins.
+    let mut in_flight: std::collections::HashMap<std::path::PathBuf, ItemInFlight> =
+        std::collections::HashMap::new();
 
     // Phase 13d — per-file UI activity feed. Monotonic `seq` gives
     // the frontend a stable ordering key so out-of-order emissions
@@ -703,6 +723,17 @@ async fn forward_events(
     let mut last_activity_src: std::path::PathBuf = std::path::PathBuf::new();
     let mut last_progress_emit = std::time::Instant::now();
     let progress_min_interval = std::time::Duration::from_millis(120);
+    // FFM-M23 — stability verdicts awaiting their `Completed`, keyed
+    // by source path. Set by `SourceChanged`, consumed by the
+    // `Completed` for that same file.
+    //
+    // The engine now emits `SourceChanged` strictly before the
+    // matching `Completed` (finalization was moved behind the
+    // verdict); before that fix this map was always empty by the time
+    // `Completed` looked in it, and every torn file was recorded as a
+    // clean `ok`.
+    let mut source_changed_detail: std::collections::HashMap<std::path::PathBuf, String> =
+        std::collections::HashMap::new();
 
     while let Some(evt) = rx.recv().await {
         match evt {
@@ -749,11 +780,14 @@ async fn forward_events(
                 last_progress_emit = std::time::Instant::now();
                 if history_row.is_some() {
                     let _ = total_bytes; // size is taken from the Completed event
-                    current_item = Some(ItemInFlight {
-                        src,
-                        dst,
-                        hash_hex: None,
-                    });
+                    in_flight.insert(
+                        src.clone(),
+                        ItemInFlight {
+                            src,
+                            dst,
+                            hash_hex: None,
+                        },
+                    );
                 }
             }
             CopyEvent::TreeEnumerating {
@@ -907,6 +941,7 @@ async fn forward_events(
                 );
             }
             CopyEvent::VerifyCompleted {
+                src,
                 algorithm: _,
                 src_hex,
                 ..
@@ -914,7 +949,13 @@ async fn forward_events(
                 // Stash the source hash on the in-flight item so
                 // Completed can persist it. Engine still returns
                 // the final Result separately.
-                if let Some(item) = current_item.as_mut() {
+                //
+                // Keyed by `src`, not by most-recent-Started: this hash
+                // is what the exported transfer certificate presents
+                // for the file, and in a concurrent tree the
+                // most-recent-Started guess stamps one file's digest
+                // onto another file's row.
+                if let Some(item) = in_flight.get_mut(&src) {
                     item.hash_hex = Some(src_hex);
                 }
             }
@@ -922,7 +963,42 @@ async fn forward_events(
                 // Engine returns VerifyFailed as part of the final
                 // Result. No state transition here.
             }
-            CopyEvent::Completed { bytes, .. } => {
+            CopyEvent::SourceChanged {
+                src,
+                detail,
+                recopying,
+            } => {
+                // FFM-M23 — something rewrote the source while the
+                // engine was reading it, so the destination is
+                // internally inconsistent. Post-copy verify cannot see
+                // this (it re-hashes the *current* source against the
+                // bytes that landed), which is exactly why the job
+                // must not report a plain green tick.
+                //
+                // `recopying: true` is the interim ping under the
+                // `Recopy` policy — a second attempt is about to run,
+                // and it emits its own final verdict. Only a
+                // `recopying: false` event is terminal for the file.
+                if !recopying {
+                    source_changed_detail.insert(src.clone(), detail.clone());
+                }
+                activity_seq += 1;
+                let _ = app.emit(
+                    crate::ipc::EVENT_FILE_ACTIVITY,
+                    crate::ipc::FileActivityDto {
+                        job_id: job_id_u64,
+                        seq: activity_seq,
+                        phase: "source-changed",
+                        src: src.to_string_lossy().into_owned(),
+                        dst: String::new(),
+                        bytes_done: 0,
+                        bytes_total: 0,
+                        is_dir: false,
+                        message: Some(detail),
+                    },
+                );
+            }
+            CopyEvent::Completed { src, bytes, .. } => {
                 // In tree mode, per-file Completed events fire as
                 // each file finishes — but TreeProgress (fired by
                 // the tree engine right after) is the authoritative
@@ -941,6 +1017,12 @@ async fn forward_events(
                         last_files_total.max(1),
                     );
                 }
+                // FFM-M23 — take the stability verdict for *this*
+                // file, if the guard raised one. A torn file is "done"
+                // in the sense that the bytes landed, but it is not a
+                // faithful copy, so it must not be indistinguishable
+                // from a good one in history or in the activity list.
+                let torn = source_changed_detail.remove(&src);
                 // Per-file "done" ping — flip the row's icon to a
                 // checkmark on the frontend side.
                 activity_seq += 1;
@@ -949,8 +1031,12 @@ async fn forward_events(
                     crate::ipc::FileActivityDto {
                         job_id: job_id_u64,
                         seq: activity_seq,
-                        phase: "done",
-                        src: last_activity_src.to_string_lossy().into_owned(),
+                        phase: if torn.is_some() {
+                            "source-changed"
+                        } else {
+                            "done"
+                        },
+                        src: src.to_string_lossy().into_owned(),
                         dst: String::new(),
                         bytes_done: bytes,
                         bytes_total: bytes,
@@ -960,7 +1046,7 @@ async fn forward_events(
                 );
                 // Phase 9 — persist the item row. Only if history
                 // is active and we saw a matching `Started`.
-                if let (Some(row), Some(item)) = (history_row, current_item.take())
+                if let (Some(row), Some(item)) = (history_row, in_flight.remove(&src))
                     && let Some(history) = &state.history
                 {
                     // Phase 34 — record FileCopied in the audit sink
@@ -981,33 +1067,61 @@ async fn forward_events(
                         src: item.src,
                         dst: item.dst,
                         size: bytes,
-                        status: "ok".into(),
+                        // FFM-M23 — a torn copy gets its own status so
+                        // the history row, the failed-item ledger and
+                        // the certificate export can all tell it apart
+                        // from a clean `ok`.
+                        status: if torn.is_some() {
+                            "source-changed".into()
+                        } else {
+                            "ok".into()
+                        },
                         hash_hex: item.hash_hex,
-                        error_code: None,
-                        error_msg: None,
+                        error_code: torn.as_ref().map(|_| "source-changed".to_string()),
+                        error_msg: torn,
                         timestamp_ms: now_ms() as i64,
                     };
                     let _ = history.record_item(&entry).await;
                 } else {
-                    // Tree mode without history still wants the audit
-                    // file-copied record.
+                    // No history row for this file (history disabled,
+                    // or no matching Started) — the audit trail still
+                    // wants a record. A torn file must not go in as a
+                    // clean `FileCopied`: with history off this is the
+                    // *only* branch every completion takes, so writing
+                    // `FileCopied` unconditionally would put every torn
+                    // copy in the audit trail as a success.
                     let audit_job_id_local = format!("job-{job_id_u64}");
-                    crate::audit_commands::record_file_copied(
-                        &state.audit,
-                        &audit_job_id_local,
-                        &last_activity_src,
-                        std::path::Path::new(""),
-                        None,
-                        bytes,
-                    );
+                    match &torn {
+                        Some(detail) => crate::audit_commands::record_file_failed(
+                            &state.audit,
+                            &audit_job_id_local,
+                            &src,
+                            "source-changed",
+                            detail,
+                        ),
+                        None => crate::audit_commands::record_file_copied(
+                            &state.audit,
+                            &audit_job_id_local,
+                            &src,
+                            std::path::Path::new(""),
+                            None,
+                            bytes,
+                        ),
+                    }
                 }
             }
             CopyEvent::TreeCompleted { bytes, files, .. } => {
                 queue.set_progress(id, bytes, bytes, files, files);
             }
-            CopyEvent::Failed { .. } => {
+            CopyEvent::Failed { ref err } => {
                 // Terminal per-file / per-tree failure — handled after
                 // the engine returns from the top-level copy_* call.
+                // Still drop this file's in-flight state: it will never
+                // get a `Completed` to consume it, and leaving it makes
+                // the "inserted on Started, removed on a terminal
+                // event" invariant non-uniform.
+                in_flight.remove(&err.src);
+                source_changed_detail.remove(&err.src);
             }
             CopyEvent::FileError { err } => {
                 // Per-file failure absorbed by the engine's error
@@ -1057,10 +1171,11 @@ async fn forward_events(
                     };
                     let _ = history.record_item(&entry).await;
                 }
-                // Drop any in-flight item that belonged to the
-                // failing file so a subsequent Completed from a
-                // later file doesn't inherit stale paths.
-                current_item = None;
+                // Drop the in-flight item and any pending stability
+                // verdict for the failing file; it will never get a
+                // `Completed` to consume them.
+                in_flight.remove(&err.src);
+                source_changed_detail.remove(&err.src);
             }
             CopyEvent::Collision(mut coll) => {
                 let job_id = id.as_u64();

@@ -116,6 +116,41 @@ fn separate_groups_force_split_one_physical_drive() {
     assert_eq!(reg.len(), 2);
 }
 
+/// FFM-M18 §3.2 — the user types `d:\media`; the shell payload
+/// delivers `D:\Media\2026`. On Windows and macOS those name the same
+/// folder, so the override must engage. It used to fall through to the
+/// volume probe and global concurrency, so the group displayed exactly
+/// as configured while doing nothing at all.
+#[test]
+#[cfg(any(target_os = "windows", target_os = "macos"))]
+fn affinity_prefixes_match_case_insensitively_where_the_os_does() {
+    let reg = registry();
+    reg.set_affinity_groups(vec![group("One spindle", &["/DRIVE/a"], Some(1))]);
+
+    let (q, _, _) = reg.route(JobKind::Copy, drive_a("s"), Some(drive_a("d")));
+    assert_eq!(
+        reg.get(q).expect("group queue").name(),
+        "One spindle",
+        "a case difference must not silently disable the override",
+    );
+}
+
+/// ...and must **not** on Linux, where two names differing only in case
+/// are genuinely two different directories.
+#[test]
+#[cfg(target_os = "linux")]
+fn affinity_prefixes_stay_case_sensitive_on_linux() {
+    let reg = registry();
+    reg.set_affinity_groups(vec![group("One spindle", &["/DRIVE/a"], Some(1))]);
+
+    let (q, _, _) = reg.route(JobKind::Copy, drive_a("s"), Some(drive_a("d")));
+    assert_ne!(
+        reg.get(q).expect("queue").name(),
+        "One spindle",
+        "/DRIVE/a and /drive/A are different directories on Linux",
+    );
+}
+
 #[test]
 fn the_longest_matching_prefix_wins() {
     let reg = registry();
@@ -193,27 +228,8 @@ fn bucket_ids_survive_reordering_the_group_list() {
 }
 
 // ---------------------------------------------------------------------
-// FFM-M19 — per-job priority, reorder, and queue move
+// FFM-M19 — per-job priority and queue move
 // ---------------------------------------------------------------------
-
-#[test]
-fn run_next_lands_on_the_first_pending_slot_not_index_zero() {
-    let reg = registry();
-    let (qid, running, _) = reg.route(JobKind::Copy, drive_a("s0"), Some(drive_a("d")));
-    let (_, second, _) = reg.route(JobKind::Copy, drive_a("s1"), Some(drive_a("d")));
-    let (_, third, _) = reg.route(JobKind::Copy, drive_a("s2"), Some(drive_a("d")));
-    let queue = reg.get(qid).expect("queue");
-    queue.start(running);
-
-    queue.run_next(third);
-
-    let order: Vec<_> = queue.snapshot().into_iter().map(|j| j.id).collect();
-    assert_eq!(
-        order,
-        vec![running, third, second],
-        "the running job keeps the head; 'run next' takes the first pending slot",
-    );
-}
 
 #[test]
 fn boost_pauses_only_running_siblings_and_restores_exactly_those() {
@@ -266,6 +282,31 @@ fn a_running_job_refuses_to_change_queue() {
         "re-parenting a running copy would change its concurrency mid-flight",
     );
     assert!(reg.get(qa).expect("A").get(job).is_some());
+}
+
+#[test]
+fn a_paused_job_refuses_to_change_queue() {
+    // A paused job is still owned by a live runner task holding the
+    // *source* queue's handle. Moving it removed the entry there, and
+    // when the copy eventually finished the runner's finish_ok /
+    // finish_fail found no matching entry and returned early — the job
+    // then sat in the destination queue in a non-terminal state that
+    // nothing would ever complete.
+    let reg = registry();
+    let (qa, job, _) = reg.route(JobKind::Copy, drive_a("s"), Some(drive_a("d")));
+    let (qb, _, _) = reg.route(JobKind::Copy, drive_b("s"), Some(drive_b("d")));
+    let a = reg.get(qa).expect("A");
+    a.start(job);
+    a.pause_job(job);
+
+    assert!(
+        reg.move_job_to_queue(job, qb).is_err(),
+        "a paused job is still runner-owned; moving it strands it forever",
+    );
+    assert!(
+        reg.get(qa).expect("A").get(job).is_some(),
+        "it must stay in the queue its runner still holds",
+    );
 }
 
 #[test]

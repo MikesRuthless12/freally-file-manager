@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Freally Central — Changelog</title>
+    <meta name="description" content="Freally Central changelog — what's added in each version." />
+    <link rel="icon" href="favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="favicon-48.png" />
+    <link rel="icon" type="image/png" sizes="96x96" href="favicon-96.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <img class="logo" src="freally-icon.png" alt="Freally Central icon" width="288" height="288" />
+      <h1>Changelog</h1>
+      <p class="sub">What's added in each version of Freally Central. Newest first.</p>
+    </header>
+
+    <main>
+      <!-- Phase 7 -->
+      <article class="release latest">
+        <div class="release-head">
+          <div class="meta">
+            <span class="badge">v0.7.0</span>
+            <span class="date">Phase 7 — polish, distribution &amp; auto-update</span>
+          </div>
+        </div>
+        <h2>0.7.0 — Phase 7</h2>
+        <p class="summary">
+          Central now ships the way the rest of the brand does: a <strong>signed self-updater</strong>
+          that resolves on every OS, an accessibility &amp; reduced-motion pass, and a public
+          download page with real per-OS counts.
+        </p>
+        <ul class="features">
+          <li><strong>In-app auto-update, all three OSes</strong> — the release now publishes one consolidated signed <code>latest.json</code> covering Windows, macOS (Intel + Apple Silicon) and Linux, so <em>Settings → Check for updates</em> resolves and verifies every download against the key baked into the app.</li>
+          <li><strong>Accessibility</strong> — dialogs move, trap and restore keyboard focus and close on Escape, the first-run agreement is fully keyboard-operable, progress and status changes are announced to screen readers, and every control shows a visible keyboard focus ring.</li>
+          <li><strong>Reduced motion</strong> — animations and transitions are neutralized for anyone whose system asks for reduced motion.</li>
+          <li><strong>Light &amp; dark</strong> — both themes verified end to end, down to native scrollbars and form controls that now follow the chosen theme.</li>
+          <li><strong>Public download page</strong> — per-OS installer buttons for Windows, macOS and Linux beside the real, auto-incrementing GitHub download counter.</li>
+        </ul>
+      </article>
+
+      <!-- Phase 6 -->
+      <article class="release">
+        <div class="release-head">
+          <div class="meta">
+            <span class="badge">v0.6.0</span>
+            <span class="date">Phase 6 — "Central inside", the embeddable panel</span>
+          </div>
+        </div>
+        <h2>0.6.0 — Phase 6</h2>
+        <p class="summary">
+          The whole hub is now an <strong>embeddable panel</strong> any Freally app can ship under a
+          "More Freally apps" entry — the card grid, detail view, live release data, install
+          detection, and the verified download → <strong>silent-install</strong> flow, with
+          <strong>no copy of the business logic</strong>. Freally Capture ships it first.
+        </p>
+        <ul class="features">
+          <li><strong>One implementation, everywhere</strong> — hosts vendor the Central repo as a git submodule; one pinned commit supplies both the React panel and the Rust engine crate, and Central itself runs on exactly the same code.</li>
+          <li><strong>Freally Capture embed</strong> — Help → <strong>More Freally apps</strong> opens the panel inside Capture, themed by Capture's own tokens (light/dark follows the host).</li>
+          <li><strong>Localized through the host</strong> — the panel's strings ship as <code>fcp-*</code> catalogs in all 18 languages and load into the host app's own Fluent bundles.</li>
+          <li><strong>The trust gate rides along</strong> — required published SHA-256, the compile-time owner allowlist, and the install-time re-hash apply identically inside every host.</li>
+          <li><strong>EMBEDDING.md</strong> — the drop-in checklist for rolling the panel out across the rest of the brand.</li>
+        </ul>
+      </article>
+
+      <!-- Phase 5 -->
+      <article class="release">
+        <div class="release-head">
+          <div class="meta">
+            <span class="badge">v0.5.0</span>
+            <span class="date">Phase 5 — hands-off silent install</span>
+          </div>
+        </div>
+        <h2>0.5.0 — Phase 5</h2>
+        <p class="summary">
+          Central now installs hands-off. One click on <strong>Download &amp; install all</strong>
+          (or a card's Install/Update) carries an app through download, verification, and a
+          <strong>silent install</strong> with the installer's own defaults — zero wizard clicks
+          where the OS allows it, at most <strong>one elevation consent per batch</strong>, and the
+          same live bar running to <strong>100.00%</strong> across both stages.
+        </p>
+        <ul class="features">
+          <li><strong>Silent installers per OS</strong> — Windows NSIS <code>/S</code> (per-user, no UAC; <code>msiexec /qn</code> as the MSI fallback), macOS dmg mount + copy into Applications, Linux AppImage placement or deb/rpm behind a single <code>pkexec</code> consent for the whole batch.</li>
+          <li><strong>Only verified official installers ever execute</strong> — a matching published SHA-256 is required, the release owner must be in an allowlist compiled into the app, and the file is re-hashed at install time; a tampered or unverified file is refused and the refusal is shown honestly.</li>
+          <li><strong>Install progress in the same bar</strong> — a determinate staged estimate that only claims 100% on the installer's real success, on the card, the detail view, and the batch aggregate.</li>
+          <li><strong>Installed ✓ and Open</strong> — the badge flips on real success (confirmed by a detection re-probe) and the detail view launches the app from what its installer actually registered.</li>
+          <li><strong>Honest cancel</strong> — pending installs cancel; a running installer is never killed mid-run and reports its real outcome.</li>
+          <li><strong>18-language UI</strong> — all new strings localized across the 18 locales; the CI parity lint stays green.</li>
+        </ul>
+      </article>
+
+      <!-- Phase 4 -->
+      <article class="release">
+        <div class="release-head">
+          <div class="meta">
+            <span class="badge">v0.4.0</span>
+            <span class="date">Phase 4 — downloads, the live progress bar &amp; Download All</span>
+          </div>
+        </div>
+        <h2>0.4.0 — Phase 4</h2>
+        <p class="summary">
+          Central now downloads installers itself. A native engine streams the right installer for
+          your OS with a <strong>precise two-decimal percent</strong> (e.g. <code>38.92%</code>)
+          computed from real bytes — landing on exactly <strong>100.00%</strong> — and every file is
+          <strong>verified (size + SHA-256)</strong> before it is kept. One click downloads the whole
+          family.
+        </p>
+        <ul class="features">
+          <li><strong>Download engine</strong> — streams each app's per-OS installer from its GitHub release to a temp folder; interrupted downloads resume where they left off; only <code>github.com/…/releases/download/…</code> URLs are ever fetched.</li>
+          <li><strong>Verification before use</strong> — the byte count must match the published size exactly and the SHA-256 digest must match when published; a short or corrupted download is refused and discarded.</li>
+          <li><strong>Live progress bar</strong> — on the card and the detail view, bound 0 → 100% to real bytes, with Cancel and a resuming Retry.</li>
+          <li><strong>Download All</strong> — queues every available app with bounded concurrency, an aggregate bar plus per-app bars, Cancel all, and per-app failure isolation with an honest summary.</li>
+          <li><strong>Simpler top bar</strong> — the search box was removed (seven apps don't need one); the Type filter stays.</li>
+          <li><strong>18-language UI</strong> — all new strings localized across the 18 locales; the CI parity lint stays green.</li>
+        </ul>
+      </article>
+
+      <!-- Phase 3 -->
+      <article class="release">
+        <div class="release-head">
+          <div class="meta">
+            <span class="badge">v0.3.0</span>
+            <span class="date">Phase 3 — install detection &amp; status badges</span>
+          </div>
+        </div>
+        <h2>0.3.0 — Phase 3</h2>
+        <p class="summary">
+          Central now knows what's on your machine. It detects the installed version of each app
+          per OS and badges every card <strong>Installed ✓ / Update available / Not installed</strong>,
+          computed by a semver-aware comparison to the latest release — honest by construction, a
+          version is shown only when an installer actually wrote it.
+        </p>
+        <ul class="features">
+          <li><strong>Installed-version detection</strong> — Windows uninstall registry keys, macOS <code>Info.plist</code>, and Linux dpkg/rpm packages (with an AppImage-filename fallback), mapped to each catalog app. Runs off the UI thread; cached with a manual Refresh.</li>
+          <li><strong>Status badges</strong> — Installed ✓ / Update available / Not installed on every card and the detail view.</li>
+          <li><strong>Status-aware action</strong> — the detail view's primary button reflects status (Install / Update / Re-download), routing to the verified download source.</li>
+          <li><strong>Desktop shortcut</strong> — the Windows installer now creates a Desktop icon on install.</li>
+          <li><strong>18-language UI</strong> — all new strings localized across the 18 locales; the CI parity lint stays green.</li>
+        </ul>
+      </article>
+
+      <!-- In development — Phase 2 -->
+      <article class="release">
+        <div class="release-head">
+          <div class="meta">
+            <span class="badge">In development</span>
+            <span class="date">Phase 2 — live release data &amp; real download counts</span>
+          </div>
+        </div>
+        <h2>0.2.0 — Phase 2</h2>
+        <p class="summary">
+          Every card is now wired to GitHub's real numbers. Central resolves each app's latest
+          release from the GitHub Releases API and shows the live version and date, per-OS and total
+          download counts, and a brand-wide grand total — always the real figures, never seeded, and
+          hidden (not faked) when the API is offline or rate-limited.
+        </p>
+        <ul class="features">
+          <li><strong>Live release data</strong> — latest version + date per app, resolved from the Releases API against each app's per-OS asset patterns.</li>
+          <li><strong>Real download counts</strong> — per-OS and total per app, plus a brand-wide grand total, straight from GitHub's <code>download_count</code>.</li>
+          <li><strong>Changelog / What's New viewer</strong> — the latest release's notes shown verbatim in-app, with fully localized chrome and links out to the full changelog.</li>
+          <li><strong>18-language UI</strong> — all new strings localized across the 18 locales; the CI parity lint stays green.</li>
+        </ul>
+      </article>
+
+      <!-- In development — Phase 1 -->
+      <article class="release">
+        <div class="release-head">
+          <div class="meta">
+            <span class="badge">In development</span>
+            <span class="date">Phase 1 — the shell &amp; the catalog grid</span>
+          </div>
+        </div>
+        <h2>0.1.0 — Phase 1</h2>
+        <p class="summary">
+          The Tauri v2 + React + Rust app itself: a dark/light themed window and a product-card grid
+          driven by the hosted catalog manifest, with an offline fallback so the grid always renders.
+        </p>
+        <ul class="features">
+          <li><strong>Product-card grid + detail view</strong> — big icon, name, tagline, description, features, and start date, with a Type filter and a search box.</li>
+          <li><strong>First-run EULA gate</strong> — shown once on first use; acceptance is remembered.</li>
+          <li><strong>Settings</strong> — About, What's New, and a self-hosted signed check-for-updates flow.</li>
+          <li><strong>18-language UI</strong> — the Fluent i18n system and 18 locales with a CI parity + coverage lint.</li>
+        </ul>
+      </article>
+
+      <!-- In development — Phase 0 -->
+      <article class="release">
+        <div class="release-head">
+          <div class="meta">
+            <span class="badge">In development</span>
+            <span class="date">Phase 0 — repo, CI &amp; the 3-OS release pipeline</span>
+          </div>
+        </div>
+        <h2>Unreleased — Phase 0</h2>
+        <p class="summary">
+          Standing up the project before any product code: the GitHub repository, a
+          Windows/macOS/Linux CI matrix, and the signed release pipeline that builds installers for
+          all three OSes and publishes the updater endpoint. The product roadmap and build-prompts
+          guide define the phases that follow (the grid, real download counts, install/update
+          status, downloads with a live progress bar, hands-off installs, and the embeddable panel).
+        </p>
+        <ul class="features">
+          <li><strong>Project scaffold</strong> — README, license (proprietary, All Rights Reserved), EULA, feature roadmap, build-prompts guide, and the product catalog manifest.</li>
+          <li><strong>This docs site</strong> — the landing/download page (with a real per-OS GitHub download counter), this changelog, and the documentation hub, matching the other Freally sites.</li>
+          <li><strong>Coming with Phase 0</strong> — signed installers for Windows/macOS/Linux and the self-hosted updater.</li>
+        </ul>
+      </article>
+    </main>
+
+    <footer>
+      <p>
+        © 2026 Mike Weaver (Havoc Software) — All Rights Reserved ·
+        <a href="index.html">Home</a> ·
+        <a href="documentation.html">Documentation</a>
+      </p>
+    </footer>
+  </body>
+</html>

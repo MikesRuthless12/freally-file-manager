@@ -1921,23 +1921,6 @@ export async function queueSetAffinity(
   return invoke<AffinityGroupDto[]>("queue_set_affinity", { groups });
 }
 
-/** FFM-M19 — drag-to-reorder within one queue. */
-export async function queueReorderJob(
-  queueId: number,
-  jobId: number,
-  newIndex: number,
-): Promise<void> {
-  return invoke<void>("queue_reorder_job", { queueId, jobId, newIndex });
-}
-
-/** FFM-M19 — move a job to the head of the pending section. */
-export async function queueRunNext(
-  queueId: number,
-  jobId: number,
-): Promise<void> {
-  return invoke<void>("queue_run_next", { queueId, jobId });
-}
-
 /** FFM-M19 — move one pending job to a different drive queue. */
 export async function queueMoveJob(
   jobId: number,

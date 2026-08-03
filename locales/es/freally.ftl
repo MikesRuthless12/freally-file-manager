@@ -1543,6 +1543,7 @@ err-schedule-too-many = Demasiadas ejecuciones programadas
 err-schedule-install-failed = El programador del sistema rechazó esta programación
 err-schedule-remove-failed = El programador del sistema no pudo eliminar esta programación
 err-schedule-no-program = No se pudo determinar la ubicación de la aplicación
+err-schedule-portable = La programación no está disponible en modo portátil
 settings-schedules-title = Ejecuciones programadas
 settings-schedules-empty = Todavía no hay ejecuciones programadas.
 settings-schedule-add = Añadir programación
@@ -1568,7 +1569,6 @@ settings-affinity-workers-auto = Automático
 
 # FFM-M19
 err-queue-unknown = Cola desconocida
-action-run-next = Ejecutar a continuación
 action-boost = Priorizar
 action-clear-boost = Dejar de priorizar
 action-move-to-queue = Mover a la cola

@@ -120,9 +120,9 @@ fn the_next_run_preview_is_offset_aware() {
     let entry = entry_from_dto(&schedule_dto(), &[]).unwrap(); // daily 03:30
     // Epoch, host two hours ahead of UTC → local 02:00, so the next
     // 03:30 local is 90 minutes out.
-    assert_eq!(next_run_for(&entry, 0, 2 * 3_600), Some(90 * 60));
+    assert_eq!(next_run_for(&entry, 0, |_| 2 * 3_600), Some(90 * 60));
     // Same instant, host on UTC → 03:30 is 210 minutes out.
-    assert_eq!(next_run_for(&entry, 0, 0), Some(210 * 60));
+    assert_eq!(next_run_for(&entry, 0, |_| 0), Some(210 * 60));
 }
 
 #[test]
@@ -141,7 +141,7 @@ fn decorate_reports_the_os_view_not_the_stored_row() {
             ..ScheduleEntry::default()
         },
     ];
-    let dtos = decorate(&entries, 0, 0, |id| id == "present");
+    let dtos = decorate(&entries, 0, |_| 0, |id| id == "present");
     assert!(dtos[0].installed);
     assert!(
         !dtos[1].installed,

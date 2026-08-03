@@ -1543,6 +1543,7 @@ err-schedule-too-many = 예약이 너무 많습니다
 err-schedule-install-failed = 시스템 스케줄러가 이 예약을 거부했습니다
 err-schedule-remove-failed = 시스템 스케줄러가 이 예약을 제거하지 못했습니다
 err-schedule-no-program = 이 응용 프로그램의 위치를 확인할 수 없습니다
+err-schedule-portable = 휴대용 모드에서는 예약을 사용할 수 없습니다
 settings-schedules-title = 예약 실행
 settings-schedules-empty = 아직 예약이 없습니다.
 settings-schedule-add = 예약 추가
@@ -1568,7 +1569,6 @@ settings-affinity-workers-auto = 자동
 
 # FFM-M19
 err-queue-unknown = 알 수 없는 대기열
-action-run-next = 다음으로 실행
 action-boost = 우선 처리
 action-clear-boost = 우선 처리 해제
 action-move-to-queue = 대기열로 이동

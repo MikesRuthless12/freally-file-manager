@@ -206,6 +206,10 @@ export type FileActivityPhase =
   | "progress"
   | "done"
   | "error"
+  // FFM-M23 — the file copied, but its source was rewritten while it
+  // was being read, so the bytes that landed are not a faithful copy.
+  // Distinct from "error": the copy did not fail.
+  | "source-changed"
   | "dir";
 
 export interface FileActivityDto {
@@ -381,7 +385,7 @@ export interface HistoryItemDto {
   src: string;
   dst: string;
   size: number;
-  status: "ok" | "failed" | "skipped" | "cancelled" | string;
+  status: "ok" | "failed" | "skipped" | "cancelled" | "source-changed" | string;
   hashHex: string | null;
   errorCode: string | null;
   errorMsg: string | null;

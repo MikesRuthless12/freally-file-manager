@@ -193,6 +193,18 @@ impl JournalSink for FreallyJournalSink {
         let _ = self.journal.finish_file(self.job, file_idx, final_hash);
     }
 
+    fn invalidate_file(&self, file_idx: u64) {
+        // Drop the in-memory pending entry *without* flushing it —
+        // flushing would write the very checkpoint we are trying to
+        // erase — then remove whatever already reached disk.
+        {
+            let mut s = self.state.lock().expect("journal sink mutex");
+            s.pending.remove(&file_idx);
+            s.seen_on_disk.remove(&file_idx);
+        }
+        let _ = self.journal.invalidate_file(self.job, file_idx);
+    }
+
     fn resume_plan(&self, file_idx: u64) -> CoreResumePlan {
         // resume_plan reads from the on-disk state; flush any
         // pending checkpoint for this file_idx first so a "resume

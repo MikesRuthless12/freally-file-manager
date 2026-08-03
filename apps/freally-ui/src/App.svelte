@@ -81,7 +81,6 @@
     // FFM-M19 — per-job priority actions on the job context menu.
     queueBoostJob,
     queueClearBoost,
-    queueRunNext,
     sidecarCreate,
     trashDelete,
     undoLastCandidate,
@@ -258,32 +257,28 @@
   // instead would restart jobs the user had paused by hand before the
   // boost, which is the failure the backend's `clear_boost(ids)`
   // signature exists to prevent.
-  let boostedJobId = $state<number | null>(null);
-  let boostPaused = $state<number[]>([]);
-
-  async function runJobNext(job: JobDto): Promise<void> {
-    try {
-      await queueRunNext(job.queueId, job.id);
-    } catch (e) {
-      pushToast("error", e instanceof Error ? e.message : String(e));
-    }
-  }
+  //
+  // The id and its paused set are one value because they are only ever
+  // meaningful together: a stale id paired with a fresh set (or the
+  // reverse) would resume the wrong jobs.
+  let boost = $state<{ jobId: number; paused: number[] } | null>(null);
 
   async function toggleBoost(job: JobDto): Promise<void> {
     try {
-      if (boostedJobId === job.id) {
-        await queueClearBoost(job.queueId, boostPaused);
-        boostedJobId = null;
-        boostPaused = [];
-        return;
+      const previous = boost;
+      if (previous !== null) {
+        // Clear any prior boost first so its siblings don't stay paused
+        // behind a second one. Drop the state as soon as the clear
+        // lands — if the *new* boost then fails, "nothing is boosted"
+        // is the truth, and keeping the old ids would later resume
+        // siblings that are already running.
+        await queueClearBoost(job.queueId, previous.paused);
+        boost = null;
+        if (previous.jobId === job.id) {
+          return;
+        }
       }
-      // Clear any prior boost first so its siblings don't stay paused
-      // behind a second one.
-      if (boostedJobId !== null) {
-        await queueClearBoost(job.queueId, boostPaused);
-      }
-      boostPaused = await queueBoostJob(job.queueId, job.id);
-      boostedJobId = job.id;
+      boost = { jobId: job.id, paused: await queueBoostJob(job.queueId, job.id) };
     } catch (e) {
       pushToast("error", e instanceof Error ? e.message : String(e));
     }
@@ -323,21 +318,15 @@
       onClick: () => void removeJob(job.id),
       tone: "danger",
     });
-    // FFM-M19 — per-job priority. "Run next" moves the job to the head
-    // of the *pending* section (not index 0, which a running job owns),
-    // and the boost pauses running siblings so this one gets the
-    // bandwidth. Both are meaningless once a job has finished, so they
-    // follow the same `isActive` gate as cancel.
-    items.push({
-      id: "run-next",
-      label: t("action-run-next"),
-      icon: "play",
-      disabled: job.state !== "pending",
-      onClick: () => void runJobNext(job),
-    });
+    // FFM-M19 — per-job priority. The boost pauses running siblings so
+    // this job gets the bandwidth; it is meaningless once a job has
+    // finished, so it follows the same `isActive` gate as cancel.
+    //
+    // No "run next" item: queue order is display-only (see
+    // `freally_core::queue::Queue`).
     items.push({
       id: "boost",
-      label: boostedJobId === job.id ? t("action-clear-boost") : t("action-boost"),
+      label: boost?.jobId === job.id ? t("action-clear-boost") : t("action-boost"),
       icon: "refresh",
       disabled: !isActive,
       onClick: () => void toggleBoost(job),

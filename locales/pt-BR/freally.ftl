@@ -1543,6 +1543,7 @@ err-schedule-too-many = Agendamentos demais
 err-schedule-install-failed = O agendador do sistema recusou este agendamento
 err-schedule-remove-failed = O agendador do sistema não conseguiu remover este agendamento
 err-schedule-no-program = Não foi possível determinar a localização do aplicativo
+err-schedule-portable = O agendamento não está disponível no modo portátil
 settings-schedules-title = Execuções agendadas
 settings-schedules-empty = Nenhuma execução agendada ainda.
 settings-schedule-add = Adicionar agendamento
@@ -1568,7 +1569,6 @@ settings-affinity-workers-auto = Automático
 
 # FFM-M19
 err-queue-unknown = Fila desconhecida
-action-run-next = Executar em seguida
 action-boost = Priorizar
 action-clear-boost = Parar de priorizar
 action-move-to-queue = Mover para a fila

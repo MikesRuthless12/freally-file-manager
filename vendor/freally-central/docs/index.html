@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Freally Central — One hub for every Freally app</title>
+    <meta
+      name="description"
+      content="Freally Central — a desktop hub that lists every Freally-brand app in one place: per-OS downloads, live install/update status, changelogs, a Download All button, and a live 0–100% download/install progress bar. Local-first, no accounts."
+    />
+    <link rel="icon" href="favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="favicon-48.png" />
+    <link rel="icon" type="image/png" sizes="96x96" href="favicon-96.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <img class="logo" src="freally-icon.png" alt="Freally Central icon" width="288" height="288" />
+      <h1>Freally Central</h1>
+      <p class="tagline">One hub for every Freally app — download, update, and launch them all.</p>
+      <p class="sub">
+        A desktop launcher that lists the whole Freally family in one grid — big icons, per-OS
+        downloads, live install/update status, changelogs &amp; "What's New", a <strong>Download
+        All</strong> button, and a live 0–100&nbsp;% download/install progress bar. Local-first,
+        no accounts, no telemetry.
+      </p>
+      <!--
+        Real download counts from GitHub's release API (each asset's download_count
+        increments on real downloads). Per OS, auto-updating, no server. Hidden if the
+        API is unreachable or there are no releases yet — real numbers or none.
+      -->
+      <div class="dl-stats" id="dl-stats" hidden aria-live="polite">
+        <span class="dl-stats-total"><strong id="dl-total">—</strong>&nbsp;downloads</span>
+        <span class="dl-stats-os">Windows <b id="dl-win">—</b></span>
+        <span class="dl-stats-os">macOS <b id="dl-mac">—</b></span>
+        <span class="dl-stats-os">Linux <b id="dl-linux">—</b></span>
+      </div>
+    </header>
+
+    <main>
+      <section class="features-grid" aria-label="Feature highlights">
+        <div class="feature">
+          <span class="ic" aria-hidden="true">🗂️</span>
+          <h3>Every app, one grid</h3>
+          <p>The whole Freally family as cards with big icons — name, tagline, cool features, the date it started, and its latest version and date.</p>
+        </div>
+        <div class="feature">
+          <span class="ic" aria-hidden="true">⬇️</span>
+          <h3>Download for any OS</h3>
+          <p>Pick the right installer for Windows, macOS, or Linux — or hit <strong>Download All</strong> to grab every app at once.</p>
+        </div>
+        <div class="feature">
+          <span class="ic" aria-hidden="true">📊</span>
+          <h3>Real download counts</h3>
+          <p>Per-OS and total download numbers per app, straight from GitHub's release stats — genuine, auto-incrementing, never a placeholder.</p>
+        </div>
+        <div class="feature">
+          <span class="ic" aria-hidden="true">🔄</span>
+          <h3>Install / update status</h3>
+          <p>Each card shows <em>Installed ✓</em>, <em>Update available</em>, or <em>Not installed</em>, compared against the latest release.</p>
+        </div>
+        <div class="feature">
+          <span class="ic" aria-hidden="true">⏳</span>
+          <h3>Live progress, hands-off install</h3>
+          <p>A precise 0–100&nbsp;% bar across download <em>and</em> install; installers run unattended, accepting their defaults.</p>
+        </div>
+        <div class="feature">
+          <span class="ic" aria-hidden="true">🌍</span>
+          <h3>18 languages</h3>
+          <p>Every button, label, and the changelog viewer are localized into the same 18 languages as the rest of the brand.</p>
+        </div>
+      </section>
+
+      <article class="release latest">
+        <div class="release-head">
+          <div class="meta">
+            <span class="badge">v0.7.0</span>
+            <span class="date">Phase 7 — polish, distribution &amp; auto-update</span>
+          </div>
+          <details class="dl">
+            <summary>Download <span class="chev" aria-hidden="true">▾</span></summary>
+            <div class="dl-menu" role="menu">
+              <span class="dl-note">Signed installers for your OS. macOS is ad-hoc signed — right-click the app → <em>Open</em> on first launch. The per-OS counts above are real GitHub download statistics; see the <a href="changelog.html">changelog</a> for what's new.</span>
+              <a role="menuitem" href="https://github.com/MikesRuthless12/freally-central/releases/download/v0.7.0/Freally.Central_0.7.0_x64-setup.exe">
+                Windows (64-bit installer)
+              </a>
+              <a role="menuitem" href="https://github.com/MikesRuthless12/freally-central/releases/download/v0.7.0/Freally.Central_0.7.0_aarch64.dmg">
+                macOS (Apple Silicon)
+              </a>
+              <a role="menuitem" href="https://github.com/MikesRuthless12/freally-central/releases/download/v0.7.0/Freally.Central_0.7.0_x64.dmg">
+                macOS (Intel)
+              </a>
+              <a role="menuitem" href="https://github.com/MikesRuthless12/freally-central/releases/download/v0.7.0/Freally.Central_0.7.0_amd64.AppImage">
+                Linux (AppImage)
+              </a>
+              <a role="menuitem" href="https://github.com/MikesRuthless12/freally-central/releases">
+                All installers &amp; formats (.msi, .deb, .rpm) — release page
+              </a>
+            </div>
+          </details>
+        </div>
+
+        <h2>What it is</h2>
+        <p class="summary">
+          Freally Central connects you to every Freally-brand app from one place. Browse the family,
+          see what's installed and what needs an update, read each app's changelog and "What's New",
+          and download or install hands-off with a live progress bar — including a one-click
+          <strong>Download &amp; install all</strong>. It also ships as an embeddable panel inside the other Freally apps, so the
+          whole family is reachable from anywhere. Local-first and honest: every download number is a
+          real GitHub statistic, and installs run only on your click.
+        </p>
+      </article>
+    </main>
+
+    <footer>
+      <p>
+        © 2026 Mike Weaver (Havoc Software) — All Rights Reserved ·
+        <a href="documentation.html">Documentation</a> ·
+        <a href="changelog.html">Changelog</a>
+      </p>
+    </footer>
+    <script>
+      // Real per-OS download counters from GitHub's release stats — no backend,
+      // no seeding. Hidden until the first release exists.
+      (function () {
+        var API =
+          "https://api.github.com/repos/MikesRuthless12/freally-central/releases?per_page=100";
+        function osOf(name) {
+          name = (name || "").toLowerCase();
+          if (/\.(exe|msi)$/.test(name)) return "win";
+          if (/\.dmg$/.test(name)) return "mac";
+          if (/\.(appimage|deb|rpm)$/.test(name)) return "linux";
+          return null;
+        }
+        var fmt = function (n) {
+          return n.toLocaleString("en-US");
+        };
+        fetch(API, { headers: { Accept: "application/vnd.github+json" } })
+          .then(function (r) {
+            return r.ok ? r.json() : Promise.reject(r.status);
+          })
+          .then(function (releases) {
+            var counts = { win: 0, mac: 0, linux: 0 };
+            releases.forEach(function (rel) {
+              (rel.assets || []).forEach(function (asset) {
+                var os = osOf(asset.name);
+                if (os) counts[os] += asset.download_count || 0;
+              });
+            });
+            if (counts.win + counts.mac + counts.linux === 0) return; // no releases yet
+            document.getElementById("dl-win").textContent = fmt(counts.win);
+            document.getElementById("dl-mac").textContent = fmt(counts.mac);
+            document.getElementById("dl-linux").textContent = fmt(counts.linux);
+            document.getElementById("dl-total").textContent = fmt(
+              counts.win + counts.mac + counts.linux,
+            );
+            document.getElementById("dl-stats").hidden = false;
+          })
+          .catch(function () {
+            // Rate-limited / offline / no releases — show nothing, never a fake number.
+          });
+      })();
+    </script>
+  </body>
+</html>

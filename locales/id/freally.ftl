@@ -1543,6 +1543,7 @@ err-schedule-too-many = Terlalu banyak tugas terjadwal
 err-schedule-install-failed = Penjadwal sistem menolak jadwal ini
 err-schedule-remove-failed = Penjadwal sistem tidak dapat menghapus jadwal ini
 err-schedule-no-program = Tidak dapat menentukan lokasi aplikasi ini
+err-schedule-portable = Penjadwalan tidak tersedia dalam mode portabel
 settings-schedules-title = Tugas terjadwal
 settings-schedules-empty = Belum ada tugas terjadwal.
 settings-schedule-add = Tambah jadwal
@@ -1568,7 +1569,6 @@ settings-affinity-workers-auto = Otomatis
 
 # FFM-M19
 err-queue-unknown = Antrean tidak dikenal
-action-run-next = Jalankan berikutnya
 action-boost = Prioritaskan
 action-clear-boost = Hentikan prioritas
 action-move-to-queue = Pindahkan ke antrean

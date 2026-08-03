@@ -8,7 +8,7 @@
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 
-use freally_core::{CopyControl, CopyError, CopyEvent, CopyOptions, CopyStrategy, copy_file};
+use freally_core::{CopyControl, CopyError, CopyEvent, CopyOptions, CopyStrategy};
 use tokio::sync::mpsc;
 
 use crate::native::{self, NativeOutcome};
@@ -17,18 +17,31 @@ use crate::reflink_path::{self, ReflinkOutcome};
 
 /// Attempt the fastest available copy from `src` to `dst`.
 ///
-/// Returns the final [`FastCopyOutcome`] on success. On failure, the
-/// dispatcher emits `CopyEvent::Failed` and returns `Err`. The
-/// destination is not unlinked automatically — callers using
-/// [`freally_core::copy_file`] get cleanup via the engine's own
-/// `keep_partial` path.
+/// `Ok(Some(outcome))` means a fast path moved the bytes.
+/// **`Ok(None)` means no fast path applied and nothing was copied** —
+/// the caller must fall back to [`freally_core::copy_file`]'s own async
+/// loop. On failure the dispatcher emits `CopyEvent::Failed` and
+/// returns `Err`. The destination is not unlinked automatically —
+/// callers using [`freally_core::copy_file`] get cleanup via the
+/// engine's own `keep_partial` path.
+///
+/// The dispatcher deliberately does **not** run an async copy of its
+/// own. It used to, by re-entering `freally_core::copy_file` with the
+/// hook stripped — but `copy_file` owns per-file finalization (journal
+/// row, provenance record, `CopyEvent::Completed`), so that nested call
+/// finalized the copy *before* the outer `copy_file` had evaluated its
+/// source-stability verdict. The result was a duplicate `Completed`
+/// ahead of `SourceChanged` and a journal row marking a torn copy
+/// complete — exactly the data-loss class the FFM-M23 guard exists to
+/// close. Declining and letting the engine's own loop run keeps
+/// finalization in the one place that knows the verdict.
 pub async fn fast_copy(
     src: &Path,
     dst: &Path,
     opts: CopyOptions,
     ctrl: CopyControl,
     events: mpsc::Sender<CopyEvent>,
-) -> Result<FastCopyOutcome, CopyError> {
+) -> Result<Option<FastCopyOutcome>, CopyError> {
     let src_owned: PathBuf = src.to_path_buf();
     let dst_owned: PathBuf = dst.to_path_buf();
 
@@ -49,8 +62,10 @@ pub async fn fast_copy(
             return Err(err);
         }
     };
+    // The platform layer has no generic symlink-clone primitive; the
+    // engine's `copy_symlink` does. Decline.
     if !opts.follow_symlinks && src_meta.file_type().is_symlink() {
-        return run_async_fallback(&src_owned, &dst_owned, opts, ctrl, events).await;
+        return Ok(None);
     }
     let total = src_meta.len();
 
@@ -138,19 +153,12 @@ pub async fn fast_copy(
                         rate_bps: rate,
                     })
                     .await;
-                let _ = events
-                    .send(CopyEvent::Completed {
-                        bytes: total,
-                        duration: elapsed,
-                        rate_bps: rate,
-                    })
-                    .await;
-                return Ok(FastCopyOutcome {
+                return Ok(Some(FastCopyOutcome {
                     strategy: ChosenStrategy::Reflink,
                     bytes: total,
                     duration: elapsed,
                     rate_bps: rate,
-                });
+                }));
             }
             ReflinkOutcome::NotSupported => {
                 // Fall through to the next strategy.
@@ -183,19 +191,12 @@ pub async fn fast_copy(
             NativeOutcome::Done { strategy, bytes } => {
                 let elapsed = started_native.elapsed();
                 let rate = rate_bps(bytes, elapsed);
-                let _ = events
-                    .send(CopyEvent::Completed {
-                        bytes,
-                        duration: elapsed,
-                        rate_bps: rate,
-                    })
-                    .await;
-                return Ok(FastCopyOutcome {
+                return Ok(Some(FastCopyOutcome {
                     strategy,
                     bytes,
                     duration: elapsed,
                     rate_bps: rate,
-                });
+                }));
             }
             NativeOutcome::Cancelled => {
                 let err = CopyError::from_io(
@@ -230,38 +231,17 @@ pub async fn fast_copy(
         return Err(err);
     }
 
-    // ---------- 4. Async fallback ----------
-    run_async_fallback(&src_owned, &dst_owned, opts, ctrl, events).await
-}
-
-async fn run_async_fallback(
-    src: &Path,
-    dst: &Path,
-    opts: CopyOptions,
-    ctrl: CopyControl,
-    events: mpsc::Sender<CopyEvent>,
-) -> Result<FastCopyOutcome, CopyError> {
-    // Prevent infinite recursion: strip the hook from the options we
-    // pass to copy_file so it doesn't re-enter the dispatcher.
-    let mut downgraded = opts;
-    downgraded.fast_copy_hook = None;
-    downgraded.strategy = CopyStrategy::AlwaysAsync;
-    // FFM-M23 — the *outer* `copy_file` that reached this dispatcher
-    // already brackets the whole read with its stability stats. Leaving
-    // the policy on here would run a second, nested guard inside that
-    // window: four stats per file instead of two, on what is the normal
-    // path for any pair where reflink and the OS-native copy both
-    // report `Unsupported` (cross-filesystem copies, external drives,
-    // network mounts). The outer guard's window strictly contains this
-    // one, so nothing is lost by turning the inner one off.
-    downgraded.source_stability = freally_core::stability::SourceStability::Off;
-    let report = copy_file(src, dst, downgraded, ctrl, events).await?;
-    Ok(FastCopyOutcome {
-        strategy: ChosenStrategy::AsyncFallback,
-        bytes: report.bytes,
-        duration: report.duration,
-        rate_bps: report.rate_bps,
-    })
+    // ---------- 4. No fast path applied ----------
+    //
+    // Decline, and let `copy_file`'s own async loop do the copy. That
+    // loop is where the journal hasher, the provenance encoder, verify,
+    // resume and the source-stability verdict are all already wired
+    // together; re-entering `copy_file` from here instead would run a
+    // second, nested copy lifecycle inside the outer one and finalize
+    // it before the outer verdict existed (see the note on
+    // [`fast_copy`]).
+    let _ = ctrl;
+    Ok(None)
 }
 
 async fn emit_started(src: &Path, dst: &Path, total: u64, events: &mpsc::Sender<CopyEvent>) {

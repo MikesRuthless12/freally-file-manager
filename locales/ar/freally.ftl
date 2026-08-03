@@ -1543,6 +1543,7 @@ err-schedule-too-many = عدد المهام المجدولة كبير جدًا
 err-schedule-install-failed = رفض مجدول النظام هذه الجدولة
 err-schedule-remove-failed = تعذّر على مجدول النظام إزالة هذه الجدولة
 err-schedule-no-program = تعذّر تحديد موقع هذا التطبيق
+err-schedule-portable = الجدولة غير متاحة في الوضع المحمول
 settings-schedules-title = المهام المجدولة
 settings-schedules-empty = لا توجد مهام مجدولة بعد.
 settings-schedule-add = إضافة جدولة
@@ -1568,7 +1569,6 @@ settings-affinity-workers-auto = تلقائي
 
 # FFM-M19
 err-queue-unknown = طابور غير معروف
-action-run-next = التشغيل تاليًا
 action-boost = إعطاء أولوية
 action-clear-boost = إلغاء الأولوية
 action-move-to-queue = النقل إلى الطابور

@@ -85,14 +85,26 @@ impl SourceStamp {
         }
     }
 
-    /// Stat `path` and stamp it. `None` when the file cannot be
-    /// stat'ed — a source that vanished mid-copy is reported by the
-    /// engine's own I/O error path, not here.
-    pub async fn of(path: &Path) -> Option<Self> {
-        tokio::fs::metadata(path)
-            .await
-            .ok()
-            .map(|md| Self::from_metadata(&md))
+    /// Stat `path` and stamp it, resolving symlinks only when the copy
+    /// itself will.
+    ///
+    /// `copy_file_once` reads the source through `symlink_metadata`
+    /// when `follow_symlinks` is false, so always following here would
+    /// fingerprint the *target* of a link the engine never reads: a
+    /// target rewritten mid-copy would report a false change on a
+    /// perfectly copied link, and a dangling link would stamp `None`
+    /// and silently disable the guard altogether.
+    ///
+    /// `None` when the file cannot be stat'ed — a source that vanished
+    /// mid-copy is reported by the engine's own I/O error path, not
+    /// here.
+    pub async fn of(path: &Path, follow_symlinks: bool) -> Option<Self> {
+        let md = if follow_symlinks {
+            tokio::fs::metadata(path).await
+        } else {
+            tokio::fs::symlink_metadata(path).await
+        };
+        md.ok().map(|md| Self::from_metadata(&md))
     }
 
     /// Human-readable summary of what differs, for the event payload

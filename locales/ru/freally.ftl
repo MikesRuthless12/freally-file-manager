@@ -1543,6 +1543,7 @@ err-schedule-too-many = Слишком много запланированных
 err-schedule-install-failed = Планировщик системы отклонил это расписание
 err-schedule-remove-failed = Планировщику системы не удалось удалить это расписание
 err-schedule-no-program = Не удалось определить расположение приложения
+err-schedule-portable = Планирование недоступно в переносном режиме
 settings-schedules-title = Запланированные задачи
 settings-schedules-empty = Запланированных задач пока нет.
 settings-schedule-add = Добавить расписание
@@ -1568,7 +1569,6 @@ settings-affinity-workers-auto = Автоматически
 
 # FFM-M19
 err-queue-unknown = Неизвестная очередь
-action-run-next = Выполнить следующим
 action-boost = Повысить приоритет
 action-clear-boost = Снять приоритет
 action-move-to-queue = Переместить в очередь

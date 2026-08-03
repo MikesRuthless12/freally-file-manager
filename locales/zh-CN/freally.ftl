@@ -1543,6 +1543,7 @@ err-schedule-too-many = 计划任务过多
 err-schedule-install-failed = 系统计划程序拒绝了此计划
 err-schedule-remove-failed = 系统计划程序无法删除此计划
 err-schedule-no-program = 无法确定本应用程序的位置
+err-schedule-portable = 便携模式下无法使用计划任务
 settings-schedules-title = 计划任务
 settings-schedules-empty = 尚无计划任务。
 settings-schedule-add = 添加计划
@@ -1568,7 +1569,6 @@ settings-affinity-workers-auto = 自动
 
 # FFM-M19
 err-queue-unknown = 未知队列
-action-run-next = 接下来运行
 action-boost = 优先处理
 action-clear-boost = 取消优先
 action-move-to-queue = 移到队列

@@ -376,17 +376,21 @@ async fn scenario_02_unc_dest_compressed_traffic() {
         let (tx, rx) = mpsc::channel::<CopyEvent>(64);
         let drain_task = tokio::spawn(drain(rx));
         let result = fast_copy(&src, &dst, CopyOptions::default(), CopyControl::new(), tx).await;
-        let events = drain_task.await.unwrap();
+        let _events = drain_task.await.unwrap();
 
         match result {
-            Ok(outcome) => {
+            // `Ok(None)` — the dispatcher declined and copied nothing;
+            // `copy_file`'s own loop would do the work. Nothing to
+            // assert about a fast path that never ran.
+            Ok(None) => {
+                println!("[phase-42][scenario-02] SKIP: no fast path applied to the UNC dst");
+            }
+            Ok(Some(outcome)) => {
                 assert_eq!(outcome.bytes, 1024 * 1024, "byte count mismatch");
-                assert!(
-                    events
-                        .iter()
-                        .any(|e| matches!(e, CopyEvent::Completed { .. })),
-                    "expected Completed event on UNC copy"
-                );
+                // No `Completed` assertion: the dispatcher no longer
+                // emits one. `copy_file` emits it once, after the
+                // source-stability verdict — and this test calls the
+                // dispatcher directly, so nothing emits it here.
                 assert!(files_equal(&src, &dst), "UNC dst content mismatch");
                 println!(
                     "[phase-42][scenario-02] OK: strategy={} dst={}",
@@ -504,18 +508,16 @@ async fn scenario_03_cross_volume_auto_overlapped() {
         let started = Instant::now();
         let outcome = fast_copy(&src, &dst, CopyOptions::default(), CopyControl::new(), tx)
             .await
-            .expect("fast_copy cross-volume");
-        let events = drain_task.await.unwrap();
+            .expect("fast_copy cross-volume")
+            .expect("a fast path must apply to a regular cross-volume copy");
+        let _events = drain_task.await.unwrap();
         let elapsed = started.elapsed();
         let samples = progress_samples.lock().unwrap().clone();
 
         assert_eq!(outcome.bytes, size, "byte count mismatch");
-        assert!(
-            events
-                .iter()
-                .any(|e| matches!(e, CopyEvent::Completed { .. })),
-            "expected Completed on cross-volume copy"
-        );
+        // No `Completed` assertion — the dispatcher no longer emits
+        // one, and this test drives it directly rather than through
+        // `copy_file`, which is what emits it after the verdict.
         // Bytes-done trajectory must be monotonically non-decreasing
         // and end at the full byte count. Multi-slot pipelines and
         // single-stream paths both satisfy this — the assertion
