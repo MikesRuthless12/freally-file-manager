@@ -81,7 +81,6 @@
     // FFM-M19 — per-job priority actions on the job context menu.
     queueBoostJob,
     queueClearBoost,
-    queueRunNext,
     sidecarCreate,
     trashDelete,
     undoLastCandidate,
@@ -261,14 +260,6 @@
   let boostedJobId = $state<number | null>(null);
   let boostPaused = $state<number[]>([]);
 
-  async function runJobNext(job: JobDto): Promise<void> {
-    try {
-      await queueRunNext(job.queueId, job.id);
-    } catch (e) {
-      pushToast("error", e instanceof Error ? e.message : String(e));
-    }
-  }
-
   async function toggleBoost(job: JobDto): Promise<void> {
     try {
       if (boostedJobId === job.id) {
@@ -323,18 +314,15 @@
       onClick: () => void removeJob(job.id),
       tone: "danger",
     });
-    // FFM-M19 — per-job priority. "Run next" moves the job to the head
-    // of the *pending* section (not index 0, which a running job owns),
-    // and the boost pauses running siblings so this one gets the
-    // bandwidth. Both are meaningless once a job has finished, so they
-    // follow the same `isActive` gate as cancel.
-    items.push({
-      id: "run-next",
-      label: t("action-run-next"),
-      icon: "play",
-      disabled: job.state !== "pending",
-      onClick: () => void runJobNext(job),
-    });
+    // FFM-M19 — per-job priority. The boost pauses running siblings so
+    // this job gets the bandwidth; it is meaningless once a job has
+    // finished, so it follows the same `isActive` gate as cancel.
+    //
+    // There is deliberately no "run next" here. `enqueue_jobs` spawns a
+    // runner for every source immediately and `run_job` starts the job
+    // as its first act, so no job is ever Pending and queue order is
+    // display-only — the item could never change what runs next.
+    // Re-shipping it needs a real permit pool first.
     items.push({
       id: "boost",
       label: boostedJobId === job.id ? t("action-clear-boost") : t("action-boost"),

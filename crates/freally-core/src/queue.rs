@@ -215,13 +215,6 @@ pub enum QueueEvent {
         /// Typed error detail.
         err: CopyError,
     },
-    /// A job was moved to a new index in the queue.
-    JobReordered {
-        /// Identifies which job moved.
-        id: JobId,
-        /// 0-based index after the reorder.
-        new_index: usize,
-    },
     /// A job was removed from the queue.
     JobRemoved(JobId),
 }
@@ -465,48 +458,12 @@ impl Queue {
         }
     }
 
-    /// Move the job to index `new_index` (saturates at `0` and
-    /// `len - 1`). No-op if the id is unknown.
-    pub fn reorder(&self, id: JobId, new_index: usize) {
-        let clamped = {
-            let mut guard = self.inner.lock().unwrap_or_else(|p| p.into_inner());
-            let Some(current) = guard.entries.iter().position(|e| e.job.id == id) else {
-                return;
-            };
-            let clamped = new_index.min(guard.entries.len().saturating_sub(1));
-            if current == clamped {
-                return;
-            }
-            let entry = guard.entries.remove(current);
-            guard.entries.insert(clamped, entry);
-            clamped
-        };
-        let _ = self.tx.send(QueueEvent::JobReordered {
-            id,
-            new_index: clamped,
-        });
-    }
-
-    /// FFM-M19 — "run next": move `id` to the head of the *pending*
-    /// section.
-    ///
-    /// Deliberately not `reorder(id, 0)`: index 0 may be occupied by a
-    /// Running or Paused job, and shoving a pending job ahead of one
-    /// the runner already owns would reorder the display without
-    /// changing what runs next. Landing on the first Pending slot is
-    /// the position that actually means "next".
-    pub fn run_next(&self, id: JobId) {
-        let target = {
-            let guard = self.inner.lock().unwrap_or_else(|p| p.into_inner());
-            guard
-                .entries
-                .iter()
-                .position(|e| e.job.state == JobState::Pending)
-        };
-        if let Some(index) = target {
-            self.reorder(id, index);
-        }
-    }
+    // There is deliberately no `reorder` or `run_next` here. Both
+    // reordered a queue whose order nothing reads: the UI spawns a
+    // runner per source at enqueue time and every runner calls
+    // `start()` immediately, so no entry is ever `Pending` and the
+    // order is display-only. They are worth restoring alongside a
+    // per-queue permit pool that actually starts jobs in queue order.
 
     /// FFM-M19 — temporary priority boost: pause every *other* Running
     /// job in this queue so `id` gets the bandwidth to itself.
@@ -541,11 +498,22 @@ impl Queue {
     /// FFM-M19 — move one job into `dst`, preserving its id, control
     /// handle, and state.
     ///
-    /// Refuses a `Running` job: the runner holds its `CopyControl` and
-    /// sizes its worker pool from the owning queue, so re-parenting
-    /// mid-copy would silently change the concurrency of a transfer
-    /// already in flight. Returns `false` when the job is unknown here,
-    /// is Running, or `dst` is this same queue.
+    /// Refuses any job a runner task currently owns — `Running` **or**
+    /// `Paused`. The runner holds its `CopyControl` and sizes its
+    /// worker pool from the owning queue, so re-parenting mid-copy
+    /// would silently change the concurrency of a transfer already in
+    /// flight.
+    ///
+    /// `Paused` matters just as much as `Running`: a paused job is
+    /// still owned by a live runner task holding *this* queue's handle.
+    /// Moving it removed the entry here, and when the copy eventually
+    /// finished the runner's `finish_ok` / `finish_fail` found no
+    /// matching entry and returned early — leaving the job sitting in
+    /// the destination queue in a non-terminal state that nothing would
+    /// ever complete.
+    ///
+    /// Returns `false` when the job is unknown here, is owned by a
+    /// runner, or `dst` is this same queue.
     pub fn transfer_job_to(&self, id: JobId, dst: &Queue) -> bool {
         if Arc::ptr_eq(&self.inner, &dst.inner) {
             return false;
@@ -555,7 +523,10 @@ impl Queue {
             let Some(pos) = guard.entries.iter().position(|e| e.job.id == id) else {
                 return false;
             };
-            if guard.entries[pos].job.state == JobState::Running {
+            if matches!(
+                guard.entries[pos].job.state,
+                JobState::Running | JobState::Paused
+            ) {
                 return false;
             }
             guard.entries.remove(pos)
@@ -870,6 +841,43 @@ fn affinity_bucket_id(name: &str) -> u64 {
     (hash >> 1) | AFFINITY_BUCKET_TAG
 }
 
+/// Component-wise prefix test that respects the platform's filename
+/// case rules.
+///
+/// [`Path::starts_with`] compares components byte-for-byte. On Windows
+/// that means a group typed as `d:\media` never matches the
+/// `D:\Media\2026` the shell payload actually delivers: `route()` then
+/// falls back to the volume probe and `resolve_concurrency_for` falls
+/// back to global concurrency, so the user's "this VHDX is really C:,
+/// merge them" or "this is a spinning disk, 1 worker" override
+/// silently does nothing — while the group still displays as
+/// configured.
+///
+/// Case-insensitive on Windows and macOS (whose default volume format
+/// is case-insensitive), byte-exact on Linux, where two names
+/// differing only in case are genuinely two different files.
+///
+/// The folding is ASCII-only. Both platforms actually fold across the
+/// whole of Unicode, so a prefix like `D:Müsik` still fails to match
+/// `d:mÜsik` and the override stays silently inert for that path —
+/// the same failure this function exists to fix, just narrowed to
+/// non-ASCII names. Full folding needs a case-mapping table that
+/// neither `std` nor the current dependency set provides.
+fn path_starts_with(path: &Path, prefix: &Path) -> bool {
+    if cfg!(any(target_os = "windows", target_os = "macos")) {
+        let mut p = path.components();
+        for want in prefix.components() {
+            match p.next() {
+                Some(have) if have.as_os_str().eq_ignore_ascii_case(want.as_os_str()) => {}
+                _ => return false,
+            }
+        }
+        true
+    } else {
+        path.starts_with(prefix)
+    }
+}
+
 struct RegistryInner {
     entries: Vec<RegistryEntry>,
 }
@@ -1019,7 +1027,7 @@ impl QueueRegistry {
         let mut best: Option<(usize, &AffinityGroup)> = None;
         for group in guard.iter() {
             for prefix in &group.prefixes {
-                if !path.starts_with(prefix) {
+                if !path_starts_with(path, prefix) {
                     continue;
                 }
                 let len = prefix.components().count();
@@ -1121,7 +1129,6 @@ impl QueueRegistry {
         // that detection got this path wrong, so consulting it again
         // would defeat the correction.
         let forced = probe_path.and_then(|p| self.affinity_match(p));
-        let group_name = forced.as_ref().map(|(_, name, _)| name.clone());
         let (dst_drive, dst_label) = match &forced {
             Some((bucket, name, _workers)) => (Some(*bucket), Some(name.clone())),
             None => (
@@ -1140,13 +1147,14 @@ impl QueueRegistry {
             } else {
                 let new_qid_value = self.next_queue_id.fetch_add(1, Ordering::Relaxed);
                 let new_qid = QueueId(new_qid_value);
-                let name: Arc<str> = match (&group_name, &dst_label, dst_drive) {
+                let name: Arc<str> = match (forced.is_some(), &dst_label, dst_drive) {
                     // A group name is the user's own words — render it
                     // verbatim rather than suffixing "queue" onto it.
-                    (Some(group), _, _) => Arc::from(group.as_str()),
-                    (None, Some(label), _) => Arc::from(format!("{label} queue")),
-                    (None, None, Some(_)) => Arc::from(format!("queue {new_qid_value}")),
-                    (None, None, None) => Arc::from("default"),
+                    // `dst_label` already holds it when `forced` matched.
+                    (true, Some(group), _) => Arc::from(group.as_str()),
+                    (false, Some(label), _) => Arc::from(format!("{label} queue")),
+                    (_, None, Some(_)) => Arc::from(format!("queue {new_qid_value}")),
+                    (_, None, None) => Arc::from("default"),
                 };
                 let queue = Queue::with_shared_counter(
                     new_qid,

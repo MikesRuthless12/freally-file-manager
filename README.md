@@ -1,4 +1,4 @@
-# Freally File Manager v0.19.85
+# Freally File Manager v0.22.0
 
 A lightweight, cross-platform, async, byte-exact file/folder copier in Rust —
 matching every feature of TeraCopy and pushing past it, while staying as fast

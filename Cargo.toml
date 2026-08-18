@@ -72,4 +72,14 @@ panic = "abort"
 
 [profile.dev]
 opt-level = 0
-debug = true
+# Full `debug = true` emits complete DWARF/PDB for every crate, and on
+# Windows the linker spends longer writing that than the compiler spends
+# producing it. `line-tables-only` keeps what a backtrace actually reads
+# — file, line, symbol — and drops the variable/type graph only an
+# interactive debugger wants. Third-party crates get nothing at all: we
+# never step into them and they are the bulk of the bytes.
+# `[profile.test]` inherits both settings.
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+debug = false

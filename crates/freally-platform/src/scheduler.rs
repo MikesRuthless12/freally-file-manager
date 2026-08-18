@@ -294,6 +294,20 @@ fn shell_quote(s: &str) -> String {
     format!("'{}'", s.replace('\'', "'\\''"))
 }
 
+/// See [`xml_escape`].
+///
+/// Crate-visible alias so `autostart` shares this rather than keeping
+/// its own copy, which had already drifted: its Run-key quoting doubled
+/// quotes but not trailing backslashes.
+pub(crate) fn xml_escape_pub(s: &str) -> String {
+    xml_escape(s)
+}
+
+/// See [`win_quote`].
+pub(crate) fn win_quote_pub(s: &str) -> String {
+    win_quote(s)
+}
+
 /// Quote one `cmd.exe` argument for the Task Scheduler `<Arguments>`
 /// element (which is a raw command tail, not an argv array). Wraps in
 /// double quotes and doubles any embedded ones.
@@ -457,6 +471,22 @@ fn launchd_label(id: &str) -> String {
     format!("dev.freally.job.{id}")
 }
 
+/// Escape `%` for a systemd unit file.
+///
+/// A unit file is **not** a shell: `%` introduces a specifier
+/// (`%i`, `%h`, `%%`, …) and systemd expands it before anything sees a
+/// quote. `shell_quote` wraps a value in single quotes, which stops the
+/// *shell* from touching it and does nothing about specifier expansion.
+///
+/// Without this, a destination like `/mnt/backup 50% full` (or a
+/// manifest at `100%.txt`) makes the `.service` fail to load while the
+/// `.timer` parses fine and enables — both `systemctl` calls exit 0,
+/// install reports success, and every firing silently does nothing,
+/// forever.
+fn systemd_escape(s: &str) -> String {
+    s.replace('%', "%%")
+}
+
 /// systemd `.service` unit for `job`.
 pub fn render_systemd_service(job: &ScheduledJob) -> String {
     let mut exec = shell_quote(&job.program.to_string_lossy());
@@ -466,7 +496,8 @@ pub fn render_systemd_service(job: &ScheduledJob) -> String {
     }
     format!(
         "[Unit]\nDescription={label}\n\n[Service]\nType=oneshot\nExecStart={exec}\n",
-        label = job.label,
+        label = systemd_escape(&job.label),
+        exec = systemd_escape(&exec),
     )
 }
 
@@ -487,7 +518,7 @@ pub fn render_systemd_timer(job: &ScheduledJob) -> String {
     let persistent = matches!(job.missed_run, MissedRunPolicy::RunWhenAvailable);
     format!(
         "[Unit]\nDescription={label} (timer)\n\n[Timer]\nOnCalendar={on_calendar}\nPersistent={persistent}\nUnit={unit}.service\n\n[Install]\nWantedBy=timers.target\n",
-        label = job.label,
+        label = systemd_escape(&job.label),
         unit = systemd_unit_stem(&job.id),
     )
 }
@@ -637,7 +668,7 @@ fn os_tool(name: &str) -> std::path::PathBuf {
         let root = std::env::var_os("SystemRoot")
             .map(std::path::PathBuf::from)
             .unwrap_or_else(|| std::path::PathBuf::from(r"C:\Windows"));
-        return root.join("System32").join(format!("{name}.exe"));
+        root.join("System32").join(format!("{name}.exe"))
     }
     #[cfg(unix)]
     {
@@ -715,17 +746,73 @@ mod windows_impl {
         out
     }
 
-    fn staging_path(id: &str) -> Result<PathBuf, SchedulerError> {
-        Ok(std::env::temp_dir().join(format!("freally-schedule-{id}.xml")))
+    /// Create the staging file **exclusively**, in a private directory,
+    /// under an unpredictable name.
+    ///
+    /// `schtasks /XML` reads the file by path in a second process, so
+    /// the window between our write and its read is a substitution
+    /// opportunity. Three things close it: the file lives beside our
+    /// own config rather than in the shared temp root, `create_new`
+    /// refuses to follow an existing file or reparse point, and the
+    /// name carries entropy so it cannot be pre-created to either
+    /// hijack the install or DoS it.
+    fn staged_xml(id: &str, bytes: &[u8]) -> Result<PathBuf, SchedulerError> {
+        use std::io::Write;
+
+        let dir = staging_dir()?;
+        std::fs::create_dir_all(&dir)?;
+        for attempt in 0..16u32 {
+            let path = dir.join(format!("{id}-{}-{attempt}.xml", nonce()));
+            match std::fs::OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(&path)
+            {
+                Ok(mut f) => {
+                    f.write_all(bytes)?;
+                    f.flush()?;
+                    return Ok(path);
+                }
+                Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => continue,
+                Err(e) => return Err(SchedulerError::Io(e)),
+            }
+        }
+        Err(SchedulerError::Io(std::io::Error::new(
+            std::io::ErrorKind::AlreadyExists,
+            "could not create a private staging file for the task XML",
+        )))
+    }
+
+    /// Per-install staging directory. Falls back to the temp root only
+    /// if the config dir cannot be resolved at all — in which case the
+    /// `create_new` + nonce above still carry the guarantee.
+    fn staging_dir() -> Result<PathBuf, SchedulerError> {
+        let base = std::env::var_os("LOCALAPPDATA")
+            .map(PathBuf::from)
+            .unwrap_or_else(std::env::temp_dir);
+        Ok(base.join("freally-file-manager").join("staging"))
+    }
+
+    /// Cheap per-call entropy. Not a CSPRNG and does not need to be —
+    /// the security property comes from `create_new`; this only stops
+    /// an attacker pre-creating the one name we would otherwise use.
+    fn nonce() -> u64 {
+        use std::collections::hash_map::RandomState;
+        use std::hash::{BuildHasher, Hasher};
+        let mut h = RandomState::new().build_hasher();
+        h.write_u64(std::process::id() as u64);
+        h.write_u64(
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_nanos() as u64)
+                .unwrap_or(0),
+        );
+        h.finish()
     }
 
     pub fn install(job: &ScheduledJob) -> Result<(), SchedulerError> {
         let xml = render_windows_task_xml(job);
-        let staged = staging_path(&job.id)?;
-        if let Some(parent) = staged.parent() {
-            std::fs::create_dir_all(parent)?;
-        }
-        std::fs::write(&staged, utf16_bytes(&xml))?;
+        let staged = staged_xml(&job.id, &utf16_bytes(&xml))?;
         let name = windows_task_name(&job.id);
         let staged_str = staged.to_string_lossy().into_owned();
         let result = run(
@@ -739,7 +826,18 @@ mod windows_impl {
     }
 
     pub fn remove(id: &str) -> Result<(), SchedulerError> {
-        if !is_installed(id)? {
+        // Only a query that *positively* reports the task absent
+        // justifies skipping the delete. Previously any query failure
+        // — Task Scheduler service stopped, task owned by another
+        // session and access denied — read as "not installed", so
+        // `remove` returned Ok without ever running `/Delete` and
+        // `schedule_remove_impl` then dropped the settings row. The app
+        // had permanently forgotten a task that was still installed and
+        // still firing nightly.
+        //
+        // When we cannot tell, attempt the delete and let its own exit
+        // status decide.
+        if let Ok(false) = is_installed(id) {
             return Ok(());
         }
         let name = windows_task_name(id);
@@ -747,25 +845,43 @@ mod windows_impl {
     }
 
     pub fn is_installed(id: &str) -> Result<bool, SchedulerError> {
-        let name = windows_task_name(id);
-        let out = std::process::Command::new(super::os_tool("schtasks"))
-            .args(["/Query", "/TN", &name])
-            .output()?;
-        Ok(out.status.success())
+        // Deliberately *not* a per-task `/Query`: that exits 1 both for
+        // "no such task" and for "could not ask", and the reason text
+        // is localized, so it cannot be told apart. Enumerating the
+        // folder gives a signal we can trust — if the enumeration
+        // itself succeeds, the absence of `id` from the result is
+        // authoritative.
+        Ok(installed_ids()?.contains(id))
+    }
+
+    fn query(args: &[&str]) -> Result<std::process::Output, SchedulerError> {
+        Ok(std::process::Command::new(super::os_tool("schtasks"))
+            .args(args)
+            .output()?)
     }
 
     /// Enumerate `\Freally\*` in one call.
     ///
     /// `/NH` drops the header row, so the output is not localisation-
-    /// sensitive; the first CSV field is the task path. A non-zero exit
-    /// means the folder does not exist yet (nothing installed), which is
-    /// an empty set rather than an error.
+    /// sensitive; the first CSV field is the task path.
     pub fn installed_ids() -> Result<HashSet<String>, SchedulerError> {
-        let out = std::process::Command::new(super::os_tool("schtasks"))
-            .args(["/Query", "/FO", "CSV", "/NH", "/TN", r"\Freally\"])
-            .output()?;
+        let out = query(&["/Query", "/FO", "CSV", "/NH", "/TN", r"\Freally\"])?;
         if !out.status.success() {
-            return Ok(HashSet::new());
+            // Either our folder does not exist yet (nothing installed
+            // — the common case) or the query itself failed. `schtasks`
+            // exits 1 for both. Ask a question whose answer we can
+            // trust: enumerate the root. If *that* works the service is
+            // reachable and our folder is genuinely absent; if it does
+            // not, we simply could not tell, and reporting "nothing is
+            // installed" would let `remove` drop a settings row for a
+            // task that is still there and still firing.
+            let root = query(&["/Query", "/FO", "CSV", "/NH"])?;
+            if root.status.success() {
+                return Ok(HashSet::new());
+            }
+            return Err(SchedulerError::Io(std::io::Error::other(
+                "could not query the Windows Task Scheduler",
+            )));
         }
         let text = String::from_utf8_lossy(&out.stdout);
         Ok(text
@@ -807,7 +923,22 @@ mod macos_impl {
             let _ = run("launchctl", &["unload", "-w", &path_str]);
         }
         write_stanza(&path, &render_launchd_plist(job))?;
-        run("launchctl", &["load", "-w", &path_str])
+        // Roll the plist back if the load fails. Returning `Err` with
+        // the file still on disk left a live orphan: `schedule_save`
+        // propagates the error *before* pushing the settings row, but
+        // launchd loads every plist in LaunchAgents at the next login —
+        // so the job would start firing with no settings row backing it
+        // and no UI affordance able to remove it.
+        //
+        // Failure here is not exotic: a stale label, a non-Aqua session
+        // or a SIP/TCC denial all land on this path.
+        match run("launchctl", &["load", "-w", &path_str]) {
+            Ok(()) => Ok(()),
+            Err(e) => {
+                let _ = std::fs::remove_file(&path);
+                Err(e)
+            }
+        }
     }
 
     pub fn remove(id: &str) -> Result<(), SchedulerError> {
@@ -1199,6 +1330,44 @@ mod tests {
             MissedRunPolicy::Skip,
         ));
         assert!(skip.contains("Persistent=false"));
+    }
+
+    #[test]
+    fn systemd_units_escape_percent_signs() {
+        // A unit file is not a shell. `shell_quote`'s single quotes stop
+        // the shell from touching a value but do nothing about systemd
+        // specifier expansion, so a literal `%` has to become `%%`.
+        //
+        // Left unescaped, a destination like `/mnt/backup 50% full`
+        // makes the .service fail to load while the .timer enables
+        // fine, both systemctl calls exit 0, install reports success —
+        // and every firing silently does nothing, forever.
+        let mut j = job(
+            ScheduleTrigger::Daily { hour: 3, minute: 0 },
+            MissedRunPolicy::Skip,
+        );
+        j.label = "Backup 50% full".to_string();
+        j.args = vec!["--destination".to_string(), "/mnt/100%.d".to_string()];
+
+        let service = render_systemd_service(&j);
+        assert!(
+            service.contains("Description=Backup 50%% full"),
+            "label must be escaped: {service}",
+        );
+        assert!(
+            service.contains("'/mnt/100%%.d'"),
+            "args must be escaped: {service}",
+        );
+        assert!(
+            !service.contains("50% full"),
+            "no bare `%` may survive into a unit file: {service}",
+        );
+
+        let timer = render_systemd_timer(&j);
+        assert!(
+            timer.contains("Description=Backup 50%% full (timer)"),
+            "the timer's Description needs it too: {timer}",
+        );
     }
 
     #[test]

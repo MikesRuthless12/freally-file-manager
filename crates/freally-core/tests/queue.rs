@@ -99,40 +99,6 @@ async fn pause_resume_cancel_drive_the_control_and_emit_events() {
 }
 
 #[tokio::test]
-async fn reorder_moves_the_job_and_emits_index() {
-    let q = Queue::new();
-    let (a, _) = q.add(JobKind::Copy, src(1), None);
-    let (b, _) = q.add(JobKind::Copy, src(2), None);
-    let (c, _) = q.add(JobKind::Copy, src(3), None);
-
-    let mut rx = q.subscribe(); // subscribe after so we don't see JobAdded
-    q.reorder(a, 2);
-    match next_event(&mut rx).await {
-        QueueEvent::JobReordered { id, new_index } => {
-            assert_eq!(id, a);
-            assert_eq!(new_index, 2);
-        }
-        other => panic!("expected JobReordered, got {other:?}"),
-    }
-
-    let snap = q.snapshot();
-    assert_eq!(snap[0].id, b);
-    assert_eq!(snap[1].id, c);
-    assert_eq!(snap[2].id, a);
-}
-
-#[tokio::test]
-async fn reorder_clamps_to_bounds() {
-    let q = Queue::new();
-    let (a, _) = q.add(JobKind::Copy, src(1), None);
-    let (_, _) = q.add(JobKind::Copy, src(2), None);
-    let (_, _) = q.add(JobKind::Copy, src(3), None);
-    q.reorder(a, 99);
-    let snap = q.snapshot();
-    assert_eq!(snap.last().unwrap().id, a);
-}
-
-#[tokio::test]
 async fn mark_failed_records_error_on_job() {
     let q = Queue::new();
     let (id, _) = q.add(JobKind::Copy, src(1), Some(dst(1)));

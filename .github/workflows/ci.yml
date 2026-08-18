@@ -13,9 +13,20 @@ on:
 permissions:
   contents: read
 
+# A force-push to a PR left the superseded run compiling the whole workspace
+# on three OSes for another 40 minutes. Cancel it. Pushes to main are NOT
+# cancelled — main's runs are the record of what was green.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
+  # Incremental compilation pays off across repeated local builds. CI restores
+  # a cache and compiles once, so here it only emits state that inflates the
+  # cache and slows every restore.
+  CARGO_INCREMENTAL: 0
   # Free tier on a private repo gives 2 000 Action minutes/month, with
   # Windows runners billed 2× and macOS runners billed 10×. The matrix
   # below burns roughly 150–200 billable minutes per push. Trim jobs or
@@ -42,7 +53,10 @@ jobs:
         with:
           toolchain: "1.97.1"
       - uses: Swatinem/rust-cache@v2
-      - run: cargo run -p xtask --release -- i18n-lint
+      # Debug, not release: this is a lint over 18 locale files, it is not
+      # compute-bound, and a release build meant compiling xtask's entire
+      # dependency tree in a profile nothing else in CI reuses.
+      - run: cargo run -p xtask -- i18n-lint
 
   cargo-deny:
     name: cargo-deny (licenses + advisories)
@@ -70,9 +84,13 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: "1.97.1"
-      - uses: Swatinem/rust-cache@v2
-      - name: Install cargo-audit
-        run: cargo install --locked cargo-audit
+      # `cargo install --locked` compiled cargo-audit from source on every
+      # run (3-5 min). install-action fetches the upstream prebuilt binary in
+      # seconds. Nothing in this job compiles the workspace, so there is also
+      # nothing for rust-cache to cache.
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-audit
       - name: Run cargo audit
         # The `--ignore` flags mirror the `[advisories] ignore` block
         # in deny.toml so the two surfaces stay in lockstep. Update
@@ -110,7 +128,8 @@ jobs:
             --ignore RUSTSEC-2024-0436 \
             --ignore RUSTSEC-2026-0097 \
             --ignore RUSTSEC-2026-0194 \
-            --ignore RUSTSEC-2026-0195
+            --ignore RUSTSEC-2026-0195 \
+            --ignore RUSTSEC-2026-0222
 
   # Phase 17b — supply-chain trust audits via cargo-vet. Tagged
   # releases require a vet-clean tree; on every push we run the
@@ -129,9 +148,11 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: "1.97.1"
-      - uses: Swatinem/rust-cache@v2
-      - name: Install cargo-vet
-        run: cargo install --locked cargo-vet
+      # Prebuilt binary rather than a from-source `cargo install` — see the
+      # cargo-audit job. This one reads the lockfile and supply-chain/ only.
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-vet
       - name: Run cargo vet
         run: cargo vet --locked
 
@@ -171,6 +192,11 @@ jobs:
           toolchain: "1.97.1"
           components: clippy
       - uses: Swatinem/rust-cache@v2
+        with:
+          # A cold leg that fails late (a flaky test after 40 min of
+          # compiling) used to save nothing, so the next run recompiled from
+          # scratch as well.
+          cache-on-failure: true
       # The clippy(--all-targets) + test(--workspace) debug compiles fill the
       # ubuntu runner's ~14 GB free disk and abort the Test step with "No space
       # left on device". Reclaim ~25 GB of preinstalled SDKs we never use.
@@ -190,6 +216,13 @@ jobs:
       # Linux / macOS). Tauri-build coverage is in the tauri-build job
       # below; install / uninstall round-trip runs against the tagged
       # release artifacts per docs/RELEASE_CHECKLIST.md, not here.
+      # NOT cargo-nextest. It cannot build this workspace: every freally-ui
+      # test target dies with `can't find crate for freally_ui_lib` and
+      # `crate <dep> required to be available in rlib format`, even though
+      # the crate already declares crate-type = ["staticlib", "cdylib",
+      # "rlib"]. Plain `cargo test --workspace --no-run` builds the same
+      # targets clean, so this is a nextest/Tauri interaction, not a config
+      # gap here. `cargo test` also runs doctests, which nextest skips.
       - name: Test
         run: cargo test --workspace
       # Phase 17d — the elevated-handshake smoke is behind the

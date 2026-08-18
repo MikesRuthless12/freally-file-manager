@@ -1543,6 +1543,7 @@ err-schedule-too-many = Zbyt wiele zaplanowanych zadań
 err-schedule-install-failed = Harmonogram systemowy odrzucił to zadanie
 err-schedule-remove-failed = Harmonogram systemowy nie mógł usunąć tego zadania
 err-schedule-no-program = Nie udało się ustalić lokalizacji aplikacji
+err-schedule-portable = Harmonogramy są niedostępne w trybie przenośnym
 settings-schedules-title = Zaplanowane zadania
 settings-schedules-empty = Brak zaplanowanych zadań.
 settings-schedule-add = Dodaj harmonogram
@@ -1568,7 +1569,6 @@ settings-affinity-workers-auto = Automatycznie
 
 # FFM-M19
 err-queue-unknown = Nieznana kolejka
-action-run-next = Uruchom jako następne
 action-boost = Priorytetyzuj
 action-clear-boost = Zakończ priorytetyzację
 action-move-to-queue = Przenieś do kolejki

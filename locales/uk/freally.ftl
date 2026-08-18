@@ -1543,6 +1543,7 @@ err-schedule-too-many = Забагато запланованих завдань
 err-schedule-install-failed = Планувальник системи відхилив цей розклад
 err-schedule-remove-failed = Планувальнику системи не вдалося вилучити цей розклад
 err-schedule-no-program = Не вдалося визначити розташування програми
+err-schedule-portable = Планування недоступне в портативному режимі
 settings-schedules-title = Заплановані завдання
 settings-schedules-empty = Запланованих завдань ще немає.
 settings-schedule-add = Додати розклад
@@ -1568,7 +1569,6 @@ settings-affinity-workers-auto = Автоматично
 
 # FFM-M19
 err-queue-unknown = Невідома черга
-action-run-next = Виконати наступним
 action-boost = Підвищити пріоритет
 action-clear-boost = Зняти пріоритет
 action-move-to-queue = Перемістити до черги

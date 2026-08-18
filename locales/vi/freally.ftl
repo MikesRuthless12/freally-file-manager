@@ -1543,6 +1543,7 @@ err-schedule-too-many = Quá nhiều tác vụ theo lịch
 err-schedule-install-failed = Bộ lập lịch của hệ thống đã từ chối lịch trình này
 err-schedule-remove-failed = Bộ lập lịch của hệ thống không thể xóa lịch trình này
 err-schedule-no-program = Không xác định được vị trí của ứng dụng
+err-schedule-portable = Lập lịch không khả dụng ở chế độ di động
 settings-schedules-title = Tác vụ theo lịch
 settings-schedules-empty = Chưa có tác vụ theo lịch nào.
 settings-schedule-add = Thêm lịch trình
@@ -1568,7 +1569,6 @@ settings-affinity-workers-auto = Tự động
 
 # FFM-M19
 err-queue-unknown = Hàng đợi không xác định
-action-run-next = Chạy kế tiếp
 action-boost = Ưu tiên
 action-clear-boost = Bỏ ưu tiên
 action-move-to-queue = Chuyển sang hàng đợi

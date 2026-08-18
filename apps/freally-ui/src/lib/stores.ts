@@ -40,6 +40,7 @@ import {
   type ErrorPromptDto,
   type ErrorResolvedDto,
   type FileActivityDto,
+  type FileActivityPhase,
   type GlobalsDto,
   type JobDto,
   type JobFailedDto,
@@ -156,13 +157,16 @@ const errorDisplayModeStore = writable<ErrorDisplayModeWire>("modal");
 // older completed rows age out so the pending / in-flight rows
 // always stay visible at the bottom.
 const ACTIVITY_LIMIT = 250_000;
-export type ActivityPhase =
-  | "pending"
-  | "start"
-  | "progress"
-  | "done"
-  | "error"
-  | "dir";
+// Derived from the DTO's phase set rather than restated. This was a
+// hand-maintained copy and the two drifted the moment FFM-M23 added
+// "source-changed" to only one of them: the store kept accepting the
+// DTO's phase field while three components compared against a variant
+// the store's own type said could not occur.
+//
+// "pending" is the one genuine addition — a row the store synthesises
+// for a file it knows about but the engine has not started yet, so it
+// never arrives over IPC and has no place in the DTO type.
+export type ActivityPhase = FileActivityPhase | "pending";
 interface FileActivityRow {
   key: string;
   jobId: number;

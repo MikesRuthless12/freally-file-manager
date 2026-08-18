@@ -56,40 +56,94 @@ pub async fn copy_file(
 
     let policy = opts.source_stability;
     if policy == SourceStability::Off {
-        return copy_file_once(src, dst, opts, ctrl, events).await;
+        return copy_file_once(src, dst, opts, ctrl, events, None).await;
     }
 
-    let before = SourceStamp::of(src).await;
+    // Stamp the same file the copy will actually read: `copy_file_once`
+    // uses `symlink_metadata` when `follow_symlinks` is false, so
+    // following here would fingerprint a link's target instead of the
+    // link (FFM-M23 fix §1.5).
+    let follow = opts.follow_symlinks;
+    let keep_partial = opts.keep_partial;
+    let before = SourceStamp::of(src, follow).await;
     // Only `Recopy` can need the options a second time. `CopyOptions`
     // is ~40 fields with eight `Option<Arc<dyn …>>` hooks, so cloning
     // it unconditionally would add a per-file allocation and eight
     // atomic bumps to every tree copy — under the default `Warn`
     // policy, for a second attempt that never happens.
+    // Set by whichever exit of `copy_file_once` held the terminal event
+    // back; stays false on the fast-copy hook path, which never emits one.
+    let mut withheld = false;
     let (report, opts) = if policy == SourceStability::Recopy {
-        let report = copy_file_once(src, dst, opts.clone(), ctrl.clone(), events.clone()).await?;
+        let report = copy_file_once(
+            src,
+            dst,
+            opts.clone(),
+            ctrl.clone(),
+            events.clone(),
+            Some(&mut withheld),
+        )
+        .await?;
         (report, Some(opts))
     } else {
         (
-            copy_file_once(src, dst, opts, ctrl.clone(), events.clone()).await?,
+            copy_file_once(
+                src,
+                dst,
+                opts,
+                ctrl.clone(),
+                events.clone(),
+                Some(&mut withheld),
+            )
+            .await?,
             None,
         )
     };
-    let after = SourceStamp::of(src).await;
+    let after = SourceStamp::of(src, follow).await;
 
     match evaluate(before, after, policy) {
-        StabilityVerdict::Stable => Ok(report),
+        StabilityVerdict::Stable => {
+            emit_completed(withheld, &events, &report).await;
+            Ok(report)
+        }
         StabilityVerdict::Fail => {
+            // Route through the same exit as every other engine
+            // failure so the torn destination is removed (unless the
+            // caller asked to keep partials) and `CopyEvent::Failed`
+            // is delivered. Returning a bare `Err` left a full-size,
+            // correctly-dated, internally-inconsistent file at the
+            // destination — which the next run under skip-existing or
+            // newer-only would treat as already copied — and the
+            // single-file UI path never learned the job had failed,
+            // because it only sees failures via that event.
             let detail = describe(before, after);
-            Err(CopyError::source_changed(src, dst, &detail))
+            finalize_error(
+                keep_partial,
+                &events,
+                CopyError::source_changed(src, dst, &detail),
+                dst,
+            )
+            .await
         }
         StabilityVerdict::Warn => {
+            let detail = describe(before, after);
             let _ = events
                 .send(CopyEvent::SourceChanged {
                     src: src.to_path_buf(),
-                    detail: describe(before, after),
+                    detail: detail.clone(),
                     recopying: false,
                 })
                 .await;
+            // Carry the verdict out in the report. `Warn` keeps the
+            // bytes, but a caller that is about to delete or trash the
+            // source on the strength of this `Ok` — `move_file`'s slow
+            // path, the runner's move-to-trash path — has to be able
+            // to see that the destination is not a faithful copy.
+            let report = CopyReport {
+                source_changed: Some(detail),
+                ..report
+            };
+            emit_completed(withheld, &events, &report).await;
             Ok(report)
         }
         StabilityVerdict::Recopy => {
@@ -104,27 +158,84 @@ pub async fn copy_file(
             // otherwise loop forever, and each pass rewrites the whole
             // destination — an unbounded retry on a busy log file is a
             // livelock, not a recovery.
-            let retry_before = SourceStamp::of(src).await;
-            let opts = opts.expect("the Recopy branch always carries the options forward");
-            let retry = copy_file_once(src, dst, opts, ctrl, events.clone()).await?;
-            let retry_after = SourceStamp::of(src).await;
+            let mut opts = opts.expect("the Recopy branch always carries the options forward");
+            // The first attempt already ran `journal.finish_file`, so
+            // re-entering with the journal attached makes
+            // `decide_resume` return `AlreadyComplete`: it confirms the
+            // destination's length and hash against the record it just
+            // wrote and hands back a synthetic report *without ever
+            // opening the source*. The retry would copy nothing and
+            // report the torn file as successfully recopied. Detaching
+            // the journal forces `FreshStart`. `fail_if_exists` goes
+            // with it: the destination we are deliberately overwriting
+            // is the one the first attempt created.
+            //
+            // Known consequence: the retry therefore never checkpoints, so
+            // the WAL row keeps attempt 1's byte count and hash while the
+            // destination now holds attempt 2's bytes. Resuming that job
+            // later is still correct — `decide_resume` sees the mismatch
+            // and forces a `FreshStart` — but it re-copies a file it did
+            // not have to. Re-finalising the row would need the retry's
+            // hash, which `CopyReport` does not carry.
+            opts.journal = None;
+            opts.fail_if_exists = false;
+            let retry_before = SourceStamp::of(src, follow).await;
+            let mut retry_withheld = false;
+            let retry = copy_file_once(
+                src,
+                dst,
+                opts,
+                ctrl,
+                events.clone(),
+                Some(&mut retry_withheld),
+            )
+            .await?;
+            let retry_after = SourceStamp::of(src, follow).await;
             if evaluate(retry_before, retry_after, policy) == StabilityVerdict::Stable {
+                emit_completed(retry_withheld, &events, &retry).await;
                 Ok(retry)
             } else {
                 // Still moving. Report and keep the second attempt's
                 // bytes rather than failing — the caller asked to
-                // re-copy, not to abort.
+                // re-copy, not to abort — but mark the report so a
+                // move still refuses to unlink the source.
+                let detail = describe(retry_before, retry_after);
                 let _ = events
                     .send(CopyEvent::SourceChanged {
                         src: src.to_path_buf(),
-                        detail: describe(retry_before, retry_after),
+                        detail: detail.clone(),
                         recopying: false,
                     })
                     .await;
+                let retry = CopyReport {
+                    source_changed: Some(detail),
+                    ..retry
+                };
+                emit_completed(retry_withheld, &events, &retry).await;
                 Ok(retry)
             }
         }
     }
+}
+
+/// Send the terminal [`CopyEvent::Completed`] that `copy_file_once` held
+/// back, if it held one back at all.
+///
+/// Only reached on the FFM-M23 guarded paths, where `copy_file_once` stays
+/// quiet so that any `SourceChanged` for the file is on the wire *before*
+/// the `Completed` that closes it out. Consumers pair the two, so that
+/// order is part of the contract rather than an accident of scheduling.
+async fn emit_completed(withheld: bool, events: &mpsc::Sender<CopyEvent>, report: &CopyReport) {
+    if !withheld {
+        return;
+    }
+    let _ = events
+        .send(CopyEvent::Completed {
+            bytes: report.bytes,
+            duration: report.duration,
+            rate_bps: report.rate_bps,
+        })
+        .await;
 }
 
 /// Summarise the difference between two optional stamps for an event
@@ -154,6 +265,19 @@ async fn copy_file_once(
     opts: CopyOptions,
     ctrl: CopyControl,
     events: mpsc::Sender<CopyEvent>,
+    // `Some` when the caller runs the FFM-M23 stability guard. The guard's
+    // verdict is only known *after* this function returns, so a terminal
+    // `Completed` sent from in here would always precede the
+    // `SourceChanged` describing the very same file. A consumer reading the
+    // verdict as it handles `Completed` would then attribute it to the
+    // *next* file to finish, and never to the one that actually tore.
+    //
+    // The flag is set by whichever exit would have sent the event, so the
+    // caller emits exactly one and only when there was one to emit — the
+    // fast-copy hook path returns without a `Completed` at all, and
+    // synthesising one there would change behaviour that has nothing to do
+    // with the guard.
+    mut withhold_completed: Option<&mut bool>,
 ) -> Result<CopyReport, CopyError> {
     let src_path = src.to_path_buf();
     let dst_path = dst.to_path_buf();
@@ -447,19 +571,24 @@ async fn copy_file_once(
                 total_bytes: total,
             })
             .await;
-        let _ = events
-            .send(CopyEvent::Completed {
-                bytes: total,
-                duration: Duration::ZERO,
-                rate_bps: 0,
-            })
-            .await;
+        if let Some(flag) = withhold_completed.as_mut() {
+            **flag = true;
+        } else {
+            let _ = events
+                .send(CopyEvent::Completed {
+                    bytes: total,
+                    duration: Duration::ZERO,
+                    rate_bps: 0,
+                })
+                .await;
+        }
         return Ok(CopyReport {
             src: src_path,
             dst: dst_path,
             bytes: total,
             duration: Duration::ZERO,
             rate_bps: 0,
+            source_changed: None,
         });
     }
 
@@ -796,7 +925,7 @@ async fn copy_file_once(
             )
             .await
             {
-                return finalize_error(&opts, &events, e, &dst_path).await;
+                return finalize_error(opts.keep_partial, &events, e, &dst_path).await;
             }
             // Snapshot lease can drop here — every metadata read
             // that needed the snapshot mount has now finished. We
@@ -824,7 +953,7 @@ async fn copy_file_once(
                 {
                     Ok(()) => {}
                     Err(err) => {
-                        return finalize_error(&opts, &events, err, &dst_path).await;
+                        return finalize_error(opts.keep_partial, &events, err, &dst_path).await;
                     }
                 }
             }
@@ -849,19 +978,24 @@ async fn copy_file_once(
                     .record_file(&src_path, &dst_path, copied, root, outboard);
             }
 
-            let _ = events
-                .send(CopyEvent::Completed {
-                    bytes: copied,
-                    duration: elapsed,
-                    rate_bps: rate,
-                })
-                .await;
+            if let Some(flag) = withhold_completed.as_mut() {
+                **flag = true;
+            } else {
+                let _ = events
+                    .send(CopyEvent::Completed {
+                        bytes: copied,
+                        duration: elapsed,
+                        rate_bps: rate,
+                    })
+                    .await;
+            }
             Ok(CopyReport {
                 src: src_path,
                 dst: dst_path,
                 bytes: copied,
                 duration: elapsed,
                 rate_bps: rate,
+                source_changed: None,
             })
         }
         Err(err) => fail(&src_path, &dst_path, &opts, &events, err, writer, reader).await,
@@ -1055,16 +1189,24 @@ async fn fail(
 ) -> Result<CopyReport, CopyError> {
     drop(writer);
     drop(reader);
-    finalize_error(opts, events, err, dst).await
+    finalize_error(opts.keep_partial, events, err, dst).await
 }
 
+/// The single exit for every failed copy: drop the unusable
+/// destination unless the caller asked to keep partials, tell the
+/// consumer via `CopyEvent::Failed`, and return the error.
+///
+/// Takes `keep_partial` rather than the whole `CopyOptions` because
+/// that is the only field it reads, and because `copy_file`'s
+/// stability guard has already moved its options into the copy by the
+/// time it needs to fail an item.
 async fn finalize_error(
-    opts: &CopyOptions,
+    keep_partial: bool,
     events: &mpsc::Sender<CopyEvent>,
     err: CopyError,
     dst: &Path,
 ) -> Result<CopyReport, CopyError> {
-    if !opts.keep_partial {
+    if !keep_partial {
         let _ = tokio::fs::remove_file(dst).await;
     }
     let _ = events.send(CopyEvent::Failed { err: err.clone() }).await;
@@ -1472,6 +1614,7 @@ async fn copy_file_sparse_aware(
         bytes: copied,
         duration: elapsed,
         rate_bps: rate,
+        source_changed: None,
     })
 }
 
@@ -1606,6 +1749,7 @@ async fn copy_file_to_cloud_sink(
         bytes: written,
         duration: elapsed,
         rate_bps,
+        source_changed: None,
     })
 }
 
@@ -1691,6 +1835,7 @@ async fn copy_file_to_transform(
         bytes: outcome.input_bytes,
         duration: elapsed,
         rate_bps,
+        source_changed: None,
     })
 }
 
@@ -1746,6 +1891,7 @@ async fn copy_symlink(
         bytes: 0,
         duration: elapsed,
         rate_bps: 0,
+        source_changed: None,
     })
 }
 

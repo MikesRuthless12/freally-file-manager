@@ -141,9 +141,12 @@ pub(crate) async fn run(
         let bytes_acc = std::sync::Arc::new(std::sync::atomic::AtomicU64::new(0));
         let files_acc = std::sync::Arc::new(std::sync::atomic::AtomicU64::new(0));
         let errors_acc = std::sync::Arc::new(std::sync::atomic::AtomicU64::new(0));
+        // FFM-M23 — files the stability guard saw rewritten mid-read.
+        let torn_acc = std::sync::Arc::new(std::sync::atomic::AtomicU64::new(0));
         let bytes_for_pump = bytes_acc.clone();
         let files_for_pump = files_acc.clone();
         let errors_for_pump = errors_acc.clone();
+        let torn_for_pump = torn_acc.clone();
         let job_started_at = std::time::Instant::now();
         let event_pump = tokio::spawn(async move {
             while let Some(evt) = rx.recv().await {
@@ -154,6 +157,7 @@ pub(crate) async fn run(
                     &bytes_for_pump,
                     &files_for_pump,
                     &errors_for_pump,
+                    &torn_for_pump,
                 );
             }
         });
@@ -198,6 +202,7 @@ pub(crate) async fn run(
                 let bytes = bytes_acc.load(std::sync::atomic::Ordering::Relaxed);
                 let files = files_acc.load(std::sync::atomic::Ordering::Relaxed).max(1);
                 let errors = errors_acc.load(std::sync::atomic::Ordering::Relaxed);
+                let torn = torn_acc.load(std::sync::atomic::Ordering::Relaxed);
                 let duration_ms = job_started_at.elapsed().as_millis() as u64;
                 let _ = writer.emit(JsonEventKind::JobCompleted {
                     job_id,
@@ -218,6 +223,27 @@ pub(crate) async fn run(
                 // failed.
                 if errors > 0 && last_status == ExitCode::Success {
                     last_status = ExitCode::GenericError;
+                }
+                // FFM-M23 — a torn file is a silent correctness failure:
+                // the engine returns Ok, so without this the command
+                // printed "done" and exited 0. For a move it is worse than
+                // cosmetic — the engine deliberately keeps the source when
+                // it cannot vouch for the destination, so "move done" is
+                // reported for files that were not moved. Say so, and fail
+                // the exit code for the same reason a per-file error does.
+                if torn > 0 {
+                    let _ = writer.human(&format!(
+                        "warning: {torn} file(s) changed while being copied; \
+                         the copies are not byte-faithful{}",
+                        if is_move {
+                            " and their sources were kept"
+                        } else {
+                            ""
+                        }
+                    ));
+                    if last_status == ExitCode::Success {
+                        last_status = ExitCode::GenericError;
+                    }
                 }
             }
             Err(e) => {
@@ -244,6 +270,7 @@ fn pump_event(
     bytes_acc: &std::sync::atomic::AtomicU64,
     files_acc: &std::sync::atomic::AtomicU64,
     errors_acc: &std::sync::atomic::AtomicU64,
+    torn_acc: &std::sync::atomic::AtomicU64,
 ) {
     use std::sync::atomic::Ordering::Relaxed;
     match evt {
@@ -280,6 +307,23 @@ fn pump_event(
             // documented.
             bytes_acc.fetch_max(bytes, Relaxed);
             files_acc.fetch_add(1, Relaxed);
+        }
+        CopyEvent::SourceChanged {
+            ref src,
+            ref detail,
+            recopying,
+        } => {
+            // FFM-M23 — the copy finished, but the source moved under it,
+            // so the bytes that landed are not a faithful copy of either
+            // version. `recopying: true` is the interim ping before a
+            // second attempt; only the terminal one counts.
+            if !recopying {
+                torn_acc.fetch_add(1, Relaxed);
+            }
+            let _ = writer.human(&format!(
+                "warning: source changed while being read: {} ({detail})",
+                src.display()
+            ));
         }
         CopyEvent::TreeCompleted { bytes, files, .. } => {
             bytes_acc.fetch_max(bytes, Relaxed);

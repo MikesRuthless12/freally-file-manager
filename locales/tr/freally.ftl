@@ -1543,6 +1543,7 @@ err-schedule-too-many = Çok fazla zamanlanmış görev
 err-schedule-install-failed = Sistem zamanlayıcısı bu zamanlamayı reddetti
 err-schedule-remove-failed = Sistem zamanlayıcısı bu zamanlamayı kaldıramadı
 err-schedule-no-program = Uygulamanın konumu belirlenemedi
+err-schedule-portable = Zamanlama taşınabilir modda kullanılamaz
 settings-schedules-title = Zamanlanmış görevler
 settings-schedules-empty = Henüz zamanlanmış görev yok.
 settings-schedule-add = Zamanlama ekle
@@ -1568,7 +1569,6 @@ settings-affinity-workers-auto = Otomatik
 
 # FFM-M19
 err-queue-unknown = Bilinmeyen kuyruk
-action-run-next = Sıradaki olarak çalıştır
 action-boost = Önceliklendir
 action-clear-boost = Önceliği kaldır
 action-move-to-queue = Kuyruğa taşı

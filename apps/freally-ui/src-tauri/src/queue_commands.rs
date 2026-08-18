@@ -583,38 +583,13 @@ pub fn apply_persisted_affinity(state: &AppState) {
 // FFM-M19 — per-job priority, reorder, and queue move
 // =====================================================================
 
-/// `queue_reorder_job(queue_id, job_id, new_index)` — drag-to-reorder
-/// within one queue.
-#[tauri::command]
-pub fn queue_reorder_job(
-    state: tauri::State<'_, AppState>,
-    queue_id: u64,
-    job_id: u64,
-    new_index: usize,
-) -> Result<(), String> {
-    let queue = state
-        .queues
-        .get(QueueId::from_u64(queue_id))
-        .ok_or("err-queue-unknown")?;
-    queue.reorder(freally_core::JobId::from_u64(job_id), new_index);
-    Ok(())
-}
-
-/// `queue_run_next(queue_id, job_id)` — move a job to the head of the
-/// pending section.
-#[tauri::command]
-pub fn queue_run_next(
-    state: tauri::State<'_, AppState>,
-    queue_id: u64,
-    job_id: u64,
-) -> Result<(), String> {
-    let queue = state
-        .queues
-        .get(QueueId::from_u64(queue_id))
-        .ok_or("err-queue-unknown")?;
-    queue.run_next(freally_core::JobId::from_u64(job_id));
-    Ok(())
-}
+// There is deliberately no `queue_run_next` or `queue_reorder_job`
+// here. `commands.rs::enqueue_jobs` spawns a runner for every source
+// immediately and `run_job` calls `queue.start(id)` as its first act,
+// so no job is ever `Pending` and queue order is display-only. Both
+// commands would have reported success while changing nothing the user
+// could observe. Re-shipping them needs a real per-queue permit pool
+// that starts jobs in queue order.
 
 /// `queue_move_job(job_id, dst_queue_id)` — move one pending job to a
 /// different drive queue.

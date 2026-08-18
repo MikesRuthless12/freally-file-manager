@@ -1486,8 +1486,16 @@ pub fn reset_settings(state: State<'_, AppState>) -> Result<crate::ipc::Settings
     // and it must not unregister the user's repositories, remotes, or
     // schedules — orphaning an installed OS schedule the app has
     // forgotten would leave it firing forever with nothing to manage it.
+    //
+    // The *narrow* carry, not `carry_backend_owned_from`: the wide one
+    // also preserves conflict profiles, chunk-store, notification and
+    // drop-stack settings, which are ordinary preferences the modal's
+    // DTO merely doesn't model. Carrying those here made this command
+    // report success while leaving them byte-identical — so a user
+    // resetting *because* their webhooks or drop-stack geometry were
+    // broken got nothing.
     let mut next = freally_settings::Settings::default();
-    next.carry_backend_owned_from(&state.settings_snapshot());
+    next.carry_install_records_from(&state.settings_snapshot());
     let path = state.settings_path.as_ref();
     if !path.as_os_str().is_empty() {
         next.save_to(path).map_err(|e| e.to_string())?;
@@ -2088,12 +2096,15 @@ pub fn save_profile(
     state: State<'_, AppState>,
 ) -> Result<crate::ipc::ProfileInfoDto, String> {
     let mut settings = state.settings_snapshot();
-    // Profiles are shareable preference snapshots. Backend-owned state
-    // is per-install and machine-specific — the EULA acceptance is a
-    // legal record, and repositories / remotes / schedules / favorites
-    // name paths and OS artifacts that do not exist on whoever opens
-    // the profile next. Strip all of it.
-    settings.carry_backend_owned_from(&freally_settings::Settings::default());
+    // Profiles are shareable preference snapshots. Per-install records
+    // are machine-specific — the EULA acceptance is a legal record, and
+    // repositories / remotes / schedules / favorites / sync pairs /
+    // backup sources name paths and OS artifacts that do not exist on
+    // whoever opens the profile next. Strip those; the preference
+    // groups the modal cannot round-trip (conflict profiles, chunk
+    // store, notifications, drop stack, sync defaults) are exactly what
+    // a shared profile *should* carry, so they stay.
+    settings.carry_install_records_from(&freally_settings::Settings::default());
     let info = state
         .profiles
         .save_replacing(&name, &settings)
@@ -2113,7 +2124,12 @@ pub fn load_profile(
     // another machine) neither clears nor grants it — and applying a
     // profile must not deregister this install's repositories,
     // remotes, or scheduled runs.
-    profile.carry_backend_owned_from(&state.settings_snapshot());
+    //
+    // Narrow carry: the wide one also re-imposed *this* install's
+    // conflict profiles, chunk-store, notification, drop-stack and sync
+    // defaults over the profile's, so loading a shared profile silently
+    // discarded exactly the settings it was shared to convey.
+    profile.carry_install_records_from(&state.settings_snapshot());
     // Loading a profile also activates it — persist + publish on the
     // live settings. Saves the caller a follow-up `update_settings`.
     let path = state.settings_path.as_ref();

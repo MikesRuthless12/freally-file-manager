@@ -553,6 +553,17 @@ pub struct CopyReport {
     pub duration: Duration,
     /// Average throughput across the copy, bytes per second.
     pub rate_bps: u64,
+    /// FFM-M23 — `Some(detail)` when the source-stability guard saw
+    /// the source rewritten during the read pass, carrying the
+    /// human-readable summary of what differed. `None` means the
+    /// source held still, or the guard was `Off`.
+    ///
+    /// A **move must never unlink a source this is set on**: the
+    /// destination is internally inconsistent (head from the old
+    /// contents, tail from the new), so the source is the only
+    /// coherent copy of the file left. Callers that delete or trash a
+    /// source after a successful copy have to consult this first.
+    pub source_changed: Option<String>,
 }
 
 /// Final success record returned by `copy_tree` and `move_tree`.
@@ -577,6 +588,16 @@ pub struct TreeReport {
     /// `on_error` is `Abort` — that path bails before the counter
     /// can tick.
     pub errored: u64,
+    /// FFM-M23 — how many files the source-stability guard saw change
+    /// underneath the copy. Non-zero means at least one destination
+    /// file is internally inconsistent.
+    ///
+    /// [`crate::tree::move_tree`] refuses to delete the source tree
+    /// when this is non-zero: it cannot tell the deletion walker which
+    /// individual files were torn, so it keeps all of them and
+    /// degrades the move to a copy rather than destroy the only
+    /// coherent copy of any one of them.
+    pub source_changed: u64,
 }
 
 /// Destination-already-exists prompt. Consumers reply on the enclosed

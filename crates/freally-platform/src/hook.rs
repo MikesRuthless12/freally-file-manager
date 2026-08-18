@@ -46,6 +46,9 @@ impl FastCopyHook for PlatformFastCopyHook {
                 bytes: outcome.bytes,
                 duration: outcome.duration,
                 rate_bps: outcome.rate_bps,
+                // `copy_file` owns the stability verdict and stamps it
+                // onto whatever report the hook hands back.
+                source_changed: None,
             }))
         })
     }

@@ -1543,6 +1543,7 @@ err-schedule-too-many = Trop d'exécutions planifiées
 err-schedule-install-failed = Le planificateur système a refusé cette planification
 err-schedule-remove-failed = Le planificateur système n'a pas pu supprimer cette planification
 err-schedule-no-program = Impossible de déterminer l'emplacement de l'application
+err-schedule-portable = La planification est indisponible en mode portable
 settings-schedules-title = Exécutions planifiées
 settings-schedules-empty = Aucune exécution planifiée pour l'instant.
 settings-schedule-add = Ajouter une planification
@@ -1568,7 +1569,6 @@ settings-affinity-workers-auto = Automatique
 
 # FFM-M19
 err-queue-unknown = File inconnue
-action-run-next = Exécuter ensuite
 action-boost = Prioriser
 action-clear-boost = Arrêter de prioriser
 action-move-to-queue = Déplacer vers la file
