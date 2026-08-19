@@ -117,6 +117,12 @@ impl OffloadOpts {
 pub fn render_cloudinit_template(src: &Backend, dst: &Backend, opts: &OffloadOpts) -> String {
     let job = sanitize_label(&opts.job_name);
     let release = sanitize_label(&opts.freally_release);
+    // The Linux artifact name carries the version twice: once inside
+    // `productName` (which itself includes the `v` prefix) and once from
+    // Tauri's own version field —
+    // `Freally.File.Manager.v0.22.0_0.22.0_amd64.AppImage`. So the tag
+    // and the bare version are both needed to address it.
+    let version = release.strip_prefix('v').unwrap_or(&release);
     let watchdog_minutes = opts.self_destruct_minutes.max(1);
     let cmd = render_copy_command(src, dst);
     format!(
@@ -133,7 +139,13 @@ write_files:
     content: |
       #!/bin/sh
       set -eu
-      curl -fsSL \"https://github.com/havoc-software/freally/releases/download/{release}/freally-x86_64-linux\" -o /usr/local/bin/freally
+      # The AppImage is the only Linux release artifact that is a single
+      # executable file, which is what this script needs. It normally
+      # mounts itself through FUSE, and a minimal cloud image ships no
+      # libfuse2; APPIMAGE_EXTRACT_AND_RUN makes the runtime unpack to a
+      # temp dir instead, so no kernel module and no extra package.
+      export APPIMAGE_EXTRACT_AND_RUN=1
+      curl -fsSL \"https://github.com/MikesRuthless12/freally-file-manager/releases/download/{release}/Freally.File.Manager.{release}_{version}_amd64.AppImage\" -o /usr/local/bin/freally
       chmod +x /usr/local/bin/freally
       {cmd}
       shutdown -h +{watchdog_minutes}
@@ -534,6 +546,48 @@ mod tests {
                 root: root.to_string(),
             }),
         }
+    }
+
+    /// The download URL must address an artifact that a release
+    /// actually produces.
+    ///
+    /// This regressed unnoticed: the template pointed at
+    /// `havoc-software/freally` — a repository that does not exist —
+    /// for an asset named `freally-x86_64-linux`, which no release has
+    /// ever produced. A rendered template would `curl -f` a 404 and the
+    /// VM would never install anything. Nothing caught it because no
+    /// test asserted the URL's shape, so this one does.
+    #[test]
+    fn cloudinit_pulls_a_linux_artifact_that_actually_exists() {
+        let src = s3_backend("src", "bucket-a");
+        let dst = s3_backend("dst", "bucket-b");
+        let out = render_cloudinit_template(&src, &dst, &OffloadOpts::default());
+        let version = env!("CARGO_PKG_VERSION");
+
+        assert!(
+            out.contains("github.com/MikesRuthless12/freally-file-manager/releases/download/"),
+            "template must point at the real repository:\n{out}"
+        );
+        // Exactly the name the Linux bundler emits — the version appears
+        // twice because `productName` carries the `v` prefix and Tauri
+        // appends its own version field.
+        assert!(
+            out.contains(&format!(
+                "Freally.File.Manager.v{version}_{version}_amd64.AppImage"
+            )),
+            "template must name the real AppImage asset:\n{out}"
+        );
+        // FUSE is absent on minimal cloud images, so the AppImage has to
+        // be told to unpack itself instead of mounting.
+        assert!(
+            out.contains("APPIMAGE_EXTRACT_AND_RUN=1"),
+            "AppImage needs the no-FUSE escape hatch on a bare VM:\n{out}"
+        );
+        // The dead artifact name must never come back.
+        assert!(
+            !out.contains("freally-x86_64-linux"),
+            "template still references an artifact no release produces:\n{out}"
+        );
     }
 
     #[test]
