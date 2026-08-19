@@ -343,6 +343,52 @@ settings-tab-advanced = متقدم
 settings-tab-updater = التحديثات
 settings-tab-profiles = الملفات الشخصية
 
+# Opt-in anonymous bug reporting (Havoc standard)
+# MT
+settings-tab-bugreport = الإبلاغ عن خطأ
+
+# Phase 51 — end-to-end encrypted collaboration
+# MT
+settings-tab-collab = التعاون
+collab-intro = تُشفَّر الملفات التي تشاركها بحيث لا يفتحها إلا الأشخاص المدرجون هنا. لكل شخص مفتاحه الخاص، ولا توجد كلمة مرور مشتركة.
+collab-forward-only = إزالة شخص تغيّر من يستطيع فتح الملفات المشفَّرة بعد ذلك، ولا تستعيد ما كان بإمكانه قراءته سابقًا.
+collab-members = الأشخاص
+collab-none = لم يُضَف أحد بعد.
+collab-label = الاسم
+collab-recipient = مفتاحه العام
+collab-add = إضافة
+collab-remove = إزالة
+collab-generate = إنشاء مفتاح لشخص
+collab-identity-once = انسخه الآن — يُعرض مرة واحدة فقط وهو الطريقة الوحيدة لفتح الملفات المشتركة:
+collab-sas-label = رمز التحقق
+collab-sas-hint = اقرأ الرمز بصوت عالٍ للطرف الآخر. إذا تطابق الرمزان فكل منكما يملك مفتاح الآخر الحقيقي.
+
+# Phase 53 — optional decoded video frames (user-supplied ffmpeg)
+# MT
+merge-heading = معاينات الفيديو
+merge-ffmpeg-hint = يمكن لـ Freally عرض لقطات من الفيديو عند مقارنة النسخ. يتطلب ذلك ffmpeg وهو غير مضمَّن — ثبّته بنفسك وسيستخدمه Freally. كل شيء آخر يعمل بدونه.
+merge-ffmpeg-enable = استخدام ffmpeg للقطات الفيديو
+merge-ffmpeg-path = مسار ffmpeg (اتركه فارغًا للبحث في PATH)
+merge-ffmpeg-found = تم العثور عليه
+merge-ffmpeg-missing = لم يُعثر على ffmpeg. تظل مقارنة الفيديو تعمل، لكنها تعرض المدة والحجم وتفاصيل المسارات بدل الصور.
+merge-ffmpeg-disabled = إطارات الفيديو معطّلة. فعّل ffmpeg في الإعدادات لمقارنة الصور.
+
+collab-revoked = مُزالون
+collab-no-roster = لا توجد قائمة أشخاص بعد. أضف شخصًا قبل مشاركة الملفات.
+collab-admin-key-corrupt = تعذّرت قراءة مفتاح المسؤول المحفوظ. قد يكون تالفًا.
+
+bugreport-intro = التقارير مجهولة ولا تُرسل تلقائيًا أبدًا. أنت تختار ما يُرسل وتضغط إرسال بنفسك — لا يوجد خادم نُشغّله.
+bugreport-pending = هناك تقرير تعطّل من تشغيل سابق في الانتظار.
+bugreport-description-label = ماذا حدث؟
+bugreport-include-crash = تضمين تقرير التعطّل
+bugreport-preview-label = اعرض بالضبط ما سيُرسل
+bugreport-send-github = فتح مسألة على GitHub
+bugreport-send-gmail = فتح Gmail
+bugreport-send-email = فتح تطبيق البريد لديّ
+bugreport-dismiss-crash = تجاهل تقرير التعطّل
+bugreport-simulate = محاكاة تقرير تعطّل
+
+
 # General tab additions
 settings-section-theme = السمة
 settings-theme-auto = تلقائي
@@ -739,6 +785,13 @@ power-reason-cellular-network = شبكة خلوية
 power-reason-presenting = وضع العرض التقديمي
 power-reason-fullscreen = تطبيق بملء الشاشة
 power-reason-thermal-throttling = وحدة المعالجة تُقيَّد حراريًا
+
+# Phase 31b — ambient power badge
+# MT
+power-badge-paused = موقوف مؤقتًا
+power-badge-capped = مقيَّد
+power-badge-tooltip = هناك سياسة طاقة تقيّد عمليات النقل. افتح الإعدادات ← الطاقة.
+
 
 # Phase 32 — cloud backend matrix via OpenDAL. Settings → Remotes
 # tab + the Add-backend wizard that writes one entry per remote into
@@ -1281,6 +1334,13 @@ restore-conflict-keep-both = الاحتفاظ بكليهما
 restore-toast-done = تمت استعادة { $restored }، وتخطّي { $skipped }
 restore-toast-failed = فشلت الاستعادة: { $reason }
 snapshot-forget = نسيان
+
+# Phase 49p — inline snapshot metadata editing
+# MT
+snapshot-field-label = الاسم
+snapshot-field-description = الوصف
+snapshot-field-tags = الوسوم (مفصولة بفواصل)
+
 snapshot-forget-toast = تم نسيان اللقطة — شغّل "استرجاع المساحة" لتحريرها
 library-reclaim = استرجاع المساحة
 # Phase 49i — full compaction.
@@ -1317,6 +1377,35 @@ repo-action-browse = تصفّح…
 repo-switcher-label = المستودع
 repo-action-forget = نسيان
 repo-action-change-pass = تغيير عبارة المرور…
+
+# Phase 50i — repository access key slots
+# MT
+repo-keys-title = مفاتيح الوصول
+repo-keys-empty = لا يحتوي هذا المستودع على قفل بعبارة مرور.
+repo-key-label = التسمية
+repo-key-password = كلمة مرور جديدة
+repo-key-auth = كلمة المرور الحالية
+repo-action-add-key = إضافة مفتاح
+repo-action-remove-key = إبطال
+repo-action-recovery = إنشاء مفتاح استرداد
+
+# Phase 50h — repository replication (3-2-1)
+# MT
+repo-action-replicate = النسخ إلى…
+
+# Phase 50g — per-repository pack storage backend
+# MT
+repo-remote-label = تخزين الحزم
+repo-remote-local = قرص محلي
+repo-remote-restart = تُطبَّق التغييرات عند التشغيل التالي.
+repo-remote-unknown = هذا المستودع البعيد غير مُهيّأ.
+repo-remote-not-empty = يحتوي هذا المستودع على بيانات بالفعل. لا يمكن اختيار مكان تخزين الحزم إلا وهو فارغ — استخدم النسخ المتماثل للنسخ إلى مستودع جديد.
+
+repo-replicate-done = تم النسخ: { $copied } لقطة منسوخة، { $skipped } موجودة بالفعل
+repo-replicate-same-path = الوجهة هي نفس مستودع المصدر.
+
+repo-recovery-once = احفظه الآن — يُعرض مرة واحدة فقط:
+
 repo-password-old = عبارة المرور الحالية
 repo-password-new = عبارة مرور جديدة
 repo-error-exists = يوجد مستودع بالفعل في هذا الموقع
@@ -1590,7 +1679,21 @@ favorites-kind-pair = زوج
 err-shell-portable = تكامل الصدفة غير متاح في الوضع المحمول
 settings-portable-title = الوضع المحمول
 settings-portable-active = الوضع المحمول مُفعّل. تُخزَّن الإعدادات والسجل ودفاتر اليومية في { $path }.
-settings-portable-keychain-warning = تحذير: لا تزال بيانات اعتماد السحابة المحفوظة تُخزَّن في سلسلة مفاتيح هذا الحاسوب، وليس على القرص المحمول — فهي تبقى على هذا الجهاز بعد فصله. احذف أي اتصالات بعيدة أضفتها قبل إعادة الحاسوب.
+settings-portable-keychain-warning = تُحفظ بيانات اعتماد السحابة في ملف مشفَّر على القرص المحمول، ويُفتح بعبارة مرور تختارها — ولا تُكتب على هذا الحاسوب. وإذا نسيت العبارة، فلا يمكن استعادة بيانات الاعتماد المحفوظة.
+
+# FFM-M21 — portable credential store (age-encrypted file)
+# MT
+cloud-error-credentials-locked = بيانات اعتماد السحابة مقفلة. افتح ملف بيانات الاعتماد على هذا القرص لاستخدام هذه الواجهة الخلفية.
+cloud-error-credentials-bad-passphrase = عبارة المرور هذه لا تفتح ملف بيانات الاعتماد.
+cloud-error-credentials-empty-passphrase = أدخل عبارة مرور.
+cloud-error-credentials-not-portable = يحفظ هذا التثبيت بيانات الاعتماد في سلسلة مفاتيح النظام، فلا يوجد ما يُفتح.
+portable-credentials-title = بيانات اعتماد السحابة المحمولة
+portable-credentials-unlock-body = أدخل عبارة المرور التي تحمي ملف بيانات الاعتماد على هذا القرص.
+portable-credentials-create-body = اختر عبارة مرور لحماية بيانات اعتماد السحابة على هذا القرص. لا يمكن استعادتها إذا نسيتها.
+portable-credentials-passphrase-label = عبارة المرور
+portable-credentials-unlock-action = فتح القفل
+portable-credentials-lock-action = قفل
+
 
 # FFM-M24
 err-autostart-portable = التشغيل عند تسجيل الدخول غير متاح في الوضع المحمول

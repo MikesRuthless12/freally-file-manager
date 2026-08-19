@@ -343,6 +343,52 @@ settings-tab-advanced = Gelişmiş
 settings-tab-updater = Güncellemeler
 settings-tab-profiles = Profiller
 
+# Opt-in anonymous bug reporting (Havoc standard)
+# MT
+settings-tab-bugreport = Hata bildir
+
+# Phase 51 — end-to-end encrypted collaboration
+# MT
+settings-tab-collab = İş birliği
+collab-intro = Paylaştığınız dosyalar yalnızca burada listelenen kişilerin açabileceği şekilde şifrelenir. Herkes kendi anahtarını saklar; ortak parola yoktur.
+collab-forward-only = Birini kaldırmak, bundan sonra şifrelenen dosyaları kimin açabileceğini değiştirir. Daha önce okuyabildiklerini geri almaz.
+collab-members = Kişiler
+collab-none = Henüz kimse eklenmedi.
+collab-label = Ad
+collab-recipient = Açık anahtarı
+collab-add = Ekle
+collab-remove = Kaldır
+collab-generate = Biri için anahtar üret
+collab-identity-once = Şimdi kopyalayın — yalnızca bir kez gösterilir ve paylaşılan dosyaları açmanın tek yoludur:
+collab-sas-label = Doğrulama kodu
+collab-sas-hint = Kodu karşı tarafa yüksek sesle okuyun. Kodlar eşleşiyorsa her biriniz diğerinin gerçek anahtarına sahipsiniz.
+
+# Phase 53 — optional decoded video frames (user-supplied ffmpeg)
+# MT
+merge-heading = Video önizlemeleri
+merge-ffmpeg-hint = Freally sürümleri karşılaştırırken videodan kareler gösterebilir. Bunun için ffmpeg gerekir; ürünle birlikte gelmez — kendiniz kurun, Freally onu kullanır. Geri kalan her şey onsuz da çalışır.
+merge-ffmpeg-enable = Video kareleri için ffmpeg kullan
+merge-ffmpeg-path = ffmpeg konumu (boş bırakılırsa PATH aranır)
+merge-ffmpeg-found = Bulundu
+merge-ffmpeg-missing = ffmpeg bulunamadı. Video karşılaştırma yine çalışır; görüntü yerine süre, boyut ve iz bilgilerini gösterir.
+merge-ffmpeg-disabled = Video kareleri kapalı. Görüntüleri karşılaştırmak için Ayarlar'dan ffmpeg'i açın.
+
+collab-revoked = Kaldırılanlar
+collab-no-roster = Henüz bir kişi listesi yok. Dosya paylaşmadan önce birini ekleyin.
+collab-admin-key-corrupt = Kayıtlı yönetici anahtarı okunamadı. Bozulmuş olabilir.
+
+bugreport-intro = Bildirimler anonimdir ve asla otomatik gönderilmez. Ne göndereceğinizi siz seçer ve Gönder’e siz basarsınız — bizim işlettiğimiz bir sunucu yok.
+bugreport-pending = Önceki çalışmadan bir çökme raporu bekliyor.
+bugreport-description-label = Ne oldu?
+bugreport-include-crash = Çökme raporunu ekle
+bugreport-preview-label = Tam olarak ne gönderileceğini göster
+bugreport-send-github = GitHub’da konu aç
+bugreport-send-gmail = Gmail’i aç
+bugreport-send-email = E-posta uygulamamı aç
+bugreport-dismiss-crash = Çökme raporunu sil
+bugreport-simulate = Çökme raporu benzetimi yap
+
+
 # General tab additions
 settings-section-theme = Tema
 settings-theme-auto = Otomatik
@@ -739,6 +785,13 @@ power-reason-cellular-network = hücresel ağ
 power-reason-presenting = sunum modu
 power-reason-fullscreen = tam ekran uygulaması
 power-reason-thermal-throttling = CPU kısıtlama yapıyor
+
+# Phase 31b — ambient power badge
+# MT
+power-badge-paused = Duraklatıldı
+power-badge-capped = Sınırlandı
+power-badge-tooltip = Bir güç ilkesi aktarımları sınırlıyor. Ayarlar → Güç bölümünü açın.
+
 
 # Phase 32 — cloud backend matrix via OpenDAL. Settings → Remotes
 # tab + the Add-backend wizard that writes one entry per remote into
@@ -1281,6 +1334,13 @@ restore-conflict-keep-both = İkisini de tut
 restore-toast-done = { $restored } geri yüklendi, { $skipped } atlandı
 restore-toast-failed = Geri yükleme başarısız: { $reason }
 snapshot-forget = Unut
+
+# Phase 49p — inline snapshot metadata editing
+# MT
+snapshot-field-label = Ad
+snapshot-field-description = Açıklama
+snapshot-field-tags = Etiketler (virgülle ayrılmış)
+
 snapshot-forget-toast = Anlık görüntü unutuldu — boşaltmak için Alanı geri kazan'ı çalıştırın
 library-reclaim = Alanı geri kazan
 # Phase 49i — full compaction.
@@ -1317,6 +1377,35 @@ repo-action-browse = Gözat…
 repo-switcher-label = Depo
 repo-action-forget = Unut
 repo-action-change-pass = Parolayı değiştir…
+
+# Phase 50i — repository access key slots
+# MT
+repo-keys-title = Erişim anahtarları
+repo-keys-empty = Bu depoda parola kilidi yok.
+repo-key-label = Etiket
+repo-key-password = Yeni parola
+repo-key-auth = Mevcut parola
+repo-action-add-key = Anahtar ekle
+repo-action-remove-key = İptal et
+repo-action-recovery = Kurtarma anahtarı oluştur
+
+# Phase 50h — repository replication (3-2-1)
+# MT
+repo-action-replicate = Şuraya çoğalt…
+
+# Phase 50g — per-repository pack storage backend
+# MT
+repo-remote-label = Paket deposu
+repo-remote-local = Yerel disk
+repo-remote-restart = Değişiklikler bir sonraki açılışta geçerli olur.
+repo-remote-unknown = Bu uzak depo yapılandırılmamış.
+repo-remote-not-empty = Bu depo zaten veri içeriyor. Paket depolama yalnızca boşken seçilebilir — bunun yerine yeni bir depoya çoğaltın.
+
+repo-replicate-done = Çoğaltıldı: { $copied } anlık görüntü kopyalandı, { $skipped } zaten mevcut
+repo-replicate-same-path = Hedef, kaynakla aynı depo.
+
+repo-recovery-once = Şimdi kaydedin — yalnızca bir kez gösterilir:
+
 repo-password-old = Mevcut parola
 repo-password-new = Yeni parola
 repo-error-exists = Bu konumda zaten bir depo var
@@ -1590,7 +1679,21 @@ favorites-kind-pair = Çift
 err-shell-portable = Kabuk tümleştirmesi taşınabilir modda kullanılamaz
 settings-portable-title = Taşınabilir mod
 settings-portable-active = Taşınabilir mod etkin. Ayarlar, geçmiş ve günlükler { $path } içinde saklanıyor.
-settings-portable-keychain-warning = Uyarı: kaydedilen bulut kimlik bilgileri hâlâ taşınabilir sürücüde değil, bu bilgisayarın sistem anahtar zincirinde saklanıyor — sürücüyü çıkardıktan sonra da bu makinede kalır. Bilgisayarı geri vermeden önce eklediğiniz uzak konumları kaldırın.
+settings-portable-keychain-warning = Bulut kimlik bilgileri taşınabilir sürücüde şifreli bir dosyada tutulur ve seçtiğiniz parolayla açılır — bu bilgisayara yazılmaz. Parolayı unutursanız kayıtlı kimlik bilgileri kurtarılamaz.
+
+# FFM-M21 — portable credential store (age-encrypted file)
+# MT
+cloud-error-credentials-locked = Bulut kimlik bilgileri kilitli. Bu arka ucu kullanmak için bu sürücüdeki kimlik dosyasının kilidini açın.
+cloud-error-credentials-bad-passphrase = Bu parola kimlik dosyasını açmıyor.
+cloud-error-credentials-empty-passphrase = Bir parola girin.
+cloud-error-credentials-not-portable = Bu kurulum kimlik bilgilerini sistem anahtarlığında tutar, bu yüzden açılacak bir şey yok.
+portable-credentials-title = Taşınabilir bulut kimlik bilgileri
+portable-credentials-unlock-body = Bu sürücüdeki kimlik dosyasını koruyan parolayı girin.
+portable-credentials-create-body = Bu sürücüdeki bulut kimlik bilgilerini korumak için bir parola seçin. Unutulursa kurtarılamaz.
+portable-credentials-passphrase-label = Parola
+portable-credentials-unlock-action = Kilidi aç
+portable-credentials-lock-action = Kilitle
+
 
 # FFM-M24
 err-autostart-portable = Oturum açılışında başlatma taşınabilir modda kullanılamaz

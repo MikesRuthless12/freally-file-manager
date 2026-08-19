@@ -184,6 +184,10 @@ fn command_path_args_pass_through_the_gate() {
                 || block.contains("enqueue_jobs(")
                 || block.contains("dropstack_apply_to(")
                 || block.contains("dropstack::")
+                // Phase 53 — `mergeview_commands::read_gated` runs every
+                // path through `validate_ipc_path` before opening it, so
+                // commands that only reach the disk through it are gated.
+                || block.contains("read_gated(")
                 // FFM-M16 — `elevate_batch_apply` re-derives its paths
                 // from the history DB via the ledger command, which
                 // gates them; the wire entries are only a selection.

@@ -34,11 +34,13 @@
 pub mod audit_commands;
 #[cfg(windows)]
 pub mod broker_auth;
+pub mod bugreport;
 pub mod certificate_commands;
 pub mod cli;
 pub mod clipboard;
 pub mod clipboard_watcher;
 pub mod cloud_commands;
+pub mod collab_commands;
 pub mod collisions;
 pub mod commands;
 pub mod crypt_commands;
@@ -69,6 +71,7 @@ pub mod ipc;
 pub mod ipc_safety;
 pub mod keep_awake;
 pub mod live_mirror;
+pub mod mergeview_commands;
 pub mod mobile_commands;
 pub mod mount_commands;
 mod notifications;
@@ -266,8 +269,63 @@ fn open_repository_blocking(
     std::sync::Arc<freally_chunk::ChunkStore>,
     Option<std::sync::Arc<freally_chunk::Repository>>,
 )> {
+    /// Resolve `chunk_store.remote_backend` into a cached object-store
+    /// backend, or `None` to fall back to the local store.
+    fn build_remote_pack_backend(
+        cs: &freally_settings::ChunkStoreSettings,
+        settings: &freally_settings::Settings,
+        root: &std::path::Path,
+    ) -> Option<Box<dyn freally_chunk::BlobBackend>> {
+        let entry = settings
+            .remotes
+            .backends
+            .iter()
+            .find(|b| b.name == cs.remote_backend)?;
+        let dto = match cloud_commands::entry_to_cloud_backend(entry) {
+            Ok(b) => b,
+            Err(e) => {
+                tracing::warn!(error = %e, name = %cs.remote_backend, "repository remote is misconfigured; using the local store");
+                return None;
+            }
+        };
+        // Startup runs before any portable credential unlock, so a
+        // portable install cannot read its remote secret yet. Falling
+        // back to the local store is the honest outcome — the
+        // alternative is an unopenable Library at every launch.
+        if freally_settings::portable::portable_root().is_some() {
+            tracing::warn!(
+                name = %cs.remote_backend,
+                "a remote-backed repository needs the portable credential file unlocked; using the local store"
+            );
+            return None;
+        }
+        let secret = freally_cloud::Credentials::Keychain
+            .load(&dto.name)
+            .ok()
+            .flatten();
+        let remote = match freally_chunk_remote::OpendalBackend::new(&dto, secret.as_deref()) {
+            Ok(b) => b,
+            Err(e) => {
+                tracing::warn!(error = %e, name = %cs.remote_backend, "cannot open the repository remote; using the local store");
+                return None;
+            }
+        };
+        let cache_dir = if cs.remote_cache_dir.is_empty() {
+            root.join("cache")
+        } else {
+            std::path::PathBuf::from(&cs.remote_cache_dir)
+        };
+        Some(Box::new(freally_chunk_remote::CachingBackend::new(
+            remote, cache_dir,
+        )))
+    }
+
     let cs = &settings.chunk_store;
-    let root = if cs.location_override.is_empty() {
+    let root = if let Some(r) =
+        freally_settings::portable::portable_root().filter(|_| cs.location_override.is_empty())
+    {
+        r.join("chunks")
+    } else if cs.location_override.is_empty() {
         match freally_chunk::default_chunk_store_path() {
             Ok(p) => p,
             Err(e) => {
@@ -287,7 +345,26 @@ fn open_repository_blocking(
     if !cs.enabled && !root.join("index.redb").exists() {
         return None;
     }
-    let store = match freally_chunk::ChunkStore::open(&root) {
+    // Phase 50g — when a cloud remote is named, the store's packs live
+    // in that object store: appended locally, uploaded once per pack on
+    // rollover, and read back through a local read-through cache.
+    // Anything that fails here degrades to the plain local store rather
+    // than leaving the Library unavailable.
+    let remote_backend = if cs.remote_backend.is_empty() {
+        None
+    } else {
+        build_remote_pack_backend(cs, settings, &root)
+    };
+
+    let opened = match remote_backend {
+        Some(backend) => freally_chunk::ChunkStore::open_with_backend(
+            &root,
+            freally_chunk::PACK_ROLLOVER_BYTES,
+            backend,
+        ),
+        None => freally_chunk::ChunkStore::open(&root),
+    };
+    let store = match opened {
         Ok(s) => std::sync::Arc::new(s),
         Err(e) => {
             tracing::warn!(error = %e, path = %root.display(), "chunk store open failed; Library + recovery unavailable");
@@ -314,6 +391,10 @@ fn open_repository_blocking(
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Opt-in bug reporting: the hook only writes a scrubbed file to
+    // disk. Nothing is transmitted, and the next launch asks the user
+    // before anything leaves the machine.
+    bugreport::install_panic_hook();
     // Wave-2 observability — install a default tracing subscriber so
     // structured `tracing::warn!` / `info!` / `debug!` calls from the
     // platform + core engines + runner land on stderr instead of being
@@ -443,7 +524,11 @@ pub fn run() {
     // Phase 20 — open the resume journal alongside history. Failure
     // is non-fatal: the runner skips checkpointing and the resume
     // modal stays empty, but the app still launches.
-    let app_state = match freally_journal::Journal::open_default() {
+    let opened_journal = match freally_settings::portable::portable_root() {
+        Some(root) => freally_journal::Journal::open(&root.join("freally-journal.redb")),
+        None => freally_journal::Journal::open_default(),
+    };
+    let app_state = match opened_journal {
         Ok(j) => {
             let unfinished = j.unfinished().unwrap_or_else(|e| {
                 eprintln!("freally: journal scan at startup failed: {e}");
@@ -690,6 +775,8 @@ pub fn run() {
             sync_commands::add_sync_pair,
             sync_commands::remove_sync_pair,
             sync_commands::start_sync,
+            sync_commands::sync_engine_get,
+            sync_commands::sync_engine_set,
             sync_commands::pause_sync,
             sync_commands::cancel_sync,
             // Phase 26 — live-mirror loop lifecycle.
@@ -721,10 +808,39 @@ pub fn run() {
             cloud_commands::copy_backend_to_local,
             cloud_commands::cancel_cloud_transfer,
             cloud_commands::active_cloud_transfer_count,
+            bugreport::bug_report_context,
+            bugreport::bug_report_preview,
+            bugreport::bug_report_submit,
+            bugreport::bug_report_clear_crash,
+            bugreport::bug_report_simulate,
+            mergeview_commands::merge_detect,
+            mergeview_commands::merge_image_compare,
+            mergeview_commands::merge_image_blend,
+            mergeview_commands::merge_psd_layers,
+            mergeview_commands::merge_audio_compare,
+            mergeview_commands::merge_video_compare,
+            mergeview_commands::merge_pdf_compare,
+            mergeview_commands::merge_ffmpeg_status,
+            mergeview_commands::merge_video_thumbnails,
+            mergeview_commands::merge_handoff,
+            mergeview_commands::merge_ffmpeg_prefs_get,
+            mergeview_commands::merge_ffmpeg_prefs_set,
+            collab_commands::collab_roster,
+            collab_commands::collab_add_member,
+            collab_commands::collab_remove_member,
+            collab_commands::collab_generate_identity,
+            collab_commands::collab_sas,
+            collab_commands::collab_encrypt,
+            collab_commands::collab_decrypt,
+            cloud_commands::portable_credentials_status,
+            cloud_commands::portable_credentials_unlock,
+            cloud_commands::portable_credentials_lock,
             // Phase 33 — mount-as-filesystem CRUD.
             mount_commands::list_mounts,
             mount_commands::mount_snapshot,
             mount_commands::unmount_snapshot,
+            mount_commands::mount_repo_snapshot,
+            mount_commands::unmount_repo_snapshot,
             mount_commands::mount_backend_name,
             // Phase 34 — audit log export + WORM mode.
             audit_commands::audit_status,
@@ -816,6 +932,13 @@ pub fn run() {
             repository_commands::repository_set_label,
             repository_commands::repository_set_description,
             repository_commands::repository_set_tags,
+            repository_commands::repository_list_keys,
+            repository_commands::repository_add_key,
+            repository_commands::repository_remove_key,
+            repository_commands::repository_generate_recovery_key,
+            repository_commands::repository_replicate,
+            repository_commands::repository_remote_get,
+            repository_commands::repository_remote_set,
             repository_commands::repository_prune_policy,
             // Phase 49q — notifications (toggles + test current webhook destinations).
             notifications::notifications_get,
@@ -1155,8 +1278,25 @@ pub fn run() {
 
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("error while running Freally File Manager v0.22.0");
+        .build(tauri::generate_context!())
+        .expect("error while running Freally File Manager v0.22.0")
+        .run(|app_handle, event| {
+            // Phase 49 — on a remote-backed store the tail of the
+            // current pack stays local until it rolls over at 512 MB.
+            // Exiting without sealing leaves every chunk written since
+            // that rollover reachable only from this machine, which is
+            // exactly the failure `ChunkStore::seal_active` exists to
+            // prevent. `RunEvent::Exit` is the single choke point every
+            // path reaches — tray Quit, the cancel-and-exit prompt, and
+            // a plain window close. No-ops on a colocated backend.
+            if matches!(event, tauri::RunEvent::Exit)
+                && let Some(state) = app_handle.try_state::<AppState>()
+                && let Some(store) = state.chunk_store.clone()
+                && let Err(e) = store.seal_active()
+            {
+                eprintln!("[shutdown] sealing the active pack failed: {e}");
+            }
+        });
 }
 
 /// Wave-2 observability — install the process-wide tracing
@@ -1259,7 +1399,11 @@ fn open_history_blocking() -> Option<freally_history::History> {
         .enable_all()
         .build()
         .ok()?;
-    match rt.block_on(freally_history::History::open_default()) {
+    let opened_history = match freally_settings::portable::portable_root() {
+        Some(root) => rt.block_on(freally_history::History::open_at(root.join("history.db"))),
+        None => rt.block_on(freally_history::History::open_default()),
+    };
+    match opened_history {
         Ok(h) => Some(h),
         Err(e) => {
             eprintln!("freally: history open failed: {e}");

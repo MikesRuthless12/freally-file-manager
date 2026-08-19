@@ -343,6 +343,52 @@ settings-tab-advanced = Lanjutan
 settings-tab-updater = Pembaruan
 settings-tab-profiles = Profil
 
+# Opt-in anonymous bug reporting (Havoc standard)
+# MT
+settings-tab-bugreport = Laporkan bug
+
+# Phase 51 — end-to-end encrypted collaboration
+# MT
+settings-tab-collab = Kolaborasi
+collab-intro = Berkas yang Anda bagikan dienkripsi sehingga hanya orang dalam daftar ini yang dapat membukanya. Masing-masing menyimpan kuncinya sendiri; tidak ada kata sandi bersama.
+collab-forward-only = Menghapus seseorang mengubah siapa yang dapat membuka berkas yang dienkripsi setelahnya. Berkas yang sudah dapat ia baca tidak bisa ditarik kembali.
+collab-members = Orang
+collab-none = Belum ada yang ditambahkan.
+collab-label = Nama
+collab-recipient = Kunci publiknya
+collab-add = Tambah
+collab-remove = Hapus
+collab-generate = Buat kunci untuk seseorang
+collab-identity-once = Salin sekarang — hanya ditampilkan sekali dan ini satu-satunya cara membuka berkas bersama:
+collab-sas-label = Kode verifikasi
+collab-sas-hint = Bacakan kode ini kepada orang tersebut. Jika cocok, kalian masing-masing memegang kunci asli satu sama lain.
+
+# Phase 53 — optional decoded video frames (user-supplied ffmpeg)
+# MT
+merge-heading = Pratinjau video
+merge-ffmpeg-hint = Freally dapat menampilkan bingkai video saat membandingkan versi. Itu memerlukan ffmpeg, yang tidak disertakan — pasang sendiri dan Freally akan memakainya. Selebihnya tetap berfungsi tanpa itu.
+merge-ffmpeg-enable = Gunakan ffmpeg untuk bingkai video
+merge-ffmpeg-path = Lokasi ffmpeg (kosongkan untuk mencari di PATH)
+merge-ffmpeg-found = Ditemukan
+merge-ffmpeg-missing = ffmpeg tidak ditemukan. Perbandingan video tetap berjalan, hanya menampilkan durasi, ukuran, dan detail trek alih-alih gambar.
+merge-ffmpeg-disabled = Bingkai video dimatikan. Aktifkan ffmpeg di Pengaturan untuk membandingkan gambar.
+
+collab-revoked = Dihapus
+collab-no-roster = Belum ada daftar orang. Tambahkan seseorang sebelum berbagi berkas.
+collab-admin-key-corrupt = Kunci administrator yang tersimpan tidak dapat dibaca. Mungkin rusak.
+
+bugreport-intro = Laporan bersifat anonim dan tidak pernah dikirim otomatis. Anda memilih isinya dan menekan Kirim sendiri — kami tidak menjalankan server apa pun.
+bugreport-pending = Ada laporan kerusakan dari sesi sebelumnya yang menunggu.
+bugreport-description-label = Apa yang terjadi?
+bugreport-include-crash = Sertakan laporan kerusakan
+bugreport-preview-label = Tampilkan persis apa yang akan dikirim
+bugreport-send-github = Buka issue GitHub
+bugreport-send-gmail = Buka Gmail
+bugreport-send-email = Buka aplikasi email saya
+bugreport-dismiss-crash = Buang laporan kerusakan
+bugreport-simulate = Simulasikan laporan kerusakan
+
+
 # General tab additions
 settings-section-theme = Tema
 settings-theme-auto = Otomatis
@@ -739,6 +785,13 @@ power-reason-cellular-network = jaringan seluler
 power-reason-presenting = mode presentasi
 power-reason-fullscreen = aplikasi layar penuh
 power-reason-thermal-throttling = CPU melakukan throttling
+
+# Phase 31b — ambient power badge
+# MT
+power-badge-paused = Dijeda
+power-badge-capped = Dibatasi
+power-badge-tooltip = Kebijakan daya sedang membatasi transfer. Buka Pengaturan → Daya.
+
 
 # Phase 32 — cloud backend matrix via OpenDAL. Settings → Remotes
 # tab + the Add-backend wizard that writes one entry per remote into
@@ -1281,6 +1334,13 @@ restore-conflict-keep-both = Simpan keduanya
 restore-toast-done = { $restored } dipulihkan, { $skipped } dilewati
 restore-toast-failed = Pemulihan gagal: { $reason }
 snapshot-forget = Lupakan
+
+# Phase 49p — inline snapshot metadata editing
+# MT
+snapshot-field-label = Nama
+snapshot-field-description = Deskripsi
+snapshot-field-tags = Tag (dipisahkan koma)
+
 snapshot-forget-toast = Snapshot dilupakan — jalankan Klaim ulang ruang untuk membebaskannya
 library-reclaim = Klaim ulang ruang
 # Phase 49i — full compaction.
@@ -1317,6 +1377,35 @@ repo-action-browse = Telusuri…
 repo-switcher-label = Repositori
 repo-action-forget = Lupakan
 repo-action-change-pass = Ubah frasa sandi…
+
+# Phase 50i — repository access key slots
+# MT
+repo-keys-title = Kunci akses
+repo-keys-empty = Repositori ini tidak memiliki kunci frasa sandi.
+repo-key-label = Label
+repo-key-password = Kata sandi baru
+repo-key-auth = Kata sandi saat ini
+repo-action-add-key = Tambah kunci
+repo-action-remove-key = Cabut
+repo-action-recovery = Buat kunci pemulihan
+
+# Phase 50h — repository replication (3-2-1)
+# MT
+repo-action-replicate = Replikasi ke…
+
+# Phase 50g — per-repository pack storage backend
+# MT
+repo-remote-label = Penyimpanan pack
+repo-remote-local = Disk lokal
+repo-remote-restart = Perubahan berlaku saat aplikasi dijalankan berikutnya.
+repo-remote-unknown = Remote itu belum dikonfigurasi.
+repo-remote-not-empty = Repositori ini sudah berisi data. Penyimpanan paket hanya dapat dipilih selagi masih kosong — gunakan Replikasi untuk menyalin ke repositori baru.
+
+repo-replicate-done = Direplikasi: { $copied } snapshot disalin, { $skipped } sudah ada
+repo-replicate-same-path = Tujuan sama dengan repositori sumber.
+
+repo-recovery-once = Simpan sekarang — hanya ditampilkan sekali:
+
 repo-password-old = Frasa sandi saat ini
 repo-password-new = Frasa sandi baru
 repo-error-exists = Sudah ada repositori di lokasi ini
@@ -1590,7 +1679,21 @@ favorites-kind-pair = Pasangan
 err-shell-portable = Integrasi shell tidak tersedia dalam mode portabel
 settings-portable-title = Mode portabel
 settings-portable-active = Mode portabel aktif. Pengaturan, riwayat, dan jurnal disimpan di { $path }.
-settings-portable-keychain-warning = Peringatan: kredensial awan yang disimpan tetap berada di gantungan kunci sistem komputer ini, bukan di diska portabel — kredensial tetap ada di mesin ini setelah dicabut. Hapus remote yang Anda tambahkan sebelum mengembalikan komputer.
+settings-portable-keychain-warning = Kredensial cloud disimpan dalam berkas terenkripsi di drive portabel, dibuka dengan frasa sandi pilihan Anda — tidak ditulis ke komputer ini. Jika frasa sandi terlupa, kredensial tersimpan tidak dapat dipulihkan.
+
+# FFM-M21 — portable credential store (age-encrypted file)
+# MT
+cloud-error-credentials-locked = Kredensial cloud terkunci. Buka kunci berkas kredensial di drive ini untuk memakai backend ini.
+cloud-error-credentials-bad-passphrase = Frasa sandi itu tidak membuka berkas kredensial.
+cloud-error-credentials-empty-passphrase = Masukkan frasa sandi.
+cloud-error-credentials-not-portable = Instalasi ini menyimpan kredensial di keychain sistem, jadi tidak ada yang perlu dibuka.
+portable-credentials-title = Kredensial cloud portabel
+portable-credentials-unlock-body = Masukkan frasa sandi yang melindungi berkas kredensial di drive ini.
+portable-credentials-create-body = Pilih frasa sandi untuk melindungi kredensial cloud di drive ini. Tidak dapat dipulihkan jika lupa.
+portable-credentials-passphrase-label = Frasa sandi
+portable-credentials-unlock-action = Buka kunci
+portable-credentials-lock-action = Kunci
+
 
 # FFM-M24
 err-autostart-portable = Mulai saat masuk tidak tersedia dalam mode portabel

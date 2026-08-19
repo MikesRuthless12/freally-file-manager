@@ -72,6 +72,7 @@ pub mod control;
 pub mod db;
 pub mod engine;
 pub mod error;
+pub mod tri_tree;
 pub mod types;
 pub mod walker;
 
@@ -80,6 +81,10 @@ pub use control::{SyncControl, SyncState};
 pub use db::{FileRecord, HistoryEntry, HistoryKind, SyncDb, default_pair_db_path};
 pub use engine::sync;
 pub use error::{Result, SyncError};
+pub use tri_tree::{
+    NodeState, PendingOp, PlannedAction, SyncedTree, TriAction, TriConflict, TriState, decide,
+    intent_after, plan,
+};
 pub use types::{
     Conflict, ConflictKind, Direction, FileMeta, SideState, SyncAction, SyncEvent, SyncMode,
     SyncOptions, SyncPair, SyncReport,

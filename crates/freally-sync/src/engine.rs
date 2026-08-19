@@ -126,7 +126,17 @@ pub async fn sync(
             relpath: relpath.clone(),
             meta: None,
         });
-        let action = decide_action(relpath, &l, &r, baseline.as_ref(), mode);
+        // The three-tree matrix is symmetric and has no notion of a
+        // forbidden direction, so it is only consulted for `TwoWay`.
+        // A one-way mode stays on Phase 25's engine, which applies
+        // `direction_allowed` (and contribute's never-delete rule)
+        // internally. Routing a mirror through the symmetric matrix
+        // would push destination-side edits back to the source.
+        let action = if opts.tri_tree && matches!(mode, SyncMode::TwoWay) {
+            decide_action_tri(relpath, &l, &r, baseline.as_ref())
+        } else {
+            decide_action(relpath, &l, &r, baseline.as_ref(), mode)
+        };
         let _ = events
             .send(SyncEvent::ActionPlanned {
                 action: action.clone(),
@@ -380,6 +390,97 @@ pub async fn sync(
 /// `baseline` is the last-seen-synced row; `left` + `right` are the
 /// current walk observations (with `meta = None` meaning absent).
 /// `mode` controls whether a one-way mirror should consider deletes.
+/// Phase 52 — decide one path with the three-tree state machine.
+///
+/// Left maps to "local", right to "remote", and the Phase 25 baseline
+/// record to the synced tree. The result is translated back into the
+/// existing [`SyncAction`] vocabulary so the executor, the event
+/// stream, and the conflict UI are all unchanged — only the decision
+/// changes.
+///
+/// `mode` is not a parameter because the three-tree matrix is
+/// symmetric — it has no concept of a forbidden direction. The caller
+/// ([`sync`]) therefore only routes `SyncMode::TwoWay` here and leaves
+/// every one-way mode on [`decide_action`], which enforces
+/// `direction_allowed` and contribute's never-delete rule itself.
+pub fn decide_action_tri(
+    relpath: &str,
+    left: &SideState,
+    right: &SideState,
+    baseline: Option<&FileRecord>,
+) -> SyncAction {
+    use crate::tri_tree::{NodeState, TriAction, TriConflict, TriState, decide};
+
+    fn node(meta: Option<&crate::types::FileMeta>) -> NodeState {
+        match meta {
+            Some(m) => NodeState::present(m.blake3, m.size),
+            None => NodeState::Absent,
+        }
+    }
+
+    let state = TriState {
+        local: node(left.meta.as_ref()),
+        synced: baseline
+            .map(|b| NodeState::present(b.blake3, b.size))
+            .unwrap_or(NodeState::Absent),
+        remote: node(right.meta.as_ref()),
+    };
+
+    let relpath = relpath.to_string();
+    match decide(&state) {
+        // Nothing to transfer. `AdvanceSynced` and `DropFromSynced` are
+        // bookkeeping-only outcomes, and the executor already refreshes
+        // the baseline for a Noop, so they collapse here.
+        TriAction::Noop | TriAction::AdvanceSynced | TriAction::DropFromSynced => {
+            SyncAction::Noop { relpath }
+        }
+        TriAction::PullToLocal => SyncAction::Copy {
+            relpath,
+            direction: Direction::RightToLeft,
+        },
+        TriAction::PushToRemote => SyncAction::Copy {
+            relpath,
+            direction: Direction::LeftToRight,
+        },
+        TriAction::DeleteLocal => SyncAction::Delete {
+            relpath,
+            direction: Direction::RightToLeft,
+        },
+        TriAction::DeleteRemote => SyncAction::Delete {
+            relpath,
+            direction: Direction::LeftToRight,
+        },
+        TriAction::Conflict(kind) => {
+            // Winner/loser matches Phase 25's convention: the side that
+            // still has content wins, and for a two-sided edit the
+            // later mtime wins with a tie going to the left.
+            let (winner, loser) = match kind {
+                TriConflict::DeleteEdit => (Direction::RightToLeft, Direction::LeftToRight),
+                TriConflict::EditDelete => (Direction::LeftToRight, Direction::RightToLeft),
+                TriConflict::EditEdit | TriConflict::AddAdd => {
+                    let lm = left.meta.as_ref().map(|m| m.mtime_ms).unwrap_or(i64::MIN);
+                    let rm = right.meta.as_ref().map(|m| m.mtime_ms).unwrap_or(i64::MIN);
+                    if rm > lm {
+                        (Direction::RightToLeft, Direction::LeftToRight)
+                    } else {
+                        (Direction::LeftToRight, Direction::RightToLeft)
+                    }
+                }
+            };
+            SyncAction::KeepConflict {
+                relpath,
+                winner,
+                loser,
+                kind: match kind {
+                    TriConflict::EditEdit => ConflictKind::ConcurrentWrite,
+                    TriConflict::DeleteEdit | TriConflict::EditDelete => ConflictKind::DeleteEdit,
+                    TriConflict::AddAdd => ConflictKind::AddAdd,
+                },
+            }
+        }
+    }
+}
+
 pub fn decide_action(
     relpath: &str,
     left: &SideState,
@@ -486,11 +587,21 @@ pub fn decide_action(
         // Left deleted (absent, had baseline), right still present.
         (false, true, true) => {
             if r_matches_baseline {
-                // Right didn't change; left deleted → propagate delete R→L? no,
-                // left is the one that deleted. Delete on right.
+                // Left deleted a file the right still holds unchanged,
+                // so the delete applies to the right. Mirror of the
+                // `(true, false, true)` arm below.
                 if matches!(mode, SyncMode::ContributeLeftToRight) {
+                    // Contribute never removes anything on the receiver.
                     SyncAction::Noop {
                         relpath: relpath.to_string(),
+                    }
+                } else if direction_allowed(mode, Direction::LeftToRight).is_none() {
+                    // `MirrorRightToLeft`: the right is authoritative,
+                    // so a deletion on the left is not allowed to erase
+                    // it — put the file back instead.
+                    SyncAction::Copy {
+                        relpath: relpath.to_string(),
+                        direction: Direction::RightToLeft,
                     }
                 } else {
                     SyncAction::Delete {
@@ -511,9 +622,16 @@ pub fn decide_action(
         // Left present, right deleted.
         (true, false, true) => {
             if l_matches_baseline {
-                if matches!(mode, SyncMode::ContributeLeftToRight) {
-                    // Contribute never deletes; right-side absence is
-                    // reinterpreted as "need to re-copy from left".
+                // The right dropped a file the left still holds
+                // unchanged. Propagating that as a delete writes to the
+                // *left*, so it is only legitimate when the mode allows
+                // a right-to-left write. Under `ContributeLeftToRight`
+                // and `MirrorLeftToRight` the left is authoritative
+                // (`SyncMode`'s contract: a left-to-right mirror
+                // "deletes extras on right"), so the file is put back
+                // instead — otherwise a deletion on the receiver would
+                // destroy the sender's only copy.
+                if direction_allowed(mode, Direction::RightToLeft).is_none() {
                     SyncAction::Copy {
                         relpath: relpath.to_string(),
                         direction: Direction::LeftToRight,
@@ -1141,6 +1259,96 @@ mod tests {
         assert!(matches!(action, SyncAction::Noop { .. }));
     }
 
+    /// Regression — a one-way mode must never delete on its own source.
+    ///
+    /// [`SyncMode`]'s contract is that `MirrorLeftToRight` "deletes
+    /// extras on right". The delete arms were ungated, so a file removed
+    /// on the *receiver* came back as a delete aimed at the *sender*:
+    /// tidying up the destination silently destroyed the source's only
+    /// copy on the next run. Neither mirror mode had any coverage.
+    #[test]
+    fn a_one_way_mode_never_deletes_on_its_own_source() {
+        // Receiver dropped a file the sender still holds, unchanged.
+        let sender = side_state("a", Some(meta(1, 10)));
+        let receiver = side_state("a", None);
+        for mode in [SyncMode::MirrorLeftToRight, SyncMode::ContributeLeftToRight] {
+            let action = decide_action("a", &sender, &receiver, Some(&baseline(1)), mode);
+            assert_eq!(
+                action,
+                SyncAction::Copy {
+                    relpath: "a".into(),
+                    direction: Direction::LeftToRight,
+                },
+                "{mode:?} must restore the receiver's copy, not delete the sender's"
+            );
+        }
+
+        // The same case with the sides swapped.
+        let action = decide_action(
+            "a",
+            &side_state("a", None),
+            &side_state("a", Some(meta(1, 10))),
+            Some(&baseline(1)),
+            SyncMode::MirrorRightToLeft,
+        );
+        assert_eq!(
+            action,
+            SyncAction::Copy {
+                relpath: "a".into(),
+                direction: Direction::RightToLeft,
+            },
+            "a right-to-left mirror must restore, not delete its source"
+        );
+    }
+
+    /// The counterpart: deletes a mode *is* allowed to make still happen,
+    /// so the gate above did not simply disable deletion.
+    #[test]
+    fn deletes_the_mode_allows_still_propagate() {
+        let present = side_state("a", Some(meta(1, 10)));
+        let absent = side_state("a", None);
+
+        // Two-way propagates a deletion in either direction.
+        assert_eq!(
+            decide_action("a", &present, &absent, Some(&baseline(1)), SyncMode::TwoWay),
+            SyncAction::Delete {
+                relpath: "a".into(),
+                direction: Direction::RightToLeft,
+            }
+        );
+
+        // A left-to-right mirror deletes extras on the right — the
+        // behaviour `SyncMode` documents.
+        assert_eq!(
+            decide_action(
+                "a",
+                &absent,
+                &present,
+                Some(&baseline(1)),
+                SyncMode::MirrorLeftToRight
+            ),
+            SyncAction::Delete {
+                relpath: "a".into(),
+                direction: Direction::LeftToRight,
+            }
+        );
+
+        // And a right-to-left mirror deletes extras on the left.
+        assert_eq!(
+            decide_action(
+                "a",
+                &present,
+                &absent,
+                Some(&baseline(1)),
+                SyncMode::MirrorRightToLeft
+            ),
+            SyncAction::Delete {
+                relpath: "a".into(),
+                direction: Direction::RightToLeft,
+            }
+        );
+    }
+
     #[test]
     fn split_last_dot_keeps_multi_dot_stem_intact() {
         let (stem, ext) = split_last_dot("foo.tar.gz");
@@ -1390,5 +1598,153 @@ mod tests {
         assert_ne!(p2, p0);
         assert_ne!(p2, p1);
         assert!(!p2.exists());
+    }
+}
+
+#[cfg(test)]
+mod tri_parity_tests {
+    //! Phase 52 — the three-tree machine must agree with the shipped
+    //! Phase 25 matrix on every unambiguous case.
+    //!
+    //! This is the evidence for flipping `SyncOptions::tri_tree` on real
+    //! data: if the two engines disagreed on a plain one-sided edit, the
+    //! new one would be a regression rather than an improvement.
+
+    use super::*;
+    use crate::types::FileMeta;
+
+    /// (name, left, right, baseline) — named so the case table
+    /// stays readable.
+    type Case = (
+        &'static str,
+        Option<FileMeta>,
+        Option<FileMeta>,
+        Option<FileRecord>,
+    );
+
+    fn meta(hash: u8, mtime: i64) -> FileMeta {
+        FileMeta {
+            mtime_ms: mtime,
+            size: 1,
+            blake3: [hash; 32],
+        }
+    }
+
+    fn side(relpath: &str, m: Option<FileMeta>) -> SideState {
+        SideState {
+            relpath: relpath.to_string(),
+            meta: m,
+        }
+    }
+
+    fn baseline(hash: u8) -> FileRecord {
+        FileRecord {
+            vv: Default::default(),
+            mtime_ms: 0,
+            size: 1,
+            blake3: [hash; 32],
+        }
+    }
+
+    #[test]
+    fn agrees_on_one_sided_edits_and_deletes() {
+        let cases: Vec<Case> = vec![
+            // Left edited, right untouched -> push left to right.
+            (
+                "edit-left",
+                Some(meta(2, 20)),
+                Some(meta(1, 10)),
+                Some(baseline(1)),
+            ),
+            // Right edited, left untouched -> pull right to left.
+            (
+                "edit-right",
+                Some(meta(1, 10)),
+                Some(meta(2, 20)),
+                Some(baseline(1)),
+            ),
+            // Left deleted, right untouched -> delete right.
+            ("del-left", None, Some(meta(1, 10)), Some(baseline(1))),
+            // Right deleted, left untouched -> delete left.
+            ("del-right", Some(meta(1, 10)), None, Some(baseline(1))),
+            // New file on the left only -> push.
+            ("new-left", Some(meta(3, 30)), None, None),
+            // New file on the right only -> pull.
+            ("new-right", None, Some(meta(3, 30)), None),
+            // Identical on both sides -> nothing.
+            (
+                "same",
+                Some(meta(1, 10)),
+                Some(meta(1, 99)),
+                Some(baseline(1)),
+            ),
+        ];
+
+        for (name, l, r, base) in cases {
+            let left = side(name, l);
+            let right = side(name, r);
+            let old = decide_action(name, &left, &right, base.as_ref(), SyncMode::TwoWay);
+            let new = decide_action_tri(name, &left, &right, base.as_ref());
+            assert_eq!(
+                old, new,
+                "engines disagreed on the unambiguous case `{name}`"
+            );
+        }
+    }
+
+    #[test]
+    fn both_engines_flag_a_two_sided_edit_as_a_conflict() {
+        let left = side("c", Some(meta(2, 20)));
+        let right = side("c", Some(meta(3, 30)));
+        let base = baseline(1);
+
+        let old = decide_action("c", &left, &right, Some(&base), SyncMode::TwoWay);
+        let new = decide_action_tri("c", &left, &right, Some(&base));
+        assert!(matches!(old, SyncAction::KeepConflict { .. }));
+        assert!(matches!(new, SyncAction::KeepConflict { .. }));
+        // And the later mtime wins in both, so the surviving content
+        // does not depend on which engine ran.
+        if let (
+            SyncAction::KeepConflict { winner: w_old, .. },
+            SyncAction::KeepConflict { winner: w_new, .. },
+        ) = (old, new)
+        {
+            assert_eq!(w_old, w_new);
+        }
+    }
+
+    #[test]
+    fn converged_content_costs_no_transfer() {
+        // Both sides independently reached identical bytes. The old
+        // matrix already treats this as a no-op; the three-tree machine
+        // must not regress it into a needless copy.
+        let left = side("x", Some(meta(9, 20)));
+        let right = side("x", Some(meta(9, 30)));
+        let base = baseline(1);
+        assert_eq!(
+            decide_action_tri("x", &left, &right, Some(&base)),
+            SyncAction::Noop {
+                relpath: "x".to_string()
+            }
+        );
+    }
+
+    #[test]
+    fn delete_edit_is_a_conflict_not_a_silent_delete() {
+        // The case that most needs to be right: one side deleted while
+        // the other edited. Losing the edit here is unrecoverable data
+        // loss, so it must surface rather than propagate the delete.
+        let left = side("d", None);
+        let right = side("d", Some(meta(5, 50)));
+        let base = baseline(1);
+        let action = decide_action_tri("d", &left, &right, Some(&base));
+        match action {
+            SyncAction::KeepConflict { kind, winner, .. } => {
+                assert_eq!(kind, ConflictKind::DeleteEdit);
+                // The side that still has content wins.
+                assert_eq!(winner, Direction::RightToLeft);
+            }
+            other => panic!("expected a conflict, got {other:?}"),
+        }
     }
 }

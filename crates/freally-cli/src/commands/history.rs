@@ -14,7 +14,11 @@ pub(crate) async fn run(
     args: HistoryArgs,
     writer: Arc<OutputWriter>,
 ) -> ExitCode {
-    let history = match History::open_default().await {
+    let opened = match freally_settings::portable::portable_root() {
+        Some(root) => History::open_at(root.join("history.db")).await,
+        None => History::open_default().await,
+    };
+    let history = match opened {
         Ok(h) => h,
         Err(e) => {
             let _ = writer.emit(JsonEventKind::Error {

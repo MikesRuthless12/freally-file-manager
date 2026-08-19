@@ -39,6 +39,26 @@
   import QueueAffinityPanel from "./QueueAffinityPanel.svelte";
   import FavoritesPanel from "./FavoritesPanel.svelte";
   import { errorText } from "../errors";
+  import {
+    collabRoster,
+    collabAddMember,
+    collabRemoveMember,
+    collabGenerateIdentity,
+    collabSas,
+    mergeFfmpegStatus,
+    mergeFfmpegPrefsGet,
+    mergeFfmpegPrefsSet,
+    type FfmpegStatusDto,
+    type CollabRosterDto,
+  } from "../ipc";
+  import {
+    bugReportContext,
+    bugReportPreview,
+    bugReportSubmit,
+    bugReportClearCrash,
+    bugReportSimulate,
+    type BugReportContextDto,
+  } from "../ipc";
   import { i18nVersion, locale, setLocale, t } from "../i18n";
   import {
     closeSettings,
@@ -96,6 +116,8 @@
     | "remotes"
     | "mobile"
     | "provenance"
+    | "bugreport"
+    | "collab"
     | "sanitize"
     | "plugins"
     | "server"
@@ -655,6 +677,166 @@
       pushToast("error", e instanceof Error ? e.message : String(e));
     }
   }
+  // Phase 53 — decoded video thumbnails are opt-in and run against an
+  // ffmpeg the user installed themselves. Nothing is bundled, which is
+  // exactly what keeps ffmpeg's LGPL terms off this project.
+  let ffmpeg = $state<FfmpegStatusDto | null>(null);
+  let ffmpegEnabled = $state(false);
+  let ffmpegPath = $state("");
+
+  $effect(() => {
+    if (activeTab !== "collab" || ffmpeg !== null) return;
+    void (async () => {
+      try {
+        ffmpeg = await mergeFfmpegStatus();
+        const prefs = await mergeFfmpegPrefsGet();
+        ffmpegEnabled = prefs.enabled;
+        ffmpegPath = prefs.path;
+      } catch (e) {
+        console.error("[merge_ffmpeg_status]", e);
+      }
+    })();
+  });
+
+  async function saveFfmpegPrefs(): Promise<void> {
+    try {
+      await mergeFfmpegPrefsSet({ enabled: ffmpegEnabled, path: ffmpegPath });
+      // Re-probe: the path may now resolve, or stop resolving.
+      ffmpeg = await mergeFfmpegStatus();
+    } catch (e) {
+      console.error("[merge_ffmpeg_prefs_set]", e);
+    }
+  }
+
+  // Phase 51 — collaboration roster. Recipients are public keys, so
+  // nothing shown in this list is a secret; the one secret the panel
+  // ever produces is a freshly generated identity, displayed once and
+  // stored nowhere.
+  let collab = $state<CollabRosterDto | null>(null);
+  let collabLabel = $state("");
+  let collabRecipient = $state("");
+  let collabNewSecret = $state<string | null>(null);
+  let sasLeft = $state("");
+  let sasRight = $state("");
+  let sasCode = $state("");
+
+  $effect(() => {
+    if (activeTab !== "collab" || collab !== null) return;
+    void (async () => {
+      try {
+        collab = await collabRoster();
+      } catch (e) {
+        console.error("[collab_roster]", e);
+      }
+    })();
+  });
+
+  async function collabRefresh(): Promise<void> {
+    try {
+      collab = await collabRoster();
+    } catch (e) {
+      console.error("[collab_roster]", e);
+    }
+  }
+
+  async function collabAdd(): Promise<void> {
+    try {
+      await collabAddMember(collabLabel, collabRecipient);
+      collabLabel = "";
+      collabRecipient = "";
+      await collabRefresh();
+    } catch (e) {
+      console.error("[collab_add_member]", e);
+    }
+  }
+
+  async function collabRemove(label: string): Promise<void> {
+    try {
+      await collabRemoveMember(label);
+      await collabRefresh();
+    } catch (e) {
+      console.error("[collab_remove_member]", e);
+    }
+  }
+
+  async function collabGenerate(): Promise<void> {
+    try {
+      const pair = await collabGenerateIdentity();
+      collabNewSecret = pair[0];
+      collabRecipient = pair[1];
+    } catch (e) {
+      console.error("[collab_generate_identity]", e);
+    }
+  }
+
+  async function collabComputeSas(): Promise<void> {
+    try {
+      sasCode = await collabSas(sasLeft, sasRight);
+    } catch (e) {
+      console.error("[collab_sas]", e);
+    }
+  }
+
+  // Opt-in bug reporting. Nothing here transmits: the backend only
+  // opens a pre-filled GitHub / Gmail / mail-client window, and the
+  // user still presses Send. The preview is the exact submitted text.
+  let bugCtx = $state<BugReportContextDto | null>(null);
+  let bugDescription = $state("");
+  let bugIncludeCrash = $state(true);
+  let bugPreview = $state("");
+
+  $effect(() => {
+    if (activeTab !== "bugreport" || bugCtx !== null) return;
+    void (async () => {
+      try {
+        bugCtx = await bugReportContext();
+      } catch (e) {
+        console.error("[bug_report_context]", e);
+      }
+    })();
+  });
+
+  async function refreshBugPreview(): Promise<void> {
+    try {
+      bugPreview = await bugReportPreview(
+        bugDescription,
+        bugIncludeCrash && !!bugCtx?.pendingCrash,
+      );
+    } catch (e) {
+      console.error("[bug_report_preview]", e);
+    }
+  }
+
+  async function sendBug(channel: "github" | "gmail" | "email"): Promise<void> {
+    try {
+      await bugReportSubmit(
+        bugDescription,
+        bugIncludeCrash && !!bugCtx?.pendingCrash,
+        channel,
+      );
+    } catch (e) {
+      console.error("[bug_report_submit]", e);
+    }
+  }
+
+  async function dismissCrash(): Promise<void> {
+    try {
+      await bugReportClearCrash();
+      bugCtx = await bugReportContext();
+      bugPreview = "";
+    } catch (e) {
+      console.error("[bug_report_clear_crash]", e);
+    }
+  }
+
+  async function simulateCrash(): Promise<void> {
+    try {
+      await bugReportSimulate();
+      bugCtx = await bugReportContext();
+    } catch (e) {
+      console.error("[bug_report_simulate]", e);
+    }
+  }
 </script>
 
 {#if $settingsOpen}
@@ -691,7 +873,7 @@
       {:else}
         <div class="body">
           <div class="tabs" role="tablist" aria-label={t("settings-title")}>
-            {#each [["general", "settings-tab-general"], ["transfer", "settings-tab-transfer"], ["filters", "settings-tab-filters"], ["shell", "settings-tab-shell"], ["secure-delete", "settings-tab-secure-delete"], ["advanced", "settings-tab-advanced"], ["updater", "settings-tab-updater"], ["network", "settings-tab-network"], ["power", "settings-tab-power"], ["remotes", "settings-tab-remotes"], ["mobile", "settings-tab-mobile"], ["provenance", "provenance-settings-heading"], ["sanitize", "sanitize-heading"], ["plugins", "settings-tab-plugins"], ["server", "settings-tab-server"], ["schedules", "settings-tab-schedules"], ["queues", "settings-tab-queues"], ["favorites", "settings-tab-favorites"], ["profiles", "settings-tab-profiles"]] as const as [id, key] (id)}
+            {#each [["general", "settings-tab-general"], ["transfer", "settings-tab-transfer"], ["filters", "settings-tab-filters"], ["shell", "settings-tab-shell"], ["secure-delete", "settings-tab-secure-delete"], ["advanced", "settings-tab-advanced"], ["updater", "settings-tab-updater"], ["network", "settings-tab-network"], ["power", "settings-tab-power"], ["remotes", "settings-tab-remotes"], ["mobile", "settings-tab-mobile"], ["provenance", "provenance-settings-heading"], ["sanitize", "sanitize-heading"], ["plugins", "settings-tab-plugins"], ["server", "settings-tab-server"], ["schedules", "settings-tab-schedules"], ["queues", "settings-tab-queues"], ["favorites", "settings-tab-favorites"], ["profiles", "settings-tab-profiles"], ["bugreport", "settings-tab-bugreport"], ["collab", "settings-tab-collab"]] as const as [id, key] (id)}
               <button
                 type="button"
                 role="tab"
@@ -1798,6 +1980,131 @@
                   </select>
                 </label>
               {/each}
+            {:else if activeTab === "collab"}
+              <p class="hint">{t("collab-intro")}</p>
+              <p class="hint">{t("collab-forward-only")}</p>
+
+              <h4>{t("collab-members")}</h4>
+              {#if !collab || collab.members.length === 0}
+                <p>{t("collab-none")}</p>
+              {:else}
+                <ul class="collab-members">
+                  {#each collab.members as m (m.label)}
+                    <li>
+                      <span>{m.label}</span>
+                      <code>{m.recipient}</code>
+                      <button type="button" onclick={() => void collabRemove(m.label)}>
+                        {t("collab-remove")}
+                      </button>
+                    </li>
+                  {/each}
+                </ul>
+              {/if}
+              {#if collab && collab.revoked.length > 0}
+                <p class="hint">{t("collab-revoked")}: {collab.revoked.join(", ")}</p>
+              {/if}
+
+              <label>
+                {t("collab-label")}
+                <input bind:value={collabLabel} />
+              </label>
+              <label>
+                {t("collab-recipient")}
+                <input bind:value={collabRecipient} />
+              </label>
+              <button type="button" onclick={() => void collabAdd()}>
+                {t("collab-add")}
+              </button>
+              <button type="button" onclick={() => void collabGenerate()}>
+                {t("collab-generate")}
+              </button>
+              {#if collabNewSecret}
+                <p class="hint">{t("collab-identity-once")}</p>
+                <pre class="collab-secret">{collabNewSecret}</pre>
+              {/if}
+
+              <h4>{t("merge-heading")}</h4>
+              <p class="hint">{t("merge-ffmpeg-hint")}</p>
+              <label class="row">
+                <span class="label">{t("merge-ffmpeg-enable")}</span>
+                <input
+                  type="checkbox"
+                  bind:checked={ffmpegEnabled}
+                  onchange={() => void saveFfmpegPrefs()}
+                />
+              </label>
+              <label>
+                {t("merge-ffmpeg-path")}
+                <input bind:value={ffmpegPath} onchange={() => void saveFfmpegPrefs()} />
+              </label>
+              <p class="hint">
+                {ffmpeg?.available
+                  ? `${t("merge-ffmpeg-found")}: ${ffmpeg.version ?? ""}`
+                  : t("merge-ffmpeg-missing")}
+              </p>
+
+              <h4>{t("collab-sas-label")}</h4>
+              <p class="hint">{t("collab-sas-hint")}</p>
+              <label>
+                A
+                <input bind:value={sasLeft} />
+              </label>
+              <label>
+                B
+                <input bind:value={sasRight} />
+              </label>
+              <button type="button" onclick={() => void collabComputeSas()}>
+                {t("collab-sas-label")}
+              </button>
+              {#if sasCode}
+                <pre class="collab-sas">{sasCode}</pre>
+              {/if}
+            {:else if activeTab === "bugreport"}
+              <p class="hint">{t("bugreport-intro")}</p>
+
+              {#if bugCtx?.pendingCrash}
+                <p class="hint">{t("bugreport-pending")}</p>
+              {/if}
+
+              <label>
+                {t("bugreport-description-label")}
+                <textarea rows="5" bind:value={bugDescription}></textarea>
+              </label>
+
+              {#if bugCtx?.pendingCrash}
+                <label class="row">
+                  <span class="label">{t("bugreport-include-crash")}</span>
+                  <input type="checkbox" bind:checked={bugIncludeCrash} />
+                </label>
+              {/if}
+
+              <button type="button" onclick={() => void refreshBugPreview()}>
+                {t("bugreport-preview-label")}
+              </button>
+              {#if bugPreview}
+                <pre class="bug-preview">{bugPreview}</pre>
+              {/if}
+
+              <div class="row">
+                <button type="button" onclick={() => void sendBug("github")}>
+                  {t("bugreport-send-github")}
+                </button>
+                <button type="button" onclick={() => void sendBug("gmail")}>
+                  {t("bugreport-send-gmail")}
+                </button>
+                <button type="button" onclick={() => void sendBug("email")}>
+                  {t("bugreport-send-email")}
+                </button>
+              </div>
+
+              {#if bugCtx?.pendingCrash}
+                <button type="button" onclick={() => void dismissCrash()}>
+                  {t("bugreport-dismiss-crash")}
+                </button>
+              {/if}
+              <button type="button" onclick={() => void simulateCrash()}>
+                {t("bugreport-simulate")}
+              </button>
             {:else if activeTab === "power"}
               <p class="hint">{t("settings-power-hint")}</p>
 

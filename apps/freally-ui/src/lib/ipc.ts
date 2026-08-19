@@ -530,6 +530,32 @@ export async function updateBackend(
   return invoke<BackendDto>("update_backend", { dto, secret });
 }
 
+/** FFM-M21 — where this install keeps cloud secrets. A portable
+ *  install uses an age-encrypted file on the drive instead of the host
+ *  keychain, so it has to be unlocked before any backend can be used. */
+export type PortableCredentialsStatus = {
+  portable: boolean;
+  unlocked: boolean;
+  initialized: boolean;
+};
+
+/** Whether the credential file exists and is unlocked this session. */
+export async function portableCredentialsStatus(): Promise<PortableCredentialsStatus> {
+  return invoke<PortableCredentialsStatus>("portable_credentials_status");
+}
+
+/** Hold the passphrase for the rest of this session. When a credential
+ *  file already exists the passphrase is checked against it, so a typo
+ *  fails here rather than as a backend with no secret. */
+export async function portableCredentialsUnlock(passphrase: string): Promise<void> {
+  await invoke("portable_credentials_unlock", { passphrase });
+}
+
+/** Forget the passphrase without restarting the app. */
+export async function portableCredentialsLock(): Promise<void> {
+  await invoke("portable_credentials_lock");
+}
+
 /** Remove a backend entry + its keychain secret. */
 export async function removeBackend(name: string): Promise<void> {
   await invoke("remove_backend", { name });
@@ -1043,6 +1069,223 @@ export async function repositoryDisconnect(id: string): Promise<void> {
   return invoke<void>("repository_disconnect", { id });
 }
 
+/** Opt-in bug reporting — diagnostics plus any crash awaiting a decision. */
+export type BugReportContextDto = {
+  diagnostics: string;
+  pendingCrash: string | null;
+};
+
+/** Anonymous system line + any pending (already scrubbed) crash report. */
+export async function bugReportContext(): Promise<BugReportContextDto> {
+  return invoke<BugReportContextDto>("bug_report_context");
+}
+
+/** The exact text that would be submitted, so the user reads it first. */
+export async function bugReportPreview(
+  description: string,
+  includeCrash: boolean,
+): Promise<string> {
+  return invoke<string>("bug_report_preview", { description, includeCrash });
+}
+
+/** Open the chosen channel pre-filled. Nothing is transmitted by the app —
+ *  the user still presses Send. */
+export async function bugReportSubmit(
+  description: string,
+  includeCrash: boolean,
+  channel: "github" | "gmail" | "email",
+): Promise<void> {
+  await invoke("bug_report_submit", { description, includeCrash, channel });
+}
+
+/** Discard the pending crash report. */
+export async function bugReportClearCrash(): Promise<void> {
+  await invoke("bug_report_clear_crash");
+}
+
+/** Write a synthetic crash report so the flow can be exercised on demand. */
+export async function bugReportSimulate(): Promise<void> {
+  await invoke("bug_report_simulate");
+}
+
+/** Phase 53 — which preview pipeline a file belongs to. */
+export type MergeFormatDto = { format: string; hasPreview: boolean };
+
+/** Phase 53 — image comparison result. `heatmap` is a data: URL. */
+export type ImageCompareDto = {
+  heatmap: string;
+  stats: {
+    width: number;
+    height: number;
+    changedPixels: number;
+    totalPixels: number;
+    changedRatio: number;
+    maxChannelDelta: number;
+    meanChannelDelta: number;
+  };
+};
+
+/** Phase 53 — whether decoded video thumbnails are available. ffmpeg is
+ *  never bundled; this reports on the user's own install. */
+export type FfmpegStatusDto = {
+  available: boolean;
+  path: string | null;
+  version: string | null;
+};
+
+export async function mergeDetect(path: string): Promise<MergeFormatDto> {
+  return invoke<MergeFormatDto>("merge_detect", { path });
+}
+
+export async function mergeImageCompare(a: string, b: string): Promise<ImageCompareDto> {
+  return invoke<ImageCompareDto>("merge_image_compare", { a, b });
+}
+
+/** `alpha` is b's weight: 0 = all a, 1 = all b. */
+export async function mergeImageBlend(a: string, b: string, alpha: number): Promise<string> {
+  return invoke<string>("merge_image_blend", { a, b, alpha });
+}
+
+export async function mergePsdLayers(a: string, b: string): Promise<unknown[]> {
+  return invoke<unknown[]>("merge_psd_layers", { a, b });
+}
+
+export async function mergeAudioCompare(
+  a: string,
+  b: string,
+  buckets: number,
+): Promise<unknown> {
+  return invoke<unknown>("merge_audio_compare", { a, b, buckets });
+}
+
+export async function mergeVideoCompare(a: string, b: string): Promise<unknown> {
+  return invoke<unknown>("merge_video_compare", { a, b });
+}
+
+export async function mergePdfCompare(a: string, b: string): Promise<unknown> {
+  return invoke<unknown>("merge_pdf_compare", { a, b });
+}
+
+export async function mergeFfmpegStatus(): Promise<FfmpegStatusDto> {
+  return invoke<FfmpegStatusDto>("merge_ffmpeg_status");
+}
+
+/** Phase 53 — the ffmpeg opt-in, as Settings edits it. */
+export type MergeFfmpegPrefsDto = { enabled: boolean; path: string };
+
+export async function mergeFfmpegPrefsGet(): Promise<MergeFfmpegPrefsDto> {
+  return invoke<MergeFfmpegPrefsDto>("merge_ffmpeg_prefs_get");
+}
+
+export async function mergeFfmpegPrefsSet(prefs: MergeFfmpegPrefsDto): Promise<void> {
+  await invoke("merge_ffmpeg_prefs_set", { prefs });
+}
+
+/** Decoded frames as data: URLs. Requires the opt-in and a present ffmpeg. */
+export async function mergeVideoThumbnails(path: string, count: number): Promise<string[]> {
+  return invoke<string[]>("merge_video_thumbnails", { path, count });
+}
+
+/** Phase 51 — one collaborator. `recipient` is a public key by design. */
+export type CollabMemberDto = { label: string; recipient: string };
+
+/** Phase 51 — the collaboration panel's state. */
+export type CollabRosterDto = {
+  initialized: boolean;
+  epoch: number;
+  members: CollabMemberDto[];
+  revoked: string[];
+};
+
+export async function collabRoster(): Promise<CollabRosterDto> {
+  return invoke<CollabRosterDto>("collab_roster");
+}
+
+export async function collabAddMember(label: string, recipient: string): Promise<void> {
+  await invoke("collab_add_member", { label, recipient });
+}
+
+/** Forward-only: this changes who can read files encrypted afterwards
+ *  and cannot claw back what the member already had. */
+export async function collabRemoveMember(label: string): Promise<void> {
+  await invoke("collab_remove_member", { label });
+}
+
+/** Returns [secret, recipient]. The secret is shown once and stored
+ *  nowhere — the member must save it themselves. */
+export async function collabGenerateIdentity(): Promise<string[]> {
+  return invoke<string[]>("collab_generate_identity");
+}
+
+/** Order-independent short code for out-of-band key verification. */
+export async function collabSas(a: string, b: string): Promise<string> {
+  return invoke<string>("collab_sas", { a, b });
+}
+
+/** Phase 50g — where this repository's pack objects live. */
+export type RepoRemoteDto = {
+  /** Name of a configured cloud remote, or "" for a local store. */
+  backend: string;
+  /** Read-through cache dir; "" means <store-root>/cache. */
+  cacheDir: string;
+};
+
+export async function repositoryRemoteGet(): Promise<RepoRemoteDto> {
+  return invoke<RepoRemoteDto>("repository_remote_get");
+}
+
+/** Persist the selection. Applies at the next launch — the store's
+ *  backend is fixed when it opens. */
+export async function repositoryRemoteSet(remote: RepoRemoteDto): Promise<void> {
+  await invoke("repository_remote_set", { remote });
+}
+
+/** Phase 50h — outcome of one replication pass. */
+export type ReplicateReportDto = {
+  snapshotsCopied: number;
+  snapshotsSkipped: number;
+  chunksCopied: number;
+  chunksPresent: number;
+  bytesCopied: number;
+};
+
+/** Push every snapshot into the repository at `dst`, creating it if
+ *  needed. Dedup-aware and idempotent; progress rides the task centre. */
+export async function repositoryReplicate(dst: string): Promise<ReplicateReportDto> {
+  return invoke<ReplicateReportDto>("repository_replicate", { dst });
+}
+
+/** Phase 50i — one access key slot. Never carries secret material. */
+export type KeySlotDto = {
+  label: string;
+  /** `"password"` or `"recovery"`. */
+  kind: string;
+};
+
+/** Slots on the active repository; empty when there is no passphrase gate. */
+export async function repositoryListKeys(): Promise<KeySlotDto[]> {
+  return invoke<KeySlotDto[]>("repository_list_keys");
+}
+
+/** Add a credential so another person or device can open the repository. */
+export async function repositoryAddKey(
+  label: string,
+  password: string,
+  auth: string | null,
+): Promise<void> {
+  await invoke("repository_add_key", { label, password, auth });
+}
+
+/** Revoke one credential. Removing the last slot is refused by the backend. */
+export async function repositoryRemoveKey(label: string): Promise<boolean> {
+  return invoke<boolean>("repository_remove_key", { label });
+}
+
+/** Mint a recovery key. Returned once — only its verifier is stored. */
+export async function repositoryGenerateRecoveryKey(auth: string | null): Promise<string> {
+  return invoke<string>("repository_generate_recovery_key", { auth });
+}
+
 export async function repositoryChangePassword(
   oldPass: string | null,
   newPass: string,
@@ -1103,6 +1346,7 @@ export type RepositorySnapshotDto = {
   totalSize: number;
   pinned: boolean;
   description: string;
+  tags: string[];
 };
 
 /** One Phase 42 per-file version. Mirrors `version_commands::VersionRecordDto`. */

@@ -1,0 +1,51 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "cdr-py"
+# Tracks the workspace version deliberately: this reader and the Rust
+# `CdrManifest` implement the same spec revision and are validated
+# against one shared conformance corpus, so a reader on PyPI that
+# claims a different lineage than the repo it shipped from would be
+# actively confusing.
+version = "0.22.0"
+description = "Pure-Python reference reader for CDR-0, the Common Dedup Repository format"
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT OR Apache-2.0"
+license-files = ["LICENSE-MIT", "LICENSE-APACHE"]
+authors = [{ name = "Mike Weaver" }]
+keywords = ["cdr", "backup", "deduplication", "cbor", "blake3"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Topic :: System :: Archiving :: Backup",
+    "Topic :: Software Development :: Libraries",
+]
+# `cbor2` decodes the canonical-CBOR manifests. BLAKE3 verification
+# uses `hashlib.blake2b`-free pure logic in `cdr.py`, so there is no
+# native dependency and the wheel stays pure-Python.
+dependencies = ["cbor2>=5.4"]
+
+[project.urls]
+Homepage = "https://github.com/MikesRuthless12/freally-file-manager"
+Specification = "https://github.com/MikesRuthless12/freally-file-manager/blob/main/docs/spec/CDR-0.md"
+Issues = "https://github.com/MikesRuthless12/freally-file-manager/issues"
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[tool.hatch.build.targets.wheel]
+# A single top-level module, not a package — mirrors how the reference
+# is imported in the README (`from cdr import parse_manifest`).
+include = ["cdr.py"]
+
+[tool.hatch.build.targets.sdist]
+# The conformance corpus is not shipped in the sdist: it lives in the
+# repository under docs/spec/conformance/ and is the *shared* fixture
+# set both implementations test against. Vendoring a copy here would
+# let the two drift silently, which is the one thing §13 exists to
+# prevent.
+include = ["cdr.py", "test_conformance.py", "README.md"]

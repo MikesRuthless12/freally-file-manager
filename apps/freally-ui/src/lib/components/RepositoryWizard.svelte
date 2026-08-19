@@ -8,6 +8,11 @@
   import { i18nVersion, t } from "../i18n";
   import {
     repositoryChangePassword,
+    repositoryListKeys,
+    repositoryAddKey,
+    repositoryRemoveKey,
+    repositoryGenerateRecoveryKey,
+    type KeySlotDto,
     repositoryConnect,
     repositoryCreate,
     repositoryDisconnect,
@@ -85,6 +90,56 @@
     try {
       await repositoryDisconnect(id);
       await refreshRepos();
+    } catch (e) {
+      pushToast("error", friendly(e));
+    }
+  }
+
+  // Phase 50i — access key slots. The multi-slot keyfile and its IPC
+  // exist; this is the panel that was deferred. Note this is an ACCESS
+  // gate, not at-rest encryption: revoking a slot removes a credential,
+  // it does not re-encrypt anything.
+  let keySlots = $state<KeySlotDto[]>([]);
+  let showKeys = $state(false);
+  let keyLabel = $state("");
+  let keyPassword = $state("");
+  let keyAuth = $state("");
+  let recoveryOnce = $state<string | null>(null);
+
+  async function refreshKeys() {
+    try {
+      keySlots = await repositoryListKeys();
+    } catch (e) {
+      pushToast("error", friendly(e));
+    }
+  }
+
+  async function addKey() {
+    try {
+      await repositoryAddKey(keyLabel, keyPassword, keyAuth.length > 0 ? keyAuth : null);
+      keyLabel = "";
+      keyPassword = "";
+      await refreshKeys();
+    } catch (e) {
+      pushToast("error", friendly(e));
+    }
+  }
+
+  async function removeKey(label: string) {
+    try {
+      await repositoryRemoveKey(label);
+      await refreshKeys();
+    } catch (e) {
+      // The backend refuses to drop the last slot — surfacing the
+      // error is correct; silently succeeding would be a lie.
+      pushToast("error", friendly(e));
+    }
+  }
+
+  async function mintRecovery() {
+    try {
+      recoveryOnce = await repositoryGenerateRecoveryKey(keyAuth.length > 0 ? keyAuth : null);
+      await refreshKeys();
     } catch (e) {
       pushToast("error", friendly(e));
     }
@@ -178,6 +233,57 @@
             <input type="password" bind:value={newPass} />
           </label>
           <button type="button" onclick={changePass}>{t("repo-action-change-pass")}</button>
+        {/if}
+
+        <button
+          type="button"
+          class="link"
+          onclick={() => {
+            showKeys = !showKeys;
+            if (showKeys) void refreshKeys();
+          }}
+        >
+          {t("repo-keys-title")}
+        </button>
+        {#if showKeys}
+          {#if keySlots.length === 0}
+            <p>{t("repo-keys-empty")}</p>
+          {:else}
+            <ul class="key-slots">
+              {#each keySlots as k (k.label)}
+                <li>
+                  <span>{k.kind} · {k.label}</span>
+                  <button type="button" onclick={() => void removeKey(k.label)}>
+                    {t("repo-action-remove-key")}
+                  </button>
+                </li>
+              {/each}
+            </ul>
+          {/if}
+          <label>
+            {t("repo-key-auth")}
+            <input type="password" bind:value={keyAuth} />
+          </label>
+          <label>
+            {t("repo-key-label")}
+            <input bind:value={keyLabel} />
+          </label>
+          <label>
+            {t("repo-key-password")}
+            <input type="password" bind:value={keyPassword} />
+          </label>
+          <button type="button" onclick={() => void addKey()}>
+            {t("repo-action-add-key")}
+          </button>
+          <button type="button" onclick={() => void mintRecovery()}>
+            {t("repo-action-recovery")}
+          </button>
+          {#if recoveryOnce}
+            <p class="recovery-once">
+              {t("repo-recovery-once")}
+              <code>{recoveryOnce}</code>
+            </p>
+          {/if}
         {/if}
       </div>
     {/key}

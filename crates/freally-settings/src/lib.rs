@@ -82,6 +82,9 @@ pub struct Settings {
     /// Phase 25 — two-way sync pair definitions + global defaults.
     /// See [`SyncSettings`].
     pub sync: SyncSettings,
+    /// Phase 53 — non-text merge previews. See [`MergeSettings`].
+    #[serde(default)]
+    pub merge: MergeSettings,
     /// Phase 27 — content-defined chunk store. Gates delta-resume +
     /// same-job dedup + the moonshot phases that layer on top. See
     /// [`ChunkStoreSettings`].
@@ -1408,6 +1411,21 @@ impl AutoThrottleRule {
 // ---------------------------------------------------------------------
 
 /// Top-level sync state: the list of configured pairs + the defaults
+/// Phase 53 — non-text merge previews.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default, rename_all = "kebab-case")]
+pub struct MergeSettings {
+    /// Opt in to decoded video thumbnails.
+    ///
+    /// Off by default and never bundled: this drives a binary the user
+    /// installed themselves, which is what keeps ffmpeg's LGPL terms
+    /// off this project entirely. Enabling it without ffmpeg present is
+    /// not an error — the merge view falls back to the structural diff.
+    pub ffmpeg_enabled: bool,
+    /// Explicit ffmpeg path. Empty = search PATH.
+    pub ffmpeg_path: String,
+}
+
 /// a new pair inherits when the user clicks "Add".
 ///
 /// Mirrors `freally_sync::SyncPair` / `SyncMode` at the settings
@@ -1427,6 +1445,15 @@ pub struct SyncSettings {
     /// future phase that lets the user customise this; the engine
     /// reads it but the UI does not yet expose the knob.
     pub conflict_suffix_format: ConflictSuffixFormat,
+    /// Phase 52 — decide conflicts with the three-tree state
+    /// machine instead of the Phase 25 vector-clock matrix.
+    ///
+    /// Off by default. Both engines agree on every unambiguous
+    /// case (see engine.rs's parity tests); this exists so the new
+    /// one can be exercised on real pairs before it becomes the
+    /// only one.
+    #[serde(default)]
+    pub tri_tree: bool,
     /// Host identifier for this device. Empty = "use the OS hostname
     /// at runtime". Override for fleet deployments where the OS
     /// hostname isn't a friendly label.
@@ -1554,6 +1581,19 @@ pub struct ChunkStoreSettings {
     /// resolves to `<data-dir>/chunks/` under the Freally File Manager project
     /// dir.
     pub location_override: String,
+    /// Phase 50g — name of a configured cloud remote
+    /// (`RemoteSettings::backends[].name`) that holds this repository's
+    /// pack objects. Empty = a plain local store, the default.
+    ///
+    /// The store still appends to a local staging pack and uploads it
+    /// as one object on rollover, so a slow link costs one request per
+    /// pack rather than one per chunk.
+    #[serde(default)]
+    pub remote_backend: String,
+    /// Phase 50g — directory for the read-through pack cache used when
+    /// `remote_backend` is set. Empty = `<store-root>/cache`.
+    #[serde(default)]
+    pub remote_cache_dir: String,
     /// Maximum store size in bytes. `0` disables the cap (unbounded).
     /// The default of 20 GiB is generous enough to hold a few
     /// full-disk backups' worth of chunks on a typical workstation.
@@ -1589,6 +1629,8 @@ impl Default for ChunkStoreSettings {
         Self {
             enabled: false,
             location_override: String::new(),
+            remote_backend: String::new(),
+            remote_cache_dir: String::new(),
             // 20 GiB.
             max_size_bytes: 20 * 1024 * 1024 * 1024,
             prune_older_than_days: 60,

@@ -544,6 +544,16 @@ fn windows_task_name(id: &str) -> String {
     format!("\\Freally\\{id}")
 }
 
+// The per-OS implementation for this target. Each `mod *_impl` below
+// carries the same `cfg` as its arm here, so the four public entry
+// points dispatch through one alias instead of repeating the triple.
+#[cfg(all(unix, not(target_os = "macos")))]
+use linux_impl as backend;
+#[cfg(target_os = "macos")]
+use macos_impl as backend;
+#[cfg(target_os = "windows")]
+use windows_impl as backend;
+
 // ---------------------------------------------------------------------
 // Installation
 // ---------------------------------------------------------------------
@@ -551,17 +561,9 @@ fn windows_task_name(id: &str) -> String {
 /// Install (or replace) `job` in the host's per-user scheduler.
 pub fn install(job: &ScheduledJob) -> Result<(), SchedulerError> {
     validate_job(job)?;
-    #[cfg(target_os = "windows")]
+    #[cfg(any(windows, unix))]
     {
-        windows_impl::install(job)
-    }
-    #[cfg(target_os = "macos")]
-    {
-        macos_impl::install(job)
-    }
-    #[cfg(all(unix, not(target_os = "macos")))]
-    {
-        linux_impl::install(job)
+        backend::install(job)
     }
     #[cfg(not(any(windows, unix)))]
     {
@@ -576,17 +578,9 @@ pub fn install(job: &ScheduledJob) -> Result<(), SchedulerError> {
 /// removable.
 pub fn remove(id: &str) -> Result<(), SchedulerError> {
     validate_id(id)?;
-    #[cfg(target_os = "windows")]
+    #[cfg(any(windows, unix))]
     {
-        windows_impl::remove(id)
-    }
-    #[cfg(target_os = "macos")]
-    {
-        macos_impl::remove(id)
-    }
-    #[cfg(all(unix, not(target_os = "macos")))]
-    {
-        linux_impl::remove(id)
+        backend::remove(id)
     }
     #[cfg(not(any(windows, unix)))]
     {
@@ -609,17 +603,9 @@ pub fn remove(id: &str) -> Result<(), SchedulerError> {
 /// intersect against their own list, and silently hiding a stray
 /// `\Freally\…` task would make an orphan invisible.
 pub fn installed_ids() -> Result<std::collections::HashSet<String>, SchedulerError> {
-    #[cfg(target_os = "windows")]
+    #[cfg(any(windows, unix))]
     {
-        windows_impl::installed_ids()
-    }
-    #[cfg(target_os = "macos")]
-    {
-        macos_impl::installed_ids()
-    }
-    #[cfg(all(unix, not(target_os = "macos")))]
-    {
-        linux_impl::installed_ids()
+        backend::installed_ids()
     }
     #[cfg(not(any(windows, unix)))]
     {
@@ -632,17 +618,9 @@ pub fn installed_ids() -> Result<std::collections::HashSet<String>, SchedulerErr
 /// Prefer [`installed_ids`] when checking more than one.
 pub fn is_installed(id: &str) -> Result<bool, SchedulerError> {
     validate_id(id)?;
-    #[cfg(target_os = "windows")]
+    #[cfg(any(windows, unix))]
     {
-        windows_impl::is_installed(id)
-    }
-    #[cfg(target_os = "macos")]
-    {
-        macos_impl::is_installed(id)
-    }
-    #[cfg(all(unix, not(target_os = "macos")))]
-    {
-        linux_impl::is_installed(id)
+        backend::is_installed(id)
     }
     #[cfg(not(any(windows, unix)))]
     {

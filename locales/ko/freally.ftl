@@ -343,6 +343,52 @@ settings-tab-advanced = 고급
 settings-tab-updater = 업데이트
 settings-tab-profiles = 프로필
 
+# Opt-in anonymous bug reporting (Havoc standard)
+# MT
+settings-tab-bugreport = 버그 신고
+
+# Phase 51 — end-to-end encrypted collaboration
+# MT
+settings-tab-collab = 공동 작업
+collab-intro = 공유하는 파일은 여기 등록된 사람만 열 수 있도록 암호화됩니다. 각자 자기 키를 가지며 공용 비밀번호는 없습니다.
+collab-forward-only = 삭제하면 그 이후 암호화되는 파일을 열 수 있는 사람이 바뀝니다. 이미 읽을 수 있었던 파일은 되돌릴 수 없습니다.
+collab-members = 구성원
+collab-none = 아직 추가된 사람이 없습니다.
+collab-label = 이름
+collab-recipient = 상대의 공개 키
+collab-add = 추가
+collab-remove = 삭제
+collab-generate = 구성원용 키 생성
+collab-identity-once = 지금 복사하세요 — 한 번만 표시되며 공유 파일을 여는 유일한 방법입니다:
+collab-sas-label = 확인 코드
+collab-sas-hint = 이 코드를 상대에게 소리 내어 읽어 주세요. 코드가 같으면 서로의 진짜 키를 가진 것입니다.
+
+# Phase 53 — optional decoded video frames (user-supplied ffmpeg)
+# MT
+merge-heading = 동영상 미리보기
+merge-ffmpeg-hint = 버전을 비교할 때 동영상 프레임을 보여줄 수 있습니다. 여기에는 ffmpeg가 필요하지만 함께 제공되지 않습니다 — 직접 설치하시면 Freally가 사용합니다. 나머지 기능은 없어도 동작합니다.
+merge-ffmpeg-enable = 동영상 프레임에 ffmpeg 사용
+merge-ffmpeg-path = ffmpeg 경로 (비워 두면 PATH 검색)
+merge-ffmpeg-found = 찾음
+merge-ffmpeg-missing = ffmpeg를 찾지 못했습니다. 동영상 비교는 계속 동작하며, 화면 대신 길이·크기·트랙 정보를 표시합니다.
+merge-ffmpeg-disabled = 동영상 프레임이 꺼져 있습니다. 이미지를 비교하려면 설정에서 ffmpeg를 켜세요.
+
+collab-revoked = 삭제됨
+collab-no-roster = 아직 사람 목록이 없습니다. 파일을 공유하기 전에 사람을 추가하세요.
+collab-admin-key-corrupt = 저장된 관리자 키를 읽을 수 없습니다. 손상되었을 수 있습니다.
+
+bugreport-intro = 신고는 익명이며 자동으로 전송되지 않습니다. 보낼 내용을 직접 고르고 직접 보내기를 누릅니다 — 저희가 운영하는 서버는 없습니다.
+bugreport-pending = 이전 실행의 크래시 보고서가 대기 중입니다.
+bugreport-description-label = 무슨 일이 있었나요?
+bugreport-include-crash = 크래시 보고서 포함
+bugreport-preview-label = 전송될 내용을 그대로 보기
+bugreport-send-github = GitHub 이슈 열기
+bugreport-send-gmail = Gmail 열기
+bugreport-send-email = 메일 앱 열기
+bugreport-dismiss-crash = 크래시 보고서 삭제
+bugreport-simulate = 크래시 보고서 시뮬레이션
+
+
 # General tab additions
 settings-section-theme = 테마
 settings-theme-auto = 자동
@@ -739,6 +785,13 @@ power-reason-cellular-network = 셀룰러 네트워크
 power-reason-presenting = 발표 모드
 power-reason-fullscreen = 전체 화면 앱
 power-reason-thermal-throttling = CPU 제한 중
+
+# Phase 31b — ambient power badge
+# MT
+power-badge-paused = 일시 중지
+power-badge-capped = 제한됨
+power-badge-tooltip = 전원 정책이 전송을 제한하고 있습니다. 설정 → 전원을 여세요.
+
 
 # Phase 32 — cloud backend matrix via OpenDAL. Settings → Remotes
 # tab + the Add-backend wizard that writes one entry per remote into
@@ -1281,6 +1334,13 @@ restore-conflict-keep-both = 둘 다 유지
 restore-toast-done = { $restored }개 복원, { $skipped }개 건너뜀
 restore-toast-failed = 복원 실패: { $reason }
 snapshot-forget = 잊기
+
+# Phase 49p — inline snapshot metadata editing
+# MT
+snapshot-field-label = 이름
+snapshot-field-description = 설명
+snapshot-field-tags = 태그 (쉼표로 구분)
+
 snapshot-forget-toast = 스냅샷을 잊었습니다 — “공간 회수”를 실행하여 비우세요
 library-reclaim = 공간 회수
 # Phase 49i — full compaction.
@@ -1317,6 +1377,35 @@ repo-action-browse = 찾아보기…
 repo-switcher-label = 저장소
 repo-action-forget = 연결 해제
 repo-action-change-pass = 암호 변경…
+
+# Phase 50i — repository access key slots
+# MT
+repo-keys-title = 액세스 키
+repo-keys-empty = 이 저장소에는 암호 잠금이 없습니다.
+repo-key-label = 레이블
+repo-key-password = 새 비밀번호
+repo-key-auth = 기존 비밀번호
+repo-action-add-key = 키 추가
+repo-action-remove-key = 해지
+repo-action-recovery = 복구 키 생성
+
+# Phase 50h — repository replication (3-2-1)
+# MT
+repo-action-replicate = 복제 대상…
+
+# Phase 50g — per-repository pack storage backend
+# MT
+repo-remote-label = 팩 저장소
+repo-remote-local = 로컬 디스크
+repo-remote-restart = 변경 사항은 다음 실행 시 적용됩니다.
+repo-remote-unknown = 해당 원격이 구성되어 있지 않습니다.
+repo-remote-not-empty = 이 저장소에는 이미 데이터가 있습니다. 팩 저장 위치는 비어 있을 때만 선택할 수 있습니다. 대신 복제를 사용해 새 저장소로 복사하세요.
+
+repo-replicate-done = 복제 완료: 스냅샷 { $copied }개 복사, { $skipped }개는 이미 존재
+repo-replicate-same-path = 대상이 원본과 같은 저장소입니다.
+
+repo-recovery-once = 지금 저장하세요 — 한 번만 표시됩니다:
+
 repo-password-old = 현재 암호
 repo-password-new = 새 암호
 repo-error-exists = 이 위치에 이미 저장소가 있습니다
@@ -1590,7 +1679,21 @@ favorites-kind-pair = 조합
 err-shell-portable = 휴대용 모드에서는 셸 통합을 사용할 수 없습니다
 settings-portable-title = 휴대용 모드
 settings-portable-active = 휴대용 모드가 활성화되어 있습니다. 설정, 기록, 저널이 { $path }에 저장됩니다.
-settings-portable-keychain-warning = 경고: 저장된 클라우드 자격 증명은 휴대용 드라이브가 아니라 이 컴퓨터의 시스템 키체인에 저장됩니다. 드라이브를 분리한 뒤에도 이 컴퓨터에 남습니다. 컴퓨터를 반납하기 전에 추가한 원격 연결을 삭제하세요.
+settings-portable-keychain-warning = 클라우드 자격 증명은 이동식 드라이브의 암호화된 파일에 보관되며 직접 정한 암호로 잠금 해제됩니다. 이 컴퓨터에는 기록되지 않습니다. 암호를 잊으면 저장된 자격 증명은 복구할 수 없습니다.
+
+# FFM-M21 — portable credential store (age-encrypted file)
+# MT
+cloud-error-credentials-locked = 클라우드 자격 증명이 잠겨 있습니다. 이 백엔드를 사용하려면 이 드라이브의 자격 증명 파일을 잠금 해제하세요.
+cloud-error-credentials-bad-passphrase = 해당 암호로는 자격 증명 파일을 열 수 없습니다.
+cloud-error-credentials-empty-passphrase = 암호를 입력하세요.
+cloud-error-credentials-not-portable = 이 설치본은 자격 증명을 시스템 키체인에 보관하므로 잠금 해제할 항목이 없습니다.
+portable-credentials-title = 이동식 클라우드 자격 증명
+portable-credentials-unlock-body = 이 드라이브의 자격 증명 파일을 보호하는 암호를 입력하세요.
+portable-credentials-create-body = 이 드라이브의 클라우드 자격 증명을 보호할 암호를 정하세요. 잊으면 복구할 수 없습니다.
+portable-credentials-passphrase-label = 암호
+portable-credentials-unlock-action = 잠금 해제
+portable-credentials-lock-action = 잠금
+
 
 # FFM-M24
 err-autostart-portable = 휴대용 모드에서는 로그인 시 시작을 사용할 수 없습니다

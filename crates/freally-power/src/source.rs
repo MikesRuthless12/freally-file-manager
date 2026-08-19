@@ -163,8 +163,132 @@ impl FullscreenProbe for RealFullscreenProbe {
     }
 }
 
-/// Non-Windows targets (Linux, macOS, and everything else) defer the
-/// presentation + fullscreen signals to the stub for now.
+/// Phase 31b — Linux fullscreen detection via EWMH.
+///
+/// Reads `_NET_WM_STATE` on the window named by the root's
+/// `_NET_ACTIVE_WINDOW` and looks for `_NET_WM_STATE_FULLSCREEN`. That
+/// is the same property a compositor sets for a fullscreen video player
+/// or a presentation in full-screen mode, and it is what the roadmap
+/// names for this platform.
+///
+/// **Never blocks the caller.** The probe is sampled from inside the
+/// tokio poller, and the X11 round trip is a blocking socket exchange.
+/// An earlier Linux probe called a blocking DBus API straight from that
+/// task, which panics with "cannot start a runtime from within a
+/// runtime" and took the whole poller down — disabling *every* power
+/// policy on Linux. Here the round trip happens on a dedicated OS
+/// thread and the poller only loads an `AtomicBool`, which structurally
+/// cannot do that.
+///
+/// Degrades to `false` — "not fullscreen", the answer that lets
+/// transfers continue — whenever the display cannot be read at all:
+/// a headless host, a Wayland session without XWayland, or a
+/// compositor that does not implement EWMH.
+#[cfg(target_os = "linux")]
+mod linux_fullscreen {
+    use std::sync::OnceLock;
+    use std::sync::atomic::{AtomicBool, Ordering};
+
+    static FULLSCREEN: AtomicBool = AtomicBool::new(false);
+    static POLLER: OnceLock<()> = OnceLock::new();
+
+    /// How often the background thread re-reads the display. The power
+    /// poller ticks far faster; a fullscreen transition that takes a
+    /// few seconds to register is not worth a busier X11 client.
+    const SAMPLE_EVERY: std::time::Duration = std::time::Duration::from_secs(5);
+
+    pub fn is_fullscreen() -> bool {
+        POLLER.get_or_init(|| {
+            // A failed spawn just means the flag stays false forever,
+            // which is the same graceful degradation as no display.
+            let _ = std::thread::Builder::new()
+                .name("freally-fullscreen".to_owned())
+                .spawn(|| {
+                    loop {
+                        FULLSCREEN.store(sample().unwrap_or(false), Ordering::Relaxed);
+                        std::thread::sleep(SAMPLE_EVERY);
+                    }
+                });
+        });
+        FULLSCREEN.load(Ordering::Relaxed)
+    }
+
+    /// One X11 round trip. `None` for any failure — no display, no
+    /// EWMH support, or a window that vanished mid-query.
+    fn sample() -> Option<bool> {
+        use x11rb::connection::Connection;
+        use x11rb::protocol::xproto::{AtomEnum, ConnectionExt};
+
+        let (conn, screen_num) = x11rb::connect(None).ok()?;
+        let root = conn.setup().roots.get(screen_num)?.root;
+
+        let atom = |name: &[u8]| -> Option<u32> {
+            Some(conn.intern_atom(false, name).ok()?.reply().ok()?.atom)
+        };
+        let active_atom = atom(b"_NET_ACTIVE_WINDOW")?;
+        let state_atom = atom(b"_NET_WM_STATE")?;
+        let fullscreen_atom = atom(b"_NET_WM_STATE_FULLSCREEN")?;
+
+        let active = conn
+            .get_property(false, root, active_atom, AtomEnum::WINDOW, 0, 1)
+            .ok()?
+            .reply()
+            .ok()?;
+        let window = active.value32()?.next()?;
+        // A root with no active window reports 0 — e.g. the desktop
+        // itself has focus. Querying window 0 is an X error, not a
+        // fullscreen app.
+        if window == 0 {
+            return Some(false);
+        }
+
+        let state = conn
+            .get_property(false, window, state_atom, AtomEnum::ATOM, 0, 32)
+            .ok()?
+            .reply()
+            .ok()?;
+        Some(state.value32()?.any(|a| a == fullscreen_atom))
+    }
+}
+
+/// Linux fullscreen probe — real EWMH detection, see
+/// [`linux_fullscreen`].
+#[cfg(target_os = "linux")]
+pub struct RealFullscreenProbe;
+
+#[cfg(target_os = "linux")]
+impl FullscreenProbe for RealFullscreenProbe {
+    fn is_fullscreen(&self) -> bool {
+        linux_fullscreen::is_fullscreen()
+    }
+}
+
+/// Linux presentation probe — **deliberately still the stub.**
+///
+/// Windows has a first-class answer (`QUNS_PRESENTATION_MODE`). Linux
+/// does not: GNOME's `org.gnome.SessionManager.IsInhibited` exposes
+/// logout / switch-user / suspend / idle / auto-mount, and the only bit
+/// that a presentation sets is *idle-inhibit* — which a playing video,
+/// a long download, and a compiling IDE all set too. The probe that was
+/// removed used exactly that bit and over-fired on all of them, pausing
+/// transfers for people who were only watching something.
+///
+/// Reporting "not presenting" is the honest answer until a signal
+/// exists that means what the setting says. Fullscreen is detected
+/// separately and faithfully above, which covers the common case of a
+/// full-screen slide deck.
+#[cfg(target_os = "linux")]
+pub struct RealPresentationProbe;
+
+#[cfg(target_os = "linux")]
+impl PresentationProbe for RealPresentationProbe {
+    fn is_presenting(&self) -> bool {
+        StubPresentationProbe.is_presenting()
+    }
+}
+
+/// macOS and every other non-Windows, non-Linux target defer both
+/// signals to the stub.
 ///
 /// The earlier Linux GNOME `org.gnome.SessionManager.IsInhibited` DBus
 /// probe was removed: it called the **blocking** zbus API from inside
@@ -184,20 +308,20 @@ impl FullscreenProbe for RealFullscreenProbe {
 /// across targets (mirrors [`RealThermalProbe`] / [`RealNetworkProbe`]).
 /// A type alias names only a type, so `Arc::new(RealPresentationProbe)`
 /// would be `error[E0423]: expected value, found type alias`.
-#[cfg(not(target_os = "windows"))]
+#[cfg(not(any(target_os = "windows", target_os = "linux")))]
 pub struct RealPresentationProbe;
 
-#[cfg(not(target_os = "windows"))]
+#[cfg(not(any(target_os = "windows", target_os = "linux")))]
 impl PresentationProbe for RealPresentationProbe {
     fn is_presenting(&self) -> bool {
         StubPresentationProbe.is_presenting()
     }
 }
 
-#[cfg(not(target_os = "windows"))]
+#[cfg(not(any(target_os = "windows", target_os = "linux")))]
 pub struct RealFullscreenProbe;
 
-#[cfg(not(target_os = "windows"))]
+#[cfg(not(any(target_os = "windows", target_os = "linux")))]
 impl FullscreenProbe for RealFullscreenProbe {
     fn is_fullscreen(&self) -> bool {
         StubFullscreenProbe.is_fullscreen()

@@ -343,6 +343,52 @@ settings-tab-advanced = Erweitert
 settings-tab-updater = Updates
 settings-tab-profiles = Profile
 
+# Opt-in anonymous bug reporting (Havoc standard)
+# MT
+settings-tab-bugreport = Fehler melden
+
+# Phase 51 — end-to-end encrypted collaboration
+# MT
+settings-tab-collab = Zusammenarbeit
+collab-intro = Freigegebene Dateien werden so verschlüsselt, dass nur die hier gelisteten Personen sie öffnen können. Jede Person behält ihren eigenen Schlüssel; es gibt kein gemeinsames Passwort.
+collab-forward-only = Ein Entfernen ändert, wer künftig verschlüsselte Dateien öffnen kann. Bereits lesbare Dateien lassen sich nicht zurückholen.
+collab-members = Personen
+collab-none = Es wurde noch niemand hinzugefügt.
+collab-label = Name
+collab-recipient = Ihr öffentlicher Schlüssel
+collab-add = Hinzufügen
+collab-remove = Entfernen
+collab-generate = Schlüssel für jemanden erzeugen
+collab-identity-once = Jetzt kopieren — wird nur einmal angezeigt und ist der einzige Weg, freigegebene Dateien zu öffnen:
+collab-sas-label = Bestätigungscode
+collab-sas-hint = Lesen Sie den Code der anderen Person vor. Stimmen die Codes überein, besitzen Sie jeweils den echten Schlüssel des anderen.
+
+# Phase 53 — optional decoded video frames (user-supplied ffmpeg)
+# MT
+merge-heading = Videovorschauen
+merge-ffmpeg-hint = Freally kann beim Vergleichen Einzelbilder aus einem Video zeigen. Dafür wird ffmpeg benötigt, das nicht mitgeliefert wird — installieren Sie es selbst, dann nutzt Freally es. Alles andere funktioniert auch ohne.
+merge-ffmpeg-enable = ffmpeg für Videobilder verwenden
+merge-ffmpeg-path = ffmpeg-Pfad (leer lassen, um PATH zu durchsuchen)
+merge-ffmpeg-found = Gefunden
+merge-ffmpeg-missing = ffmpeg wurde nicht gefunden. Der Videovergleich funktioniert weiterhin, zeigt aber Länge, Größe und Spurdetails statt Bildern.
+merge-ffmpeg-disabled = Videobilder sind ausgeschaltet. Aktivieren Sie ffmpeg in den Einstellungen, um Bilder zu vergleichen.
+
+collab-revoked = Entfernt
+collab-no-roster = Es gibt noch keine Personenliste. Fügen Sie jemanden hinzu, bevor Sie Dateien teilen.
+collab-admin-key-corrupt = Der gespeicherte Administratorschlüssel konnte nicht gelesen werden. Er ist möglicherweise beschädigt.
+
+bugreport-intro = Berichte sind anonym und werden nie automatisch gesendet. Sie wählen den Inhalt und senden selbst — wir betreiben keinen Server.
+bugreport-pending = Ein Absturzbericht aus einem früheren Lauf wartet.
+bugreport-description-label = Was ist passiert?
+bugreport-include-crash = Absturzbericht einschließen
+bugreport-preview-label = Genau anzeigen, was gesendet wird
+bugreport-send-github = GitHub-Issue öffnen
+bugreport-send-gmail = Gmail öffnen
+bugreport-send-email = E-Mail-Programm öffnen
+bugreport-dismiss-crash = Absturzbericht verwerfen
+bugreport-simulate = Absturzbericht simulieren
+
+
 # General tab additions
 settings-section-theme = Design
 settings-theme-auto = Automatisch
@@ -739,6 +785,13 @@ power-reason-cellular-network = Mobilfunknetz
 power-reason-presenting = Präsentationsmodus
 power-reason-fullscreen = Vollbild-App
 power-reason-thermal-throttling = CPU drosselt
+
+# Phase 31b — ambient power badge
+# MT
+power-badge-paused = Angehalten
+power-badge-capped = Begrenzt
+power-badge-tooltip = Eine Energierichtlinie begrenzt Übertragungen. Einstellungen → Energie öffnen.
+
 
 # Phase 32 — cloud backend matrix via OpenDAL. Settings → Remotes
 # tab + the Add-backend wizard that writes one entry per remote into
@@ -1281,6 +1334,13 @@ restore-conflict-keep-both = Beide behalten
 restore-toast-done = { $restored } wiederhergestellt, { $skipped } übersprungen
 restore-toast-failed = Wiederherstellung fehlgeschlagen: { $reason }
 snapshot-forget = Vergessen
+
+# Phase 49p — inline snapshot metadata editing
+# MT
+snapshot-field-label = Name
+snapshot-field-description = Beschreibung
+snapshot-field-tags = Schlagwörter (durch Komma getrennt)
+
 snapshot-forget-toast = Snapshot vergessen — „Speicher freigeben“ ausführen, um ihn freizugeben
 library-reclaim = Speicher freigeben
 # Phase 49i — full compaction.
@@ -1317,6 +1377,35 @@ repo-action-browse = Durchsuchen…
 repo-switcher-label = Repository
 repo-action-forget = Vergessen
 repo-action-change-pass = Passphrase ändern…
+
+# Phase 50i — repository access key slots
+# MT
+repo-keys-title = Zugangsschlüssel
+repo-keys-empty = Dieses Repository hat keine Passphrase-Sperre.
+repo-key-label = Bezeichnung
+repo-key-password = Neues Passwort
+repo-key-auth = Vorhandenes Passwort
+repo-action-add-key = Schlüssel hinzufügen
+repo-action-remove-key = Widerrufen
+repo-action-recovery = Wiederherstellungsschlüssel erzeugen
+
+# Phase 50h — repository replication (3-2-1)
+# MT
+repo-action-replicate = Replizieren nach…
+
+# Phase 50g — per-repository pack storage backend
+# MT
+repo-remote-label = Pack-Speicher
+repo-remote-local = Lokale Festplatte
+repo-remote-restart = Änderungen am Pack-Speicher gelten ab dem nächsten Start.
+repo-remote-unknown = Dieses Remote ist nicht konfiguriert.
+repo-remote-not-empty = Dieses Repository enthält bereits Daten. Der Speicherort für Pakete lässt sich nur wählen, solange es leer ist — replizieren Sie stattdessen in ein neues Repository.
+
+repo-replicate-done = Repliziert: { $copied } Snapshot(s) kopiert, { $skipped } bereits vorhanden
+repo-replicate-same-path = Das Ziel ist dasselbe Repository wie die Quelle.
+
+repo-recovery-once = Jetzt sichern — wird nur einmal angezeigt:
+
 repo-password-old = Aktuelle Passphrase
 repo-password-new = Neue Passphrase
 repo-error-exists = An diesem Speicherort existiert bereits ein Repository
@@ -1590,7 +1679,21 @@ favorites-kind-pair = Paar
 err-shell-portable = Die Shell-Integration ist im portablen Modus nicht verfügbar
 settings-portable-title = Portabler Modus
 settings-portable-active = Der portable Modus ist aktiv. Einstellungen, Verlauf und Journale werden in { $path } gespeichert.
-settings-portable-keychain-warning = Warnung: Gespeicherte Cloud-Zugangsdaten liegen weiterhin im Systemschlüsselbund dieses Computers, nicht auf dem Wechseldatenträger — sie verbleiben nach dem Abziehen auf diesem Rechner. Entfernen Sie hinzugefügte Remotes, bevor Sie den Computer zurückgeben.
+settings-portable-keychain-warning = Cloud-Zugangsdaten liegen in einer verschlüsselten Datei auf dem Wechseldatenträger und werden mit einer selbst gewählten Passphrase entsperrt — sie werden nicht auf diesem Computer gespeichert. Ist die Passphrase vergessen, sind die Zugangsdaten nicht wiederherstellbar.
+
+# FFM-M21 — portable credential store (age-encrypted file)
+# MT
+cloud-error-credentials-locked = Cloud-Zugangsdaten sind gesperrt. Entsperren Sie die Zugangsdatei auf diesem Laufwerk, um dieses Backend zu verwenden.
+cloud-error-credentials-bad-passphrase = Mit dieser Passphrase lässt sich die Zugangsdatei nicht öffnen.
+cloud-error-credentials-empty-passphrase = Geben Sie eine Passphrase ein.
+cloud-error-credentials-not-portable = Diese Installation speichert Zugangsdaten im Systemschlüsselbund; es gibt nichts zu entsperren.
+portable-credentials-title = Portable Cloud-Zugangsdaten
+portable-credentials-unlock-body = Geben Sie die Passphrase ein, die die Zugangsdatei auf diesem Laufwerk schützt.
+portable-credentials-create-body = Wählen Sie eine Passphrase zum Schutz der Cloud-Zugangsdaten auf diesem Laufwerk. Sie kann nicht wiederhergestellt werden.
+portable-credentials-passphrase-label = Passphrase
+portable-credentials-unlock-action = Entsperren
+portable-credentials-lock-action = Sperren
+
 
 # FFM-M24
 err-autostart-portable = Der Start bei der Anmeldung ist im portablen Modus nicht verfügbar

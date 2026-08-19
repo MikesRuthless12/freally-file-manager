@@ -449,6 +449,9 @@ fn emit_changed(app: &AppHandle, registry: &DropStackRegistry) {
 /// Resolve the default on-disk path for the Drop Stack JSON. Sits
 /// next to `settings.toml` under the OS config dir.
 pub fn default_dropstack_path() -> Option<PathBuf> {
+    if let Some(root) = freally_settings::portable::portable_root() {
+        return Some(root.join("dropstack.json"));
+    }
     directories::ProjectDirs::from("com", "Freally", "freally-file-manager")
         .map(|d| d.config_dir().join("dropstack.json"))
 }

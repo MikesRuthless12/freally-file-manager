@@ -34,6 +34,13 @@ freally-platform = { path = "../../../crates/freally-platform", version = "0.22"
 freally-provenance = { path = "../../../crates/freally-provenance", version = "0.22" }
 freally-secure-delete = { path = "../../../crates/freally-secure-delete", version = "0.22" }
 freally-settings = { path = "../../../crates/freally-settings", version = "0.22" }
+# Phase 50g — object-store backend + read-through cache for a
+# repository whose packs live on a configured cloud remote.
+freally-chunk-remote = { path = "../../../crates/freally-chunk-remote", version = "0.22" }
+# Phase 51 — roster, envelope crypto, signed revocation, SAS.
+freally-collab = { path = "../../../crates/freally-collab", version = "0.22" }
+# Phase 53 — non-text merge previews (image, PSD, audio, video, PDF).
+freally-mergeview = { path = "../../../crates/freally-mergeview", version = "0.22" }
 # Phase 19b — filesystem-snapshot bridge (VSS / ZFS / Btrfs / APFS)
 # wired into `CopyOptions::snapshot_hook` when the user opts into the
 # "Use snapshot" locked-file policy.
@@ -431,6 +438,21 @@ path = "../../../tests/smoke/phase_17e_ipc_audit.rs"
 [[test]]
 name = "phase_46_plugin_ui"
 path = "../../../tests/smoke/phase_46_plugin_ui.rs"
+
+# FFM-M21 smoke test — a portable install keeps every writer beside the
+# binary. Spawns the real CLI staged in a tempdir, because
+# `portable::portable_root()` is a process-wide OnceLock seeded from
+# `current_exe()`; self-skips when the CLI has not been built.
+[[test]]
+name = "phase_m21_portable"
+path = "../../../tests/smoke/phase_m21_portable.rs"
+
+# Phase 51 smoke test — collaboration round trip: roster, SAS
+# verification, multi-recipient envelope, persistence, and the
+# forward-only limit of revocation.
+[[test]]
+name = "phase_51_collab"
+path = "../../../tests/smoke/phase_51_collab.rs"
 
 # Phase 17d — manual UAC-probe (dev-only; NOT shipped). Gated behind the
 # `elevate-probe` feature via required-features, so `cargo build`,

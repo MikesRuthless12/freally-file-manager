@@ -343,6 +343,49 @@ settings-tab-advanced = Advanced
 settings-tab-updater = Updates
 settings-tab-profiles = Profiles
 
+# Opt-in anonymous bug reporting (Havoc standard)
+settings-tab-bugreport = Report a bug
+
+# Phase 51 — end-to-end encrypted collaboration
+settings-tab-collab = Collaboration
+collab-intro = Files you share are encrypted so only the people listed here can open them. Each person keeps their own key; there is no shared password.
+collab-forward-only = Removing someone changes who can open files encrypted from then on. It cannot take back files they could already read.
+collab-members = People
+collab-none = No one has been added yet.
+collab-label = Name
+collab-recipient = Their public key
+collab-add = Add
+collab-remove = Remove
+collab-generate = Generate a key for someone
+collab-identity-once = Copy this now — it is shown only once, and is the only way to open shared files:
+collab-sas-label = Verification code
+collab-sas-hint = Read this code aloud to the other person. If your codes match, you each hold the other's real key.
+
+# Phase 53 — optional decoded video frames (user-supplied ffmpeg)
+merge-heading = Video previews
+merge-ffmpeg-hint = Freally can show frames from a video when comparing versions. That needs ffmpeg, which is not included — install it yourself and Freally will use it. Everything else works without it.
+merge-ffmpeg-enable = Use ffmpeg for video frames
+merge-ffmpeg-path = ffmpeg location (leave empty to search PATH)
+merge-ffmpeg-found = Found
+merge-ffmpeg-missing = ffmpeg was not found. Video comparison still works, it just shows length, size and track details instead of pictures.
+merge-ffmpeg-disabled = Video frames are turned off. Turn on ffmpeg in Settings to compare pictures.
+
+collab-revoked = Removed
+collab-no-roster = There is no list of people yet. Add someone before sharing files.
+collab-admin-key-corrupt = The stored administrator key could not be read. It may be damaged.
+
+bugreport-intro = Reports are anonymous and never sent automatically. You choose what to send and press Send yourself — there is no server we run.
+bugreport-pending = A crash report from a previous run is waiting.
+bugreport-description-label = What happened?
+bugreport-include-crash = Include the crash report
+bugreport-preview-label = Show exactly what will be sent
+bugreport-send-github = Open a GitHub issue
+bugreport-send-gmail = Open Gmail
+bugreport-send-email = Open my email app
+bugreport-dismiss-crash = Discard the crash report
+bugreport-simulate = Simulate a crash report
+
+
 # General tab additions
 settings-section-theme = Theme
 settings-theme-auto = Auto
@@ -742,6 +785,12 @@ power-reason-cellular-network = cellular network
 power-reason-presenting = presentation mode
 power-reason-fullscreen = fullscreen app
 power-reason-thermal-throttling = CPU is throttling
+
+# Phase 31b — ambient power badge
+power-badge-paused = Paused
+power-badge-capped = Limited
+power-badge-tooltip = A power policy is limiting transfers. Open Settings → Power.
+
 
 # Phase 32 — cloud backend matrix via OpenDAL. Settings → Remotes
 # tab + the Add-backend wizard that writes one entry per remote into
@@ -1291,6 +1340,12 @@ restore-conflict-keep-both = Keep both
 restore-toast-done = Restored { $restored }, skipped { $skipped }
 restore-toast-failed = Restore failed: { $reason }
 snapshot-forget = Forget
+
+# Phase 49p — inline snapshot metadata editing
+snapshot-field-label = Name
+snapshot-field-description = Description
+snapshot-field-tags = Tags (comma-separated)
+
 snapshot-forget-toast = Snapshot forgotten — run Reclaim space to free it
 library-reclaim = Reclaim space
 # Phase 49i — full compaction.
@@ -1327,6 +1382,32 @@ repo-action-browse = Browse…
 repo-switcher-label = Repository
 repo-action-forget = Forget
 repo-action-change-pass = Change passphrase…
+
+# Phase 50i — repository access key slots
+repo-keys-title = Access keys
+repo-keys-empty = This repository has no passphrase gate.
+repo-key-label = Label
+repo-key-password = New password
+repo-key-auth = Existing password
+repo-action-add-key = Add key
+repo-action-remove-key = Revoke
+repo-action-recovery = Generate recovery key
+
+# Phase 50h — repository replication (3-2-1)
+repo-action-replicate = Replicate to…
+
+# Phase 50g — per-repository pack storage backend
+repo-remote-label = Pack storage
+repo-remote-local = Local disk
+repo-remote-restart = Pack storage changes apply the next time the app starts.
+repo-remote-unknown = That remote is not configured.
+repo-remote-not-empty = This repository already holds data. Pack storage can only be chosen while it is still empty — use Replicate to copy into a new repository instead.
+
+repo-replicate-done = Replicated: { $copied } snapshot(s) copied, { $skipped } already present
+repo-replicate-same-path = The destination is the same repository as the source.
+
+repo-recovery-once = Store this now — it is shown only once:
+
 repo-password-old = Current passphrase
 repo-password-new = New passphrase
 repo-error-exists = A repository already exists at this location
@@ -1596,7 +1677,20 @@ favorites-kind-pair = Pair
 err-shell-portable = Shell integration is unavailable in portable mode
 settings-portable-title = Portable mode
 settings-portable-active = Portable mode is active. Settings, history, and journals are stored in { $path }.
-settings-portable-keychain-warning = Warning: saved cloud credentials are still stored in this computer's system keychain, not on the portable drive — they remain on this machine after you unplug it. Remove any remotes you added before handing the computer back.
+settings-portable-keychain-warning = Cloud credentials are kept in an encrypted file on the portable drive, unlocked by a passphrase you choose — they are not written to this computer. If you forget the passphrase, the saved credentials cannot be recovered.
+
+# FFM-M21 — portable credential store (age-encrypted file)
+cloud-error-credentials-locked = Cloud credentials are locked. Unlock the credential file on this drive to use this backend.
+cloud-error-credentials-bad-passphrase = That passphrase does not open the credential file.
+cloud-error-credentials-empty-passphrase = Enter a passphrase.
+cloud-error-credentials-not-portable = This install keeps credentials in the system keychain, so there is nothing to unlock.
+portable-credentials-title = Portable cloud credentials
+portable-credentials-unlock-body = Enter the passphrase that protects the credential file on this drive.
+portable-credentials-create-body = Choose a passphrase to protect cloud credentials on this drive. It cannot be recovered if you forget it.
+portable-credentials-passphrase-label = Passphrase
+portable-credentials-unlock-action = Unlock
+portable-credentials-lock-action = Lock
+
 
 # FFM-M24 — launch at login
 err-autostart-portable = Launch at login is unavailable in portable mode

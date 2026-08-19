@@ -47,6 +47,11 @@ pub(crate) fn dispatch(cli: Cli) -> ExitCode {
             Cmd::Remote(args) => commands::remote::run(&cli.global, args, writer.clone()).await,
             Cmd::Mount(args) => commands::mount::run(&cli.global, args, writer.clone()).await,
             Cmd::Audit(args) => commands::audit::run(&cli.global, args, writer.clone()).await,
+            Cmd::Repo(args) => commands::repo::run(&cli.global, args, writer.clone()).await,
+            Cmd::Key(args) => commands::key::run(&cli.global, args, writer.clone()).await,
+            Cmd::Replicate(args) => {
+                commands::replicate::run(&cli.global, args, writer.clone()).await
+            }
             Cmd::Plan(args) => commands::plan::run(&cli.global, args, writer.clone(), false).await,
             Cmd::Apply(args) => commands::plan::run(&cli.global, args, writer.clone(), true).await,
             Cmd::Schedule(args) => commands::schedule::run(&cli.global, args, writer.clone()).await,

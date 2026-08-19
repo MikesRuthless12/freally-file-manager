@@ -138,3 +138,42 @@ docs/BENCHMARKS_PHASE_42.md
 
 # Internal prompt docs — never track (Mike, 2026-06-20)
 *[Pp][Rr][Oo][Mm][Pp][Tt]*.md
+
+# cdr-py build artifacts (Phase 50f) — the published package is built
+# in CI/locally on demand; never committed.
+cdr-py/dist/
+cdr-py/__pycache__/
+cdr-py/.pytest_cache/
+
+# ffmpeg — NEVER commit or ship a binary (Phase 53).
+#
+# ffmpeg is LGPL-2.1, and GPL when built --enable-gpl. Committing one
+# here, or letting one reach a release artifact, turns this project into
+# a *distributor* of it: that carries a permanent per-release obligation
+# to ship its source or a written offer and to let users relink, and
+# `deny.toml` would have to be reopened to admit LGPL at all.
+#
+# The feature is deliberately built around a binary the USER installs
+# and points us at (`crates/freally-mergeview/src/ffmpeg.rs`), because
+# invoking one at arms length distributes nothing. It is opt-in and
+# absent by default. These rules exist so a stray download in the tree
+# can never quietly undo that.
+ffmpeg
+ffmpeg.exe
+ffprobe
+ffprobe.exe
+ffplay
+ffplay.exe
+**/ffmpeg-*/
+avcodec-*.dll
+avformat-*.dll
+avutil-*.dll
+avdevice-*.dll
+avfilter-*.dll
+swresample-*.dll
+swscale-*.dll
+postproc-*.dll
+libav*.so*
+libsw*.so*
+libav*.dylib
+libsw*.dylib

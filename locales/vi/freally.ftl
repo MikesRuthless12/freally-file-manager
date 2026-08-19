@@ -343,6 +343,52 @@ settings-tab-advanced = Nâng cao
 settings-tab-updater = Cập nhật
 settings-tab-profiles = Hồ sơ
 
+# Opt-in anonymous bug reporting (Havoc standard)
+# MT
+settings-tab-bugreport = Báo lỗi
+
+# Phase 51 — end-to-end encrypted collaboration
+# MT
+settings-tab-collab = Cộng tác
+collab-intro = Tệp bạn chia sẻ được mã hoá để chỉ những người trong danh sách này mở được. Mỗi người giữ khoá riêng; không có mật khẩu dùng chung.
+collab-forward-only = Xoá một người sẽ thay đổi ai mở được các tệp mã hoá từ đó trở đi, và không thu hồi được những tệp họ đã đọc được.
+collab-members = Thành viên
+collab-none = Chưa thêm ai.
+collab-label = Tên
+collab-recipient = Khoá công khai của họ
+collab-add = Thêm
+collab-remove = Xoá
+collab-generate = Tạo khoá cho một người
+collab-identity-once = Hãy sao chép ngay — chỉ hiển thị một lần và là cách duy nhất để mở tệp chia sẻ:
+collab-sas-label = Mã xác minh
+collab-sas-hint = Đọc to mã này cho người kia. Nếu trùng khớp, hai bên đang giữ đúng khoá thật của nhau.
+
+# Phase 53 — optional decoded video frames (user-supplied ffmpeg)
+# MT
+merge-heading = Xem trước video
+merge-ffmpeg-hint = Freally có thể hiển thị khung hình video khi so sánh phiên bản. Việc này cần ffmpeg, vốn không đi kèm — bạn tự cài và Freally sẽ dùng. Mọi thứ khác vẫn hoạt động khi không có nó.
+merge-ffmpeg-enable = Dùng ffmpeg cho khung hình video
+merge-ffmpeg-path = Đường dẫn ffmpeg (để trống sẽ tìm trong PATH)
+merge-ffmpeg-found = Đã tìm thấy
+merge-ffmpeg-missing = Không tìm thấy ffmpeg. So sánh video vẫn hoạt động, chỉ hiển thị thời lượng, kích thước và thông tin track thay vì hình ảnh.
+merge-ffmpeg-disabled = Khung hình video đang tắt. Bật ffmpeg trong Cài đặt để so sánh hình ảnh.
+
+collab-revoked = Đã xoá
+collab-no-roster = Chưa có danh sách người nào. Hãy thêm một người trước khi chia sẻ tệp.
+collab-admin-key-corrupt = Không thể đọc khoá quản trị đã lưu. Khoá có thể đã hỏng.
+
+bugreport-intro = Báo cáo là ẩn danh và không bao giờ tự động gửi. Bạn chọn nội dung và tự bấm Gửi — chúng tôi không vận hành máy chủ nào.
+bugreport-pending = Có một báo cáo sự cố từ lần chạy trước đang chờ.
+bugreport-description-label = Chuyện gì đã xảy ra?
+bugreport-include-crash = Kèm báo cáo sự cố
+bugreport-preview-label = Hiển thị đúng nội dung sẽ gửi
+bugreport-send-github = Mở issue trên GitHub
+bugreport-send-gmail = Mở Gmail
+bugreport-send-email = Mở ứng dụng email của tôi
+bugreport-dismiss-crash = Bỏ báo cáo sự cố
+bugreport-simulate = Mô phỏng một báo cáo sự cố
+
+
 # General tab additions
 settings-section-theme = Chủ đề
 settings-theme-auto = Tự động
@@ -739,6 +785,13 @@ power-reason-cellular-network = mạng di động
 power-reason-presenting = chế độ trình bày
 power-reason-fullscreen = ứng dụng toàn màn hình
 power-reason-thermal-throttling = CPU đang giảm tốc
+
+# Phase 31b — ambient power badge
+# MT
+power-badge-paused = Đã tạm dừng
+power-badge-capped = Bị giới hạn
+power-badge-tooltip = Một chính sách nguồn đang giới hạn truyền dữ liệu. Mở Cài đặt → Nguồn.
+
 
 # Phase 32 — cloud backend matrix via OpenDAL. Settings → Remotes
 # tab + the Add-backend wizard that writes one entry per remote into
@@ -1281,6 +1334,13 @@ restore-conflict-keep-both = Giữ cả hai
 restore-toast-done = Đã khôi phục { $restored }, bỏ qua { $skipped }
 restore-toast-failed = Khôi phục thất bại: { $reason }
 snapshot-forget = Quên
+
+# Phase 49p — inline snapshot metadata editing
+# MT
+snapshot-field-label = Tên
+snapshot-field-description = Mô tả
+snapshot-field-tags = Thẻ (phân tách bằng dấu phẩy)
+
 snapshot-forget-toast = Đã quên ảnh chụp — chạy Thu hồi dung lượng để giải phóng
 library-reclaim = Thu hồi dung lượng
 # Phase 49i — full compaction.
@@ -1317,6 +1377,35 @@ repo-action-browse = Duyệt…
 repo-switcher-label = Kho lưu trữ
 repo-action-forget = Quên
 repo-action-change-pass = Đổi cụm mật khẩu…
+
+# Phase 50i — repository access key slots
+# MT
+repo-keys-title = Khoá truy cập
+repo-keys-empty = Kho này không có khoá bằng cụm mật khẩu.
+repo-key-label = Nhãn
+repo-key-password = Mật khẩu mới
+repo-key-auth = Mật khẩu hiện tại
+repo-action-add-key = Thêm khoá
+repo-action-remove-key = Thu hồi
+repo-action-recovery = Tạo khoá khôi phục
+
+# Phase 50h — repository replication (3-2-1)
+# MT
+repo-action-replicate = Sao chép sang…
+
+# Phase 50g — per-repository pack storage backend
+# MT
+repo-remote-label = Nơi lưu pack
+repo-remote-local = Ổ đĩa cục bộ
+repo-remote-restart = Thay đổi có hiệu lực ở lần khởi động kế tiếp.
+repo-remote-unknown = Máy chủ từ xa đó chưa được cấu hình.
+repo-remote-not-empty = Kho lưu trữ này đã có dữ liệu. Chỉ có thể chọn nơi lưu gói khi kho còn trống — hãy dùng Sao chép sang một kho mới.
+
+repo-replicate-done = Đã sao chép: { $copied } ảnh chụp, { $skipped } đã có sẵn
+repo-replicate-same-path = Đích đến trùng với kho nguồn.
+
+repo-recovery-once = Hãy lưu ngay — chỉ hiển thị một lần:
+
 repo-password-old = Cụm mật khẩu hiện tại
 repo-password-new = Cụm mật khẩu mới
 repo-error-exists = Đã có kho lưu trữ tại vị trí này
@@ -1590,7 +1679,21 @@ favorites-kind-pair = Cặp
 err-shell-portable = Tích hợp shell không khả dụng ở chế độ di động
 settings-portable-title = Chế độ di động
 settings-portable-active = Chế độ di động đang bật. Cài đặt, lịch sử và nhật ký được lưu trong { $path }.
-settings-portable-keychain-warning = Cảnh báo: thông tin đăng nhập đám mây đã lưu vẫn nằm trong chuỗi khóa hệ thống của máy tính này, không phải trên ổ đĩa di động — chúng vẫn ở lại sau khi bạn rút ổ. Hãy xóa các kết nối từ xa bạn đã thêm trước khi trả lại máy.
+settings-portable-keychain-warning = Thông tin đăng nhập đám mây được giữ trong một tệp mã hoá trên ổ đĩa di động, mở bằng cụm mật khẩu bạn chọn — không ghi lên máy tính này. Nếu quên cụm mật khẩu, thông tin đã lưu không thể khôi phục.
+
+# FFM-M21 — portable credential store (age-encrypted file)
+# MT
+cloud-error-credentials-locked = Thông tin đăng nhập đám mây đang bị khoá. Hãy mở khoá tệp thông tin đăng nhập trên ổ đĩa này để dùng backend này.
+cloud-error-credentials-bad-passphrase = Cụm mật khẩu đó không mở được tệp thông tin đăng nhập.
+cloud-error-credentials-empty-passphrase = Hãy nhập cụm mật khẩu.
+cloud-error-credentials-not-portable = Bản cài đặt này lưu thông tin đăng nhập trong keychain hệ thống nên không có gì để mở khoá.
+portable-credentials-title = Thông tin đăng nhập đám mây di động
+portable-credentials-unlock-body = Nhập cụm mật khẩu bảo vệ tệp thông tin đăng nhập trên ổ đĩa này.
+portable-credentials-create-body = Chọn một cụm mật khẩu để bảo vệ thông tin đăng nhập đám mây trên ổ đĩa này. Không thể khôi phục nếu bạn quên.
+portable-credentials-passphrase-label = Cụm mật khẩu
+portable-credentials-unlock-action = Mở khoá
+portable-credentials-lock-action = Khoá
+
 
 # FFM-M24
 err-autostart-portable = Khởi động khi đăng nhập không khả dụng ở chế độ di động

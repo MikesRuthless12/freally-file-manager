@@ -534,6 +534,11 @@ fn canned_args(key: &str) -> HashMap<&'static str, String> {
             m.insert("bytes", "1.2 GiB".to_string());
             m.insert("chunks", "1 024".to_string());
         }
+        // Phase 50 — repository replication placeables.
+        "repo-replicate-done" => {
+            m.insert("copied", "12".to_string());
+            m.insert("skipped", "3".to_string());
+        }
         _ => {}
     }
     m

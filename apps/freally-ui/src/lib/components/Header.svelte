@@ -34,7 +34,7 @@
     pickFolders,
   } from "../ipc";
   import { formatEta, formatRate } from "../format";
-  import type { DiagDto, ShapeRateDto } from "../types";
+  import type { DiagDto, PowerActionDto, ShapeRateDto } from "../types";
 
   let g = $derived($globals);
   let rate = $derived($liveRateBps);
@@ -65,6 +65,25 @@
     if (smbAlgo === "unknown") return t("smb-compress-algo-unknown");
     return smbAlgo.toUpperCase();
   });
+  // Phase 31b — ambient power badge. The subscriber has emitted
+  // `power-action-changed` since Phase 31; nothing rendered it, so a
+  // policy that paused or capped a transfer was invisible. `continue`
+  // is the resting state and shows nothing.
+  let powerAction = $state<PowerActionDto | null>(null);
+  let powerBadgeLabel = $derived.by(() => {
+    if (!powerAction || powerAction.kind === "continue") return "";
+    if (powerAction.kind === "pause") return t("power-badge-paused");
+    return powerAction.bytesPerSecond !== null
+      ? formatRate(powerAction.bytesPerSecond)
+      : t("power-badge-capped");
+  });
+  let powerReasonLabel = $derived.by(() => {
+    // The six `power-reason-*` keys already ship; the suffix comes
+    // straight off the wire so a new backend reason needs only a key.
+    if (!powerAction?.reason) return "";
+    return t(`power-reason-${powerAction.reason}`);
+  });
+
   let badgeLabel = $derived.by(() => {
     if (!shapeRate || shapeRate.bytesPerSecond === null) return "";
     if (shapeRate.bytesPerSecond === 0) return t("shape-badge-paused");
@@ -104,6 +123,27 @@
       } catch {
         // Listener registration is best-effort; the badge stays on the
         // last-known value if the event bus rejects us.
+      }
+    })();
+    return () => {
+      if (unlistenFn) unlistenFn();
+    };
+  });
+
+  // Phase 31b — render the power directive the subscriber announces.
+  $effect(() => {
+    let unlistenFn: (() => void) | undefined;
+    void (async () => {
+      try {
+        unlistenFn = await onEvent<PowerActionDto>(
+          "power-action-changed",
+          (payload) => {
+            powerAction = payload;
+          },
+        );
+      } catch {
+        // Best-effort, same as the shape badge: without the listener
+        // the badge simply never appears.
       }
     })();
     return () => {
@@ -342,6 +382,23 @@
           <span class="metric eta" aria-label={t("header-eta-label")}>
             {etaDisplay}
           </span>
+        {/if}
+        {#if powerBadgeLabel}
+          <button
+            type="button"
+            class="shape-badge power-badge"
+            title={t("power-badge-tooltip")}
+            aria-label={t("power-badge-tooltip")}
+            onclick={() => openSettings()}
+          >
+            <span class="shape-icon" aria-hidden="true"
+              >{powerAction?.kind === "pause" ? "⏸" : "▼"}</span
+            >
+            <span class="shape-rate">{powerBadgeLabel}</span>
+            {#if powerReasonLabel}
+              <span class="shape-source">· {powerReasonLabel}</span>
+            {/if}
+          </button>
         {/if}
         {#if badgeLabel}
           <button

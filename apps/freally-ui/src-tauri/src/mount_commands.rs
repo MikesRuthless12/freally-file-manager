@@ -25,7 +25,41 @@ use serde::Serialize;
 
 use crate::state::AppState;
 
-/// Live-mount registry. One handle per job; re-mounting a job
+/// What a live mount is a view of.
+///
+/// Phase 49m — mounts used to be keyed on a history row alone. A
+/// repository snapshot is a second, unrelated id space (both are
+/// integers, and snapshot 7 has nothing to do with job 7), so the two
+/// are separate variants rather than one numeric key.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum MountKey {
+    /// A history row — the in-flight/completed job view.
+    Job(i64),
+    /// A repository snapshot, mounted read-only from the chunk store.
+    Snapshot(u64),
+}
+
+impl MountKey {
+    /// Wire form for [`MountDto`]: `"job"` or `"snapshot"`.
+    pub fn kind(&self) -> &'static str {
+        match self {
+            Self::Job(_) => "job",
+            Self::Snapshot(_) => "snapshot",
+        }
+    }
+
+    /// The id inside the variant, as the frontend sees it.
+    pub fn id(&self) -> i64 {
+        match self {
+            Self::Job(id) => *id,
+            // Snapshot ids are monotonic and far below 2^63; the cast
+            // is lossless for anything this app can produce.
+            Self::Snapshot(id) => *id as i64,
+        }
+    }
+}
+
+/// Live-mount registry. One handle per key; re-mounting the same key
 /// drops the previous handle (via `MountHandle::Drop`) before
 /// replacing it.
 #[derive(Clone, Default)]
@@ -35,13 +69,12 @@ pub struct MountRegistry {
 
 #[derive(Default)]
 struct MountRegistryInner {
-    /// Keyed on `job_row_id`. `Option<MountHandle>` so the handle
-    /// can be taken out for explicit unmount without losing the
-    /// map entry until the reply fires.
-    handles: HashMap<i64, MountHandle>,
+    /// Keyed on [`MountKey`] so a job mount and a snapshot mount with
+    /// the same numeric id cannot evict each other.
+    handles: HashMap<MountKey, MountHandle>,
     /// Parallel mountpoint cache so `list_mounts` can reply
     /// without taking the handles lock beyond a snapshot.
-    mountpoints: HashMap<i64, PathBuf>,
+    mountpoints: HashMap<MountKey, PathBuf>,
 }
 
 impl MountRegistry {
@@ -52,31 +85,31 @@ impl MountRegistry {
     /// Replace the handle for `job_row_id`. Returns the previous
     /// mountpoint (if any) so the caller can surface the "swapped"
     /// UX.
-    fn insert(&self, job_row_id: i64, handle: MountHandle) -> Option<PathBuf> {
+    fn insert(&self, key: MountKey, handle: MountHandle) -> Option<PathBuf> {
         let mut guard = self.inner.lock().expect("mount registry poisoned");
         let mountpoint = handle.mountpoint().to_path_buf();
-        let prev = guard.mountpoints.insert(job_row_id, mountpoint);
+        let prev = guard.mountpoints.insert(key, mountpoint);
         // Drop the old handle explicitly so its Drop runs while the
         // lock is held, ensuring no race with a concurrent mount.
-        guard.handles.insert(job_row_id, handle);
+        guard.handles.insert(key, handle);
         prev
     }
 
     /// Take a handle out for explicit unmount. Returns `None` if
     /// the job isn't currently mounted.
-    fn take(&self, job_row_id: i64) -> Option<(MountHandle, PathBuf)> {
+    fn take(&self, key: MountKey) -> Option<(MountHandle, PathBuf)> {
         let mut guard = self.inner.lock().expect("mount registry poisoned");
-        let handle = guard.handles.remove(&job_row_id)?;
+        let handle = guard.handles.remove(&key)?;
         let mountpoint = guard
             .mountpoints
-            .remove(&job_row_id)
+            .remove(&key)
             .unwrap_or_else(|| handle.mountpoint().to_path_buf());
         Some((handle, mountpoint))
     }
 
     /// Snapshot of every active mount. Cheap: clones a `HashMap`
     /// of `i64` → `PathBuf` without touching the handle slot.
-    pub fn snapshot(&self) -> Vec<(i64, PathBuf)> {
+    pub fn snapshot(&self) -> Vec<(MountKey, PathBuf)> {
         let guard = self.inner.lock().expect("mount registry poisoned");
         guard
             .mountpoints
@@ -90,7 +123,12 @@ impl MountRegistry {
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MountDto {
+    /// Legacy field: the job row for a job mount, or the snapshot id
+    /// for a snapshot mount. Kept so existing callers keep working;
+    /// `kind` is what disambiguates them.
     pub job_row_id: i64,
+    /// `"job"` or `"snapshot"` (Phase 49m).
+    pub kind: &'static str,
     pub mountpoint: String,
 }
 
@@ -115,8 +153,9 @@ pub fn list_mounts(state: tauri::State<'_, AppState>) -> Vec<MountDto> {
         .mounts
         .snapshot()
         .into_iter()
-        .map(|(job_row_id, mountpoint)| MountDto {
-            job_row_id,
+        .map(|(key, mountpoint)| MountDto {
+            job_row_id: key.id(),
+            kind: key.kind(),
             mountpoint: mountpoint.to_string_lossy().into_owned(),
         })
         .collect()
@@ -158,10 +197,11 @@ pub async fn mount_snapshot(
         )
         .map_err(|e: MountError| e.to_string())?;
 
-    state.mounts.insert(job_row_id, handle);
+    state.mounts.insert(MountKey::Job(job_row_id), handle);
 
     Ok(MountDto {
         job_row_id,
+        kind: "job",
         mountpoint,
     })
 }
@@ -172,8 +212,73 @@ pub async fn mount_snapshot(
 pub fn unmount_snapshot(job_row_id: i64, state: tauri::State<'_, AppState>) -> Result<(), String> {
     let (handle, _path) = state
         .mounts
-        .take(job_row_id)
+        .take(MountKey::Job(job_row_id))
         .ok_or_else(|| format!("job {job_row_id} is not mounted"))?;
+    handle.unmount().map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+/// Phase 49m — mount repository snapshot `snapshot_id` at `mountpoint`.
+///
+/// This is the trigger the 49m core was built for: `materialise_range`
+/// and `MountTree::build_from_snapshot` have existed since 49m shipped,
+/// but nothing could start a snapshot-backed session. The chunk-store
+/// `Arc` is handed to the backend through `ArchiveRefs` so the gated
+/// FUSE/WinFsp `read` callbacks can serve file content straight out of
+/// the repository.
+///
+/// On a default build the backend is `NoopBackend` and the mount is
+/// logical only — kernel callbacks need `--features fuse` / `winfsp`.
+#[tauri::command]
+pub async fn mount_repo_snapshot(
+    snapshot_id: u64,
+    mountpoint: String,
+    state: tauri::State<'_, AppState>,
+) -> Result<MountDto, String> {
+    // Fail before opening a handle if the snapshot is not in the
+    // repository — otherwise the user gets an empty mount and no
+    // explanation.
+    let repo = state.repository().ok_or("repository-unavailable")?;
+    let known = {
+        let repo = repo.clone();
+        tokio::task::spawn_blocking(move || repo.snapshots())
+            .await
+            .map_err(|e| format!("snapshot lookup task: {e}"))?
+            .map_err(|e| format!("snapshot lookup: {e}"))?
+    };
+    if !known.iter().any(|s| s.id == snapshot_id) {
+        return Err(format!("snapshot {snapshot_id} not found"));
+    }
+
+    let backend = NoopBackend::default();
+    let mountpoint_path = PathBuf::from(&mountpoint);
+    let archive = freally_mount::backends::ArchiveRefs {
+        chunk_store: state.chunk_store.clone(),
+        ..Default::default()
+    };
+    let handle = backend
+        .mount(&mountpoint_path, MountLayout::all(), &archive)
+        .map_err(|e: MountError| e.to_string())?;
+
+    state.mounts.insert(MountKey::Snapshot(snapshot_id), handle);
+
+    Ok(MountDto {
+        job_row_id: snapshot_id as i64,
+        kind: "snapshot",
+        mountpoint,
+    })
+}
+
+/// Phase 49m — unmount a snapshot mounted by [`mount_repo_snapshot`].
+#[tauri::command]
+pub fn unmount_repo_snapshot(
+    snapshot_id: u64,
+    state: tauri::State<'_, AppState>,
+) -> Result<(), String> {
+    let (handle, _path) = state
+        .mounts
+        .take(MountKey::Snapshot(snapshot_id))
+        .ok_or_else(|| format!("snapshot {snapshot_id} is not mounted"))?;
     handle.unmount().map_err(|e| e.to_string())?;
     Ok(())
 }
@@ -219,7 +324,7 @@ pub async fn mount_latest_on_launch(state: &AppState) {
         &freally_mount::backends::ArchiveRefs::default(),
     ) {
         Ok(handle) => {
-            state.mounts.insert(latest.row_id, handle);
+            state.mounts.insert(MountKey::Job(latest.row_id), handle);
         }
         Err(e) => {
             eprintln!(
@@ -246,10 +351,10 @@ mod tests {
                 &freally_mount::backends::ArchiveRefs::default(),
             )
             .expect("mount");
-        registry.insert(42, handle);
+        registry.insert(MountKey::Job(42), handle);
         let snap = registry.snapshot();
         assert_eq!(snap.len(), 1);
-        assert_eq!(snap[0].0, 42);
+        assert_eq!(snap[0].0, MountKey::Job(42));
         assert_eq!(snap[0].1, tmp.path());
     }
 
@@ -268,7 +373,7 @@ mod tests {
                 &freally_mount::backends::ArchiveRefs::default(),
             )
             .expect("mount1");
-        registry.insert(7, h1);
+        registry.insert(MountKey::Job(7), h1);
         assert_eq!(*counter.lock().unwrap(), 0, "first mount still live");
 
         let h2 = backend
@@ -278,7 +383,7 @@ mod tests {
                 &freally_mount::backends::ArchiveRefs::default(),
             )
             .expect("mount2");
-        registry.insert(7, h2);
+        registry.insert(MountKey::Job(7), h2);
         // Replacement dropped h1 → unmount_on_drop fired once.
         assert_eq!(*counter.lock().unwrap(), 1);
 
@@ -300,12 +405,12 @@ mod tests {
                 &freally_mount::backends::ArchiveRefs::default(),
             )
             .expect("mount");
-        registry.insert(3, handle);
-        let (taken, path) = registry.take(3).expect("taken");
+        registry.insert(MountKey::Job(3), handle);
+        let (taken, path) = registry.take(MountKey::Job(3)).expect("taken");
         assert_eq!(path, tmp.path());
         taken.unmount().expect("unmount");
         assert!(registry.snapshot().is_empty());
         // Re-take on a missing id returns None.
-        assert!(registry.take(3).is_none());
+        assert!(registry.take(MountKey::Job(3)).is_none());
     }
 }

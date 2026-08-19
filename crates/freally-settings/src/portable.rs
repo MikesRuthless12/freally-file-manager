@@ -31,21 +31,27 @@
 //! Two honest limitations, stated here because the UI copy is written
 //! against this list:
 //!
-//! - **Only [`config_root`] is wired.** `settings.toml` and the profile
-//!   store follow it; the history DB, resume journal, audit log, chunk
-//!   store, scan index, thumbnail cache, drop-stack, and plugin dir all
-//!   still resolve `ProjectDirs` directly in their own crates. A
-//!   portable install therefore still leaves a record of every path the
-//!   user touched on the host. [`data_root`] exists for those call
-//!   sites; wiring them is the follow-up.
-//! - **Credentials still go to the OS keychain.**
-//!   [`allows_os_keychain`] reports the *intent*, but nothing enforces
-//!   it: `freally_cloud::Credentials` writes to the host keystore
-//!   unconditionally and there is no encrypted-local-file fallback. The
-//!   `settings-portable-keychain-warning` string therefore tells the
-//!   user their cloud credentials stay on the host machine, which is
-//!   what actually happens. Do not soften that string until the
-//!   fallback exists.
+//! - **The non-portable directory identity is still split.** Every
+//!   writer now checks [`portable_root`] before falling back to its
+//!   own resolver, so a portable install keeps `settings.toml`, the
+//!   profile store, history DB, resume journal, audit log, chunk
+//!   store, scan index and per-scan DBs, thumbnail cache, drop-stack,
+//!   and plugin dir beside the binary. What is *not* unified is the
+//!   fallback each writer uses when the install is normal: the
+//!   engine-side crates resolve `com.Freally.freally-file-manager`
+//!   while this crate resolves `dev.freally.freally-file-manager`.
+//!   Those are the same directory on Windows and Linux, but not on
+//!   macOS — so routing the fallbacks through [`data_root`] would
+//!   orphan an existing macOS install's data. Unifying them is a
+//!   migration, not a rename.
+//! - **A forgotten credential passphrase is unrecoverable.** Cloud
+//!   secrets no longer reach the host keystore: under portable mode
+//!   `freally_cloud::Credentials` uses an age-encrypted file on the
+//!   drive, unlocked by a passphrase the user chooses and held in
+//!   memory for the process lifetime only. Nothing on the stick can
+//!   decrypt it — that is the point, and it means there is no reset
+//!   path. `settings-portable-keychain-warning` says so; do not soften
+//!   *that* claim either.
 //!
 //! Nothing here creates directories — resolvers stay side-effect free
 //! so a probe (`is_portable()` in a settings screen) can't litter a
@@ -168,14 +174,11 @@ pub fn allows_os_integration() -> bool {
 /// after the stick is unplugged, which is both a leak and a credential
 /// the portable install cannot reach on the next machine.
 ///
-/// **This is a reported capability, not an enforced policy.** Nothing
-/// consults it before writing — `freally_cloud::Credentials` still uses
-/// the host keystore unconditionally. Its only consumer is the Settings
-/// banner, which uses it to warn the user that their credentials will
-/// be left behind. Renaming this to `should_use_os_keychain` would
-/// overstate it; wiring it into `Credentials` (with the encrypted-file
-/// fallback that has to come with it) is the follow-up that makes the
-/// name honest.
+/// Enforced, not merely reported: `cloud_commands::credential_store`
+/// selects `Credentials::Keychain` for a normal install and
+/// `Credentials::EncryptedFile` under portable mode, so a portable
+/// install never opens a host keychain entry. The Settings banner
+/// still reads this to explain which store is in use.
 pub fn allows_os_keychain() -> bool {
     !is_portable()
 }

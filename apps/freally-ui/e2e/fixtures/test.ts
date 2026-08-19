@@ -374,6 +374,42 @@ export const test = base.extend<Fixtures>({
         url: "http://localhost:1420/pwa",
         qrPngBase64: "",
       }));
+      // Build 4 (Phases 51-53). The Settings modal's Collaboration tab
+      // fires `merge_ffmpeg_status`, `merge_ffmpeg_prefs_get` and
+      // `collab_roster` the moment it opens, and the shim answers an
+      // unregistered command with `undefined`. An `undefined` reaching
+      // a pane is indistinguishable from a product bug — it renders as
+      // a stuck "Loading settings…" or throws mid-render and leaves the
+      // *previous* pane's DOM on screen. That is precisely what
+      // stranded 50 specs when Build 3 landed; these defaults keep the
+      // same thing from happening again.
+      reg.setHandlerIfMissing("collab_roster", () => ({
+        initialized: false,
+        epoch: 0,
+        members: [],
+        revoked: [],
+      }));
+      reg.setHandlerIfMissing("collab_generate_identity", () => [
+        "AGE-SECRET-KEY-1E2ETESTONLYNOTAREALKEY000000000000000000000000000000000",
+        "age1e2etestonlynotarealkey00000000000000000000000000000000000",
+      ]);
+      reg.setHandlerIfMissing("collab_sas", () => "123 456 789 012 345");
+      reg.setHandlerIfMissing("merge_ffmpeg_status", () => ({
+        available: false,
+        path: null,
+        version: null,
+      }));
+      reg.setHandlerIfMissing("merge_ffmpeg_prefs_get", () => ({
+        enabled: false,
+        path: "",
+      }));
+      reg.setHandlerIfMissing("bug_report_context", () => ({
+        version: "0.22.0",
+        os: "windows",
+        arch: "x86_64",
+        hasCrash: false,
+      }));
+      reg.setHandlerIfMissing("bug_report_pending", () => null);
       reg.setDefaultHandler(noop);
     }, { en: enTranslations });
 

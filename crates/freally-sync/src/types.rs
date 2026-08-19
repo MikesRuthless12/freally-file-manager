@@ -113,6 +113,14 @@ pub struct SyncOptions {
     /// Forwarded to [`freally_core::CopyOptions::fsync_on_close`].
     /// Default on — we want sync runs to be durable end-to-end.
     pub fsync_on_close: bool,
+    /// Phase 52 — decide with the three-tree state machine instead
+    /// of the Phase 25 vector-clock matrix.
+    ///
+    /// Off by default. The execution path is identical either way;
+    /// only the decision function changes, so this can be flipped
+    /// per-run to compare the two on real data before the
+    /// three-tree machine becomes the only one.
+    pub tri_tree: bool,
     /// Plug-point for the Tauri runner: when present, every copy the
     /// engine issues gets this hook attached so fast paths / verify
     /// / sparseness / security metadata all carry through.
@@ -126,6 +134,7 @@ impl Default for SyncOptions {
             event_buffer_hint: 256,
             copy_buffer_size: freally_core::DEFAULT_BUFFER_SIZE,
             fsync_on_close: true,
+            tri_tree: false,
             copy_hook: None,
         }
     }

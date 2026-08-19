@@ -131,6 +131,12 @@ pub enum Cmd {
     Migrate(MigrateArgs),
     /// Phase 50 — export a CDR-0 repository OUT to another tool's format.
     Export(ExportArgs),
+    /// Phase 49n — verify or repair the local chunk repository.
+    Repo(RepoArgs),
+    /// Phase 50i — manage the repository's access key slots.
+    Key(KeyArgs),
+    /// Phase 50h — push every snapshot into another repository.
+    Replicate(ReplicateArgs),
     /// Emit a shell-completion script for bash / zsh / fish / pwsh.
     Completions(CompletionsArgs),
 }
@@ -373,6 +379,10 @@ pub struct MountArgs {
     /// Optional job UUID to mount. Defaults to the most recent job.
     #[arg(long)]
     pub job: Option<String>,
+    /// Phase 49m — mount this repository snapshot read-only instead
+    /// of a job view. Content is served from the chunk store.
+    #[arg(long, value_name = "ID")]
+    pub snapshot: Option<u64>,
 }
 
 #[derive(Subcommand, Debug, Clone)]
@@ -385,6 +395,98 @@ pub enum AuditOp {
 pub struct AuditArgs {
     #[command(subcommand)]
     pub op: AuditOp,
+}
+
+/// `freally repo verify [--deep] [--snapshot ID]`
+/// `freally repo repair [--deep] [--apply]`
+#[derive(Subcommand, Debug, Clone)]
+pub enum RepoOp {
+    /// Check every snapshot. Metadata-only by default.
+    Verify {
+        /// Re-read and re-hash every chunk, and check each file's
+        /// whole-file hash. Much slower; catches silent corruption a
+        /// metadata pass cannot see.
+        #[arg(long)]
+        deep: bool,
+        /// Limit the pass to a single snapshot id.
+        #[arg(long, value_name = "ID")]
+        snapshot: Option<u64>,
+    },
+    /// Quarantine every damaged snapshot, then reclaim its chunks.
+    ///
+    /// Dry run unless `--apply`, so an unattended caller cannot delete
+    /// snapshots by typo.
+    Repair {
+        /// Verify deeply before deciding what to quarantine.
+        #[arg(long)]
+        deep: bool,
+        /// Actually remove the damaged snapshots.
+        #[arg(long)]
+        apply: bool,
+    },
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct RepoArgs {
+    #[command(subcommand)]
+    pub op: RepoOp,
+}
+
+/// `freally key list|add|remove|recovery` — Phase 50i access slots.
+///
+/// Passphrase arguments fall back to `FREALLY_REPO_PASSWORD` (existing
+/// credential) and `FREALLY_NEW_PASSWORD` (slot being created). Prefer
+/// the env vars: an argv passphrase is readable by any local process.
+#[derive(Subcommand, Debug, Clone)]
+pub enum KeyOp {
+    /// List key slots (labels + kinds; never secrets).
+    List,
+    /// Add a password slot so another person or device can open the repo.
+    Add {
+        /// Label for the new slot ("laptop", "backup-host", …).
+        #[arg(long, value_name = "LABEL")]
+        label: String,
+        /// Password the new slot will unlock with.
+        #[arg(long)]
+        password: Option<String>,
+        /// An existing credential that already grants access.
+        #[arg(long)]
+        auth: Option<String>,
+    },
+    /// Revoke one slot. Refused for the last remaining slot, which
+    /// would leave the repository permanently unopenable.
+    Remove {
+        #[arg(long, value_name = "LABEL")]
+        label: String,
+    },
+    /// Mint a recovery key. Printed once — only its verifier is stored,
+    /// so it cannot be shown again. Replaces any prior recovery slot.
+    Recovery {
+        /// An existing credential that already grants access.
+        #[arg(long)]
+        auth: Option<String>,
+    },
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct KeyArgs {
+    #[command(subcommand)]
+    pub op: KeyOp,
+}
+
+/// `freally replicate <dst> [--src <path>]` — Phase 50h 3-2-1 push.
+///
+/// Dedup-aware and idempotent: only chunks the destination lacks are
+/// transferred, and a re-run copies nothing because snapshots match on
+/// a content fingerprint rather than a local id.
+#[derive(Args, Debug, Clone)]
+pub struct ReplicateArgs {
+    /// Destination repository path. Created if it does not exist.
+    pub dst: PathBuf,
+    /// Source repository. Defaults to this install's own repository
+    /// (portable-aware, like `freally repo`).
+    #[arg(long, value_name = "PATH")]
+    pub src: Option<PathBuf>,
 }
 
 #[derive(Args, Debug, Clone)]

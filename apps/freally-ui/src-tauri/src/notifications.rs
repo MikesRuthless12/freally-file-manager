@@ -76,7 +76,57 @@ pub(crate) async fn dispatch(state: &AppState, event: JobNotification) {
         .iter()
         .filter_map(webhook_sink)
         .collect();
+    push_all(&settings, &event).await;
     deliver_all(sinks, event).await;
+}
+
+/// Phase 49q — fan the same notification out to every paired mobile
+/// device that has a push target.
+///
+/// Phase 37 shipped the whole push stack (APNs / FCM signers, the
+/// dispatcher, per-pairing targets) and Settings → Mobile could send a
+/// *test* push, but nothing ever pushed a real job outcome: backup
+/// completion only reached server webhooks. A user who paired a phone
+/// specifically to be told when a long transfer finished got nothing.
+///
+/// Best-effort and never fatal: a device with no target is skipped, an
+/// unconfigured signer or a provider rejection is logged. A failed push
+/// must not affect the job it is reporting on.
+async fn push_all(settings: &freally_settings::Settings, event: &JobNotification) {
+    use freally_mobile::{HttpDispatcher, NotifyDispatcher, PushPayload, PushTarget};
+
+    for pairing in &settings.mobile.pairings {
+        let Some(target) = pairing.push_target.clone() else {
+            continue;
+        };
+        let target = match target {
+            freally_settings::MobilePushTarget::Apns { token } => PushTarget::Apns { token },
+            freally_settings::MobilePushTarget::Fcm { token } => PushTarget::Fcm { token },
+            freally_settings::MobilePushTarget::StubEndpoint { url } => {
+                PushTarget::StubEndpoint { url }
+            }
+        };
+        let signer = match crate::mobile_commands::build_signer_for(&target, &settings.mobile) {
+            Ok(s) => s,
+            Err(e) => {
+                tracing::debug!(error = %e, "skipping push: signer unavailable");
+                continue;
+            }
+        };
+        let dispatcher = match signer {
+            Some(s) => HttpDispatcher::new().with_signer(s),
+            None => HttpDispatcher::new(),
+        };
+        let payload = PushPayload {
+            title: event.title.clone(),
+            body: event.body.clone(),
+            icon: None,
+            deep_link: None,
+        };
+        if let Err(e) = dispatcher.send(&target, &payload).await {
+            tracing::debug!(error = %e, "push delivery failed");
+        }
+    }
 }
 
 /// `notifications_test` — send a test notification to the configured

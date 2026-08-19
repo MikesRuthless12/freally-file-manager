@@ -197,6 +197,20 @@ impl OutputWriter {
         guard.flush()
     }
 
+    /// Report a fatal error on whichever channel the caller is watching.
+    ///
+    /// [`Self::emit`] is a no-op outside JSON mode, so an error reported
+    /// only that way leaves a terminal user staring at a blank screen
+    /// with nothing but an exit code. This writes the JSON record *and*
+    /// a human line, so neither audience is left guessing.
+    pub fn error(&self, message: &str, code: u8) {
+        let _ = self.emit(JsonEventKind::Error {
+            message: message.to_string(),
+            code,
+        });
+        let _ = self.human(&format!("error: {message}"));
+    }
+
     /// Print human-readable progress. A no-op in JSON or Quiet mode.
     pub fn human(&self, line: &str) -> io::Result<()> {
         if self.mode != OutputMode::Human {

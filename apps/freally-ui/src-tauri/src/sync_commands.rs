@@ -251,12 +251,19 @@ pub async fn start_sync(
     // Phase 49b — captures for the post-run `Sync` snapshot.
     let repository = state.repository();
     let snapshot_on_sync = state.settings_snapshot().chunk_store.snapshot_on_sync;
+    // Phase 52 — captured here rather than inside the task: the
+    // decision engine must not change halfway through a run.
+    let use_tri_tree = state.settings_snapshot().sync.tri_tree;
     let sync_right = cfg.right.clone();
     let sync_label = cfg.label.clone();
     let changed_for_run = changed;
 
     tokio::spawn(async move {
-        let opts = SyncOptions::default();
+        let opts = SyncOptions {
+            // Phase 52 — opt into the three-tree decision engine.
+            tri_tree: use_tri_tree,
+            ..SyncOptions::default()
+        };
         let result = sync(&pair, mode, opts, ctrl, tx).await;
         // Drain the event forwarder before reading `changed`: `sync` drops
         // `tx` on return, closing the channel, so this await completes once
@@ -518,4 +525,33 @@ fn update_last_run(
     if !settings_path.as_os_str().is_empty() {
         let _ = snapshot.save_to(settings_path);
     }
+}
+
+// ---------------------------------------------------------------------
+// Phase 52 — which conflict engine sync pairs use.
+// ---------------------------------------------------------------------
+
+/// `sync_engine_get()` — `true` when pairs decide with the three-tree
+/// state machine rather than the Phase 25 vector-clock matrix.
+#[tauri::command]
+pub fn sync_engine_get(state: tauri::State<'_, AppState>) -> bool {
+    state.settings_snapshot().sync.tri_tree
+}
+
+/// `sync_engine_set(enabled)` — switch the conflict engine.
+///
+/// Applies to the next run of each pair, not to one already in flight:
+/// `sync_start` captures the choice before spawning so the engine
+/// cannot change halfway through a pass.
+#[tauri::command]
+pub fn sync_engine_set(state: tauri::State<'_, AppState>, enabled: bool) -> Result<(), String> {
+    let mut guard = state.settings.write().map_err(|e| e.to_string())?;
+    guard.sync.tri_tree = enabled;
+    let path = state.settings_path.as_path();
+    if path.as_os_str().is_empty() {
+        return Ok(());
+    }
+    guard
+        .save_to(path)
+        .map_err(|e| format!("save settings: {e}"))
 }

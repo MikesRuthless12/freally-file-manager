@@ -20,8 +20,9 @@
 //! so each command hops to a `spawn_blocking` worker rather than stalling
 //! the async runtime.
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
+use crate::ipc_safety::{err_string, validate_ipc_path};
 use crate::state::AppState;
 
 /// Wire shape for [`freally_chunk::RepoStats`] plus the derived
@@ -67,6 +68,10 @@ pub struct RepoSnapshotDto {
     pub pinned: bool,
     /// Phase 49p — user-editable description (empty if unset).
     pub description: String,
+    /// Phase 49p — user-editable tags (empty if unset). Carried on the
+    /// DTO so the Library can render and edit them; `set_tags` replaces
+    /// the whole list rather than merging.
+    pub tags: Vec<String>,
 }
 
 /// `repository_stats()` — the dedup overview for the Library header
@@ -112,6 +117,7 @@ pub async fn repository_snapshots(
             total_size: s.total_size,
             pinned: s.pinned,
             description: s.description,
+            tags: s.tags,
         })
         .collect())
 }
@@ -444,6 +450,82 @@ pub fn repository_compression_set(
         .map_err(|e| format!("save settings: {e}"))
 }
 
+// ---------------------------------------------------------------------
+// Phase 50g — which cloud remote holds this repository's packs.
+// ---------------------------------------------------------------------
+
+/// Wire form of the repository's pack-storage selection.
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RepoRemoteDto {
+    /// Name of a configured cloud remote, or empty for a local store.
+    pub backend: String,
+    /// Read-through cache directory; empty means `<store-root>/cache`.
+    pub cache_dir: String,
+}
+
+/// Read the persisted pack-storage selection.
+#[tauri::command]
+pub fn repository_remote_get(state: tauri::State<'_, AppState>) -> RepoRemoteDto {
+    let cs = state.settings_snapshot().chunk_store;
+    RepoRemoteDto {
+        backend: cs.remote_backend,
+        cache_dir: cs.remote_cache_dir,
+    }
+}
+
+/// Set + persist the pack-storage selection.
+///
+/// Takes effect at the next launch, like the compression policy: the
+/// store's backend is fixed when the store is opened, and swapping it
+/// under a live repository would strand the unsealed active pack.
+#[tauri::command]
+pub fn repository_remote_set(
+    state: tauri::State<'_, AppState>,
+    remote: RepoRemoteDto,
+) -> Result<(), String> {
+    // Reject a name that is not a configured remote — otherwise the
+    // setting silently does nothing until someone reads the log.
+    if !remote.backend.is_empty() {
+        let snap = state.settings_snapshot();
+        if !snap
+            .remotes
+            .backends
+            .iter()
+            .any(|b| b.name == remote.backend)
+        {
+            return Err("repo-remote-unknown".to_string());
+        }
+
+        // Refuse to point a repository that already holds data at an
+        // object store. `ChunkStore::open_with_backend` swaps the
+        // backend after opening and `read_pack_range` only special-cases
+        // the *active* pack, so every previously written local pack
+        // would be fetched from a bucket that has never seen it — every
+        // existing snapshot would fail with `MissingChunk` on the next
+        // launch, and nothing uploads them. Switching an empty
+        // repository is fine, which is the case the wizard actually
+        // creates.
+        let populated = state
+            .repository()
+            .and_then(|repo| repo.stats().ok())
+            .is_some_and(|s| s.chunk_count > 0 || s.snapshot_count > 0);
+        if populated && snap.chunk_store.remote_backend != remote.backend {
+            return Err("repo-remote-not-empty".to_string());
+        }
+    }
+    let mut guard = state.settings.write().map_err(|e| e.to_string())?;
+    guard.chunk_store.remote_backend = remote.backend;
+    guard.chunk_store.remote_cache_dir = remote.cache_dir;
+    let path = state.settings_path.as_path();
+    if path.as_os_str().is_empty() {
+        return Ok(());
+    }
+    guard
+        .save_to(path)
+        .map_err(|e| format!("save settings: {e}"))
+}
+
 /// Phase 49i — full compaction (quick gc + rewrite half-dead packs). Spawns
 /// a 49j task, runs the blocking work off the async runtime with a progress
 /// callback, and returns the task id immediately so the UI can watch it in
@@ -710,6 +792,173 @@ pub fn repository_change_password(
 }
 
 // ---------------------------------------------------------------------
+// Phase 50i — access key slots.
+//
+// An ACCESS gate (scrypt), not at-rest encryption: revoking a slot
+// removes that credential's ability to open the repository, it does not
+// re-encrypt anything. Phase 51 owns envelope crypto.
+// ---------------------------------------------------------------------
+
+/// One key slot. Deliberately carries no secret material — only the
+/// label and kind, which is all the panel needs to render.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct KeySlotDto {
+    pub label: String,
+    /// `"password"` or `"recovery"`.
+    pub kind: String,
+}
+
+/// `repository_list_keys()` — slots on the active repository. Empty
+/// when the repository has no passphrase gate at all.
+#[tauri::command]
+pub fn repository_list_keys(state: tauri::State<'_, AppState>) -> Result<Vec<KeySlotDto>, String> {
+    let repo = state.repository().ok_or("repository-unavailable")?;
+    Ok(repo
+        .list_keys()
+        .map_err(|e| e.to_string())?
+        .into_iter()
+        .map(|s| KeySlotDto {
+            label: s.label,
+            kind: s.kind,
+        })
+        .collect())
+}
+
+/// `repository_add_key(label, password, auth)` — add a credential so
+/// another person or device can open the repository.
+#[tauri::command]
+pub async fn repository_add_key(
+    state: tauri::State<'_, AppState>,
+    label: String,
+    password: String,
+    auth: Option<String>,
+) -> Result<(), String> {
+    let repo = state.repository().ok_or("repository-unavailable")?;
+    // Key derivation is scrypt at log_n = 15 — ~1 s of CPU and 32 MiB.
+    // Inline, that stalls the runtime (and for a non-async command the
+    // main thread) for the whole derivation, freezing the window.
+    tokio::task::spawn_blocking(move || repo.add_key(auth.as_deref(), &password, &label))
+        .await
+        .map_err(|e| format!("add key task: {e}"))?
+        .map_err(|e| e.to_string())
+}
+
+/// `repository_remove_key(label)` — revoke one credential.
+///
+/// `false` means there was no such slot. Removing the *last* slot is
+/// refused by the keyfile layer and surfaces here as an error, because
+/// it would leave the repository permanently unopenable.
+#[tauri::command]
+pub fn repository_remove_key(
+    state: tauri::State<'_, AppState>,
+    label: String,
+) -> Result<bool, String> {
+    let repo = state.repository().ok_or("repository-unavailable")?;
+    repo.remove_key(&label).map_err(|e| e.to_string())
+}
+
+/// `repository_generate_recovery_key(auth)` — mint a recovery key.
+///
+/// Returned **once**: only its verifier is stored, so the caller must
+/// show it to the user immediately. Replaces any prior recovery slot.
+#[tauri::command]
+pub async fn repository_generate_recovery_key(
+    state: tauri::State<'_, AppState>,
+    auth: Option<String>,
+) -> Result<String, String> {
+    let repo = state.repository().ok_or("repository-unavailable")?;
+    // Same scrypt cost as `repository_add_key` — mint off the runtime.
+    tokio::task::spawn_blocking(move || repo.generate_recovery_key(auth.as_deref()))
+        .await
+        .map_err(|e| format!("recovery key task: {e}"))?
+        .map_err(|e| e.to_string())
+}
+
+// ---------------------------------------------------------------------
+// Phase 50h — replication (the 3-2-1 push).
+// ---------------------------------------------------------------------
+
+/// Outcome of one replication pass. Mirrors
+/// `freally_chunk::ReplicateReport`.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReplicateReportDto {
+    pub snapshots_copied: u64,
+    pub snapshots_skipped: u64,
+    pub chunks_copied: u64,
+    pub chunks_present: u64,
+    pub bytes_copied: u64,
+}
+
+/// `repository_replicate(dst)` — push every snapshot into the
+/// repository at `dst`, creating it if needed.
+///
+/// Dedup-aware (only chunks the destination lacks transfer) and
+/// idempotent (snapshots match on a content fingerprint, so a re-run
+/// copies nothing). Reports through the Phase 49j task centre because a
+/// first replication of a large repository is a long, silent operation.
+#[tauri::command]
+pub async fn repository_replicate(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, AppState>,
+    dst: String,
+) -> Result<ReplicateReportDto, String> {
+    let src = state.repository().ok_or("repository-unavailable")?;
+    // Phase 17e — `dst` arrives raw off the wire and is created if it
+    // does not exist, so it goes through the lexical gate first.
+    let dst_path = validate_ipc_path(&dst).map_err(err_string)?;
+
+    // Refuse a destination that resolves to the source. redb would
+    // refuse the second open anyway, but with an opaque lock error.
+    let norm = |p: &std::path::Path| {
+        std::fs::canonicalize(p)
+            .or_else(|_| std::path::absolute(p))
+            .unwrap_or_else(|_| p.to_path_buf())
+    };
+    if norm(src.root()) == norm(&dst_path) {
+        return Err("repo-replicate-same-path".to_string());
+    }
+
+    let tasks = state.tasks.clone();
+    let task = tasks.create("replicate", "Replicate repository");
+    tasks.started(&app, task);
+
+    let outcome = tokio::task::spawn_blocking(move || {
+        let dst_repo = freally_chunk::Repository::open(&dst_path)?;
+        src.replicate_to(&dst_repo)
+    })
+    .await;
+
+    let report = match outcome {
+        Ok(Ok(r)) => r,
+        Ok(Err(e)) => {
+            let message = format!("replicate: {e}");
+            tasks.fail(&app, task, &message);
+            return Err(message);
+        }
+        Err(e) => {
+            let message = format!("replicate task: {e}");
+            tasks.fail(&app, task, &message);
+            return Err(message);
+        }
+    };
+    tasks.complete(
+        &app,
+        task,
+        &format!("{} snapshot(s) copied", report.snapshots_copied),
+    );
+
+    Ok(ReplicateReportDto {
+        snapshots_copied: report.snapshots_copied,
+        snapshots_skipped: report.snapshots_skipped,
+        chunks_copied: report.chunks_copied,
+        chunks_present: report.chunks_present,
+        bytes_copied: report.bytes_copied,
+    })
+}
+
+// ---------------------------------------------------------------------
 // Phase 49l — Sources dashboard (one row per source, summaries only).
 // ---------------------------------------------------------------------
 
@@ -816,6 +1065,7 @@ fn verify_report_dto(r: freally_chunk::VerifyReport) -> VerifyReportDto {
 /// index-only). Runs off the async runtime; `snapshot_id` limits to one.
 #[tauri::command]
 pub async fn repository_verify(
+    app: tauri::AppHandle,
     state: tauri::State<'_, AppState>,
     snapshot_id: Option<u64>,
     deep: bool,
@@ -827,10 +1077,53 @@ pub async fn repository_verify(
         freally_chunk::VerifyLevel::Metadata
     };
     let only = snapshot_id.map(freally_chunk::SnapshotId);
-    let report = tokio::task::spawn_blocking(move || repo.verify(only, level))
-        .await
-        .map_err(|e| format!("verify task: {e}"))?
-        .map_err(|e| format!("verify: {e}"))?;
+
+    // A deep pass re-reads and re-hashes every chunk in the repository,
+    // which is minutes of silence on a large one. Report through the
+    // Phase 49j task centre exactly as compaction does, so the drawer
+    // shows "verify 3/12" rather than an indefinite spinner.
+    let tasks = state.tasks.clone();
+    let task = tasks.create("verify", if deep { "Deep verify" } else { "Verify" });
+    tasks.started(&app, task);
+    let tasks_inner = tasks.clone();
+    let app_inner = app.clone();
+
+    let outcome = tokio::task::spawn_blocking(move || {
+        let mut cb = |p: freally_chunk::MaintenanceProgress| {
+            let frac = if p.total > 0 {
+                p.done as f32 / p.total as f32
+            } else {
+                0.0
+            };
+            tasks_inner.update(
+                &app_inner,
+                task,
+                frac,
+                &format!("{} {}/{}", p.phase, p.done, p.total),
+            );
+        };
+        repo.verify_with_progress(only, level, &mut cb)
+    })
+    .await;
+
+    let report = match outcome {
+        Ok(Ok(r)) => r,
+        Ok(Err(e)) => {
+            let message = format!("verify: {e}");
+            tasks.fail(&app, task, &message);
+            return Err(message);
+        }
+        Err(e) => {
+            let message = format!("verify task: {e}");
+            tasks.fail(&app, task, &message);
+            return Err(message);
+        }
+    };
+    tasks.complete(
+        &app,
+        task,
+        &format!("{} snapshot(s) checked", report.snapshots_checked),
+    );
     Ok(verify_report_dto(report))
 }
 

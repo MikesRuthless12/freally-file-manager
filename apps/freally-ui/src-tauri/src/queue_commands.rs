@@ -24,7 +24,7 @@
 
 use std::sync::atomic::Ordering;
 
-use freally_core::{JobKind, JobState, QueueId, QueueRegistry, QueueRegistryEvent};
+use freally_core::{JobKind, JobState, Queue, QueueId, QueueRegistry, QueueRegistryEvent};
 use freally_settings::{AffinityGroupSetting, PinnedDestination};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Runtime};
@@ -608,6 +608,17 @@ pub fn queue_move_job(
         .map_err(|e| e.to_string())
 }
 
+/// Resolve a queue from the raw id the IPC boundary hands us.
+///
+/// Both boost commands do this lookup and both must fail with the same
+/// Fluent key, so the key lives in exactly one place.
+fn queue_of(state: &AppState, queue_id: u64) -> Result<Queue, &'static str> {
+    state
+        .queues
+        .get(QueueId::from_u64(queue_id))
+        .ok_or("err-queue-unknown")
+}
+
 /// `queue_boost_job(queue_id, job_id)` — pause every running sibling so
 /// this job gets the bandwidth. Returns the ids paused, which the
 /// frontend hands back to [`queue_clear_boost`] so exactly those resume.
@@ -617,10 +628,7 @@ pub fn queue_boost_job(
     queue_id: u64,
     job_id: u64,
 ) -> Result<Vec<u64>, String> {
-    let queue = state
-        .queues
-        .get(QueueId::from_u64(queue_id))
-        .ok_or("err-queue-unknown")?;
+    let queue = queue_of(&state, queue_id)?;
     Ok(queue
         .boost_job(freally_core::JobId::from_u64(job_id))
         .into_iter()
@@ -639,10 +647,7 @@ pub fn queue_clear_boost(
     queue_id: u64,
     paused: Vec<u64>,
 ) -> Result<(), String> {
-    let queue = state
-        .queues
-        .get(QueueId::from_u64(queue_id))
-        .ok_or("err-queue-unknown")?;
+    let queue = queue_of(&state, queue_id)?;
     let ids: Vec<freally_core::JobId> = paused
         .into_iter()
         .map(freally_core::JobId::from_u64)

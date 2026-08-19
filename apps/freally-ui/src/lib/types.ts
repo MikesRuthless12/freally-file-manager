@@ -888,6 +888,17 @@ export interface ShapeRateDto {
     | "off";
 }
 
+/** Phase 31b — payload of `power-action-changed`.
+ *
+ *  `kind` is the directive the power policy resolved to. `reason`
+ *  is a Fluent-key suffix the UI concatenates onto `power-reason-`
+ *  (e.g. `on-battery`), and is null for `continue`. */
+export interface PowerActionDto {
+  kind: "continue" | "pause" | "cap";
+  reason: string | null;
+  bytesPerSecond: number | null;
+}
+
 /** Phase 15 — return shape of `updater_check_now`. */
 export interface UpdateCheckDto {
   availableVersion: string;

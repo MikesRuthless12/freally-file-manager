@@ -343,6 +343,52 @@ settings-tab-advanced = Zaawansowane
 settings-tab-updater = Aktualizacje
 settings-tab-profiles = Profile
 
+# Opt-in anonymous bug reporting (Havoc standard)
+# MT
+settings-tab-bugreport = Zgłoś błąd
+
+# Phase 51 — end-to-end encrypted collaboration
+# MT
+settings-tab-collab = Współpraca
+collab-intro = Udostępniane pliki są szyfrowane tak, by mogły je otworzyć tylko osoby z tej listy. Każda ma własny klucz; nie ma wspólnego hasła.
+collab-forward-only = Usunięcie kogoś zmienia, kto będzie mógł otwierać pliki zaszyfrowane od tej chwili. Nie odbiera tego, co już mógł przeczytać.
+collab-members = Osoby
+collab-none = Nikogo jeszcze nie dodano.
+collab-label = Nazwa
+collab-recipient = Jego klucz publiczny
+collab-add = Dodaj
+collab-remove = Usuń
+collab-generate = Wygeneruj klucz dla kogoś
+collab-identity-once = Skopiuj teraz — pokazywany tylko raz i jest jedynym sposobem otwarcia udostępnionych plików:
+collab-sas-label = Kod weryfikacyjny
+collab-sas-hint = Przeczytaj kod na głos drugiej osobie. Jeśli się zgadzają, każde z was ma prawdziwy klucz drugiego.
+
+# Phase 53 — optional decoded video frames (user-supplied ffmpeg)
+# MT
+merge-heading = Podgląd wideo
+merge-ffmpeg-hint = Freally może pokazywać klatki z wideo podczas porównywania. Wymaga to ffmpeg, którego nie dołączamy — zainstaluj go sam, a Freally go użyje. Reszta działa i bez niego.
+merge-ffmpeg-enable = Używaj ffmpeg do klatek wideo
+merge-ffmpeg-path = Ścieżka ffmpeg (puste = szukaj w PATH)
+merge-ffmpeg-found = Znaleziono
+merge-ffmpeg-missing = Nie znaleziono ffmpeg. Porównywanie wideo nadal działa — pokazuje długość, rozmiar i ścieżki zamiast obrazów.
+merge-ffmpeg-disabled = Klatki wideo są wyłączone. Włącz ffmpeg w Ustawieniach, aby porównywać obrazy.
+
+collab-revoked = Usunięte
+collab-no-roster = Nie ma jeszcze listy osób. Dodaj kogoś przed udostępnieniem plików.
+collab-admin-key-corrupt = Nie można odczytać zapisanego klucza administratora. Może być uszkodzony.
+
+bugreport-intro = Zgłoszenia są anonimowe i nigdy nie są wysyłane automatycznie. Sam decydujesz, co wysłać, i klikasz Wyślij — nie prowadzimy żadnego serwera.
+bugreport-pending = Czeka raport awarii z poprzedniego uruchomienia.
+bugreport-description-label = Co się stało?
+bugreport-include-crash = Dołącz raport awarii
+bugreport-preview-label = Pokaż dokładnie, co zostanie wysłane
+bugreport-send-github = Otwórz zgłoszenie na GitHubie
+bugreport-send-gmail = Otwórz Gmaila
+bugreport-send-email = Otwórz mój program pocztowy
+bugreport-dismiss-crash = Odrzuć raport awarii
+bugreport-simulate = Symuluj raport awarii
+
+
 # General tab additions
 settings-section-theme = Motyw
 settings-theme-auto = Automatyczny
@@ -739,6 +785,13 @@ power-reason-cellular-network = sieć komórkowa
 power-reason-presenting = tryb prezentacji
 power-reason-fullscreen = aplikacja pełnoekranowa
 power-reason-thermal-throttling = procesor ogranicza wydajność
+
+# Phase 31b — ambient power badge
+# MT
+power-badge-paused = Wstrzymano
+power-badge-capped = Ograniczono
+power-badge-tooltip = Zasady zasilania ograniczają transfery. Otwórz Ustawienia → Zasilanie.
+
 
 # Phase 32 — cloud backend matrix via OpenDAL. Settings → Remotes
 # tab + the Add-backend wizard that writes one entry per remote into
@@ -1281,6 +1334,13 @@ restore-conflict-keep-both = Zachowaj oba
 restore-toast-done = Przywrócono { $restored }, pominięto { $skipped }
 restore-toast-failed = Przywracanie nie powiodło się: { $reason }
 snapshot-forget = Zapomnij
+
+# Phase 49p — inline snapshot metadata editing
+# MT
+snapshot-field-label = Nazwa
+snapshot-field-description = Opis
+snapshot-field-tags = Tagi (oddzielone przecinkami)
+
 snapshot-forget-toast = Migawka zapomniana — uruchom Odzyskaj miejsce, aby ją zwolnić
 library-reclaim = Odzyskaj miejsce
 # Phase 49i — full compaction.
@@ -1317,6 +1377,35 @@ repo-action-browse = Przeglądaj…
 repo-switcher-label = Repozytorium
 repo-action-forget = Zapomnij
 repo-action-change-pass = Zmień hasło…
+
+# Phase 50i — repository access key slots
+# MT
+repo-keys-title = Klucze dostępu
+repo-keys-empty = To repozytorium nie ma blokady hasłem.
+repo-key-label = Etykieta
+repo-key-password = Nowe hasło
+repo-key-auth = Obecne hasło
+repo-action-add-key = Dodaj klucz
+repo-action-remove-key = Odwołaj
+repo-action-recovery = Wygeneruj klucz odzyskiwania
+
+# Phase 50h — repository replication (3-2-1)
+# MT
+repo-action-replicate = Replikuj do…
+
+# Phase 50g — per-repository pack storage backend
+# MT
+repo-remote-label = Magazyn paczek
+repo-remote-local = Dysk lokalny
+repo-remote-restart = Zmiany zaczną obowiązywać po następnym uruchomieniu.
+repo-remote-unknown = To zdalne repozytorium nie jest skonfigurowane.
+repo-remote-not-empty = To repozytorium zawiera już dane. Miejsce przechowywania paczek można wybrać tylko, gdy jest puste — zamiast tego zreplikuj do nowego repozytorium.
+
+repo-replicate-done = Zreplikowano: skopiowano { $copied } migawek, { $skipped } już obecnych
+repo-replicate-same-path = Miejsce docelowe to to samo repozytorium co źródło.
+
+repo-recovery-once = Zapisz teraz — pokazywany tylko raz:
+
 repo-password-old = Bieżące hasło
 repo-password-new = Nowe hasło
 repo-error-exists = W tej lokalizacji już istnieje repozytorium
@@ -1590,7 +1679,21 @@ favorites-kind-pair = Para
 err-shell-portable = Integracja z powłoką jest niedostępna w trybie przenośnym
 settings-portable-title = Tryb przenośny
 settings-portable-active = Tryb przenośny jest aktywny. Ustawienia, historia i dzienniki są przechowywane w { $path }.
-settings-portable-keychain-warning = Ostrzeżenie: zapisane poświadczenia chmury nadal trafiają do pęku kluczy systemu tego komputera, a nie na dysk przenośny — pozostają na tej maszynie po jego odłączeniu. Usuń dodane zdalne lokalizacje przed oddaniem komputera.
+settings-portable-keychain-warning = Poświadczenia chmury są przechowywane w zaszyfrowanym pliku na dysku przenośnym i odblokowywane wybranym przez Ciebie hasłem — nie są zapisywane na tym komputerze. Po zapomnieniu hasła zapisanych poświadczeń nie można odzyskać.
+
+# FFM-M21 — portable credential store (age-encrypted file)
+# MT
+cloud-error-credentials-locked = Poświadczenia chmury są zablokowane. Odblokuj plik poświadczeń na tym dysku, aby użyć tego backendu.
+cloud-error-credentials-bad-passphrase = To hasło nie otwiera pliku poświadczeń.
+cloud-error-credentials-empty-passphrase = Wprowadź hasło.
+cloud-error-credentials-not-portable = Ta instalacja przechowuje poświadczenia w pęku kluczy systemu, więc nie ma czego odblokowywać.
+portable-credentials-title = Przenośne poświadczenia chmury
+portable-credentials-unlock-body = Wprowadź hasło chroniące plik poświadczeń na tym dysku.
+portable-credentials-create-body = Wybierz hasło chroniące poświadczenia chmury na tym dysku. Nie da się go odzyskać po zapomnieniu.
+portable-credentials-passphrase-label = Hasło
+portable-credentials-unlock-action = Odblokuj
+portable-credentials-lock-action = Zablokuj
+
 
 # FFM-M24
 err-autostart-portable = Uruchamianie przy logowaniu jest niedostępne w trybie przenośnym

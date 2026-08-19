@@ -25,6 +25,12 @@ use crate::state::AppState;
 #[derive(Clone, Default)]
 pub struct ServerRegistry {
     pub inner: Arc<Mutex<Option<ServerHandle>>>,
+    /// Phase 49q — the OTLP exporter guard for the running server.
+    ///
+    /// Held for exactly as long as the server runs: dropping it flushes
+    /// pending spans and shuts the exporter's runtime down, so it must
+    /// not be a local in `server_start`.
+    pub otel: Arc<Mutex<Option<freally_server::OtelGuard>>>,
 }
 
 impl ServerRegistry {
@@ -140,11 +146,40 @@ pub async fn server_start(state: tauri::State<'_, AppState>) -> Result<ServerSta
         handle.shutdown().await;
     }
 
+    // Phase 49q — close the GUI-serve telemetry gap. `ServerSettings`
+    // has carried `otel_endpoint` since Phase 48 and the Settings pane
+    // has always shown it, but only the CLI's `serve` ever called
+    // `install_otel`. Starting the server from the GUI therefore
+    // exported nothing, silently, no matter what the user configured.
+    //
+    // A telemetry failure must never stop the file server: an
+    // unreachable collector is logged and the server still serves.
+    let otel_guard = if settings.otel_endpoint.trim().is_empty() {
+        None
+    } else {
+        match freally_server::install_otel(&freally_server::OtelConfig {
+            endpoint: settings.otel_endpoint.clone(),
+            enabled: true,
+        }) {
+            Ok(guard) => Some(guard),
+            Err(e) => {
+                tracing::warn!(
+                    error = %e,
+                    "OTel exporter unavailable; serving without trace export"
+                );
+                None
+            }
+        }
+    };
+
     let handle = serve(config)
         .await
         .map_err(|e| e.localized_key().to_string())?;
     let status = status_from_handle(&handle);
     *lock = Some(handle);
+    // Replacing the previous guard drops it, which flushes the old
+    // exporter — do it only once the new server is actually up.
+    *state.server.otel.lock().await = otel_guard;
     Ok(status)
 }
 
@@ -156,6 +191,8 @@ pub async fn server_stop(state: tauri::State<'_, AppState>) -> Result<ServerStat
     if let Some(handle) = lock.take() {
         handle.shutdown().await;
     }
+    // Drop after the server drains so in-flight spans still export.
+    *state.server.otel.lock().await = None;
     Ok(ServerStatusDto::stopped())
 }
 

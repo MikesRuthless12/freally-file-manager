@@ -343,6 +343,52 @@ settings-tab-advanced = 高级
 settings-tab-updater = 更新
 settings-tab-profiles = 配置文件
 
+# Opt-in anonymous bug reporting (Havoc standard)
+# MT
+settings-tab-bugreport = 报告问题
+
+# Phase 51 — end-to-end encrypted collaboration
+# MT
+settings-tab-collab = 协作
+collab-intro = 共享的文件会被加密，只有此处列出的人才能打开。每人保管自己的密钥，没有共用密码。
+collab-forward-only = 移除某人只会改变之后加密的文件由谁可以打开，无法收回其此前已能读取的文件。
+collab-members = 成员
+collab-none = 尚未添加任何人。
+collab-label = 名称
+collab-recipient = 对方的公钥
+collab-add = 添加
+collab-remove = 移除
+collab-generate = 为某人生成密钥
+collab-identity-once = 请立即保存——只显示一次，且是打开共享文件的唯一方式：
+collab-sas-label = 验证码
+collab-sas-hint = 把这串验证码念给对方听。若两边一致，说明你们各自持有对方的真实密钥。
+
+# Phase 53 — optional decoded video frames (user-supplied ffmpeg)
+# MT
+merge-heading = 视频预览
+merge-ffmpeg-hint = 比较版本时，Freally 可以显示视频画面。这需要 ffmpeg，但我们不随附——你自行安装后 Freally 就会使用它。其余功能没有它也能正常工作。
+merge-ffmpeg-enable = 使用 ffmpeg 显示视频画面
+merge-ffmpeg-path = ffmpeg 路径（留空则搜索 PATH）
+merge-ffmpeg-found = 已找到
+merge-ffmpeg-missing = 未找到 ffmpeg。视频比较仍然可用，只是改为显示时长、大小和轨道信息，而不是画面。
+merge-ffmpeg-disabled = 视频画面已关闭。在设置中启用 ffmpeg 即可比较画面。
+
+collab-revoked = 已移除
+collab-no-roster = 还没有任何人员名单。请先添加成员，再共享文件。
+collab-admin-key-corrupt = 无法读取已保存的管理员密钥，它可能已损坏。
+
+bugreport-intro = 报告是匿名的，绝不会自动发送。发送内容由你决定，也由你点击发送——我们不运行任何服务器。
+bugreport-pending = 上次运行的崩溃报告仍在等待处理。
+bugreport-description-label = 发生了什么？
+bugreport-include-crash = 包含崩溃报告
+bugreport-preview-label = 完整显示将要发送的内容
+bugreport-send-github = 打开 GitHub 议题
+bugreport-send-gmail = 打开 Gmail
+bugreport-send-email = 打开我的邮件客户端
+bugreport-dismiss-crash = 丢弃崩溃报告
+bugreport-simulate = 模拟一份崩溃报告
+
+
 # General tab additions
 settings-section-theme = 主题
 settings-theme-auto = 自动
@@ -739,6 +785,13 @@ power-reason-cellular-network = 蜂窝网络
 power-reason-presenting = 演示模式
 power-reason-fullscreen = 全屏应用
 power-reason-thermal-throttling = CPU 正在降频
+
+# Phase 31b — ambient power badge
+# MT
+power-badge-paused = 已暂停
+power-badge-capped = 已限速
+power-badge-tooltip = 电源策略正在限制传输。打开“设置 → 电源”。
+
 
 # Phase 32 — cloud backend matrix via OpenDAL. Settings → Remotes
 # tab + the Add-backend wizard that writes one entry per remote into
@@ -1281,6 +1334,13 @@ restore-conflict-keep-both = 两者都保留
 restore-toast-done = 已还原 { $restored } 个，跳过 { $skipped } 个
 restore-toast-failed = 还原失败：{ $reason }
 snapshot-forget = 忘记
+
+# Phase 49p — inline snapshot metadata editing
+# MT
+snapshot-field-label = 名称
+snapshot-field-description = 描述
+snapshot-field-tags = 标签（以逗号分隔）
+
 snapshot-forget-toast = 已忘记快照 — 运行“回收空间”以释放
 library-reclaim = 回收空间
 # Phase 49i — full compaction.
@@ -1317,6 +1377,35 @@ repo-action-browse = 浏览…
 repo-switcher-label = 仓库
 repo-action-forget = 忘记
 repo-action-change-pass = 更改口令…
+
+# Phase 50i — repository access key slots
+# MT
+repo-keys-title = 访问密钥
+repo-keys-empty = 此仓库没有口令保护。
+repo-key-label = 标签
+repo-key-password = 新密码
+repo-key-auth = 现有密码
+repo-action-add-key = 添加密钥
+repo-action-remove-key = 吊销
+repo-action-recovery = 生成恢复密钥
+
+# Phase 50h — repository replication (3-2-1)
+# MT
+repo-action-replicate = 复制到…
+
+# Phase 50g — per-repository pack storage backend
+# MT
+repo-remote-label = 包存储位置
+repo-remote-local = 本地磁盘
+repo-remote-restart = 更改将在下次启动时生效。
+repo-remote-unknown = 该远程未配置。
+repo-remote-not-empty = 此仓库中已有数据。只能在仓库为空时选择包存储位置——请改用复制功能复制到新仓库。
+
+repo-replicate-done = 已复制：{ $copied } 个快照，{ $skipped } 个已存在
+repo-replicate-same-path = 目标与源是同一个仓库。
+
+repo-recovery-once = 请立即保存——只显示一次：
+
 repo-password-old = 当前口令
 repo-password-new = 新口令
 repo-error-exists = 此位置已存在仓库
@@ -1590,7 +1679,21 @@ favorites-kind-pair = 组合
 err-shell-portable = 便携模式下无法使用外壳集成
 settings-portable-title = 便携模式
 settings-portable-active = 便携模式已启用。设置、历史记录和日志保存在 { $path }。
-settings-portable-keychain-warning = 警告：已保存的云凭据仍存放在本机的系统钥匙串中，而不是便携驱动器上——拔出驱动器后它们仍留在这台计算机上。归还计算机前请删除你添加的远程连接。
+settings-portable-keychain-warning = 云凭据以加密文件的形式保存在便携驱动器上，由你设置的口令解锁，不会写入本计算机。若忘记口令，已保存的凭据将无法恢复。
+
+# FFM-M21 — portable credential store (age-encrypted file)
+# MT
+cloud-error-credentials-locked = 云凭据已锁定。请解锁此驱动器上的凭据文件后再使用该后端。
+cloud-error-credentials-bad-passphrase = 该口令无法打开凭据文件。
+cloud-error-credentials-empty-passphrase = 请输入口令。
+cloud-error-credentials-not-portable = 此安装将凭据保存在系统钥匙串中，无需解锁。
+portable-credentials-title = 便携式云凭据
+portable-credentials-unlock-body = 请输入保护此驱动器上凭据文件的口令。
+portable-credentials-create-body = 请设置用于保护此驱动器上云凭据的口令。一旦忘记将无法恢复。
+portable-credentials-passphrase-label = 口令
+portable-credentials-unlock-action = 解锁
+portable-credentials-lock-action = 锁定
+
 
 # FFM-M24
 err-autostart-portable = 便携模式下无法使用登录时启动

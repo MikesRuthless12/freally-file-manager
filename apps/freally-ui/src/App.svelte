@@ -257,24 +257,30 @@
   // instead would restart jobs the user had paused by hand before the
   // boost, which is the failure the backend's `clear_boost(ids)`
   // signature exists to prevent.
-  let boostedJobId = $state<number | null>(null);
-  let boostPaused = $state<number[]>([]);
+  // Held as one object so a boosted job id can never be recorded
+  // without the sibling list that undoes it — or without the queue
+  // that list belongs to. `clear_boost` resolves the ids inside the
+  // queue it is handed, so clearing a boost taken in queue A against
+  // queue B silently resumes nothing and strands A's siblings paused.
+  let boost = $state<{ queueId: number; jobId: number; paused: number[] } | null>(null);
 
   async function toggleBoost(job: JobDto): Promise<void> {
     try {
-      if (boostedJobId === job.id) {
-        await queueClearBoost(job.queueId, boostPaused);
-        boostedJobId = null;
-        boostPaused = [];
+      if (boost?.jobId === job.id) {
+        await queueClearBoost(boost.queueId, boost.paused);
+        boost = null;
         return;
       }
       // Clear any prior boost first so its siblings don't stay paused
       // behind a second one.
-      if (boostedJobId !== null) {
-        await queueClearBoost(job.queueId, boostPaused);
+      if (boost !== null) {
+        await queueClearBoost(boost.queueId, boost.paused);
       }
-      boostPaused = await queueBoostJob(job.queueId, job.id);
-      boostedJobId = job.id;
+      boost = {
+        queueId: job.queueId,
+        jobId: job.id,
+        paused: await queueBoostJob(job.queueId, job.id),
+      };
     } catch (e) {
       pushToast("error", e instanceof Error ? e.message : String(e));
     }
@@ -325,7 +331,7 @@
     // Re-shipping it needs a real permit pool first.
     items.push({
       id: "boost",
-      label: boostedJobId === job.id ? t("action-clear-boost") : t("action-boost"),
+      label: boost?.jobId === job.id ? t("action-clear-boost") : t("action-boost"),
       icon: "refresh",
       disabled: !isActive,
       onClick: () => void toggleBoost(job),

@@ -18,7 +18,14 @@
 //! | `plan` / `apply`  | TOML jobspec → action list → idempotent run   |
 //! | `history`         | `freally_history` read-side reporter         |
 //! | `completions`     | `clap_complete` shell-script emitter          |
-//! | `sync` / `shred` / `stack` / `remote` / `mount` / `audit` | accept-and-stub  |
+//! | `repo`            | `freally_chunk::Repository` verify / repair   |
+//! | `key`             | repository key slots — add / remove / recovery |
+//! | `replicate`       | dedup-aware push into a second repository     |
+//! | `mount --snapshot`| repository snapshot, read-only                |
+//! | `sync` / `shred` / `stack` / `remote` / `audit` | accept-and-stub  |
+//!
+//! `mount --job` remains staged: a job view is served from the running
+//! GUI's live registry, which a separate CLI process cannot reach.
 //!
 //! Stubbed subcommands accept their flags so scripts written against
 //! the v1 surface keep parsing, but they exit with a clearly-labelled

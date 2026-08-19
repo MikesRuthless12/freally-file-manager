@@ -113,6 +113,9 @@ pub fn thumbnail_for(path: &Path, max_dim: u32) -> ThumbnailDto {
 /// config dir can't be resolved (sandboxed / cron-ish envs) — the
 /// caller still renders, just without persistence.
 fn cache_dir_for_thumbs() -> Option<PathBuf> {
+    if let Some(root) = freally_settings::portable::portable_root() {
+        return Some(root.join("thumb-cache"));
+    }
     let dirs = directories::ProjectDirs::from("dev", "freally", "freally-file-manager")?;
     Some(dirs.cache_dir().join("thumb-cache"))
 }

@@ -1814,9 +1814,37 @@ impl Repository {
     /// chunk AND checks each file's concatenated bytes hash to its
     /// `file_hash`. Takes the shared read lease so a gc can't run mid-pass.
     pub fn verify(&self, only: Option<SnapshotId>, level: VerifyLevel) -> Result<VerifyReport> {
+        self.verify_with_progress(only, level, &mut |_| {})
+    }
+
+    /// Phase 49n follow-up — [`Self::verify`] with progress callbacks.
+    ///
+    /// A `ReadData` pass re-reads and re-hashes every chunk in the
+    /// repository, which on a large repo is minutes of silence. The
+    /// callback fires once before the first snapshot and once after each
+    /// one, so a caller can render "snapshot N of M" instead of a
+    /// spinner that looks hung.
+    pub fn verify_with_progress(
+        &self,
+        only: Option<SnapshotId>,
+        level: VerifyLevel,
+        cb: &mut dyn FnMut(MaintenanceProgress),
+    ) -> Result<VerifyReport> {
         let _lease = self.read_lease()?;
         let mut report = VerifyReport::default();
-        for snap in self.load_all_snapshots()? {
+        let snapshots = self.load_all_snapshots()?;
+        // Count up front so `total` is the number actually inspected,
+        // not the repository's whole snapshot count, when `only` is set.
+        let total = snapshots
+            .iter()
+            .filter(|s| only.is_none_or(|o| s.id == o.0))
+            .count() as u64;
+        cb(MaintenanceProgress {
+            phase: "verify",
+            done: 0,
+            total,
+        });
+        for snap in snapshots {
             if let Some(only) = only {
                 if snap.id != only.0 {
                     continue;
@@ -1880,6 +1908,11 @@ impl Repository {
                     });
                 }
             }
+            cb(MaintenanceProgress {
+                phase: "verify",
+                done: report.snapshots_checked,
+                total,
+            });
         }
         Ok(report)
     }

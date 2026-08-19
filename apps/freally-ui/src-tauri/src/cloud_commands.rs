@@ -32,6 +32,110 @@ use tokio::task::AbortHandle;
 use crate::ipc_safety::{err_string, validate_ipc_path};
 use crate::state::AppState;
 
+/// `<portable-root>/credentials.age` — where a portable install keeps
+/// its backend secrets.
+fn credential_file_path(root: &std::path::Path) -> std::path::PathBuf {
+    root.join("credentials.age")
+}
+
+/// The credential store this install should use.
+///
+/// A normal install uses the OS keychain. A portable install must not:
+/// the entry would stay on the host after the stick is unplugged,
+/// which is both a leak and a credential the next machine cannot
+/// reach. It uses an age-encrypted file instead, which needs the
+/// passphrase the user unlocked with this session — hence the
+/// `cloud-error-credentials-locked` path when they have not.
+pub(crate) fn credential_store(state: &AppState) -> Result<Credentials, String> {
+    match freally_settings::portable::portable_root() {
+        None => Ok(Credentials::Keychain),
+        Some(root) => {
+            let passphrase = state
+                .portable_credential_key()
+                .ok_or("cloud-error-credentials-locked")?;
+            Ok(Credentials::EncryptedFile {
+                path: credential_file_path(root),
+                passphrase,
+            })
+        }
+    }
+}
+
+/// What the Cloud pane needs to decide between "unlock", "choose a
+/// passphrase", and "nothing to do".
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PortableCredentialsStatus {
+    /// Whether this install keeps credentials in a file at all.
+    pub portable: bool,
+    /// Whether the passphrase has been supplied in this session.
+    pub unlocked: bool,
+    /// Whether a credential file already exists. Drives "unlock an
+    /// existing file" vs "pick a passphrase for a new one".
+    pub initialized: bool,
+}
+
+/// `portable_credentials_status()` — see [`PortableCredentialsStatus`].
+#[tauri::command]
+pub fn portable_credentials_status(state: tauri::State<'_, AppState>) -> PortableCredentialsStatus {
+    match freally_settings::portable::portable_root() {
+        None => PortableCredentialsStatus {
+            portable: false,
+            unlocked: false,
+            initialized: false,
+        },
+        Some(root) => PortableCredentialsStatus {
+            portable: true,
+            unlocked: state.portable_credential_key().is_some(),
+            initialized: credential_file_path(root).is_file(),
+        },
+    }
+}
+
+/// `portable_credentials_unlock(passphrase)` — hold the passphrase for
+/// the rest of this process.
+///
+/// When a credential file already exists the passphrase is verified
+/// against it first, so a typo surfaces here instead of later as a
+/// backend that mysteriously has no secret.
+#[tauri::command]
+pub fn portable_credentials_unlock(
+    passphrase: String,
+    state: tauri::State<'_, AppState>,
+) -> Result<(), String> {
+    if passphrase.is_empty() {
+        return Err("cloud-error-credentials-empty-passphrase".to_string());
+    }
+    let Some(root) = freally_settings::portable::portable_root() else {
+        return Err("cloud-error-credentials-not-portable".to_string());
+    };
+    let passphrase = secrecy::SecretString::from(passphrase);
+    let path = credential_file_path(root);
+    if path.is_file() {
+        let probe = Credentials::EncryptedFile {
+            path,
+            passphrase: passphrase.clone(),
+        };
+        // Any legal name works — a successful decrypt is the check;
+        // whether that name happens to be present is irrelevant.
+        probe.load("probe").map_err(|e| match e {
+            freally_cloud::CredentialsError::Undecryptable => {
+                "cloud-error-credentials-bad-passphrase".to_string()
+            }
+            other => other.to_string(),
+        })?;
+    }
+    state.set_portable_credential_key(passphrase);
+    Ok(())
+}
+
+/// `portable_credentials_lock()` — forget the passphrase without
+/// restarting the app.
+#[tauri::command]
+pub fn portable_credentials_lock(state: tauri::State<'_, AppState>) {
+    state.clear_portable_credential_key();
+}
+
 /// Tauri event fired whenever the count of in-flight cloud transfers
 /// changes. The frontend listens and disables the pause button while
 /// the count is > 0 (cloud transfers can't pause — only cancel).
@@ -227,7 +331,7 @@ pub fn add_backend(
     if let Some(s) = secret
         && !s.is_empty()
     {
-        Credentials
+        credential_store(&state)?
             .store(&backend.name, &s)
             .map_err(|e| e.to_string())?;
     }
@@ -280,7 +384,7 @@ pub fn update_backend(
     if let Some(s) = secret
         && !s.is_empty()
     {
-        Credentials
+        credential_store(&state)?
             .store(&backend.name, &s)
             .map_err(|e| e.to_string())?;
     }
@@ -310,7 +414,9 @@ pub fn remove_backend(name: String, state: tauri::State<'_, AppState>) -> Result
         snapshot.save_to(&path).map_err(|e| e.to_string())?;
     }
 
-    Credentials.delete(&name).map_err(|e| e.to_string())?;
+    credential_store(&state)?
+        .delete(&name)
+        .map_err(|e| e.to_string())?;
     let _ = state.cloud_backends.remove(&name);
     Ok(())
 }
@@ -353,7 +459,9 @@ pub async fn test_backend_connection(
         }
     };
 
-    let secret = match Credentials.load(&backend.name) {
+    let secret = match credential_store(&state)
+        .and_then(|c| c.load(&backend.name).map_err(|e| e.to_string()))
+    {
         Ok(s) => s,
         Err(e) => {
             return Ok(TestConnectionResult {
@@ -435,7 +543,9 @@ pub async fn copy_local_to_backend(
         .cloud_backends
         .get(&backend_name)
         .ok_or_else(|| format!("backend `{backend_name}` is not registered"))?;
-    let secret = Credentials.load(&backend.name).map_err(|e| e.to_string())?;
+    let secret = credential_store(&state)?
+        .load(&backend.name)
+        .map_err(|e| e.to_string())?;
     let operator = make_operator(&backend, secret.as_deref()).map_err(|e| e.to_string())?;
     let target: Arc<dyn CopyTarget> = Arc::new(OperatorTarget::new(backend.name.clone(), operator));
     run_cloud_transfer(&app, state.inner(), async move {
@@ -467,7 +577,9 @@ pub async fn copy_backend_to_local(
         .cloud_backends
         .get(&backend_name)
         .ok_or_else(|| format!("backend `{backend_name}` is not registered"))?;
-    let secret = Credentials.load(&backend.name).map_err(|e| e.to_string())?;
+    let secret = credential_store(&state)?
+        .load(&backend.name)
+        .map_err(|e| e.to_string())?;
     let operator = make_operator(&backend, secret.as_deref()).map_err(|e| e.to_string())?;
     let target: Arc<dyn CopyTarget> = Arc::new(OperatorTarget::new(backend.name.clone(), operator));
     run_cloud_transfer(&app, state.inner(), async move {
@@ -776,7 +888,7 @@ fn default_known_hosts_path() -> String {
     p.to_string_lossy().into_owned()
 }
 
-fn entry_to_cloud_backend(
+pub(crate) fn entry_to_cloud_backend(
     entry: &BackendConfigEntry,
 ) -> Result<Backend, freally_cloud::BackendError> {
     let kind = kind_to_cloud_kind(entry.kind);

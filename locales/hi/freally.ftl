@@ -343,6 +343,52 @@ settings-tab-advanced = उन्नत
 settings-tab-updater = अपडेट
 settings-tab-profiles = प्रोफ़ाइल
 
+# Opt-in anonymous bug reporting (Havoc standard)
+# MT
+settings-tab-bugreport = बग रिपोर्ट करें
+
+# Phase 51 — end-to-end encrypted collaboration
+# MT
+settings-tab-collab = सहयोग
+collab-intro = आप जो फ़ाइलें साझा करते हैं वे इस तरह एन्क्रिप्ट होती हैं कि उन्हें केवल यहाँ सूचीबद्ध लोग ही खोल सकें। हर किसी की अपनी कुंजी होती है; कोई साझा पासवर्ड नहीं।
+collab-forward-only = किसी को हटाने से यह बदलता है कि आगे एन्क्रिप्ट होने वाली फ़ाइलें कौन खोल सकेगा। जो वे पहले पढ़ सकते थे, वह वापस नहीं लिया जा सकता।
+collab-members = लोग
+collab-none = अभी तक किसी को नहीं जोड़ा गया।
+collab-label = नाम
+collab-recipient = उनकी सार्वजनिक कुंजी
+collab-add = जोड़ें
+collab-remove = हटाएँ
+collab-generate = किसी के लिए कुंजी बनाएँ
+collab-identity-once = अभी कॉपी करें — यह केवल एक बार दिखती है और साझा फ़ाइलें खोलने का यही एकमात्र तरीका है:
+collab-sas-label = सत्यापन कोड
+collab-sas-hint = यह कोड दूसरे व्यक्ति को ज़ोर से पढ़कर सुनाएँ। यदि कोड मेल खाते हैं, तो आप दोनों के पास एक-दूसरे की असली कुंजी है।
+
+# Phase 53 — optional decoded video frames (user-supplied ffmpeg)
+# MT
+merge-heading = वीडियो पूर्वावलोकन
+merge-ffmpeg-hint = संस्करणों की तुलना करते समय Freally वीडियो के फ़्रेम दिखा सकता है। इसके लिए ffmpeg चाहिए, जो साथ नहीं आता — आप स्वयं इंस्टॉल करें और Freally उसका उपयोग करेगा। बाकी सब उसके बिना भी काम करता है।
+merge-ffmpeg-enable = वीडियो फ़्रेम के लिए ffmpeg उपयोग करें
+merge-ffmpeg-path = ffmpeg का स्थान (खाली छोड़ें तो PATH खोजा जाएगा)
+merge-ffmpeg-found = मिल गया
+merge-ffmpeg-missing = ffmpeg नहीं मिला। वीडियो तुलना फिर भी काम करती है — चित्रों की जगह अवधि, आकार और ट्रैक विवरण दिखाती है।
+merge-ffmpeg-disabled = वीडियो फ़्रेम बंद हैं। चित्रों की तुलना करने के लिए सेटिंग्स में ffmpeg चालू करें।
+
+collab-revoked = हटाए गए
+collab-no-roster = अभी तक लोगों की कोई सूची नहीं है। फ़ाइलें साझा करने से पहले किसी को जोड़ें।
+collab-admin-key-corrupt = सहेजी गई व्यवस्थापक कुंजी पढ़ी नहीं जा सकी। वह क्षतिग्रस्त हो सकती है।
+
+bugreport-intro = रिपोर्ट गुमनाम होती हैं और कभी अपने आप नहीं भेजी जातीं। क्या भेजना है यह आप चुनते हैं और भेजें आप ही दबाते हैं — हमारा कोई सर्वर नहीं है।
+bugreport-pending = पिछले रन की एक क्रैश रिपोर्ट प्रतीक्षा में है।
+bugreport-description-label = क्या हुआ था?
+bugreport-include-crash = क्रैश रिपोर्ट शामिल करें
+bugreport-preview-label = जो भेजा जाएगा वही दिखाएँ
+bugreport-send-github = GitHub पर इशू खोलें
+bugreport-send-gmail = Gmail खोलें
+bugreport-send-email = मेरा ईमेल ऐप खोलें
+bugreport-dismiss-crash = क्रैश रिपोर्ट हटाएँ
+bugreport-simulate = क्रैश रिपोर्ट का अनुकरण करें
+
+
 # General tab additions
 settings-section-theme = थीम
 settings-theme-auto = स्वतः
@@ -739,6 +785,13 @@ power-reason-cellular-network = सेल्युलर नेटवर्क
 power-reason-presenting = प्रस्तुति मोड
 power-reason-fullscreen = फ़ुलस्क्रीन ऐप
 power-reason-thermal-throttling = CPU थ्रॉटलिंग कर रहा है
+
+# Phase 31b — ambient power badge
+# MT
+power-badge-paused = रोका गया
+power-badge-capped = सीमित
+power-badge-tooltip = एक पावर नीति स्थानांतरण सीमित कर रही है। सेटिंग्स → पावर खोलें।
+
 
 # Phase 32 — cloud backend matrix via OpenDAL. Settings → Remotes
 # tab + the Add-backend wizard that writes one entry per remote into
@@ -1281,6 +1334,13 @@ restore-conflict-keep-both = दोनों रखें
 restore-toast-done = { $restored } पुनर्स्थापित, { $skipped } छोड़े गए
 restore-toast-failed = पुनर्स्थापना विफल: { $reason }
 snapshot-forget = भूल जाएँ
+
+# Phase 49p — inline snapshot metadata editing
+# MT
+snapshot-field-label = नाम
+snapshot-field-description = विवरण
+snapshot-field-tags = टैग (अल्पविराम से अलग)
+
 snapshot-forget-toast = स्नैपशॉट भुला दिया — स्थान खाली करने के लिए “स्थान पुनः प्राप्त करें” चलाएँ
 library-reclaim = स्थान पुनः प्राप्त करें
 # Phase 49i — full compaction.
@@ -1317,6 +1377,35 @@ repo-action-browse = ब्राउज़ करें…
 repo-switcher-label = रिपॉज़िटरी
 repo-action-forget = भूल जाएँ
 repo-action-change-pass = पासफ़्रेज़ बदलें…
+
+# Phase 50i — repository access key slots
+# MT
+repo-keys-title = एक्सेस कुंजियाँ
+repo-keys-empty = इस रिपॉज़िटरी पर पासफ़्रेज़ लॉक नहीं है।
+repo-key-label = लेबल
+repo-key-password = नया पासवर्ड
+repo-key-auth = मौजूदा पासवर्ड
+repo-action-add-key = कुंजी जोड़ें
+repo-action-remove-key = रद्द करें
+repo-action-recovery = रिकवरी कुंजी बनाएँ
+
+# Phase 50h — repository replication (3-2-1)
+# MT
+repo-action-replicate = यहाँ प्रतिकृति…
+
+# Phase 50g — per-repository pack storage backend
+# MT
+repo-remote-label = पैक संग्रहण
+repo-remote-local = स्थानीय डिस्क
+repo-remote-restart = परिवर्तन अगली बार ऐप शुरू होने पर लागू होंगे।
+repo-remote-unknown = वह रिमोट कॉन्फ़िगर नहीं है।
+repo-remote-not-empty = इस रिपॉज़िटरी में पहले से डेटा है। पैक संग्रहण केवल खाली रहने तक ही चुना जा सकता है — इसके बजाय नई रिपॉज़िटरी में प्रतिकृति बनाएँ।
+
+repo-replicate-done = प्रतिकृति पूर्ण: { $copied } स्नैपशॉट कॉपी, { $skipped } पहले से मौजूद
+repo-replicate-same-path = गंतव्य स्रोत के समान रिपॉज़िटरी है।
+
+repo-recovery-once = अभी सहेजें — यह केवल एक बार दिखाई जाती है:
+
 repo-password-old = वर्तमान पासफ़्रेज़
 repo-password-new = नया पासफ़्रेज़
 repo-error-exists = इस स्थान पर पहले से एक रिपॉज़िटरी मौजूद है
@@ -1590,7 +1679,21 @@ favorites-kind-pair = जोड़ी
 err-shell-portable = पोर्टेबल मोड में शेल एकीकरण उपलब्ध नहीं है
 settings-portable-title = पोर्टेबल मोड
 settings-portable-active = पोर्टेबल मोड सक्रिय है। सेटिंग्स, इतिहास और जर्नल { $path } में संग्रहीत हैं।
-settings-portable-keychain-warning = चेतावनी: सहेजे गए क्लाउड क्रेडेंशियल अब भी इस कंप्यूटर की सिस्टम कीचेन में संग्रहीत होते हैं, पोर्टेबल ड्राइव पर नहीं — ड्राइव निकालने के बाद भी वे इसी मशीन पर रहते हैं। कंप्यूटर लौटाने से पहले जोड़े गए रिमोट हटा दें।
+settings-portable-keychain-warning = क्लाउड क्रेडेंशियल पोर्टेबल ड्राइव पर एक एन्क्रिप्टेड फ़ाइल में रहते हैं, जिसे आपके चुने पासफ़्रेज़ से खोला जाता है — वे इस कंप्यूटर पर नहीं लिखे जाते। पासफ़्रेज़ भूलने पर सहेजे गए क्रेडेंशियल पुनर्प्राप्त नहीं किए जा सकते।
+
+# FFM-M21 — portable credential store (age-encrypted file)
+# MT
+cloud-error-credentials-locked = क्लाउड क्रेडेंशियल लॉक हैं। इस बैकएंड का उपयोग करने के लिए इस ड्राइव की क्रेडेंशियल फ़ाइल अनलॉक करें।
+cloud-error-credentials-bad-passphrase = यह पासफ़्रेज़ क्रेडेंशियल फ़ाइल नहीं खोलता।
+cloud-error-credentials-empty-passphrase = पासफ़्रेज़ दर्ज करें।
+cloud-error-credentials-not-portable = यह इंस्टॉल क्रेडेंशियल सिस्टम कीचेन में रखता है, इसलिए अनलॉक करने को कुछ नहीं है।
+portable-credentials-title = पोर्टेबल क्लाउड क्रेडेंशियल
+portable-credentials-unlock-body = इस ड्राइव की क्रेडेंशियल फ़ाइल की सुरक्षा करने वाला पासफ़्रेज़ दर्ज करें।
+portable-credentials-create-body = इस ड्राइव पर क्लाउड क्रेडेंशियल की सुरक्षा के लिए पासफ़्रेज़ चुनें। भूलने पर इसे पुनर्प्राप्त नहीं किया जा सकता।
+portable-credentials-passphrase-label = पासफ़्रेज़
+portable-credentials-unlock-action = अनलॉक करें
+portable-credentials-lock-action = लॉक करें
+
 
 # FFM-M24
 err-autostart-portable = पोर्टेबल मोड में लॉगिन पर प्रारंभ उपलब्ध नहीं है

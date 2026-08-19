@@ -59,6 +59,14 @@ bytes = "1"
 async-trait = "0.1"
 # Phase 32b — CloudSink adapter against freally-core's trait bound.
 freally-core = { path = "../freally-core", version = "0.22" }
+# Portable installs cannot use the host keychain (the entry would
+# outlive the stick), so the fallback store is an age-encrypted file.
+# Reuses the Phase 47 crypt pipeline rather than depending on `age`
+# directly, so both paths share one audited encrypt/decrypt seam.
+freally-crypt = { path = "../freally-crypt", version = "0.22" }
+# `SecretString` for the passphrase — same major as freally-crypt so
+# the two unify on one type.
+secrecy = "0.10"
 
 # Phase 32f — SFTP via russh + russh-sftp. Pure-Rust MIT-licensed
 # replacement for OpenDAL's `services-sftp` (which pulls the

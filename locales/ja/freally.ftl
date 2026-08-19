@@ -343,6 +343,52 @@ settings-tab-advanced = 詳細設定
 settings-tab-updater = 更新
 settings-tab-profiles = プロファイル
 
+# Opt-in anonymous bug reporting (Havoc standard)
+# MT
+settings-tab-bugreport = バグを報告
+
+# Phase 51 — end-to-end encrypted collaboration
+# MT
+settings-tab-collab = 共同作業
+collab-intro = 共有するファイルは、ここに載っている人だけが開けるように暗号化されます。各自が自分の鍵を持ち、共通のパスワードはありません。
+collab-forward-only = 削除すると、それ以降に暗号化されるファイルを開ける人が変わります。すでに読めたファイルを取り戻すことはできません。
+collab-members = メンバー
+collab-none = まだ誰も追加されていません。
+collab-label = 名前
+collab-recipient = 相手の公開鍵
+collab-add = 追加
+collab-remove = 削除
+collab-generate = メンバー用の鍵を生成
+collab-identity-once = 今すぐ控えてください — 表示は一度きりで、共有ファイルを開く唯一の手段です:
+collab-sas-label = 確認コード
+collab-sas-hint = このコードを相手に読み上げてください。一致すれば、互いに本物の鍵を持っています。
+
+# Phase 53 — optional decoded video frames (user-supplied ffmpeg)
+# MT
+merge-heading = 動画のプレビュー
+merge-ffmpeg-hint = バージョンを比較するとき、動画のコマを表示できます。これには ffmpeg が必要ですが同梱していません — ご自身で入れていただければ Freally が利用します。それ以外の機能は ffmpeg なしで動作します。
+merge-ffmpeg-enable = 動画のコマ表示に ffmpeg を使う
+merge-ffmpeg-path = ffmpeg の場所（空欄なら PATH を検索）
+merge-ffmpeg-found = 見つかりました
+merge-ffmpeg-missing = ffmpeg が見つかりません。動画の比較は引き続き利用でき、コマの代わりに長さ・サイズ・トラック情報を表示します。
+merge-ffmpeg-disabled = 動画のフレームは無効です。画像を比較するには設定で ffmpeg を有効にしてください。
+
+collab-revoked = 削除済み
+collab-no-roster = まだ相手の一覧がありません。ファイルを共有する前に相手を追加してください。
+collab-admin-key-corrupt = 保存された管理者キーを読み取れませんでした。壊れている可能性があります。
+
+bugreport-intro = レポートは匿名で、自動送信されることはありません。送る内容はあなたが選び、送信もあなたが行います — 当方のサーバーはありません。
+bugreport-pending = 前回の実行のクラッシュレポートが残っています。
+bugreport-description-label = 何が起きましたか？
+bugreport-include-crash = クラッシュレポートを含める
+bugreport-preview-label = 送信内容をそのまま表示
+bugreport-send-github = GitHub で Issue を開く
+bugreport-send-gmail = Gmail を開く
+bugreport-send-email = メールアプリを開く
+bugreport-dismiss-crash = クラッシュレポートを破棄
+bugreport-simulate = クラッシュレポートをシミュレート
+
+
 # General tab additions
 settings-section-theme = テーマ
 settings-theme-auto = 自動
@@ -739,6 +785,13 @@ power-reason-cellular-network = モバイルネットワーク
 power-reason-presenting = プレゼンモード
 power-reason-fullscreen = 全画面アプリ
 power-reason-thermal-throttling = CPU がスロットリング中
+
+# Phase 31b — ambient power badge
+# MT
+power-badge-paused = 一時停止
+power-badge-capped = 制限中
+power-badge-tooltip = 電源ポリシーが転送を制限しています。設定 → 電源 を開いてください。
+
 
 # Phase 32 — cloud backend matrix via OpenDAL. Settings → Remotes
 # tab + the Add-backend wizard that writes one entry per remote into
@@ -1281,6 +1334,13 @@ restore-conflict-keep-both = 両方を保持
 restore-toast-done = { $restored } 個を復元、{ $skipped } 個をスキップ
 restore-toast-failed = 復元に失敗: { $reason }
 snapshot-forget = 削除
+
+# Phase 49p — inline snapshot metadata editing
+# MT
+snapshot-field-label = 名前
+snapshot-field-description = 説明
+snapshot-field-tags = タグ (カンマ区切り)
+
 snapshot-forget-toast = スナップショットを削除しました — 「容量を回収」で解放できます
 library-reclaim = 容量を回収
 # Phase 49i — full compaction.
@@ -1317,6 +1377,35 @@ repo-action-browse = 参照…
 repo-switcher-label = リポジトリ
 repo-action-forget = 登録解除
 repo-action-change-pass = パスフレーズを変更…
+
+# Phase 50i — repository access key slots
+# MT
+repo-keys-title = アクセスキー
+repo-keys-empty = このリポジトリにはパスフレーズによる保護がありません。
+repo-key-label = ラベル
+repo-key-password = 新しいパスワード
+repo-key-auth = 現在のパスワード
+repo-action-add-key = キーを追加
+repo-action-remove-key = 失効
+repo-action-recovery = リカバリキーを生成
+
+# Phase 50h — repository replication (3-2-1)
+# MT
+repo-action-replicate = 複製先…
+
+# Phase 50g — per-repository pack storage backend
+# MT
+repo-remote-label = パックの保存先
+repo-remote-local = ローカルディスク
+repo-remote-restart = 変更は次回の起動時に適用されます。
+repo-remote-unknown = そのリモートは設定されていません。
+repo-remote-not-empty = このリポジトリにはすでにデータがあります。パックの保存先は空のときだけ選択できます。代わりにレプリケートで新しいリポジトリへコピーしてください。
+
+repo-replicate-done = 複製しました: { $copied } 件のスナップショットをコピー、{ $skipped } 件は既存
+repo-replicate-same-path = コピー先がコピー元と同じリポジトリです。
+
+repo-recovery-once = 今すぐ保存してください — 表示は一度きりです:
+
 repo-password-old = 現在のパスフレーズ
 repo-password-new = 新しいパスフレーズ
 repo-error-exists = この場所には既にリポジトリが存在します
@@ -1590,7 +1679,21 @@ favorites-kind-pair = ペア
 err-shell-portable = ポータブルモードではシェル統合を利用できません
 settings-portable-title = ポータブルモード
 settings-portable-active = ポータブルモードが有効です。設定・履歴・ジャーナルは { $path } に保存されます。
-settings-portable-keychain-warning = 警告: 保存したクラウドの資格情報は、ポータブルドライブではなく、このコンピューターのシステムキーチェーンに保存されます。ドライブを取り外した後もこのマシンに残ります。コンピューターを返却する前に、追加したリモートを削除してください。
+settings-portable-keychain-warning = クラウド資格情報は、選んだパスフレーズで解除する暗号化ファイルとしてポータブルドライブに保存され、このコンピューターには書き込まれません。パスフレーズを忘れると、保存した資格情報は復元できません。
+
+# FFM-M21 — portable credential store (age-encrypted file)
+# MT
+cloud-error-credentials-locked = クラウド資格情報はロックされています。このバックエンドを使うには、このドライブの資格情報ファイルのロックを解除してください。
+cloud-error-credentials-bad-passphrase = そのパスフレーズでは資格情報ファイルを開けません。
+cloud-error-credentials-empty-passphrase = パスフレーズを入力してください。
+cloud-error-credentials-not-portable = このインストールは資格情報をシステムキーチェーンに保存するため、解除するものはありません。
+portable-credentials-title = ポータブルのクラウド資格情報
+portable-credentials-unlock-body = このドライブの資格情報ファイルを保護しているパスフレーズを入力してください。
+portable-credentials-create-body = このドライブのクラウド資格情報を保護するパスフレーズを選んでください。忘れると復元できません。
+portable-credentials-passphrase-label = パスフレーズ
+portable-credentials-unlock-action = ロック解除
+portable-credentials-lock-action = ロック
+
 
 # FFM-M24
 err-autostart-portable = ポータブルモードではログイン時の起動を利用できません

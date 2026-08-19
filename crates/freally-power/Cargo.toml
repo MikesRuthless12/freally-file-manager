@@ -43,6 +43,12 @@ raw-cpuid = "11"
 # `freally-platform::presence`, the only crate in the workspace
 # allowed to carry unsafe code. We re-export through the safe
 # `is_in_presentation_mode` / `is_in_fullscreen_mode` helpers.
+# Phase 31b — the Linux fullscreen probe reads `_NET_WM_STATE` on the
+# EWMH active window. x11rb is a pure-Rust X11 client (no C linkage) and
+# is already in the lockfile via the desktop stack.
+[target.'cfg(target_os = "linux")'.dependencies]
+x11rb = { version = "0.13", default-features = false }
+
 [target.'cfg(target_os = "windows")'.dependencies]
 freally-platform = { path = "../freally-platform", version = "0.22" }
 

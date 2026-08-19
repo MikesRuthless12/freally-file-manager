@@ -228,6 +228,23 @@ impl ChunkStore {
         })
     }
 
+    /// Open with a caller-supplied blob backend (Phase 50g).
+    ///
+    /// The store still *appends* to a local staging file — one object
+    /// write per chunk against a real object store would be
+    /// prohibitively slow — and uploads the completed pack as a single
+    /// object when it rolls over. See [`Self::seal_active`] for the
+    /// shutdown half of that contract.
+    pub fn open_with_backend(
+        root: &Path,
+        rollover_bytes: u64,
+        backend: Box<dyn crate::backend::BlobBackend>,
+    ) -> Result<Self> {
+        let mut store = Self::open_with_rollover(root, rollover_bytes)?;
+        store.backend = backend;
+        Ok(store)
+    }
+
     /// Root directory (the value passed to `open`).
     #[must_use]
     pub fn root(&self) -> &Path {
@@ -375,10 +392,8 @@ impl ChunkStore {
         };
         // Phase 50g — read through the blob backend (LocalFsBackend seeks the
         // pack file; a remote backend would range-get the object).
-        let pack_name = format!("pack-{}.pack", loc.pack_id);
         let stored = self
-            .backend
-            .get_range(&pack_name, loc.offset, loc.stored_len as usize)?
+            .read_pack_range(loc.pack_id, loc.offset, loc.stored_len as usize)?
             .ok_or_else(|| ChunkStoreError::MissingChunk { hash: hex_of(hash) })?;
         // Decode the stored bytes back to plaintext. The zstd decompress is
         // capacity-bounded by the known logical length, so a crafted frame
@@ -479,6 +494,44 @@ impl ChunkStore {
     /// The id of the pack currently being appended to. GC must never
     /// delete this pack — the active writer holds it open and future
     /// `put`s land in it.
+    /// Range-read a pack, preferring the local staging file when the
+    /// pack is the still-unsealed active one.
+    ///
+    /// On a non-colocated backend the active pack has not been uploaded
+    /// yet, so asking the backend for it would report a missing chunk
+    /// for everything written since the last rollover.
+    fn read_pack_range(&self, pack_id: Uuid, offset: u64, len: usize) -> Result<Option<Vec<u8>>> {
+        if !self.backend.is_colocated() {
+            let staging = {
+                let active = self
+                    .active
+                    .lock()
+                    .map_err(|_| ChunkStoreError::Redb("active pack mutex poisoned".into()))?;
+                (active.id == pack_id).then(|| active.path.clone())
+            };
+            if let Some(path) = staging {
+                use std::io::{Read, Seek, SeekFrom};
+                let mut f = File::open(&path).map_err(|e| ChunkStoreError::Io {
+                    path: path.clone(),
+                    source: e,
+                })?;
+                f.seek(SeekFrom::Start(offset))
+                    .map_err(|e| ChunkStoreError::Io {
+                        path: path.clone(),
+                        source: e,
+                    })?;
+                let mut buf = vec![0u8; len];
+                f.read_exact(&mut buf).map_err(|e| ChunkStoreError::Io {
+                    path: path.clone(),
+                    source: e,
+                })?;
+                return Ok(Some(buf));
+            }
+        }
+        self.backend
+            .get_range(&format!("pack-{pack_id}.pack"), offset, len)
+    }
+
     pub(crate) fn active_pack_id(&self) -> Result<Uuid> {
         let active = self
             .active
@@ -495,7 +548,17 @@ impl ChunkStore {
     pub(crate) fn remove_pack_file(&self, id: Uuid) -> Result<u64> {
         // Phase 50g — reclaim through the backend (LocalFs removes the file;
         // a remote backend deletes the object). Idempotent (0 if absent).
-        self.backend.delete(&format!("pack-{id}.pack"))
+        let name = format!("pack-{id}.pack");
+        let freed = self.backend.delete(&name)?;
+        if !self.backend.is_colocated() {
+            // A non-colocated backend was appended to through a local
+            // staging file that the backend knows nothing about.
+            // Without this every pack the store ever wrote stays on
+            // local disk forever, so a gc / compaction sweep would
+            // report bytes freed while freeing nothing locally.
+            let _ = std::fs::remove_file(self.packs_dir.join(&name));
+        }
+        Ok(freed)
     }
 
     /// Every Phase 27 manifest currently persisted in the `manifests`
@@ -519,7 +582,43 @@ impl ChunkStore {
     /// Replace the active pack with a fresh one. Caller holds the `active`
     /// lock. The old active pack becomes a normal, compactable pack;
     /// persists the new id so a restart resumes it.
+    /// Upload a completed pack to the backend.
+    ///
+    /// No-op when the backend is colocated (the file is already at its
+    /// object path) or the pack is empty. This is the "remote
+    /// active-pack seal": chunks are appended locally and the pack
+    /// crosses the wire once, on rollover, instead of once per chunk.
+    fn seal_locked(&self, active: &ActivePack) -> Result<()> {
+        if self.backend.is_colocated() || active.size == 0 {
+            return Ok(());
+        }
+        let bytes = std::fs::read(&active.path).map_err(|e| ChunkStoreError::Io {
+            path: active.path.clone(),
+            source: e,
+        })?;
+        self.backend
+            .put(&format!("pack-{}.pack", active.id), &bytes)
+    }
+
+    /// Seal the current active pack without rolling it.
+    ///
+    /// Call before dropping the store on a remote backend: until a pack
+    /// is sealed it exists only as a local staging file, so a process
+    /// that exits mid-pack would leave those chunks unreachable from
+    /// any other machine. Idempotent, and a no-op on a colocated
+    /// backend.
+    pub fn seal_active(&self) -> Result<()> {
+        let active = self
+            .active
+            .lock()
+            .map_err(|_| ChunkStoreError::Redb("active pack mutex poisoned".into()))?;
+        self.seal_locked(&active)
+    }
+
     fn roll_locked(&self, active: &mut ActivePack) -> Result<()> {
+        // Seal the outgoing pack before it stops being reachable
+        // through the local-staging read path below.
+        self.seal_locked(active)?;
         let id = Uuid::new_v4();
         let path = self.packs_dir.join(format!("pack-{id}.pack"));
         File::create(&path).map_err(|e| ChunkStoreError::Io {
@@ -756,7 +855,137 @@ pub fn default_chunk_store_path() -> Result<PathBuf> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::backend::BlobBackend;
     use crate::types::Manifest;
+
+    // -----------------------------------------------------------------
+    // Phase 50g — remote active-pack seal.
+    //
+    // A non-colocated backend (MemBackend stands in for an object
+    // store) must see a pack exactly once, on rollover — not once per
+    // appended chunk — and chunks written since the last rollover must
+    // still be readable from the local staging file in the meantime.
+    // -----------------------------------------------------------------
+
+    fn mem_store(
+        dir: &std::path::Path,
+        rollover: u64,
+    ) -> (ChunkStore, std::sync::Arc<crate::backend::MemBackend>) {
+        let mem = std::sync::Arc::new(crate::backend::MemBackend::default());
+        let store = ChunkStore::open_with_backend(dir, rollover, Box::new(ArcBackend(mem.clone())))
+            .expect("open with mem backend");
+        (store, mem)
+    }
+
+    /// Shares one MemBackend between the store and the assertions.
+    struct ArcBackend(std::sync::Arc<crate::backend::MemBackend>);
+
+    impl crate::backend::BlobBackend for ArcBackend {
+        fn get(&self, name: &str) -> Result<Option<Vec<u8>>> {
+            self.0.get(name)
+        }
+        fn get_range(&self, name: &str, offset: u64, len: usize) -> Result<Option<Vec<u8>>> {
+            self.0.get_range(name, offset, len)
+        }
+        fn put(&self, name: &str, bytes: &[u8]) -> Result<()> {
+            self.0.put(name, bytes)
+        }
+        fn delete(&self, name: &str) -> Result<u64> {
+            self.0.delete(name)
+        }
+        fn list(&self, prefix: &str) -> Result<Vec<String>> {
+            self.0.list(prefix)
+        }
+        fn exists(&self, name: &str) -> Result<bool> {
+            self.0.exists(name)
+        }
+        fn size(&self, name: &str) -> Result<Option<u64>> {
+            self.0.size(name)
+        }
+        // Deliberately inherits the default `is_colocated() == false`:
+        // this is the remote-style path under test.
+    }
+
+    #[test]
+    fn unsealed_active_pack_is_readable_before_it_reaches_the_backend() {
+        let dir = tempfile::tempdir().unwrap();
+        // Huge rollover so nothing seals during the test.
+        let (store, mem) = mem_store(dir.path(), 1 << 30);
+
+        let payload = b"chunk in the active pack";
+        let hash = *blake3::hash(payload).as_bytes();
+        store.put(hash, payload).unwrap();
+
+        // Nothing has crossed the wire yet — one object write per chunk
+        // is exactly what the seal exists to avoid.
+        assert!(
+            mem.list("pack-").unwrap().is_empty(),
+            "an unsealed pack must not be uploaded per-chunk"
+        );
+        // …and it is still readable, from the local staging file.
+        assert_eq!(store.get(&hash).unwrap().unwrap(), payload);
+    }
+
+    #[test]
+    fn rollover_seals_the_pack_and_it_stays_readable() {
+        let dir = tempfile::tempdir().unwrap();
+        // Tiny rollover so the second put rolls the first pack.
+        let (store, mem) = mem_store(dir.path(), 8);
+
+        let a = b"first payload";
+        let ha = *blake3::hash(a).as_bytes();
+        store.put(ha, a).unwrap();
+        assert!(mem.list("pack-").unwrap().is_empty());
+
+        // This put trips the rollover, which seals the outgoing pack.
+        let b = b"second payload";
+        let hb = *blake3::hash(b).as_bytes();
+        store.put(hb, b).unwrap();
+
+        let uploaded = mem.list("pack-").unwrap();
+        assert_eq!(uploaded.len(), 1, "exactly one sealed pack, uploaded once");
+
+        // The sealed chunk now reads back through the backend, and the
+        // still-active one from local staging. Both must work.
+        assert_eq!(store.get(&ha).unwrap().unwrap(), a);
+        assert_eq!(store.get(&hb).unwrap().unwrap(), b);
+    }
+
+    #[test]
+    fn seal_active_flushes_without_rolling() {
+        let dir = tempfile::tempdir().unwrap();
+        let (store, mem) = mem_store(dir.path(), 1 << 30);
+
+        let payload = b"written just before shutdown";
+        let hash = *blake3::hash(payload).as_bytes();
+        store.put(hash, payload).unwrap();
+        assert!(mem.list("pack-").unwrap().is_empty());
+
+        // Without this, a process exiting mid-pack would leave these
+        // chunks unreachable from any other machine.
+        store.seal_active().unwrap();
+        assert_eq!(mem.list("pack-").unwrap().len(), 1);
+        // Idempotent — sealing twice is not an error.
+        store.seal_active().unwrap();
+        assert_eq!(store.get(&hash).unwrap().unwrap(), payload);
+    }
+
+    #[test]
+    fn local_backend_stays_colocated_and_seals_nothing() {
+        // Regression guard: the default LocalFs path must not start
+        // rewriting every pack onto itself on rollover.
+        let dir = tempfile::tempdir().unwrap();
+        let store = ChunkStore::open_with_rollover(dir.path(), 8).unwrap();
+        let a = b"first";
+        let ha = *blake3::hash(a).as_bytes();
+        store.put(ha, a).unwrap();
+        let b = b"second";
+        let hb = *blake3::hash(b).as_bytes();
+        store.put(hb, b).unwrap();
+        assert_eq!(store.get(&ha).unwrap().unwrap(), a);
+        assert_eq!(store.get(&hb).unwrap().unwrap(), b);
+        store.seal_active().unwrap();
+    }
 
     #[test]
     fn locator_v0_v1_round_trip_and_compat() {

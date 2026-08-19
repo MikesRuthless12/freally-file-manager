@@ -211,6 +211,12 @@ pub struct AppState {
     /// `set_active("")` can restore it without re-opening (which would
     /// clash with the still-held default chunk-store lock).
     default_repository: Option<Arc<freally_chunk::Repository>>,
+    /// FFM-M21 — the passphrase that unlocks the portable credential
+    /// file, held for this process only and never persisted.
+    ///
+    /// `None` until the user unlocks, and always `None` on a normal
+    /// install, which uses the OS keychain and needs no passphrase.
+    portable_credential_key: Arc<Mutex<Option<secrecy::SecretString>>>,
 }
 
 impl AppState {
@@ -336,6 +342,7 @@ impl AppState {
             chunk_store: None,
             repository_handle: Arc::new(std::sync::RwLock::new(None)),
             default_repository: None,
+            portable_credential_key: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -379,6 +386,30 @@ impl AppState {
     /// Phase 49k — the startup default repository (for `set_active("")`).
     pub fn default_repository(&self) -> Option<Arc<freally_chunk::Repository>> {
         self.default_repository.clone()
+    }
+
+    /// The portable credential passphrase, if the user unlocked it in
+    /// this session. Always `None` on a normal install.
+    pub fn portable_credential_key(&self) -> Option<secrecy::SecretString> {
+        self.portable_credential_key.lock().ok()?.clone()
+    }
+
+    /// Hold the passphrase for the rest of this process.
+    ///
+    /// Deliberately has no disk side effect: persisting it anywhere on
+    /// the stick would put the key next to the ciphertext and reduce
+    /// the file to obfuscation.
+    pub fn set_portable_credential_key(&self, pw: secrecy::SecretString) {
+        if let Ok(mut g) = self.portable_credential_key.lock() {
+            *g = Some(pw);
+        }
+    }
+
+    /// Forget the passphrase — used by an explicit lock action.
+    pub fn clear_portable_credential_key(&self) {
+        if let Ok(mut g) = self.portable_credential_key.lock() {
+            *g = None;
+        }
     }
 
     /// Phase 49k — the active unified repository handle (read lease on the

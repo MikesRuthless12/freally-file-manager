@@ -343,6 +343,52 @@ settings-tab-advanced = Дополнительно
 settings-tab-updater = Обновления
 settings-tab-profiles = Профили
 
+# Opt-in anonymous bug reporting (Havoc standard)
+# MT
+settings-tab-bugreport = Сообщить об ошибке
+
+# Phase 51 — end-to-end encrypted collaboration
+# MT
+settings-tab-collab = Совместная работа
+collab-intro = Общие файлы шифруются так, что открыть их могут только перечисленные здесь люди. У каждого свой ключ; общего пароля нет.
+collab-forward-only = Удаление меняет, кто сможет открывать файлы, зашифрованные после этого. Уже прочитанные файлы вернуть нельзя.
+collab-members = Участники
+collab-none = Пока никто не добавлен.
+collab-label = Имя
+collab-recipient = Его открытый ключ
+collab-add = Добавить
+collab-remove = Удалить
+collab-generate = Создать ключ для участника
+collab-identity-once = Скопируйте сейчас — показывается один раз и это единственный способ открыть общие файлы:
+collab-sas-label = Код подтверждения
+collab-sas-hint = Прочитайте код вслух собеседнику. Если коды совпали, у вас настоящие ключи друг друга.
+
+# Phase 53 — optional decoded video frames (user-supplied ffmpeg)
+# MT
+merge-heading = Предпросмотр видео
+merge-ffmpeg-hint = Freally может показывать кадры из видео при сравнении версий. Для этого нужен ffmpeg, он не входит в комплект — установите его сами, и Freally будет им пользоваться. Остальное работает и без него.
+merge-ffmpeg-enable = Использовать ffmpeg для кадров видео
+merge-ffmpeg-path = Путь к ffmpeg (пусто — искать в PATH)
+merge-ffmpeg-found = Найден
+merge-ffmpeg-missing = ffmpeg не найден. Сравнение видео по-прежнему работает: вместо кадров показываются длительность, размер и дорожки.
+merge-ffmpeg-disabled = Кадры видео отключены. Включите ffmpeg в настройках, чтобы сравнивать изображения.
+
+collab-revoked = Удалены
+collab-no-roster = Списка людей ещё нет. Добавьте кого-нибудь, прежде чем делиться файлами.
+collab-admin-key-corrupt = Не удалось прочитать сохранённый ключ администратора. Возможно, он повреждён.
+
+bugreport-intro = Отчёты анонимны и никогда не отправляются автоматически. Вы сами выбираете содержимое и нажимаете «Отправить» — у нас нет сервера.
+bugreport-pending = Ожидает отчёт о сбое из предыдущего запуска.
+bugreport-description-label = Что произошло?
+bugreport-include-crash = Включить отчёт о сбое
+bugreport-preview-label = Показать, что именно будет отправлено
+bugreport-send-github = Открыть issue на GitHub
+bugreport-send-gmail = Открыть Gmail
+bugreport-send-email = Открыть почтовую программу
+bugreport-dismiss-crash = Удалить отчёт о сбое
+bugreport-simulate = Смоделировать отчёт о сбое
+
+
 # General tab additions
 settings-section-theme = Тема
 settings-theme-auto = Авто
@@ -739,6 +785,13 @@ power-reason-cellular-network = сотовая сеть
 power-reason-presenting = режим презентации
 power-reason-fullscreen = полноэкранное приложение
 power-reason-thermal-throttling = ЦП троттлит
+
+# Phase 31b — ambient power badge
+# MT
+power-badge-paused = Приостановлено
+power-badge-capped = Ограничено
+power-badge-tooltip = Политика питания ограничивает передачи. Откройте «Настройки → Питание».
+
 
 # Phase 32 — cloud backend matrix via OpenDAL. Settings → Remotes
 # tab + the Add-backend wizard that writes one entry per remote into
@@ -1281,6 +1334,13 @@ restore-conflict-keep-both = Сохранить оба
 restore-toast-done = Восстановлено { $restored }, пропущено { $skipped }
 restore-toast-failed = Сбой восстановления: { $reason }
 snapshot-forget = Забыть
+
+# Phase 49p — inline snapshot metadata editing
+# MT
+snapshot-field-label = Имя
+snapshot-field-description = Описание
+snapshot-field-tags = Теги (через запятую)
+
 snapshot-forget-toast = Снимок забыт — запустите «Освободить место», чтобы очистить
 library-reclaim = Освободить место
 # Phase 49i — full compaction.
@@ -1317,6 +1377,35 @@ repo-action-browse = Обзор…
 repo-switcher-label = Репозиторий
 repo-action-forget = Забыть
 repo-action-change-pass = Изменить пароль…
+
+# Phase 50i — repository access key slots
+# MT
+repo-keys-title = Ключи доступа
+repo-keys-empty = У этого репозитория нет парольной защиты.
+repo-key-label = Метка
+repo-key-password = Новый пароль
+repo-key-auth = Текущий пароль
+repo-action-add-key = Добавить ключ
+repo-action-remove-key = Отозвать
+repo-action-recovery = Создать ключ восстановления
+
+# Phase 50h — repository replication (3-2-1)
+# MT
+repo-action-replicate = Реплицировать в…
+
+# Phase 50g — per-repository pack storage backend
+# MT
+repo-remote-label = Хранилище пакетов
+repo-remote-local = Локальный диск
+repo-remote-restart = Изменения вступят в силу при следующем запуске.
+repo-remote-unknown = Это удалённое хранилище не настроено.
+repo-remote-not-empty = В этом репозитории уже есть данные. Хранилище пакетов можно выбрать, только пока он пуст — вместо этого выполните репликацию в новый репозиторий.
+
+repo-replicate-done = Реплицировано: скопировано снимков — { $copied }, уже было — { $skipped }
+repo-replicate-same-path = Назначение совпадает с исходным репозиторием.
+
+repo-recovery-once = Сохраните сейчас — показывается только один раз:
+
 repo-password-old = Текущий пароль
 repo-password-new = Новый пароль
 repo-error-exists = В этом расположении уже существует репозиторий
@@ -1590,7 +1679,21 @@ favorites-kind-pair = Пара
 err-shell-portable = Интеграция с оболочкой недоступна в переносном режиме
 settings-portable-title = Переносной режим
 settings-portable-active = Переносной режим активен. Настройки, история и журналы хранятся в { $path }.
-settings-portable-keychain-warning = Предупреждение: сохранённые облачные учётные данные по-прежнему помещаются в связку ключей этого компьютера, а не на съёмный диск — они останутся здесь после извлечения. Удалите добавленные подключения, прежде чем вернуть компьютер.
+settings-portable-keychain-warning = Облачные учётные данные хранятся в зашифрованном файле на съёмном диске и открываются выбранной вами парольной фразой — на этот компьютер они не записываются. Если забыть фразу, восстановить данные будет нельзя.
+
+# FFM-M21 — portable credential store (age-encrypted file)
+# MT
+cloud-error-credentials-locked = Облачные учётные данные заблокированы. Разблокируйте файл учётных данных на этом диске, чтобы использовать этот бэкенд.
+cloud-error-credentials-bad-passphrase = Эта парольная фраза не открывает файл учётных данных.
+cloud-error-credentials-empty-passphrase = Введите парольную фразу.
+cloud-error-credentials-not-portable = Эта установка хранит учётные данные в системной связке ключей, разблокировать нечего.
+portable-credentials-title = Портативные облачные учётные данные
+portable-credentials-unlock-body = Введите парольную фразу, защищающую файл учётных данных на этом диске.
+portable-credentials-create-body = Выберите парольную фразу для защиты облачных учётных данных на этом диске. Восстановить её невозможно.
+portable-credentials-passphrase-label = Парольная фраза
+portable-credentials-unlock-action = Разблокировать
+portable-credentials-lock-action = Заблокировать
+
 
 # FFM-M24
 err-autostart-portable = Запуск при входе недоступен в переносном режиме

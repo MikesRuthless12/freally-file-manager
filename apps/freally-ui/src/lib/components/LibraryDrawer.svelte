@@ -18,12 +18,16 @@
   import { escapeToClose } from "../a11y";
   import BackupSourcesView from "./BackupSourcesView.svelte";
   import RestoreModal from "./RestoreModal.svelte";
-  import { save } from "@tauri-apps/plugin-dialog";
+  import { save, open as openDialog } from "@tauri-apps/plugin-dialog";
   import { i18nVersion, t } from "../i18n";
   import { formatBytes } from "../format";
   import {
     listVersions,
     repositoryCompact,
+    repositoryReplicate,
+    repositoryRemoteGet,
+    repositoryRemoteSet,
+    listBackends,
     repositoryCompressionGet,
     repositoryCompressionSet,
     repositoryDiff,
@@ -33,6 +37,9 @@
     repositoryPrunePolicy,
     repositoryReport,
     repositorySetPinned,
+    repositorySetLabel,
+    repositorySetDescription,
+    repositorySetTags,
     repositoryRepair,
     repositorySnapshots,
     repositorySources,
@@ -176,6 +183,52 @@
     }
   }
 
+  // Phase 50g — which configured cloud remote holds the pack objects.
+  // Applied at the next launch: the store's backend is fixed when the
+  // store opens, and swapping it under a live repository would strand
+  // the unsealed active pack.
+  let packRemote = $state("");
+  let remoteNames = $state<string[]>([]);
+
+  async function loadRemoteChoice(): Promise<void> {
+    try {
+      packRemote = (await repositoryRemoteGet()).backend;
+      remoteNames = (await listBackends()).map((b) => b.name);
+    } catch (e) {
+      console.error("[repository_remote_get]", e);
+    }
+  }
+
+  async function saveRemoteChoice(name: string): Promise<void> {
+    try {
+      await repositoryRemoteSet({ backend: name, cacheDir: "" });
+      packRemote = name;
+      pushToast("info", t("repo-remote-restart"));
+    } catch (e) {
+      pushToast("error", t(typeof e === "string" ? e : String(e)));
+    }
+  }
+
+  // Phase 50h — the 3-2-1 push. `replicate_to` shipped with 50h but was
+  // reachable only from a smoke test; this is the affordance.
+  async function doReplicate() {
+    try {
+      const dst = await openDialog({ directory: true, multiple: false });
+      if (typeof dst !== "string") return;
+      openTaskCenter();
+      const r = await repositoryReplicate(dst);
+      pushToast(
+        "success",
+        t("repo-replicate-done", {
+          copied: r.snapshotsCopied,
+          skipped: r.snapshotsSkipped,
+        }),
+      );
+    } catch (e) {
+      pushToast("error", e instanceof Error ? e.message : String(e));
+    }
+  }
+
   async function fullCompact() {
     try {
       await repositoryCompact();
@@ -263,6 +316,48 @@
       .join(" ");
   }
 
+  // Phase 49p — inline snapshot metadata editing. The backend and IPC
+  // have supported label / description / tags since 49p shipped; only
+  // this surface was missing.
+  let editingId = $state<number | null>(null);
+  let editLabel = $state("");
+  let editDescription = $state("");
+  let editTags = $state("");
+  let editBusy = $state(false);
+
+  function startEdit(s: RepositorySnapshotDto) {
+    editingId = s.id;
+    editLabel = s.label;
+    editDescription = s.description;
+    editTags = s.tags.join(", ");
+  }
+
+  function cancelEdit() {
+    editingId = null;
+  }
+
+  async function saveEdit(id: number) {
+    editBusy = true;
+    try {
+      // `set_tags` replaces the whole list, so the input is the full
+      // set. Blank segments are dropped: "a, ,b" must not create an
+      // empty tag that can never be selected or removed again.
+      const tags = editTags
+        .split(",")
+        .map((x) => x.trim())
+        .filter((x) => x.length > 0);
+      await repositorySetLabel(id, editLabel);
+      await repositorySetDescription(id, editDescription);
+      await repositorySetTags(id, tags);
+      editingId = null;
+      await refresh();
+    } catch (e) {
+      pushToast("error", e instanceof Error ? e.message : String(e));
+    } finally {
+      editBusy = false;
+    }
+  }
+
   async function togglePin(id: number, pinned: boolean) {
     try {
       await repositorySetPinned(id, pinned);
@@ -290,6 +385,7 @@
   async function loadCompression() {
     try {
       compressionMode = (await repositoryCompressionGet()).mode;
+      await loadRemoteChoice();
     } catch {
       // advisory; ignore
     }
@@ -448,6 +544,21 @@
               <button type="button" onclick={fullCompact}>
                 {t("library-compact")}
               </button>
+              <button type="button" onclick={() => void doReplicate()}>
+                {t("repo-action-replicate")}
+              </button>
+              <label class="pack-remote">
+                {t("repo-remote-label")}
+                <select
+                  value={packRemote}
+                  onchange={(e) => void saveRemoteChoice(e.currentTarget.value)}
+                >
+                  <option value="">{t("repo-remote-local")}</option>
+                  {#each remoteNames as name (name)}
+                    <option value={name}>{name}</option>
+                  {/each}
+                </select>
+              </label>
               <button type="button" onclick={() => doVerify(false)}>
                 {t("repo-action-verify")}
               </button>
@@ -481,9 +592,29 @@
                       <span class="pin-badge">📌 {t("repo-pinned-badge")}</span>
                     {/if}
                   </span>
-                  <span class="label">{s.label}</span>
-                  {#if s.description}
-                    <span class="meta">{s.description}</span>
+                  {#if editingId === s.id}
+                    <span class="snap-edit">
+                      <label>
+                        {t("snapshot-field-label")}
+                        <input bind:value={editLabel} disabled={editBusy} />
+                      </label>
+                      <label>
+                        {t("snapshot-field-description")}
+                        <input bind:value={editDescription} disabled={editBusy} />
+                      </label>
+                      <label>
+                        {t("snapshot-field-tags")}
+                        <input bind:value={editTags} disabled={editBusy} />
+                      </label>
+                    </span>
+                  {:else}
+                    <span class="label">{s.label}</span>
+                    {#if s.description}
+                      <span class="meta">{s.description}</span>
+                    {/if}
+                    {#if s.tags.length > 0}
+                      <span class="meta snap-tags">{s.tags.join(", ")}</span>
+                    {/if}
                   {/if}
                   <span class="meta">
                     {fmtDate(s.createdAtMs)} ·
@@ -491,6 +622,22 @@
                     {formatBytes(s.totalSize)}
                   </span>
                   <span class="snap-actions">
+                    {#if editingId === s.id}
+                      <button
+                        type="button"
+                        onclick={() => void saveEdit(s.id)}
+                        disabled={editBusy}
+                      >
+                        {t("action-save")}
+                      </button>
+                      <button type="button" onclick={cancelEdit} disabled={editBusy}>
+                        {t("action-cancel")}
+                      </button>
+                    {:else}
+                      <button type="button" onclick={() => startEdit(s)}>
+                        {t("action-edit")}
+                      </button>
+                    {/if}
                     <button type="button" onclick={() => togglePin(s.id, !s.pinned)}>
                       {s.pinned ? t("repo-unpin") : t("repo-pin")}
                     </button>

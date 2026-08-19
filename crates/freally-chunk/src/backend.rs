@@ -52,6 +52,21 @@ pub trait BlobBackend: Send + Sync {
     /// Whether `name` exists.
     fn exists(&self, name: &str) -> Result<bool>;
 
+    /// Whether objects already live where the store appends to them.
+    ///
+    /// `LocalFsBackend` is rooted at the pack directory, so an active
+    /// pack is *already* at its final object path and sealing it is a
+    /// no-op. Every other backend must have the completed pack uploaded
+    /// as one object when it rolls over — the alternative, an object
+    /// write per appended chunk, is prohibitively slow and expensive
+    /// against a real object store.
+    ///
+    /// Defaults to `false`, the safe answer: a backend that forgets to
+    /// override this uploads a redundant copy rather than silently
+    /// never uploading at all.
+    fn is_colocated(&self) -> bool {
+        false
+    }
     /// Byte size of object `name`, or `None` if absent. Default reads the
     /// whole object; local / HEAD-capable backends override.
     fn size(&self, name: &str) -> Result<Option<u64>> {
@@ -79,6 +94,12 @@ impl LocalFsBackend {
 }
 
 impl BlobBackend for LocalFsBackend {
+    /// Rooted at the pack directory, so a sealed pack is already at
+    /// its final object path — nothing to upload.
+    fn is_colocated(&self) -> bool {
+        true
+    }
+
     fn get(&self, name: &str) -> Result<Option<Vec<u8>>> {
         let path = self.path(name);
         match std::fs::read(&path) {

@@ -549,7 +549,7 @@ pub async fn mobile_send_test_push(
     ))
 }
 
-fn build_signer_for(
+pub(crate) fn build_signer_for(
     target: &PushTarget,
     persisted: &freally_settings::MobileSettings,
 ) -> Result<Option<Arc<dyn PushSigner>>, String> {

@@ -89,8 +89,20 @@ pub struct ScheduleDto {
     pub missed_run_honored: bool,
 }
 
-impl From<&ScheduleEntry> for ScheduleDto {
-    fn from(e: &ScheduleEntry) -> Self {
+impl ScheduleDto {
+    /// Build the wire DTO for a persisted entry.
+    ///
+    /// The three derived fields are parameters rather than defaults
+    /// because none of them can be read off the entry — they come from
+    /// the OS probe and the clock, and the only caller
+    /// ([`decorate`]) always has them. Defaulting them here would put a
+    /// DTO into a state no consumer ever legitimately sees.
+    fn new(
+        e: &ScheduleEntry,
+        installed: bool,
+        next_run_unix_secs: Option<i64>,
+        missed_run_honored: bool,
+    ) -> Self {
         Self {
             id: e.id.clone(),
             label: e.label.clone(),
@@ -103,9 +115,9 @@ impl From<&ScheduleEntry> for ScheduleDto {
             hour: e.hour,
             minute: e.minute,
             run_when_available: e.run_when_available,
-            installed: false,
-            next_run_unix_secs: None,
-            missed_run_honored: true,
+            installed,
+            next_run_unix_secs,
+            missed_run_honored,
         }
     }
 }
@@ -346,11 +358,12 @@ pub fn decorate(
     entries
         .iter()
         .map(|e| {
-            let mut dto = ScheduleDto::from(e);
-            dto.installed = installed(&e.id);
-            dto.next_run_unix_secs = next_run_for(e, now_unix_secs, utc_offset, &offset_at);
-            dto.missed_run_honored = policy_is_honored(policy_of(e));
-            dto
+            ScheduleDto::new(
+                e,
+                installed(&e.id),
+                next_run_for(e, now_unix_secs, utc_offset, &offset_at),
+                policy_is_honored(policy_of(e)),
+            )
         })
         .collect()
 }

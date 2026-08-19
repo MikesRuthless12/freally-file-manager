@@ -343,6 +343,52 @@ settings-tab-advanced = Geavanceerd
 settings-tab-updater = Updates
 settings-tab-profiles = Profielen
 
+# Opt-in anonymous bug reporting (Havoc standard)
+# MT
+settings-tab-bugreport = Een bug melden
+
+# Phase 51 — end-to-end encrypted collaboration
+# MT
+settings-tab-collab = Samenwerking
+collab-intro = Gedeelde bestanden worden versleuteld zodat alleen de personen in deze lijst ze kunnen openen. Ieder houdt de eigen sleutel; er is geen gedeeld wachtwoord.
+collab-forward-only = Iemand verwijderen verandert wie voortaan versleutelde bestanden kan openen. Het haalt niet terug wat die persoon al kon lezen.
+collab-members = Personen
+collab-none = Er is nog niemand toegevoegd.
+collab-label = Naam
+collab-recipient = Hun publieke sleutel
+collab-add = Toevoegen
+collab-remove = Verwijderen
+collab-generate = Een sleutel voor iemand genereren
+collab-identity-once = Kopieer dit nu — het wordt maar één keer getoond en is de enige manier om gedeelde bestanden te openen:
+collab-sas-label = Verificatiecode
+collab-sas-hint = Lees deze code hardop voor. Komen ze overeen, dan hebt u elkaars echte sleutel.
+
+# Phase 53 — optional decoded video frames (user-supplied ffmpeg)
+# MT
+merge-heading = Videovoorbeelden
+merge-ffmpeg-hint = Freally kan beelden uit een video tonen bij het vergelijken. Daarvoor is ffmpeg nodig, dat niet wordt meegeleverd — installeer het zelf en Freally gebruikt het. De rest werkt ook zonder.
+merge-ffmpeg-enable = ffmpeg gebruiken voor videobeelden
+merge-ffmpeg-path = ffmpeg-pad (leeg laten om PATH te doorzoeken)
+merge-ffmpeg-found = Gevonden
+merge-ffmpeg-missing = ffmpeg is niet gevonden. Video vergelijken werkt nog steeds; het toont lengte, grootte en sporen in plaats van beelden.
+merge-ffmpeg-disabled = Videobeelden staan uit. Schakel ffmpeg in bij Instellingen om beelden te vergelijken.
+
+collab-revoked = Verwijderd
+collab-no-roster = Er is nog geen lijst met personen. Voeg iemand toe voordat u bestanden deelt.
+collab-admin-key-corrupt = De opgeslagen beheerderssleutel kon niet worden gelezen. Mogelijk is deze beschadigd.
+
+bugreport-intro = Meldingen zijn anoniem en worden nooit automatisch verzonden. U kiest wat u verstuurt en drukt zelf op Verzenden — wij draaien geen server.
+bugreport-pending = Er staat nog een crashrapport van een eerdere sessie klaar.
+bugreport-description-label = Wat gebeurde er?
+bugreport-include-crash = Crashrapport meesturen
+bugreport-preview-label = Toon precies wat er verzonden wordt
+bugreport-send-github = Een GitHub-issue openen
+bugreport-send-gmail = Gmail openen
+bugreport-send-email = Mijn e-mailprogramma openen
+bugreport-dismiss-crash = Crashrapport verwijderen
+bugreport-simulate = Een crashrapport simuleren
+
+
 # General tab additions
 settings-section-theme = Thema
 settings-theme-auto = Automatisch
@@ -739,6 +785,13 @@ power-reason-cellular-network = mobiel netwerk
 power-reason-presenting = presentatiemodus
 power-reason-fullscreen = app op volledig scherm
 power-reason-thermal-throttling = CPU wordt beperkt
+
+# Phase 31b — ambient power badge
+# MT
+power-badge-paused = Gepauzeerd
+power-badge-capped = Beperkt
+power-badge-tooltip = Een energiebeleid beperkt overdrachten. Open Instellingen → Energie.
+
 
 # Phase 32 — cloud backend matrix via OpenDAL. Settings → Remotes
 # tab + the Add-backend wizard that writes one entry per remote into
@@ -1281,6 +1334,13 @@ restore-conflict-keep-both = Beide behouden
 restore-toast-done = { $restored } hersteld, { $skipped } overgeslagen
 restore-toast-failed = Herstellen mislukt: { $reason }
 snapshot-forget = Vergeten
+
+# Phase 49p — inline snapshot metadata editing
+# MT
+snapshot-field-label = Naam
+snapshot-field-description = Beschrijving
+snapshot-field-tags = Labels (door komma’s gescheiden)
+
 snapshot-forget-toast = Momentopname vergeten — voer Ruimte vrijmaken uit om deze vrij te geven
 library-reclaim = Ruimte vrijmaken
 # Phase 49i — full compaction.
@@ -1317,6 +1377,35 @@ repo-action-browse = Bladeren…
 repo-switcher-label = Repository
 repo-action-forget = Vergeten
 repo-action-change-pass = Wachtwoordzin wijzigen…
+
+# Phase 50i — repository access key slots
+# MT
+repo-keys-title = Toegangssleutels
+repo-keys-empty = Deze repository heeft geen wachtwoordzin-slot.
+repo-key-label = Label
+repo-key-password = Nieuw wachtwoord
+repo-key-auth = Bestaand wachtwoord
+repo-action-add-key = Sleutel toevoegen
+repo-action-remove-key = Intrekken
+repo-action-recovery = Herstelsleutel genereren
+
+# Phase 50h — repository replication (3-2-1)
+# MT
+repo-action-replicate = Repliceren naar…
+
+# Phase 50g — per-repository pack storage backend
+# MT
+repo-remote-label = Packopslag
+repo-remote-local = Lokale schijf
+repo-remote-restart = Wijzigingen gelden vanaf de volgende start.
+repo-remote-unknown = Die remote is niet geconfigureerd.
+repo-remote-not-empty = Deze repository bevat al gegevens. De pakketopslag kan alleen worden gekozen zolang deze leeg is — repliceer in plaats daarvan naar een nieuwe repository.
+
+repo-replicate-done = Gerepliceerd: { $copied } momentopname(n) gekopieerd, { $skipped } al aanwezig
+repo-replicate-same-path = De bestemming is dezelfde repository als de bron.
+
+repo-recovery-once = Bewaar deze nu — hij wordt maar één keer getoond:
+
 repo-password-old = Huidige wachtwoordzin
 repo-password-new = Nieuwe wachtwoordzin
 repo-error-exists = Op deze locatie bestaat al een repository
@@ -1590,7 +1679,21 @@ favorites-kind-pair = Paar
 err-shell-portable = Shell-integratie is niet beschikbaar in draagbare modus
 settings-portable-title = Draagbare modus
 settings-portable-active = De draagbare modus is actief. Instellingen, geschiedenis en journaals worden opgeslagen in { $path }.
-settings-portable-keychain-warning = Waarschuwing: opgeslagen cloudgegevens staan nog steeds in de systeemsleutelhanger van deze computer, niet op de draagbare schijf — ze blijven achter nadat u de schijf loskoppelt. Verwijder toegevoegde remotes voordat u de computer teruggeeft.
+settings-portable-keychain-warning = Cloudreferenties staan in een versleuteld bestand op het draagbare station, ontgrendeld met een zelfgekozen wachtwoordzin — ze worden niet op deze computer opgeslagen. Bent u de wachtwoordzin kwijt, dan zijn de referenties niet te herstellen.
+
+# FFM-M21 — portable credential store (age-encrypted file)
+# MT
+cloud-error-credentials-locked = Cloudreferenties zijn vergrendeld. Ontgrendel het referentiebestand op dit station om deze backend te gebruiken.
+cloud-error-credentials-bad-passphrase = Die wachtwoordzin opent het referentiebestand niet.
+cloud-error-credentials-empty-passphrase = Voer een wachtwoordzin in.
+cloud-error-credentials-not-portable = Deze installatie bewaart referenties in de systeemsleutelhanger, dus er valt niets te ontgrendelen.
+portable-credentials-title = Draagbare cloudreferenties
+portable-credentials-unlock-body = Voer de wachtwoordzin in die het referentiebestand op dit station beschermt.
+portable-credentials-create-body = Kies een wachtwoordzin om cloudreferenties op dit station te beschermen. Deze kan niet worden hersteld als u haar vergeet.
+portable-credentials-passphrase-label = Wachtwoordzin
+portable-credentials-unlock-action = Ontgrendelen
+portable-credentials-lock-action = Vergrendelen
+
 
 # FFM-M24
 err-autostart-portable = Starten bij aanmelden is niet beschikbaar in draagbare modus

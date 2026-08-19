@@ -251,6 +251,9 @@ impl PluginState {
 /// finds plugins under the same `com.Freally.freally-file-manager` config
 /// root as `settings.toml` and `dropstack.json`.
 pub fn default_plugins_root() -> Option<PathBuf> {
+    if let Some(root) = freally_settings::portable::portable_root() {
+        return Some(root.join(PLUGINS_SUBDIR));
+    }
     directories::ProjectDirs::from("com", "Freally", "freally-file-manager")
         .map(|d| d.config_dir().join(PLUGINS_SUBDIR))
 }

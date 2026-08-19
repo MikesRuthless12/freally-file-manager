@@ -125,6 +125,9 @@ fn parse_audit_settings(cfg: &AuditSettings) -> (AuditFormat, WormMode, Rotation
 /// `<config-dir>/audit/freally-audit.log`. Mirrors the pattern
 /// the Phase 9 history / Phase 28 dropstack persistence use.
 pub fn default_audit_path() -> PathBuf {
+    if let Some(root) = freally_settings::portable::portable_root() {
+        return root.join("audit").join("freally-audit.log");
+    }
     if let Some(dirs) = directories::ProjectDirs::from("com", "Freally", "freally-file-manager") {
         return dirs.config_dir().join("audit").join("freally-audit.log");
     }

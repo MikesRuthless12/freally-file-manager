@@ -6,11 +6,13 @@
 //! - **Windows** — `SHQueryUserNotificationState` from Shell32 via
 //!   `freally_platform::presence` (presentation and fullscreen are
 //!   distinct `QUNS_*` states).
-//! - **Linux / macOS / other** — deferred to the cross-platform stub
-//!   for now (`Real*Probe` are type aliases to the stub there). The
-//!   Linux GNOME DBus probe was pulled — it blocked inside the tokio
-//!   poller and over-fired on any idle-inhibit; a non-blocking rework
-//!   validated on real Linux is a Phase 31c follow-up.
+//! - **Linux** — fullscreen is real: `_NET_WM_STATE_FULLSCREEN` on the
+//!   EWMH active window, sampled on a dedicated thread so the tokio
+//!   poller only reads an `AtomicBool`. Presentation stays stubbed on
+//!   purpose: GNOME exposes no presentation flag, and the only related
+//!   bit (idle-inhibit) is also set by a playing video — the
+//!   over-firing that got the previous probe removed.
+//! - **macOS / other** — both deferred to the cross-platform stub.
 //!
 //! Coverage:
 //! 1. `is_in_presentation_mode()` + `is_in_fullscreen_mode()` are

@@ -17,6 +17,10 @@
     renderOffloadTemplate,
     testBackendConnection,
     updateBackend,
+    portableCredentialsStatus,
+    portableCredentialsUnlock,
+    portableCredentialsLock,
+    type PortableCredentialsStatus,
     type BackendDto,
     type OffloadOptsDto,
     type OffloadTemplateFormat,
@@ -139,6 +143,48 @@
 
   onMount(refresh);
 
+  // FFM-M21 — a portable install keeps secrets in an encrypted file on
+  // the drive, not the host keychain, so nothing can be read or written
+  // until the user supplies the passphrase. A normal install reports
+  // `portable: false` and this whole block stays hidden.
+  let credStatus = $state<PortableCredentialsStatus | null>(null);
+  let credPassphrase = $state("");
+  let credBusy = $state(false);
+  let credError = $state<string | null>(null);
+
+  async function refreshCredStatus(): Promise<void> {
+    try {
+      credStatus = await portableCredentialsStatus();
+    } catch (e) {
+      // A status probe that fails must not take the pane down; the
+      // banner simply stays hidden and the per-action errors still
+      // explain themselves.
+      console.error("[portable_credentials_status]", e);
+      credStatus = null;
+    }
+  }
+  onMount(refreshCredStatus);
+
+  async function credUnlock(): Promise<void> {
+    credBusy = true;
+    credError = null;
+    try {
+      await portableCredentialsUnlock(credPassphrase);
+      credPassphrase = "";
+      await refreshCredStatus();
+      await refresh();
+    } catch (e) {
+      credError = t(typeof e === "string" ? e : String(e));
+    } finally {
+      credBusy = false;
+    }
+  }
+
+  async function credLock(): Promise<void> {
+    await portableCredentialsLock();
+    await refreshCredStatus();
+  }
+
   function resetForm() {
     showForm = false;
     editingName = null;
@@ -258,6 +304,33 @@
 
 <div class="remotes-tab">
   <h3>{t("remote-heading")}</h3>
+
+  {#if credStatus?.portable}
+    <section class="cred-gate">
+      <h4>{t("portable-credentials-title")}</h4>
+      {#if credStatus.unlocked}
+        <button type="button" onclick={() => void credLock()}>
+          {t("portable-credentials-lock-action")}
+        </button>
+      {:else}
+        <p>
+          {credStatus.initialized
+            ? t("portable-credentials-unlock-body")
+            : t("portable-credentials-create-body")}
+        </p>
+        <label>
+          {t("portable-credentials-passphrase-label")}
+          <input type="password" bind:value={credPassphrase} disabled={credBusy} />
+        </label>
+        <button type="button" onclick={() => void credUnlock()} disabled={credBusy}>
+          {t("portable-credentials-unlock-action")}
+        </button>
+        {#if credError}
+          <p class="error">{credError}</p>
+        {/if}
+      {/if}
+    </section>
+  {/if}
 
   {#if loading}
     <p>{t("settings-loading")}</p>

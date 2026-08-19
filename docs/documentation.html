@@ -124,6 +124,8 @@
           <a href="#paste-hotkey">The global paste hotkey</a>
           <a href="#history">History &amp; totals</a>
           <a href="#library">Library (snapshots)</a>
+          <a href="#collaborate">Share files with people</a>
+          <a href="#merge">Compare &amp; merge files</a>
           <a href="#server">Run as a server</a>
           <a href="#migrate">Migrate from other tools</a>
           <a href="#settings">Change settings</a>
@@ -519,6 +521,82 @@
             <li>The existing <strong>History</strong>, <strong>Sync</strong>, and <strong>Totals</strong>
               drawers remain available &mdash; the Library is additive.</li>
           </ol>
+        </section>
+
+        <!-- COLLABORATION (Phase 51) -->
+        <section id="collaborate">
+          <h2>Share files with people</h2>
+          <p>
+            Files you share are encrypted so that only the people on your list can open them.
+            Each person keeps their own key &mdash; there is no shared password to pass around
+            or to leak.
+          </p>
+          <ol>
+            <li>Open <strong>Settings &rarr; Collaboration</strong>.</li>
+            <li>
+              Add each person with a name and <strong>their public key</strong>. If they do not
+              have one yet, <strong>Generate a key for someone</strong> creates a pair; the secret
+              half is shown <em>once</em> and is the only way to open shared files, so they must
+              copy it straight away.
+            </li>
+            <li>
+              <strong>Check the verification code.</strong> After adding someone, both of you see a
+              short code. Read it aloud to each other &mdash; over the phone, in person, any channel
+              an attacker does not control. If the codes match, you each hold the other's real key.
+              This step is what stops someone from slipping a substitute key into the list.
+            </li>
+            <li>
+              To stop sharing with someone, use <strong>Remove</strong>. The removal is signed with
+              a key only this installation holds, so it cannot be forged by a program that edits
+              the list behind your back.
+            </li>
+          </ol>
+          <p>
+            <strong>Removing someone is forward-only, and this matters.</strong> It changes who can
+            open files encrypted <em>from that point on</em>. It cannot take back files they could
+            already read &mdash; those bytes were already in their hands, and no software can reach
+            into someone else's computer and un-read them. If a departing collaborator had access to
+            something sensitive, treat it as disclosed and rotate the secret itself.
+          </p>
+          <p>
+            The list of people is not secret. It holds names and public keys, which reveals who you
+            work with even though it reveals nothing they can decrypt.
+          </p>
+        </section>
+
+        <!-- MERGE VIEW (Phase 53) -->
+        <section id="merge">
+          <h2>Compare &amp; merge files that are not text</h2>
+          <p>
+            When two versions of a document differ, a text editor can show you three columns of
+            lines. A photo, a Photoshop file, a song, a video or a PDF has no such view, so
+            Freally File Manager shows you a <em>comparison</em> built for each kind of file.
+          </p>
+          <ul>
+            <li><strong>Images</strong> &mdash; the two pictures blended together, plus a heat map
+              highlighting exactly which pixels changed and by how much.</li>
+            <li><strong>Photoshop files</strong> &mdash; a layer-by-layer list showing which layers
+              were added, removed, or edited.</li>
+            <li><strong>Audio</strong> &mdash; the waveform of each version side by side, so a
+              re-record, a trim, or a level change is visible at a glance.</li>
+            <li><strong>Video</strong> &mdash; length, track list, dimensions and a timeline of the
+              clip's structure. A re-encode or a trim shows up clearly.</li>
+            <li><strong>PDF</strong> &mdash; page count and per-page size, so an inserted or removed
+              page is obvious.</li>
+          </ul>
+          <p>
+            <strong>Video and PDF show structure, not pictures.</strong> Reading actual video frames
+            or rendering a PDF page needs large extra components that Freally File Manager does not
+            bundle. For video you can turn on <strong>ffmpeg</strong> in
+            <strong>Settings &rarr; Merge</strong> if you already have it installed, and the
+            comparison gains a real strip of thumbnails across the clip. Without it, the structural
+            comparison still works and tells you so rather than pretending otherwise.
+          </p>
+          <p>
+            When you want to resolve the difference yourself, <strong>Hand off to an editor</strong>
+            writes all three versions &mdash; the common ancestor, your copy, and theirs &mdash; out
+            as files, so you can open them in whatever program actually edits that format.
+          </p>
         </section>
 
         <!-- SERVER MODE -->

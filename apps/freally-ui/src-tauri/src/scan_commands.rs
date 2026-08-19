@@ -83,7 +83,11 @@ pub async fn scan_start(
 ) -> Result<String, String> {
     let src_path = PathBuf::from(&src);
     let settings_snapshot = state.settings_snapshot();
-    let db_dir = settings_snapshot.scan.database_path.clone();
+    let db_dir = settings_snapshot
+        .scan
+        .database_path
+        .clone()
+        .or_else(|| freally_settings::portable::portable_root().map(|r| r.join("scans")));
     let hash = hash_during_scan.unwrap_or(settings_snapshot.scan.hash_during_scan);
 
     let scan_id = ScanId::new();
@@ -211,6 +215,12 @@ pub fn scan_cancel(scan_id: String, state: tauri::State<'_, AppState>) -> Result
 /// on app startup so the UI can offer to resume pending scans.
 #[tauri::command]
 pub fn scan_list_unfinished() -> Result<Vec<ActiveScanDto>, String> {
+    // Must be the same file `Scanner::create` registers into, which is
+    // `index::default_index_path()` unconditionally — `freally-core`
+    // has no view of portable mode (freally-settings is a dev-only dep
+    // there). Resolving a portable path here instead made the resume
+    // list permanently empty on a portable install. Moving the index
+    // itself needs an `index_path` on `ScanOptions`.
     let Some(index_path) = scan::index::default_index_path() else {
         return Ok(Vec::new());
     };
