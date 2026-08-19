@@ -9,7 +9,7 @@ export default defineConfig(async () => ({
   plugins: [svelte()],
 
   // "More Freally apps" is the React CentralPanel vendored from the
-  // freally-central submodule (view-only). Svelte owns the app; the panel is a
+  // vendor/freally-central tree (view-only). Svelte owns the app; the panel is a
   // React island. esbuild's automatic JSX runtime transforms the vendored .tsx;
   // dedupe forces the out-of-tree panel's bare imports onto this project's
   // single installed copy of react/react-dom/@tauri-apps/api.

@@ -1,0 +1,331 @@
+# Release — a version-tag push builds + signs the Tauri installers for all three
+# OSes and opens a DRAFT GitHub Release with them attached, plus the consolidated
+# signed `latest.json` updater endpoint (FC-00c / FC-60). Mirrors Freally
+# Capture's release workflow — the same pattern every Freally app uses.
+#
+# Why two jobs (build matrix → release): tauri-action's per-job updater JSON only
+# describes the ONE platform that job built, and four matrix jobs uploading a
+# `latest.json` each just overwrite one another — so the endpoint ends up carrying
+# a single OS. Instead each build job stages a per-platform fragment
+# (`{platform: {signature, url}}`); the release job merges all four into one
+# `latest.json` so the in-app updater resolves on every OS.
+#
+# - Windows: MSI + NSIS, unsigned (SmartScreen reputation clears with downloads).
+# - macOS:   .app/.dmg, ad-hoc signed (APPLE_SIGNING_IDENTITY=-); right-click →
+#            Open on first launch. Intel is cross-compiled on the Apple-Silicon
+#            runner. Full Developer-ID signing/notarization needs a paid Apple
+#            Developer membership — set the APPLE_* secrets to switch it on with no
+#            further workflow change (see "Configure macOS signing" below).
+# - Linux:   AppImage + .deb + .rpm.
+#
+# Required repository secrets (Settings → Secrets and variables → Actions):
+#   TAURI_SIGNING_PRIVATE_KEY           - updater signing key (`tauri signer generate`)
+#   TAURI_SIGNING_PRIVATE_KEY_PASSWORD  - password for that key (empty string if none)
+name: Release
+
+on:
+  push:
+    # Any version tag (Central ships vX.Y.Z, but keep the broad match so a
+    # two-part or marketing tag is never silently skipped).
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Dry-run ref to build (e.g. v0.7.0) — artifacts only, no release"
+        required: false
+        default: ""
+
+# Build jobs only read the repo; only the release job needs write.
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  build:
+    name: Build (${{ matrix.target.label }})
+    runs-on: ${{ matrix.target.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - os: ubuntu-latest
+            label: linux-x86_64
+            rust-target: x86_64-unknown-linux-gnu
+            bundles: deb,rpm,appimage
+          - os: macos-latest
+            label: macos-aarch64
+            rust-target: aarch64-apple-darwin
+            bundles: app,dmg
+          - os: macos-latest
+            label: macos-x86_64
+            rust-target: x86_64-apple-darwin
+            bundles: app,dmg
+          - os: windows-latest
+            label: windows-x86_64
+            rust-target: x86_64-pc-windows-msvc
+            bundles: msi,nsis
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # A workflow_dispatch dry-run builds the requested ref; tag pushes
+          # build the tag itself (the default).
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: Install Linux build deps (Tauri)
+        if: matrix.target.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf
+
+      - name: Install the pinned toolchain + target
+        run: |
+          rustup toolchain install
+          rustup target add ${{ matrix.target.rust-target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            ui/package-lock.json
+
+      # tauri build runs from the repo root, so the root @tauri-apps/cli (the
+      # `tauri` binary) must be installed — and the UI deps too, because the
+      # bundler's beforeBuildCommand builds ui/.
+      - name: Install root deps (Tauri CLI)
+        run: npm ci
+
+      - name: Install UI deps
+        working-directory: ui
+        run: npm ci
+
+      # macOS signing: falls back to ad-hoc ("-") — free; Gatekeeper shows
+      # right-click → Open on first launch. Set the APPLE_* secrets (a paid
+      # Developer-ID cert) to switch to full Developer-ID signing + notarization
+      # with no further workflow change. Dormant until then.
+      #
+      # The bundler decides to import a certificate on the *presence* of
+      # APPLE_CERTIFICATE, not on it holding a value — and an unconfigured repo
+      # secret expands to "", which still sets the variable. Passing the secrets
+      # straight into the build step therefore made every macOS build run
+      # `security import` on an empty certificate and fail. So export them here,
+      # and only when a certificate is really configured.
+      - name: Configure macOS signing
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          # Re-export one variable to the later steps. Heredoc form so a
+          # multi-line base64 certificate survives intact.
+          forward() {
+            printf '%s<<__FC_EOF__\n%s\n__FC_EOF__\n' "$1" "${!1:-}" >> "$GITHUB_ENV"
+          }
+
+          if [ -n "${APPLE_CERTIFICATE:-}" ]; then
+            echo "Apple certificate configured — importing it for Developer-ID signing."
+            forward APPLE_CERTIFICATE
+            # Paired with the certificate even when empty: the bundler passes it
+            # to `security import -P`, and a password-less .p12 is legal.
+            forward APPLE_CERTIFICATE_PASSWORD
+            # Notarization wants all three; the bundler fails loudly on a
+            # partial set rather than shipping something un-notarized.
+            for var in APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID; do
+              if [ -n "${!var:-}" ]; then forward "$var"; fi
+            done
+          else
+            echo "No Apple certificate — using free ad-hoc signing."
+          fi
+
+          # Honour a configured identity, else ad-hoc ("-").
+          if [ -n "${APPLE_SIGNING_IDENTITY:-}" ]; then
+            forward APPLE_SIGNING_IDENTITY
+          else
+            echo "APPLE_SIGNING_IDENTITY=-" >> "$GITHUB_ENV"
+          fi
+
+      - name: Tauri build (release, ${{ matrix.target.bundles }})
+        env:
+          # Updater signing: when TAURI_SIGNING_PRIVATE_KEY is set, the bundler
+          # emits a detached minisign `.sig` beside each updater artifact; the app
+          # verifies it against the public key baked into tauri.conf.json before
+          # applying an update. Unset → no `.sig` files (updater dormant; the
+          # installers still build).
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: npm run tauri -- build --target ${{ matrix.target.rust-target }} --bundles ${{ matrix.target.bundles }}
+
+      - name: Stage installers
+        shell: bash
+        run: |
+          mkdir -p release-staging
+          find "target/${{ matrix.target.rust-target }}/release/bundle" -type f \
+            \( -name "*.msi" -o -name "*.exe" -o -name "*.dmg" \
+               -o -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" \) \
+            -exec cp {} release-staging/ \;
+          ls -la release-staging
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bundles-${{ matrix.target.label }}
+          path: release-staging/*
+          if-no-files-found: error
+
+      # Updater artifacts (FC-60): the signed update package for THIS platform plus
+      # a `latest.json` fragment (platform → {signature, url}). Only emitted when
+      # the build was signed (a `.sig` exists). Names are prefixed + space-free so
+      # the uploaded asset and the URL in latest.json are the same unambiguous
+      # string — no dependence on how GitHub rewrites asset names.
+      - name: Stage updater artifacts
+        shell: bash
+        # A tag name is attacker-influenced text. Interpolating `${{ … }}` into a
+        # `run:` block splices it into the shell *source* before bash parses it —
+        # ref names forbid spaces but allow `"`, `;`, `$` and backticks, and
+        # `${IFS}` supplies the space. Bind it to an env var instead, so it is
+        # only ever data.
+        env:
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          mkdir -p updater-staging
+          BUNDLE="target/${{ matrix.target.rust-target }}/release/bundle"
+          if [ -z "$(find "$BUNDLE" -name '*.sig' -print -quit)" ]; then
+            echo "No .sig found (TAURI_SIGNING_PRIVATE_KEY unset) — updater artifacts skipped."
+            exit 0
+          fi
+          # The bundler signs every format it built; the updater picks how to
+          # install from the file's extension. Name the one format the updater
+          # uses per OS — picking whichever `find` listed first could hand
+          # AppImage users an .rpm.
+          case "${{ matrix.target.label }}" in
+            linux-x86_64)   PLAT=linux-x86_64;   PATTERN='*.AppImage.sig' ;;
+            macos-aarch64)  PLAT=darwin-aarch64; PATTERN='*.app.tar.gz.sig' ;;
+            macos-x86_64)   PLAT=darwin-x86_64;  PATTERN='*.app.tar.gz.sig' ;;
+            windows-x86_64) PLAT=windows-x86_64; PATTERN='*-setup.exe.sig' ;;
+            *) echo "unknown matrix label"; exit 1 ;;
+          esac
+          SIG="$(find "$BUNDLE" -name "$PATTERN" -print -quit)"
+          if [ -z "$SIG" ]; then
+            echo "Build is signed, but no artifact matches $PATTERN under $BUNDLE. Signed artifacts:"
+            find "$BUNDLE" -name '*.sig'
+            exit 1
+          fi
+          ART="${SIG%.sig}"
+          SAFE="update-${PLAT}-$(basename "$ART" | tr ' ' '.')"
+          cp "$ART" "updater-staging/$SAFE"
+          URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/${SAFE}"
+          jq -n --arg plat "$PLAT" --arg sig "$(cat "$SIG")" --arg url "$URL" \
+            '{($plat): {signature: $sig, url: $url}}' > "updater-staging/fragment-${PLAT}.json"
+          echo "Staged updater artifact for $PLAT:"
+          ls -la updater-staging
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: updater-${{ matrix.target.label }}
+          path: updater-staging/*
+          if-no-files-found: ignore
+
+  release:
+    name: Draft GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+    steps:
+      # Needed for CHANGELOG.md, which supplies the updater's release notes.
+      # `persist-credentials: false` — this job holds `contents: write`, and the
+      # default checkout leaves the GITHUB_TOKEN in `.git/config`, which would
+      # hand any script-injection in a later step a ready path to push. Nothing
+      # here pushes; it only reads a file.
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: all-bundles
+          merge-multiple: true
+
+      # Compose the updater manifest from the per-platform fragments (FC-60).
+      # Skipped cleanly when the build wasn't signed (no fragments) — the release
+      # still ships every installer; only the updater endpoint is absent.
+      #
+      # `notes` is what the in-app "Version X is available" dialog shows, so it
+      # carries this version's CHANGELOG section verbatim rather than a generic
+      # "see the release notes" line the user cannot read from inside the app.
+      - name: Compose latest.json
+        shell: bash
+        # The tag reaches the script as data, never as shell source. See the note
+        # on "Stage updater artifacts".
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          FRAGS=(all-bundles/fragment-*.json)
+          if [ ${#FRAGS[@]} -eq 0 ]; then
+            echo "No updater fragments — build was unsigned; latest.json skipped."
+            exit 0
+          fi
+          VERSION="${TAG#v}"
+          PUBDATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          PLATFORMS="$(jq -s 'add' "${FRAGS[@]}")"
+
+          # The section between `## <version> …` and the next `## ` heading. Matched
+          # literally (index/substr), never as a regex, and bounded so the version
+          # token can't be a prefix of another (## 0.7.0 vs a future ## 0.7.01).
+          # Blank leading/trailing lines trimmed.
+          NOTES="$(awk -v ver="$VERSION" '
+            BEGIN { needle = "## " ver; n = length(needle) }
+            substr($0, 1, n) == needle && (substr($0, n + 1, 1) == " " || substr($0, n + 1, 1) == "") { inside = 1; next }
+            inside && substr($0, 1, 3) == "## " { exit }
+            inside { print }
+          ' CHANGELOG.md | sed -e '/./,$!d' | tac | sed -e '/./,$!d' | tac)"
+
+          # Bound it so latest.json stays small — the manifest is fetched on every
+          # launch, and the dialog scrolls anyway. Trimmed with a shell expansion
+          # rather than `| head -c`: head closes the pipe early, which SIGPIPEs the
+          # upstream `tac` and, under `pipefail`, aborts the release with 141.
+          # `iconv -c` then drops any partial UTF-8 sequence the cut may have left,
+          # because jq refuses to encode invalid UTF-8 and would fail the job.
+          NOTES="${NOTES:0:8000}"
+          NOTES="$(printf '%s' "$NOTES" | iconv -f utf-8 -t utf-8 -c)"
+
+          if [ -z "${NOTES//[[:space:]]/}" ]; then
+            echo "::warning::No CHANGELOG.md section for ${VERSION} — falling back to a generic note."
+            NOTES="See the release notes for this version."
+          fi
+
+          jq -n --arg v "$VERSION" --arg n "$NOTES" --arg d "$PUBDATE" --argjson p "$PLATFORMS" \
+            '{version: $v, notes: $n, pub_date: $d, platforms: $p}' \
+            > all-bundles/latest.json
+          rm -f "${FRAGS[@]}"
+          echo "latest.json (notes trimmed for the log):"
+          jq '.notes |= (.[0:200] + " …")' all-bundles/latest.json
+
+      - name: Draft the release with all installers
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          generate_release_notes: true
+          files: all-bundles/**

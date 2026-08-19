@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Freally Central — Documentation</title>
+    <meta name="description" content="Freally Central documentation — what it is, how it works, and the project's roadmap and build guide." />
+    <link rel="icon" href="favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="favicon-48.png" />
+    <link rel="icon" type="image/png" sizes="96x96" href="favicon-96.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <img class="logo" src="freally-icon.png" alt="Freally Central icon" width="288" height="288" />
+      <h1>Documentation</h1>
+      <p class="sub">The document hub for Freally Central — what it is, how it works, and the project's roadmap and build guide.</p>
+    </header>
+
+    <main>
+      <article class="release">
+        <h2>What is Freally Central?</h2>
+        <p class="summary">
+          Freally Central is the brand's hub: one desktop app (and an embeddable panel that ships
+          inside every other Freally app) that shows the whole product family in a card grid — big
+          icons, per-OS downloads, live install/update status, changelogs &amp; "What's New", real
+          download counts, and a Download All button — with a live 0–100&nbsp;% download/install
+          progress bar and hands-off (silent) installation, all in 18 languages.
+        </p>
+        <ul class="features">
+          <li><strong>Data-driven grid</strong> — the product list comes from a hosted catalog manifest, so it updates without shipping a new Central build.</li>
+          <li><strong>Real numbers only</strong> — download counts come from GitHub's release API and the progress percent tracks real bytes; nothing is fabricated.</li>
+          <li><strong>Consent &amp; safety</strong> — installs run only on your click, only on official verified installers, and request elevation at most once per batch.</li>
+          <li><strong>Cross-platform</strong> — built and tested on Windows, macOS, and Linux from Phase 0's CI matrix.</li>
+        </ul>
+      </article>
+
+      <article class="release">
+        <h2>How it works</h2>
+        <ul class="features">
+          <li><strong>Browse</strong> — every Freally app as a card: icon, tagline, features, start date, latest version + date.</li>
+          <li><strong>Status</strong> — each card shows <em>Installed ✓</em> / <em>Update available</em> / <em>Not installed</em>.</li>
+          <li><strong>Download</strong> — pick your OS's installer, or Download All; watch the precise 0–100&nbsp;% bar.</li>
+          <li><strong>Install</strong> — installers run unattended, accepting their defaults, then the card flips to Installed with an Open button.</li>
+          <li><strong>Changelog &amp; What's New</strong> — read each app's latest release notes in-app.</li>
+        </ul>
+      </article>
+
+      <article class="release">
+        <h2>Project documents</h2>
+        <ul class="features">
+          <li><strong>Feature roadmap</strong> — the phased plan (Phase 0 repo/CI through the embeddable panel) with a Definition of Done per phase, and a closeout DoD for every phase.</li>
+          <li><strong>Build-prompts guide</strong> — a build prompt with acceptance criteria for each phase.</li>
+          <li><strong>Catalog manifest</strong> — the product-catalog data model (<code>catalog/freally-central.json</code>).</li>
+          <li><strong>License &amp; EULA</strong> — proprietary, All Rights Reserved; the EULA appears on first use.</li>
+        </ul>
+        <p class="summary">
+          These live in the project repository. Freally Studio is intentionally excluded from the
+          catalog/rollout until its own roadmap exists.
+        </p>
+      </article>
+    </main>
+
+    <footer>
+      <p>
+        © 2026 Mike Weaver (Havoc Software) — All Rights Reserved ·
+        <a href="index.html">Home</a> ·
+        <a href="changelog.html">Changelog</a>
+      </p>
+    </footer>
+  </body>
+</html>
