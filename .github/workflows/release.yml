@@ -60,22 +60,16 @@ jobs:
     name: Build (${{ matrix.target.label }})
     needs: vet
     runs-on: ${{ matrix.target.os }}
-    # 60 was not enough once Build 4 landed. The v0.22.0 attempt finished
-    # macOS in 17-20 min and Windows in 26, but ubuntu-latest ran 60m25s
-    # and was killed at the cap — so the release published without any
-    # deb/rpm/AppImage and the updater manifest was skipped.
+    # Headroom, not a fix for anything. The first v0.22.0 attempt hit the
+    # old 60-minute cap, but NOT because the build got slower: the whole
+    # hour went to "Install Linux Tauri prerequisites" while apt retried
+    # against a failing azure.archive.ubuntu.com. That is addressed at
+    # its source in the step below.
     #
-    # The Linux leg is the slow one because it alone pays for the apt
-    # webkit2gtk toolchain on top of a release-profile build, and Phases
-    # 51-53 added ~40 crates (image, psd, symphonia, mp4, pdf, opendal,
-    # age) to a profile with `lto = "fat"` + `codegen-units = 1`, where
-    # link time scales badly with crate count. A timed-out job also never
-    # saves its `Swatinem/rust-cache` entry, so a re-run starts cold and
-    # times out again — raising the cap is the fix, not retrying.
-    #
-    # 120 leaves roughly 2x headroom over the observed 60m25s. Revisit if
-    # a leg ever approaches it; that would mean the LTO settings, not the
-    # runner, need the attention.
+    # For reference, the healthy numbers from that same run: macOS 17-20
+    # min, Windows 26. Linux never reached the compiler. If a leg ever
+    # genuinely approaches 120, the LTO settings are the thing to look
+    # at (`lto = "fat"` + `codegen-units = 1`), not the runner.
     timeout-minutes: 120
     strategy:
       fail-fast: false
@@ -108,9 +102,32 @@ jobs:
 
       - name: Install Linux Tauri prerequisites
         if: matrix.target.os == 'ubuntu-latest'
+        # GitHub's ubuntu runners point apt at azure.archive.ubuntu.com,
+        # which is a single point of failure this job cannot survive: it
+        # runs before the toolchain, so an outage there burns the whole
+        # job timeout without compiling a line. That is exactly what
+        # killed the first v0.22.0 release — 60 minutes spent entirely in
+        # this step, which looked like a slow build and was not.
+        #
+        # Repoint at the canonical archive first. Both formats have to be
+        # handled: 22.04 images use the legacy `sources.list`, 24.04 uses
+        # deb822 `ubuntu.sources`. `|| true` so a layout we do not
+        # recognise degrades to "use whatever the image shipped" rather
+        # than failing the release outright.
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
+          sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|http://archive.ubuntu.com/ubuntu|g' \
+            /etc/apt/sources.list 2>/dev/null || true
+          sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|http://archive.ubuntu.com/ubuntu|g' \
+            /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources 2>/dev/null || true
+          # Bounded retries: a mirror can still blip, but never hang the
+          # job. 3 tries with a short backoff, then fail loudly and fast.
+          for i in 1 2 3; do
+            sudo apt-get update -o Acquire::Retries=2 -o Acquire::http::Timeout=15 && break
+            echo "apt-get update failed (attempt $i), retrying in 10s"
+            sleep 10
+          done
+          sudo apt-get install -y --no-install-recommends \
+            -o Acquire::Retries=2 -o Acquire::http::Timeout=15 \
             libwebkit2gtk-4.1-dev \
             libayatana-appindicator3-dev \
             librsvg2-dev \
