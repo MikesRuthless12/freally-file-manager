@@ -102,30 +102,45 @@ jobs:
 
       - name: Install Linux Tauri prerequisites
         if: matrix.target.os == 'ubuntu-latest'
-        # GitHub's ubuntu runners point apt at azure.archive.ubuntu.com,
-        # which is a single point of failure this job cannot survive: it
-        # runs before the toolchain, so an outage there burns the whole
-        # job timeout without compiling a line. That is exactly what
-        # killed the first v0.22.0 release — 60 minutes spent entirely in
-        # this step, which looked like a slow build and was not.
+        # GitHub's ubuntu runners resolve apt through a MIRRORLIST —
+        # `mirror+file:/etc/apt/apt-mirrors.txt` — that names
+        # azure.archive.ubuntu.com first. This matters more than it
+        # looks: editing sources.list does nothing, because the URL is
+        # not in sources.list.
         #
-        # Repoint at the canonical archive first. Both formats have to be
-        # handled: 22.04 images use the legacy `sources.list`, 24.04 uses
-        # deb822 `ubuntu.sources`. `|| true` so a layout we do not
-        # recognise degrades to "use whatever the image shipped" rather
-        # than failing the release outright.
+        # When Azure went dark (2026-08-19) the job log showed apt doing
+        # exactly what the mirrorlist told it to:
+        #
+        #   Ign: http://azure.archive.ubuntu.com/ubuntu noble InRelease
+        #   Hit: https://archive.ubuntu.com/ubuntu     noble InRelease
+        #
+        # `apt-get update` therefore SUCCEEDED in ~40 s via the fallback,
+        # and the damage was all in `apt-get install`: the mirrorlist
+        # retries Azure first for every one of the hundreds of packages
+        # webkit2gtk pulls in, paying a timeout each time. That is how a
+        # 40-second step became an hour and killed the first two v0.22.0
+        # release attempts before a line was compiled.
+        #
+        # So: strike Azure from the mirrorlist itself. Print the result,
+        # because the previous two fixes here were guesses that a log
+        # line would have settled immediately.
         run: |
+          # Drop Azure from the MIRRORLIST, which is where it actually
+          # lives. Editing sources.list is a no-op on these images.
+          if [ -f /etc/apt/apt-mirrors.txt ]; then
+            sudo sed -i '/azure\.archive\.ubuntu\.com/d' /etc/apt/apt-mirrors.txt
+            # Never leave the list empty, or apt has nowhere to go.
+            if ! grep -q . /etc/apt/apt-mirrors.txt; then
+              echo "http://archive.ubuntu.com/ubuntu/" | sudo tee /etc/apt/apt-mirrors.txt
+            fi
+            echo "--- effective mirrorlist ---"; cat /etc/apt/apt-mirrors.txt
+          fi
+          # Harmless fallback for images that inline the URL instead.
           sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|http://archive.ubuntu.com/ubuntu|g' \
             /etc/apt/sources.list 2>/dev/null || true
           sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|http://archive.ubuntu.com/ubuntu|g' \
             /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources 2>/dev/null || true
-          # Bounded retries: a mirror can still blip, but never hang the
-          # job. 3 tries with a short backoff, then fail loudly and fast.
-          for i in 1 2 3; do
-            sudo apt-get update -o Acquire::Retries=2 -o Acquire::http::Timeout=15 && break
-            echo "apt-get update failed (attempt $i), retrying in 10s"
-            sleep 10
-          done
+          sudo apt-get update -o Acquire::Retries=2 -o Acquire::http::Timeout=15
           sudo apt-get install -y --no-install-recommends \
             -o Acquire::Retries=2 -o Acquire::http::Timeout=15 \
             libwebkit2gtk-4.1-dev \

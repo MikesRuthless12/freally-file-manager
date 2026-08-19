@@ -174,24 +174,30 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install Linux Tauri prerequisites
         if: matrix.os == 'ubuntu-latest'
-        # GitHub's ubuntu runners point apt at azure.archive.ubuntu.com,
-        # a single mirror whose outages stall this step before the
-        # toolchain is even installed. One such outage burned an entire
-        # 60-minute release job during the v0.22.0 attempt without
-        # compiling a line — it looked like a slow build and was not.
-        # Repoint at the canonical archive and bound the retries. Both
-        # apt layouts are handled: legacy `sources.list` (22.04) and
-        # deb822 `ubuntu.sources` (24.04).
+        # GitHub's ubuntu runners resolve apt through a MIRRORLIST —
+        # `mirror+file:/etc/apt/apt-mirrors.txt` — that names
+        # azure.archive.ubuntu.com first. Editing sources.list does
+        # nothing, because the URL is not in sources.list.
+        #
+        # When Azure went dark (2026-08-19), `apt-get update` still
+        # succeeded in ~40 s by falling back to archive.ubuntu.com. The
+        # damage was in `apt-get install`: the mirrorlist retries Azure
+        # first for every one of the hundreds of packages webkit2gtk
+        # pulls in, paying a timeout each time. That turned a 40-second
+        # step into an hour and killed two v0.22.0 release attempts.
         run: |
+          if [ -f /etc/apt/apt-mirrors.txt ]; then
+            sudo sed -i '/azure\.archive\.ubuntu\.com/d' /etc/apt/apt-mirrors.txt
+            if ! grep -q . /etc/apt/apt-mirrors.txt; then
+              echo "http://archive.ubuntu.com/ubuntu/" | sudo tee /etc/apt/apt-mirrors.txt
+            fi
+            echo "--- effective mirrorlist ---"; cat /etc/apt/apt-mirrors.txt
+          fi
           sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|http://archive.ubuntu.com/ubuntu|g' \
             /etc/apt/sources.list 2>/dev/null || true
           sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|http://archive.ubuntu.com/ubuntu|g' \
             /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources 2>/dev/null || true
-          for i in 1 2 3; do
-            sudo apt-get update -o Acquire::Retries=2 -o Acquire::http::Timeout=15 && break
-            echo "apt-get update failed (attempt $i), retrying in 10s"
-            sleep 10
-          done
+          sudo apt-get update -o Acquire::Retries=2 -o Acquire::http::Timeout=15
           sudo apt-get install -y --no-install-recommends \
             -o Acquire::Retries=2 -o Acquire::http::Timeout=15 \
             libwebkit2gtk-4.1-dev \
@@ -266,24 +272,30 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install Linux Tauri prerequisites
         if: matrix.os == 'ubuntu-latest'
-        # GitHub's ubuntu runners point apt at azure.archive.ubuntu.com,
-        # a single mirror whose outages stall this step before the
-        # toolchain is even installed. One such outage burned an entire
-        # 60-minute release job during the v0.22.0 attempt without
-        # compiling a line — it looked like a slow build and was not.
-        # Repoint at the canonical archive and bound the retries. Both
-        # apt layouts are handled: legacy `sources.list` (22.04) and
-        # deb822 `ubuntu.sources` (24.04).
+        # GitHub's ubuntu runners resolve apt through a MIRRORLIST —
+        # `mirror+file:/etc/apt/apt-mirrors.txt` — that names
+        # azure.archive.ubuntu.com first. Editing sources.list does
+        # nothing, because the URL is not in sources.list.
+        #
+        # When Azure went dark (2026-08-19), `apt-get update` still
+        # succeeded in ~40 s by falling back to archive.ubuntu.com. The
+        # damage was in `apt-get install`: the mirrorlist retries Azure
+        # first for every one of the hundreds of packages webkit2gtk
+        # pulls in, paying a timeout each time. That turned a 40-second
+        # step into an hour and killed two v0.22.0 release attempts.
         run: |
+          if [ -f /etc/apt/apt-mirrors.txt ]; then
+            sudo sed -i '/azure\.archive\.ubuntu\.com/d' /etc/apt/apt-mirrors.txt
+            if ! grep -q . /etc/apt/apt-mirrors.txt; then
+              echo "http://archive.ubuntu.com/ubuntu/" | sudo tee /etc/apt/apt-mirrors.txt
+            fi
+            echo "--- effective mirrorlist ---"; cat /etc/apt/apt-mirrors.txt
+          fi
           sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|http://archive.ubuntu.com/ubuntu|g' \
             /etc/apt/sources.list 2>/dev/null || true
           sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|http://archive.ubuntu.com/ubuntu|g' \
             /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources 2>/dev/null || true
-          for i in 1 2 3; do
-            sudo apt-get update -o Acquire::Retries=2 -o Acquire::http::Timeout=15 && break
-            echo "apt-get update failed (attempt $i), retrying in 10s"
-            sleep 10
-          done
+          sudo apt-get update -o Acquire::Retries=2 -o Acquire::http::Timeout=15
           sudo apt-get install -y --no-install-recommends \
             -o Acquire::Retries=2 -o Acquire::http::Timeout=15 \
             libwebkit2gtk-4.1-dev \
