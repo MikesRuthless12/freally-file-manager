@@ -497,7 +497,7 @@ version = "0.25.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.cpp_demangle]]
-version = "0.4.5"
+version = "0.3.5"
 criteria = "safe-to-deploy"
 
 [[exemptions.cpubits]]
@@ -1208,10 +1208,6 @@ criteria = "safe-to-deploy"
 version = "1.8.1"
 criteria = "safe-to-deploy"
 
-[[exemptions.indexmap]]
-version = "2.14.0"
-criteria = "safe-to-deploy"
-
 [[exemptions.infer]]
 version = "0.19.0"
 criteria = "safe-to-deploy"
@@ -1425,7 +1421,7 @@ version = "0.3.2"
 criteria = "safe-to-deploy"
 
 [[exemptions.mach2]]
-version = "0.4.3"
+version = "0.6.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.markup5ever]]
@@ -2296,10 +2292,6 @@ criteria = "safe-to-deploy"
 version = "1.2.2"
 criteria = "safe-to-deploy"
 
-[[exemptions.semver]]
-version = "1.0.28"
-criteria = "safe-to-deploy"
-
 [[exemptions.serde]]
 version = "1.0.226"
 criteria = "safe-to-deploy"
@@ -2338,10 +2330,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.serde_spanned]]
 version = "0.6.8"
-criteria = "safe-to-deploy"
-
-[[exemptions.serde_spanned]]
-version = "1.1.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.serde_urlencoded]]
@@ -2704,10 +2692,6 @@ criteria = "safe-to-deploy"
 version = "0.9.12+spec-1.1.0"
 criteria = "safe-to-deploy"
 
-[[exemptions.toml_datetime]]
-version = "1.1.1+spec-1.1.0"
-criteria = "safe-to-deploy"
-
 [[exemptions.toml_edit]]
 version = "0.19.15"
 criteria = "safe-to-deploy"
@@ -2718,10 +2702,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.toml_parser]]
 version = "1.1.2+spec-1.1.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.toml_writer]]
-version = "1.1.1+spec-1.1.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.tower]]
@@ -3390,10 +3370,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.zip]]
 version = "4.6.1"
-criteria = "safe-to-deploy"
-
-[[exemptions.zmij]]
-version = "1.0.21"
 criteria = "safe-to-deploy"
 
 [[exemptions.zstd]]
