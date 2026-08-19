@@ -60,7 +60,23 @@ jobs:
     name: Build (${{ matrix.target.label }})
     needs: vet
     runs-on: ${{ matrix.target.os }}
-    timeout-minutes: 60
+    # 60 was not enough once Build 4 landed. The v0.22.0 attempt finished
+    # macOS in 17-20 min and Windows in 26, but ubuntu-latest ran 60m25s
+    # and was killed at the cap — so the release published without any
+    # deb/rpm/AppImage and the updater manifest was skipped.
+    #
+    # The Linux leg is the slow one because it alone pays for the apt
+    # webkit2gtk toolchain on top of a release-profile build, and Phases
+    # 51-53 added ~40 crates (image, psd, symphonia, mp4, pdf, opendal,
+    # age) to a profile with `lto = "fat"` + `codegen-units = 1`, where
+    # link time scales badly with crate count. A timed-out job also never
+    # saves its `Swatinem/rust-cache` entry, so a re-run starts cold and
+    # times out again — raising the cap is the fix, not retrying.
+    #
+    # 120 leaves roughly 2x headroom over the observed 60m25s. Revisit if
+    # a leg ever approaches it; that would mean the LTO settings, not the
+    # runner, need the attention.
+    timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
