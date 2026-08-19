@@ -78,7 +78,9 @@ fn arrival_then_departure_observed() {
             &roots,
             VolumeWatchOptions {
                 poll_interval: Duration::from_millis(20),
-                max_run_time: Some(Duration::from_secs(2)),
+                // Generous ceiling: `cancel` is what ends this loop.
+                // A 2 s cap raced the waits below on a slow runner.
+                max_run_time: Some(Duration::from_secs(60)),
             },
             cancel_for_loop,
             probe,
@@ -86,11 +88,38 @@ fn arrival_then_departure_observed() {
         )
     });
 
+    // Wait for each transition to actually be observed rather than
+    // sleeping a fixed span and hoping the poll loop got a slice. A
+    // loaded CI runner can skip straight past a 120 ms window, which
+    // is how this passed on Windows and failed on macOS.
+    let wait_for = |want_departure: bool| {
+        let deadline = Instant::now() + Duration::from_secs(10);
+        while Instant::now() < deadline {
+            let seen = observed.lock().unwrap();
+            let hit = seen.iter().any(|e| {
+                if want_departure {
+                    matches!(e, VolumeEvent::Departure { .. })
+                } else {
+                    matches!(e, VolumeEvent::Arrival { .. })
+                }
+            });
+            drop(seen);
+            if hit {
+                return true;
+            }
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        false
+    };
+
+    // Let the loop establish an "absent" baseline first — pushing
+    // before its first poll makes the root part of the initial state
+    // and no Arrival is ever emitted.
     std::thread::sleep(Duration::from_millis(60));
     present.lock().unwrap().push(root.clone());
-    std::thread::sleep(Duration::from_millis(120));
+    assert!(wait_for(false), "watcher never reported the arrival");
     present.lock().unwrap().clear();
-    std::thread::sleep(Duration::from_millis(120));
+    assert!(wait_for(true), "watcher never reported the departure");
     cancel.cancel();
 
     let res = handle.join().unwrap();

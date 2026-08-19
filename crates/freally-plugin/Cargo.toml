@@ -48,7 +48,7 @@ toml = "0.9"
 # `profiling`, `wmemcheck`, `debug-builtins` — none are needed by
 # the post-copy-hook ABI and they all add build time + binary
 # weight.
-wasmtime = { version = "44", default-features = false, features = ["cranelift", "runtime", "wat", "async"] }
+wasmtime = { version = "47", default-features = false, features = ["cranelift", "runtime", "wat", "async"] }
 
 [dev-dependencies]
 # Phase 46.1 scaffold smoke uses `#[tokio::test]` to exercise the

@@ -169,15 +169,6 @@ ignore = [
     # These MUST mirror the cargo-audit --ignore flags (phase_17b test).
     "RUSTSEC-2026-0194",
     "RUSTSEC-2026-0195",
-    # wasmtime 44 — "Stores can mix up type indices between engines".
-    # The bug needs two or more `Engine`s with a `Store` used against the
-    # wrong one; `freally_plugin::host` constructs exactly one engine
-    # (`host.rs`, the sole `Engine::new` call) and shares it across every
-    # plugin instance, so the precondition cannot be met. No fix exists in
-    # the 44.x line — the ranges are >=46.0.2 or >=47.0.3 — so clearing
-    # this means a major runtime bump, tracked as follow-up rather than
-    # done during a release closeout.
-    "RUSTSEC-2026-0222",
     # Phase 35 / 32 — Marvin Attack on `rsa` crate; see provenance
     # comment above. Local file-copying tool, no remote-observable
     # RSA timing.
