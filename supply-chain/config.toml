@@ -2933,7 +2933,7 @@ version = "0.2.3"
 criteria = "safe-to-deploy"
 
 [[exemptions.webbrowser]]
-version = "1.2.1"
+version = "1.2.4"
 criteria = "safe-to-deploy"
 
 [[exemptions.webkit2gtk]]

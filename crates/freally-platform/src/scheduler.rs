@@ -539,6 +539,7 @@ fn systemd_unit_stem(id: &str) -> String {
     format!("freally-{id}")
 }
 
+#[cfg(target_os = "windows")]
 fn windows_task_name(id: &str) -> String {
     format!("\\Freally\\{id}")
 }
@@ -686,8 +687,9 @@ fn os_tool(name: &str) -> std::path::PathBuf {
 }
 
 /// Crate-visible alias so sibling modules (`autostart`) get the same
-/// hardening without duplicating the lookup.
-#[cfg(any(windows, unix))]
+/// hardening without duplicating the lookup. Only `autostart`'s
+/// Windows Run-key path calls it, so it is dead code elsewhere.
+#[cfg(windows)]
 pub(crate) fn os_tool_pub(name: &str) -> std::path::PathBuf {
     os_tool(name)
 }

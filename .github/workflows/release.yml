@@ -39,8 +39,26 @@ env:
   RUST_BACKTRACE: 1
 
 jobs:
+  # Phase 17b — the vet-clean gate ci.yml points at. On a tagged
+  # release this is blocking (unlike the non-blocking push check in
+  # ci.yml), so an un-vetted dependency cannot ship in an artifact.
+  vet:
+    name: cargo-vet (release gate)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.97.1"
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-vet@0.10.2
+      - name: Run cargo vet
+        run: cargo vet --locked
+
   build:
     name: Build (${{ matrix.target.label }})
+    needs: vet
     runs-on: ${{ matrix.target.os }}
     timeout-minutes: 60
     strategy:
