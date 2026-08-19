@@ -150,3 +150,52 @@ When a new phase lands:
 3. One `test.fixme()` per checkbox initially. Fill them in as the
    underlying flow stabilises.
 4. Update this README's "File layout" table.
+
+## What the run's three buckets mean
+
+A clean run on 2026-08-18 reports **65 passed · 0 failed · 52 skipped**
+across 24 spec files. The skip count is not a broken guard — it is the
+design described above ("one `test.fixme()` per checkbox initially"),
+and every stub carries its own reason. The breakdown:
+
+| Bucket | Count | What it means |
+|---|---|---|
+| **Passing** | 65 | Real assertions against the mocked-IPC boot. |
+| **`test.fixme`** | 52 | Documented placeholders — see the three kinds below. |
+| **`test.skip`** | 0 (5 conditional) | §4.10's CLI tests skip themselves unless `freally` is built. |
+
+The 52 fixme stubs are three different things, and only one of them is
+a to-do for this codebase:
+
+1. **Needs hardware or another OS** — a real iPhone/Android, a macOS
+   host for notarisation, a ReFS Dev Drive, APFS/Btrfs for sparse
+   files. All of §6 (9), most of §5 (6) and §9 (5). These will never
+   run on a single Windows dev box and are not a coverage gap this
+   harness can close.
+2. **Human-only release steps** — `git tag`, publishing the GitHub
+   release, announcements. All 4 of §10's remaining stubs.
+3. **Genuinely unbuilt product surface** — these are real to-dos, and
+   the stub is where they are recorded: `start_dedup_scan` and
+   `quick_hash` IPCs unwired, `mobile_snapshot` push, the
+   `freally queue --watch` subcommand, HistoryDrawer's Unmount button,
+   and `App.svelte`'s `contextItemsFor` missing a Secure Delete entry.
+
+**The 5 CLI tests in §4.10 are conditional, not permanent.** They probe
+for `target/{release,debug}/freally[.exe]` and skip with "freally binary
+not built" when it is missing. Run `cargo build -p freally-cli` first
+and they execute — that is how the count above reaches 65.
+
+### Keeping the fixture honest
+
+The mock's default handler returns `undefined` for any command nobody
+registered, and `undefined` reaching a pane is indistinguishable from a
+product bug: it renders as a stuck "Loading settings…" or a mid-render
+throw that leaves the *previous* pane's DOM on screen. When a build
+adds a command to the boot or settings-open path, add a default for it
+in `fixtures/test.ts`, and add any new **required** `SettingsDto` group
+to `fixtures/settings.ts` — a missing group throws inside the pane that
+binds it. Build 3 added `portable_status`, `autostart_status`,
+`tasks_list`, `queue_list`, `queue_get_pinned`, `current_shape_rate`,
+`active_cloud_transfer_count`, `mobile_onboarding_qr`, and the
+`safety` / `power` / `server` settings groups; missing those was what
+stranded 50 specs.

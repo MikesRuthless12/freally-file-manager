@@ -93,15 +93,18 @@ test.describe("§4.3 Verify", () => {
     await page.goto("/");
     await expect(page.getByText(/drop files or folders/i)).toBeVisible();
 
+    // `handleValue`, not `handles`: a handler body is stringified and
+    // re-evaluated in the page, so a closure over MATCH/OTHER would
+    // throw ReferenceError there and leave the inspector empty.
+    await tauri.handleValue("hash_inspect", {
+      algo: "sha256",
+      rows: [
+        { path: "/tmp/one.bin", hex: MATCH, size: 1024, error: null },
+        { path: "/tmp/two.bin", hex: OTHER, size: 2048, error: null },
+      ],
+      truncated: false,
+    });
     await tauri.handles({
-      hash_inspect: () => ({
-        algo: "sha256",
-        rows: [
-          { path: "/tmp/one.bin", hex: MATCH, size: 1024, error: null },
-          { path: "/tmp/two.bin", hex: OTHER, size: 2048, error: null },
-        ],
-        truncated: false,
-      }),
       // Mirror of the Rust parser for the bare-digest case the test uses.
       hash_parse_digest: (args) => {
         const text = String(args?.text ?? "").trim().toLowerCase();

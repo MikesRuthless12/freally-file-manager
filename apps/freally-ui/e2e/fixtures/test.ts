@@ -350,6 +350,30 @@ export const test = base.extend<Fixtures>({
       }));
       reg.setHandlerIfMissing("pending_resumes", () => []);
       reg.setHandlerIfMissing("plugin:dialog|open", () => null);
+      // Build 3 (FFM-M17–M24) added these to the boot and
+      // settings-open paths. Without them the shim's `undefined`
+      // reaches the panes and the Settings modal never leaves
+      // "Loading settings…", which is what stranded 11 specs.
+      reg.setHandlerIfMissing("portable_status", () => ({
+        portable: false,
+        dataRoot: "/tmp/freally-e2e",
+        osIntegrationAllowed: true,
+        osKeychainAllowed: true,
+      }));
+      reg.setHandlerIfMissing("autostart_status", () => ({
+        enabled: false,
+        supported: true,
+        reasonKey: "",
+      }));
+      reg.setHandlerIfMissing("tasks_list", () => []);
+      reg.setHandlerIfMissing("queue_list", () => []);
+      reg.setHandlerIfMissing("queue_get_pinned", () => []);
+      reg.setHandlerIfMissing("current_shape_rate", () => null);
+      reg.setHandlerIfMissing("active_cloud_transfer_count", () => 0);
+      reg.setHandlerIfMissing("mobile_onboarding_qr", () => ({
+        url: "http://localhost:1420/pwa",
+        qrPngBase64: "",
+      }));
       reg.setDefaultHandler(noop);
     }, { en: enTranslations });
 

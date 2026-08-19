@@ -119,10 +119,12 @@
 
   async function loadSystemStatus() {
     try {
-      [portable, autostart] = await Promise.all([
-        portableStatus(),
-        autostartStatus(),
-      ]);
+      // Normalise to `null`: every reader below guards on `!== null`,
+      // and a probe that resolves with nothing would otherwise sail
+      // past that guard and crash the pane on `.supported`.
+      const [p, a] = await Promise.all([portableStatus(), autostartStatus()]);
+      portable = p ?? null;
+      autostart = a ?? null;
     } catch (e) {
       autostartError = errorText(e);
     }
@@ -138,7 +140,7 @@
       autostartError = errorText(e);
       // Re-read so the checkbox snaps back to what the OS actually
       // holds rather than showing a state we failed to reach.
-      autostart = await autostartStatus();
+      autostart = (await autostartStatus()) ?? null;
     }
   }
 
