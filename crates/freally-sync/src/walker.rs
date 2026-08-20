@@ -124,6 +124,70 @@ pub fn scan_side(root: &Path, skip_filenames: &[&str]) -> Result<BTreeMap<String
     Ok(out)
 }
 
+/// Does this volume treat `Foo.txt` and `foo.txt` as the same file?
+///
+/// Probed, not assumed. NTFS, exFAT and a default-configured APFS are
+/// case-insensitive while ext4 is not — but any of them can be mounted
+/// the other way, and a sync root is often a network share whose
+/// semantics come from the far end, not from the host running us.
+///
+/// The probe flips the case of one letter in the final component and
+/// asks whether the same directory answers to the new spelling.
+/// Comparing *canonicalized* paths rather than merely "did the stat
+/// succeed" is what makes it sound on a case-sensitive volume that
+/// happens to hold both `Photos` and `photos`: there the two
+/// canonicalize differently, so we correctly answer false.
+///
+/// Errs toward `false` — treating a case-insensitive volume as
+/// sensitive costs a redundant copy, while the reverse would collapse
+/// two genuinely distinct files onto one.
+pub(crate) fn is_case_insensitive(root: &Path) -> bool {
+    let Some(name) = root.file_name().and_then(|n| n.to_str()) else {
+        return false;
+    };
+    let Some(flipped) = flip_one_ascii_letter(name) else {
+        return false;
+    };
+    let probe = root.with_file_name(flipped);
+    match (std::fs::canonicalize(&probe), std::fs::canonicalize(root)) {
+        (Ok(a), Ok(b)) => a == b,
+        _ => false,
+    }
+}
+
+/// Flip the case of the first ASCII letter, or `None` when there is
+/// none to flip (a purely numeric or symbolic directory name tells us
+/// nothing about the volume).
+fn flip_one_ascii_letter(name: &str) -> Option<String> {
+    let idx = name.char_indices().find_map(|(i, c)| {
+        if c.is_ascii_alphabetic() {
+            Some(i)
+        } else {
+            None
+        }
+    })?;
+    let mut out = String::with_capacity(name.len());
+    for (i, c) in name.char_indices() {
+        if i == idx {
+            if c.is_ascii_uppercase() {
+                out.push(c.to_ascii_lowercase());
+            } else {
+                out.push(c.to_ascii_uppercase());
+            }
+        } else {
+            out.push(c);
+        }
+    }
+    Some(out)
+}
+
+/// The key two spellings of one filename share on a case-insensitive
+/// volume. Only ever used to *group* relpaths — never to name a file,
+/// because the on-disk spelling is what has to be opened.
+pub(crate) fn fold_relpath(relpath: &str) -> String {
+    relpath.to_lowercase()
+}
+
 /// Normalize a relative path to forward-slash form. Idempotent.
 pub(crate) fn normalize_relpath(p: &Path) -> String {
     let mut s = String::with_capacity(p.as_os_str().len());

@@ -882,6 +882,8 @@ pub struct MobileDto {
     pub apns_p8_pem: String,
     pub apns_team_id: String,
     pub apns_key_id: String,
+    #[serde(default)]
+    pub apns_bundle_id: String,
     pub fcm_service_account_json: String,
 }
 
@@ -914,6 +916,7 @@ impl From<freally_settings::MobileSettings> for MobileDto {
             apns_p8_pem: s.apns_p8_pem,
             apns_team_id: s.apns_team_id,
             apns_key_id: s.apns_key_id,
+            apns_bundle_id: s.apns_bundle_id,
             fcm_service_account_json: s.fcm_service_account_json,
         }
     }
@@ -930,6 +933,7 @@ impl From<MobileDto> for freally_settings::MobileSettings {
             apns_p8_pem: d.apns_p8_pem,
             apns_team_id: d.apns_team_id,
             apns_key_id: d.apns_key_id,
+            apns_bundle_id: d.apns_bundle_id,
             fcm_service_account_json: d.fcm_service_account_json,
         }
     }

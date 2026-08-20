@@ -254,7 +254,7 @@ impl SftpHandler {
     /// component is ever resolved through the filesystem, so symlinks under
     /// the root cannot be used to break out. The normalised result is
     /// finally re-checked to start with the canonical root.
-    fn resolve(&self, client_path: &str) -> Result<PathBuf, StatusCode> {
+    async fn resolve(&self, client_path: &str) -> Result<PathBuf, StatusCode> {
         let relative = client_path.trim_start_matches('/');
         let mut normalized = (*self.root).clone();
         for component in Path::new(relative).components() {
@@ -288,7 +288,9 @@ impl SftpHandler {
         //
         // A path that does not exist yet is legitimate (create/mkdir), and
         // `ensure_within_root` judges those by their parent.
-        if let Err(e) = crate::jail::ensure_within_root(&normalized, &self.root) {
+        if let Err(e) =
+            crate::jail::ensure_within_root_async(normalized.clone(), self.root.to_path_buf()).await
+        {
             // Preserve the distinction clients act on: a missing path is
             // NO_SUCH_FILE ("create it"), not PERMISSION_DENIED ("give
             // up"). Only a genuine containment failure is the latter.
@@ -360,7 +362,7 @@ impl russh_sftp::server::Handler for SftpHandler {
     }
 
     async fn realpath(&mut self, id: u32, path: String) -> Result<Name, Self::Error> {
-        let resolved = self.resolve(&path)?;
+        let resolved = self.resolve(&path).await?;
         Ok(Name {
             id,
             files: vec![SftpFile::dummy(self.virtual_path(&resolved))],
@@ -368,7 +370,7 @@ impl russh_sftp::server::Handler for SftpHandler {
     }
 
     async fn opendir(&mut self, id: u32, path: String) -> Result<Handle, Self::Error> {
-        let dir = self.resolve(&path)?;
+        let dir = self.resolve(&path).await?;
         let read_dir = std::fs::read_dir(&dir).map_err(|e| io_status(&e))?;
         let mut entries = Vec::new();
         for entry in read_dir {
@@ -418,7 +420,7 @@ impl russh_sftp::server::Handler for SftpHandler {
         if pflags.intersects(write_flags) {
             self.deny_if_readonly()?;
         }
-        let path = self.resolve(&filename)?;
+        let path = self.resolve(&filename).await?;
         let options: std::fs::OpenOptions = pflags.into();
         let file = options.open(&path).map_err(|e| io_status(&e))?;
         let handle = self.fresh_handle();
@@ -482,7 +484,7 @@ impl russh_sftp::server::Handler for SftpHandler {
     }
 
     async fn lstat(&mut self, id: u32, path: String) -> Result<Attrs, Self::Error> {
-        let resolved = self.resolve(&path)?;
+        let resolved = self.resolve(&path).await?;
         let meta = std::fs::symlink_metadata(&resolved).map_err(|e| io_status(&e))?;
         Ok(Attrs {
             id,
@@ -491,7 +493,7 @@ impl russh_sftp::server::Handler for SftpHandler {
     }
 
     async fn stat(&mut self, id: u32, path: String) -> Result<Attrs, Self::Error> {
-        let resolved = self.resolve(&path)?;
+        let resolved = self.resolve(&path).await?;
         let meta = std::fs::metadata(&resolved).map_err(|e| io_status(&e))?;
         Ok(Attrs {
             id,
@@ -519,21 +521,21 @@ impl russh_sftp::server::Handler for SftpHandler {
         _attrs: FileAttributes,
     ) -> Result<Status, Self::Error> {
         self.deny_if_readonly()?;
-        let resolved = self.resolve(&path)?;
+        let resolved = self.resolve(&path).await?;
         std::fs::create_dir(&resolved).map_err(|e| io_status(&e))?;
         Ok(ok_status(id))
     }
 
     async fn rmdir(&mut self, id: u32, path: String) -> Result<Status, Self::Error> {
         self.deny_if_readonly()?;
-        let resolved = self.resolve(&path)?;
+        let resolved = self.resolve(&path).await?;
         std::fs::remove_dir(&resolved).map_err(|e| io_status(&e))?;
         Ok(ok_status(id))
     }
 
     async fn remove(&mut self, id: u32, filename: String) -> Result<Status, Self::Error> {
         self.deny_if_readonly()?;
-        let resolved = self.resolve(&filename)?;
+        let resolved = self.resolve(&filename).await?;
         std::fs::remove_file(&resolved).map_err(|e| io_status(&e))?;
         Ok(ok_status(id))
     }
@@ -545,8 +547,8 @@ impl russh_sftp::server::Handler for SftpHandler {
         newpath: String,
     ) -> Result<Status, Self::Error> {
         self.deny_if_readonly()?;
-        let from = self.resolve(&oldpath)?;
-        let to = self.resolve(&newpath)?;
+        let from = self.resolve(&oldpath).await?;
+        let to = self.resolve(&newpath).await?;
         std::fs::rename(&from, &to).map_err(|e| io_status(&e))?;
         Ok(ok_status(id))
     }
@@ -563,7 +565,7 @@ impl russh_sftp::server::Handler for SftpHandler {
         // targets, and clients (`sftp put`) issue setstat after upload and
         // expect success. The bytes are already written; ignoring the mode
         // bits is the pragmatic, safe behaviour for a homelab file server.
-        let _ = self.resolve(&path)?;
+        let _ = self.resolve(&path).await?;
         Ok(ok_status(id))
     }
 
@@ -591,8 +593,10 @@ mod tests {
         SftpHandler::new(Arc::new(canonical), false)
     }
 
-    #[test]
-    fn jail_rejects_traversal() {
+    // `resolve` runs its containment check on the blocking pool, so
+    // the test needs a runtime.
+    #[tokio::test]
+    async fn jail_rejects_traversal() {
         let dir = tempfile::tempdir().unwrap();
         std::fs::create_dir(dir.path().join("sub")).unwrap();
         std::fs::write(dir.path().join("sub").join("file.txt"), b"hi").unwrap();
@@ -601,7 +605,7 @@ mod tests {
         // `..` escapes — rejected on every platform.
         for bad in ["../etc/passwd", "/../../etc", "a/../../b"] {
             assert_eq!(
-                handler.resolve(bad),
+                handler.resolve(bad).await,
                 Err(StatusCode::PermissionDenied),
                 "traversal `{bad}` must be denied"
             );
@@ -611,7 +615,7 @@ mod tests {
         // on Windows; gate the assertion so the suite stays green on Linux.
         #[cfg(windows)]
         assert_eq!(
-            handler.resolve("C:\\Windows\\System32"),
+            handler.resolve("C:\\Windows\\System32").await,
             Err(StatusCode::PermissionDenied),
             "absolute drive path must be denied"
         );
@@ -619,20 +623,21 @@ mod tests {
         // A legitimate, root-relative path resolves under the served root.
         let ok = handler
             .resolve("/sub/file.txt")
+            .await
             .expect("legit path resolves");
         assert!(ok.starts_with(&*handler.root));
         assert!(ok.ends_with("file.txt"));
     }
 
-    #[test]
-    fn jail_allows_dot_and_root() {
+    #[tokio::test]
+    async fn jail_allows_dot_and_root() {
         let dir = tempfile::tempdir().unwrap();
         let handler = handler_for(dir.path());
         // "/" and "." both denote the served root itself.
-        assert_eq!(handler.resolve("/").unwrap(), *handler.root);
-        assert_eq!(handler.resolve(".").unwrap(), *handler.root);
+        assert_eq!(handler.resolve("/").await.unwrap(), *handler.root);
+        assert_eq!(handler.resolve(".").await.unwrap(), *handler.root);
         // An in-bounds `..` that stays under root is fine.
-        let p = handler.resolve("/a/../b").unwrap();
+        let p = handler.resolve("/a/../b").await.unwrap();
         assert!(p.starts_with(&*handler.root));
         assert!(p.ends_with("b"));
     }

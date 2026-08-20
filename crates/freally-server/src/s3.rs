@@ -132,6 +132,7 @@ pub(crate) fn build_router(
             get(get_object)
                 .head(head_object)
                 .put(put_object)
+                .post(post_object)
                 .delete(delete_object),
         )
         .with_state(state))
@@ -228,7 +229,10 @@ async fn get_object(State(st): State<S3State>, req: Request) -> Response {
 
     // `resolve_key` is lexical only — it cannot see a symlink or Windows
     // junction *under* the root whose target is outside it.
-    if crate::jail::ensure_within_root(&path, &st.root).is_err() {
+    if crate::jail::ensure_within_root_async(path.clone(), st.root.to_path_buf())
+        .await
+        .is_err()
+    {
         return access_denied();
     }
 
@@ -295,7 +299,10 @@ async fn head_object(State(st): State<S3State>, req: Request) -> Response {
         return StatusCode::FORBIDDEN.into_response();
     };
     // Same post-resolution containment re-check the GET path does.
-    if crate::jail::ensure_within_root(&path, &st.root).is_err() {
+    if crate::jail::ensure_within_root_async(path.clone(), st.root.to_path_buf())
+        .await
+        .is_err()
+    {
         return StatusCode::FORBIDDEN.into_response();
     }
 
@@ -458,6 +465,19 @@ async fn put_object(State(st): State<S3State>, req: Request) -> Response {
     if st.readonly {
         return s3_error(StatusCode::FORBIDDEN, "AccessDenied", "server is read-only");
     }
+
+    // `PUT ?partNumber=&uploadId=` is UploadPart, not PutObject. The
+    // AWS SDKs and `aws-cli` switch to multipart above 8 MB without
+    // being asked, so without this branch every large upload from a
+    // default-configured client got a 405 and no explanation.
+    let query = req.uri().query().map(str::to_owned);
+    if let (Some(part), Some(upload)) = (
+        query_param(query.as_deref(), "partNumber"),
+        query_param(query.as_deref(), "uploadId"),
+    ) {
+        return upload_part(st, req, &part, &upload).await;
+    }
+
     let (_, raw_key) = split_bucket_key(req.uri().path());
     let Some(raw_key) = raw_key else {
         return s3_error(
@@ -473,7 +493,10 @@ async fn put_object(State(st): State<S3State>, req: Request) -> Response {
     // Jail check BEFORE create_dir_all: creating the parent first meant
     // `PUT /bucket/link/evil/x.txt`, where `link` escapes the root, made
     // `<target>/evil` on disk before the 403 was returned.
-    if crate::jail::ensure_within_root(&path, &st.root).is_err() {
+    if crate::jail::ensure_within_root_async(path.clone(), st.root.to_path_buf())
+        .await
+        .is_err()
+    {
         return access_denied();
     }
     if let Some(parent) = path.parent() {
@@ -487,7 +510,10 @@ async fn put_object(State(st): State<S3State>, req: Request) -> Response {
         }
         // Re-check: create_dir_all may have materialised a path that
         // now resolves differently.
-        if crate::jail::ensure_within_root(&path, &st.root).is_err() {
+        if crate::jail::ensure_within_root_async(path.clone(), st.root.to_path_buf())
+            .await
+            .is_err()
+        {
             return access_denied();
         }
     }
@@ -498,7 +524,7 @@ async fn put_object(State(st): State<S3State>, req: Request) -> Response {
     // truncates, and a digest mismatch then deleted it outright. Real S3
     // leaves the previous object intact.
     let staging = path.with_extension(format!("freally-part-{}", std::process::id()));
-    let mut file = match tokio::fs::File::create(&staging).await {
+    let file = match tokio::fs::File::create(&staging).await {
         Ok(f) => f,
         Err(e) => {
             st.metrics.record_error();
@@ -510,130 +536,11 @@ async fn put_object(State(st): State<S3State>, req: Request) -> Response {
         }
     };
 
-    // Stream the body frame-by-frame so a large upload is never fully
-    // buffered in memory.
-    // Hash as we stream so the claimed payload digest can be checked
-    // without buffering the upload.
-    let verify_digest = claimed_sha256
-        .as_deref()
-        .filter(|c| c.len() == 64 && c.bytes().all(|b| b.is_ascii_hexdigit()));
-    let mut hasher = verify_digest.is_some().then(Sha256::new);
-
-    // `STREAMING-AWS4-HMAC-SHA256-PAYLOAD` and
-    // `STREAMING-UNSIGNED-PAYLOAD-TRAILER` mean the body is
-    // `aws-chunked`-framed rather than the raw object. Those values are
-    // not 64 hex characters, so they fall out of `verify_digest` above —
-    // but the framing still has to come back off before the bytes hit
-    // the file, or the object is stored with chunk headers baked in.
-    let mut chunked = claimed_sha256
-        .as_deref()
-        .is_some_and(|c| c.starts_with("streaming-"))
-        .then(AwsChunkedDecoder::new);
-    // The object length the client promises, once the framing is off.
-    let decoded_len: Option<u64> = req
-        .headers()
-        .get("x-amz-decoded-content-length")
-        .and_then(|v| v.to_str().ok())
-        .and_then(|v| v.trim().parse().ok());
-
-    let mut body = req.into_body();
-    let mut written: u64 = 0;
-    let mut decoded = Vec::new();
-    loop {
-        match body.frame().await {
-            Some(Ok(frame)) => {
-                if let Ok(raw) = frame.into_data() {
-                    let data: bytes::Bytes = if let Some(dec) = chunked.as_mut() {
-                        decoded.clear();
-                        if let Err(msg) = dec.push(&raw, &mut decoded) {
-                            st.metrics.record_error();
-                            drop(file);
-                            let _ = tokio::fs::remove_file(&staging).await;
-                            return s3_error(StatusCode::BAD_REQUEST, "IncompleteBody", msg);
-                        }
-                        bytes::Bytes::copy_from_slice(&decoded)
-                    } else {
-                        raw
-                    };
-                    if data.is_empty() {
-                        continue;
-                    }
-                    if let Some(h) = hasher.as_mut() {
-                        h.update(&data);
-                    }
-                    if let Err(e) = file.write_all(&data).await {
-                        st.metrics.record_error();
-                        drop(file);
-                        let _ = tokio::fs::remove_file(&staging).await;
-                        return s3_error(
-                            StatusCode::INTERNAL_SERVER_ERROR,
-                            "InternalError",
-                            &e.to_string(),
-                        );
-                    }
-                    written += data.len() as u64;
-                }
-            }
-            Some(Err(_)) => {
-                st.metrics.record_error();
-                drop(file);
-                let _ = tokio::fs::remove_file(&staging).await;
-                return s3_error(
-                    StatusCode::BAD_REQUEST,
-                    "IncompleteBody",
-                    "error reading request body",
-                );
-            }
-            None => break,
-        }
-    }
-    if let Err(e) = file.flush().await {
-        st.metrics.record_error();
-        drop(file);
-        let _ = tokio::fs::remove_file(&staging).await;
-        return s3_error(
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "InternalError",
-            &e.to_string(),
-        );
-    }
-
-    // A framed upload must have ended on its zero-length chunk, and must
-    // have produced exactly the number of bytes the client promised.
-    // This is what binds body to signature on the streaming path, where
-    // there is no whole-body digest to compare against.
-    if let Some(dec) = chunked.as_ref() {
-        let complete = dec.finished();
-        let length_ok = decoded_len.is_none_or(|want| want == written);
-        if !complete || !length_ok {
-            drop(file);
-            let _ = tokio::fs::remove_file(&staging).await;
-            st.metrics.record_error();
-            return s3_error(
-                StatusCode::BAD_REQUEST,
-                "IncompleteBody",
-                "aws-chunked body was truncated or did not match \
-                 x-amz-decoded-content-length",
-            );
-        }
-    }
-
-    // Signature covered the *claimed* digest; make the body match it or
-    // the write never happened. Without this, one observed authenticated
-    // PUT could be replayed forever with attacker-chosen content.
-    if let (Some(h), Some(want)) = (hasher, verify_digest) {
-        let got = hex::encode(h.finalize());
-        if !ct_eq(&got, want) {
-            drop(file);
-            let _ = tokio::fs::remove_file(&staging).await;
-            st.metrics.record_error();
-            return s3_error(
-                StatusCode::BAD_REQUEST,
-                "XAmzContentSHA256Mismatch",
-                "the provided x-amz-content-sha256 does not match the body",
-            );
-        }
-    }
+    let (file, outcome) =
+        match stream_body_into(&st, req, file, &staging, claimed_sha256.as_deref()).await {
+            Ok(v) => v,
+            Err(resp) => return resp,
+        };
 
     // Body is complete and its digest checked — publish atomically. Only
     // now does the previously-stored object get replaced.
@@ -648,7 +555,7 @@ async fn put_object(State(st): State<S3State>, req: Request) -> Response {
         );
     }
 
-    st.metrics.record_copy(written);
+    st.metrics.record_copy(outcome.bytes);
     // `file` was dropped by the rename above; stat the published path.
     let modified = tokio::fs::metadata(&path)
         .await
@@ -656,7 +563,7 @@ async fn put_object(State(st): State<S3State>, req: Request) -> Response {
         .and_then(|m| m.modified().ok());
     (
         StatusCode::OK,
-        [(header::ETAG, content_etag(written, modified))],
+        [(header::ETAG, content_etag(outcome.bytes, modified))],
     )
         .into_response()
 }
@@ -671,6 +578,13 @@ async fn delete_object(State(st): State<S3State>, req: Request) -> Response {
     if st.readonly {
         return s3_error(StatusCode::FORBIDDEN, "AccessDenied", "server is read-only");
     }
+
+    // `DELETE ?uploadId=` is AbortMultipartUpload. Clients send it when
+    // a transfer is cancelled or a part fails permanently; without it,
+    // the staging directory stays on disk forever.
+    if let Some(upload_id) = query_param(req.uri().query(), "uploadId") {
+        return abort_multipart(&st, &upload_id).await;
+    }
     let (_, raw_key) = split_bucket_key(req.uri().path());
     let Some(raw_key) = raw_key else {
         return s3_error(
@@ -683,7 +597,10 @@ async fn delete_object(State(st): State<S3State>, req: Request) -> Response {
         return access_denied();
     };
     // A delete must not follow a link out of the served root either.
-    if crate::jail::ensure_within_root(&path, &st.root).is_err() {
+    if crate::jail::ensure_within_root_async(path.clone(), st.root.to_path_buf())
+        .await
+        .is_err()
+    {
         return access_denied();
     }
 
@@ -979,6 +896,659 @@ struct Entry {
 /// other way) cannot take the process down.
 const LIST_MAX_DEPTH: usize = 64;
 
+// ---------------------------------------------------------------------------
+// Multipart upload
+// ---------------------------------------------------------------------------
+
+/// Staging directory for in-flight multipart uploads, relative to the
+/// served root.
+///
+/// Under the root rather than in the system temp dir so that assembling
+/// the finished object is a same-filesystem operation, and so a large
+/// upload is bounded by the space the user actually gave us rather than
+/// by whatever `/tmp` happens to have. `list_objects` filters it out —
+/// a half-finished upload is not an object.
+const MULTIPART_DIR: &str = ".freally-uploads";
+
+/// S3 allows part numbers 1..=10000.
+const MAX_PART_NUMBER: u32 = 10_000;
+
+/// Mint an upload id: 16 random bytes, hex.
+///
+/// It names a directory, so it is generated here and validated on the
+/// way back in — never taken from the client on trust.
+fn new_upload_id() -> String {
+    use rand::RngExt;
+    let raw: [u8; 16] = rand::rng().random();
+    hex::encode(raw)
+}
+
+/// Resolve the staging directory for `upload_id`, or `None` if the id is
+/// not one we could have issued.
+///
+/// The id arrives on a query string and is used as a path component, so
+/// the shape check is the jail: exactly 32 lowercase hex characters
+/// cannot contain a separator, a `..`, a drive prefix or a NUL.
+fn upload_dir(root: &Path, upload_id: &str) -> Option<PathBuf> {
+    let valid = upload_id.len() == 32
+        && upload_id
+            .bytes()
+            .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b));
+    if !valid {
+        return None;
+    }
+    Some(root.join(MULTIPART_DIR).join(upload_id))
+}
+
+/// Remove one upload staging directory, and the parent that holds them
+/// if this was the last one.
+///
+/// Without the second step an empty `.freally-uploads` accumulates
+/// under the served root and never goes away. `remove_dir` fails
+/// harmlessly when another upload is still in flight, which is exactly
+/// the behaviour wanted — no locking, no racing a concurrent create.
+async fn discard_upload_dir(root: &Path, dir: &Path) {
+    let _ = tokio::fs::remove_dir_all(dir).await;
+    let _ = tokio::fs::remove_dir(root.join(MULTIPART_DIR)).await;
+}
+
+/// Part file name. Zero-padded so a plain lexical sort is ascending by
+/// part number, which is the order S3 requires the parts be joined in.
+fn part_file(dir: &Path, part_number: u32) -> PathBuf {
+    dir.join(format!("{part_number:05}.part"))
+}
+
+/// Sidecar holding the ETag we returned for a part, so CompleteMultipart
+/// can check the client is completing the upload it actually made.
+fn part_etag_file(dir: &Path, part_number: u32) -> PathBuf {
+    dir.join(format!("{part_number:05}.etag"))
+}
+
+/// `POST /{bucket}/{*key}` — CreateMultipartUpload (`?uploads`) or
+/// CompleteMultipartUpload (`?uploadId=`).
+async fn post_object(State(st): State<S3State>, req: Request) -> Response {
+    if let Some(resp) = authorize(&st, &req) {
+        return resp;
+    }
+    if st.readonly {
+        return s3_error(StatusCode::FORBIDDEN, "AccessDenied", "server is read-only");
+    }
+    let query = req.uri().query().map(str::to_owned);
+    if let Some(upload_id) = query_param(query.as_deref(), "uploadId") {
+        return complete_multipart(st, req, &upload_id).await;
+    }
+    if query.as_deref().is_some_and(|q| {
+        q.split('&')
+            .any(|kv| kv == "uploads" || kv.starts_with("uploads="))
+    }) {
+        return create_multipart(st, req).await;
+    }
+    s3_error(
+        StatusCode::BAD_REQUEST,
+        "InvalidRequest",
+        "POST on an object requires ?uploads or ?uploadId=",
+    )
+}
+
+/// CreateMultipartUpload. Allocates the staging directory and hands back
+/// the id every later part must carry.
+async fn create_multipart(st: S3State, req: Request) -> Response {
+    let (bucket, raw_key) = split_bucket_key(req.uri().path());
+    let Some(raw_key) = raw_key else {
+        return s3_error(
+            StatusCode::BAD_REQUEST,
+            "InvalidRequest",
+            "missing object key",
+        );
+    };
+    // Validate the destination NOW, not at completion. Discovering the
+    // key is out of bounds only after the client has uploaded gigabytes
+    // wastes their time and our disk.
+    let Some(dest) = resolve_key(&st.root, &raw_key) else {
+        return access_denied();
+    };
+    if crate::jail::ensure_within_root_async(dest.clone(), st.root.to_path_buf())
+        .await
+        .is_err()
+    {
+        return access_denied();
+    }
+
+    let upload_id = new_upload_id();
+    let Some(dir) = upload_dir(&st.root, &upload_id) else {
+        st.metrics.record_error();
+        return s3_error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "InternalError",
+            "could not allocate an upload id",
+        );
+    };
+    if let Err(e) = tokio::fs::create_dir_all(&dir).await {
+        st.metrics.record_error();
+        return s3_error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "InternalError",
+            &e.to_string(),
+        );
+    }
+    // Remember where this upload is destined, so CompleteMultipartUpload
+    // does not have to trust the key on that request to match this one.
+    if let Err(e) = tokio::fs::write(dir.join("key"), raw_key.as_bytes()).await {
+        st.metrics.record_error();
+        let _ = tokio::fs::remove_dir_all(&dir).await;
+        return s3_error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "InternalError",
+            &e.to_string(),
+        );
+    }
+
+    s3_xml_response(
+        StatusCode::OK,
+        format!(
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\
+             <InitiateMultipartUploadResult>\
+             <Bucket>{}</Bucket><Key>{}</Key><UploadId>{}</UploadId>\
+             </InitiateMultipartUploadResult>",
+            xml_escape(&bucket),
+            xml_escape(&raw_key),
+            xml_escape(&upload_id),
+        ),
+    )
+}
+
+/// UploadPart. Stores one numbered part and returns its ETag.
+async fn upload_part(st: S3State, req: Request, part: &str, upload_id: &str) -> Response {
+    let Ok(part_number) = part.parse::<u32>() else {
+        return s3_error(
+            StatusCode::BAD_REQUEST,
+            "InvalidArgument",
+            "partNumber must be a number",
+        );
+    };
+    if part_number == 0 || part_number > MAX_PART_NUMBER {
+        return s3_error(
+            StatusCode::BAD_REQUEST,
+            "InvalidArgument",
+            "partNumber must be between 1 and 10000",
+        );
+    }
+    let Some(dir) = upload_dir(&st.root, upload_id) else {
+        return s3_error(
+            StatusCode::NOT_FOUND,
+            "NoSuchUpload",
+            "the upload id is not valid",
+        );
+    };
+    if !tokio::fs::try_exists(&dir).await.unwrap_or(false) {
+        return s3_error(
+            StatusCode::NOT_FOUND,
+            "NoSuchUpload",
+            "no such upload, or it has already been completed or aborted",
+        );
+    }
+
+    let claimed_sha256 = req
+        .headers()
+        .get("x-amz-content-sha256")
+        .and_then(|v| v.to_str().ok())
+        .map(str::to_ascii_lowercase);
+
+    let dest = part_file(&dir, part_number);
+    let file = match tokio::fs::File::create(&dest).await {
+        Ok(f) => f,
+        Err(e) => {
+            st.metrics.record_error();
+            return s3_error(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "InternalError",
+                &e.to_string(),
+            );
+        }
+    };
+    // Same body handling as PutObject: a part arrives `aws-chunked` too,
+    // and its digest is covered by the same signature.
+    let (file, outcome) =
+        match stream_body_into(&st, req, file, &dest, claimed_sha256.as_deref()).await {
+            Ok(v) => v,
+            Err(resp) => return resp,
+        };
+    drop(file);
+
+    let etag = outcome.sha256_hex;
+    if let Err(e) = tokio::fs::write(part_etag_file(&dir, part_number), etag.as_bytes()).await {
+        st.metrics.record_error();
+        let _ = tokio::fs::remove_file(&dest).await;
+        return s3_error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "InternalError",
+            &e.to_string(),
+        );
+    }
+
+    (
+        StatusCode::OK,
+        [(header::ETAG, format!("\"{etag}\""))],
+        axum::body::Body::empty(),
+    )
+        .into_response()
+}
+
+/// CompleteMultipartUpload. Joins the named parts, in ascending part
+/// order, into the object the upload was created for.
+async fn complete_multipart(st: S3State, req: Request, upload_id: &str) -> Response {
+    let Some(dir) = upload_dir(&st.root, upload_id) else {
+        return s3_error(
+            StatusCode::NOT_FOUND,
+            "NoSuchUpload",
+            "the upload id is not valid",
+        );
+    };
+    let Ok(raw_key) = tokio::fs::read_to_string(dir.join("key")).await else {
+        return s3_error(
+            StatusCode::NOT_FOUND,
+            "NoSuchUpload",
+            "no such upload, or it has already been completed or aborted",
+        );
+    };
+
+    // Read the part list the client is asking us to assemble.
+    let body = match axum::body::to_bytes(req.into_body(), 1 << 20).await {
+        Ok(b) => b,
+        Err(_) => {
+            return s3_error(
+                StatusCode::BAD_REQUEST,
+                "MalformedXML",
+                "could not read the CompleteMultipartUpload body",
+            );
+        }
+    };
+    let requested = parse_complete_parts(&String::from_utf8_lossy(&body));
+    if requested.is_empty() {
+        return s3_error(
+            StatusCode::BAD_REQUEST,
+            "MalformedXML",
+            "the CompleteMultipartUpload body named no parts",
+        );
+    }
+    // S3 requires ascending part numbers, and joining them in any other
+    // order would silently produce a corrupt object.
+    if requested.windows(2).any(|w| w[0].0 >= w[1].0) {
+        return s3_error(
+            StatusCode::BAD_REQUEST,
+            "InvalidPartOrder",
+            "parts must be listed in ascending partNumber order",
+        );
+    }
+
+    // Every named part must exist and carry the ETag we handed out.
+    // Without this a client could complete an upload with parts it never
+    // sent, or with a stale part from a retry it thought had failed.
+    for (number, want_etag) in &requested {
+        let stored = tokio::fs::read_to_string(part_etag_file(&dir, *number))
+            .await
+            .unwrap_or_default();
+        if stored.is_empty() {
+            return s3_error(
+                StatusCode::BAD_REQUEST,
+                "InvalidPart",
+                &format!("part {number} was never uploaded"),
+            );
+        }
+        if let Some(want) = want_etag {
+            if !ct_eq(&stored, want) {
+                return s3_error(
+                    StatusCode::BAD_REQUEST,
+                    "InvalidPart",
+                    &format!("the ETag given for part {number} is not the one we returned"),
+                );
+            }
+        }
+    }
+
+    let Some(dest) = resolve_key(&st.root, raw_key.trim()) else {
+        return access_denied();
+    };
+    if crate::jail::ensure_within_root_async(dest.clone(), st.root.to_path_buf())
+        .await
+        .is_err()
+    {
+        return access_denied();
+    }
+    if let Some(parent) = dest.parent() {
+        if let Err(e) = tokio::fs::create_dir_all(parent).await {
+            st.metrics.record_error();
+            return s3_error(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "InternalError",
+                &e.to_string(),
+            );
+        }
+        if crate::jail::ensure_within_root_async(dest.clone(), st.root.to_path_buf())
+            .await
+            .is_err()
+        {
+            return access_denied();
+        }
+    }
+
+    // Assemble into a staging file and rename, so a failure part-way
+    // through never replaces a good object with a truncated one.
+    let staging = dir.join("assembled");
+    let mut out = match tokio::fs::File::create(&staging).await {
+        Ok(f) => f,
+        Err(e) => {
+            st.metrics.record_error();
+            return s3_error(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "InternalError",
+                &e.to_string(),
+            );
+        }
+    };
+    let mut total: u64 = 0;
+    let mut etag_input = Vec::new();
+    for (number, _) in &requested {
+        let src = part_file(&dir, *number);
+        let mut part = match tokio::fs::File::open(&src).await {
+            Ok(f) => f,
+            Err(e) => {
+                st.metrics.record_error();
+                drop(out);
+                let _ = tokio::fs::remove_file(&staging).await;
+                return s3_error(
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "InternalError",
+                    &e.to_string(),
+                );
+            }
+        };
+        match tokio::io::copy(&mut part, &mut out).await {
+            Ok(n) => total += n,
+            Err(e) => {
+                st.metrics.record_error();
+                drop(out);
+                let _ = tokio::fs::remove_file(&staging).await;
+                return s3_error(
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "InternalError",
+                    &e.to_string(),
+                );
+            }
+        }
+        etag_input.extend_from_slice(
+            tokio::fs::read_to_string(part_etag_file(&dir, *number))
+                .await
+                .unwrap_or_default()
+                .as_bytes(),
+        );
+    }
+    if let Err(e) = out.flush().await {
+        st.metrics.record_error();
+        drop(out);
+        let _ = tokio::fs::remove_file(&staging).await;
+        return s3_error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "InternalError",
+            &e.to_string(),
+        );
+    }
+    drop(out);
+
+    if let Err(e) = tokio::fs::rename(&staging, &dest).await {
+        st.metrics.record_error();
+        let _ = tokio::fs::remove_file(&staging).await;
+        return s3_error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "InternalError",
+            &e.to_string(),
+        );
+    }
+    // The upload is finished either way now; leaving the staging
+    // directory behind would show up as disk the user cannot account for.
+    discard_upload_dir(&st.root, &dir).await;
+    st.metrics.record_copy(total);
+
+    // S3 renders a multipart ETag as `<digest>-<part count>`; clients use
+    // the suffix to tell a multipart object from a plain one.
+    let mut h = Sha256::new();
+    h.update(&etag_input);
+    let digest = hex::encode(h.finalize());
+    let etag = format!("{}-{}", &digest[..32], requested.len());
+
+    let (bucket, _) = split_bucket_key("/");
+    let _ = bucket;
+    s3_xml_response(
+        StatusCode::OK,
+        format!(
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\
+             <CompleteMultipartUploadResult>\
+             <Key>{}</Key><ETag>&quot;{}&quot;</ETag>\
+             </CompleteMultipartUploadResult>",
+            xml_escape(raw_key.trim()),
+            xml_escape(&etag),
+        ),
+    )
+}
+
+/// AbortMultipartUpload — drop the staging directory and everything in it.
+async fn abort_multipart(st: &S3State, upload_id: &str) -> Response {
+    let Some(dir) = upload_dir(&st.root, upload_id) else {
+        return s3_error(
+            StatusCode::NOT_FOUND,
+            "NoSuchUpload",
+            "the upload id is not valid",
+        );
+    };
+    if !tokio::fs::try_exists(&dir).await.unwrap_or(false) {
+        return s3_error(
+            StatusCode::NOT_FOUND,
+            "NoSuchUpload",
+            "no such upload, or it has already been completed or aborted",
+        );
+    }
+    discard_upload_dir(&st.root, &dir).await;
+    StatusCode::NO_CONTENT.into_response()
+}
+
+/// Pull `(part number, ETag)` pairs out of a CompleteMultipartUpload body.
+///
+/// Deliberately a scan rather than a parser. The document is a flat list
+/// of `<Part><PartNumber>N</PartNumber><ETag>"..."</ETag></Part>`, the
+/// only fields that matter are those two, and adding an XML parser to
+/// this crate to read them would be a larger attack surface than the
+/// thing it parses. Anything unrecognised is ignored, and a body that
+/// yields no parts is rejected by the caller.
+fn parse_complete_parts(xml: &str) -> Vec<(u32, Option<String>)> {
+    let mut out = Vec::new();
+    for chunk in xml.split("<Part>").skip(1) {
+        let Some(number) = tag_value(chunk, "PartNumber").and_then(|v| v.trim().parse().ok())
+        else {
+            continue;
+        };
+        let etag = tag_value(chunk, "ETag").map(|v| {
+            // Clients quote the ETag, and some escape the quotes as
+            // entities; we stored the bare hex.
+            v.trim()
+                .trim_start_matches("&quot;")
+                .trim_end_matches("&quot;")
+                .trim_matches('"')
+                .to_string()
+        });
+        out.push((number, etag));
+    }
+    out
+}
+
+/// Text between `<tag>` and `</tag>`, first occurrence only.
+fn tag_value(chunk: &str, tag: &str) -> Option<String> {
+    let open = format!("<{tag}>");
+    let close = format!("</{tag}>");
+    let start = chunk.find(&open)? + open.len();
+    let end = chunk[start..].find(&close)? + start;
+    Some(chunk[start..end].to_string())
+}
+
+/// What a successfully-received body amounted to.
+struct BodyOutcome {
+    /// Bytes actually written, after any `aws-chunked` framing came off.
+    bytes: u64,
+    /// SHA-256 of those bytes, hex. Always computed: PutObject may not
+    /// need it, but UploadPart uses it as the part ETag, and hashing a
+    /// stream we are already writing to disk is not the expensive part.
+    sha256_hex: String,
+}
+
+/// Stream `req`'s body into `file`, undoing `aws-chunked` framing and
+/// enforcing whatever the client claimed about the payload.
+///
+/// Shared by PutObject and UploadPart. They take the same body shapes
+/// from the AWS SDKs, so the framing, the digest check and the
+/// `x-amz-decoded-content-length` check have to behave identically —
+/// otherwise starting a multipart upload becomes the way to bypass the
+/// checks a plain PUT is subject to.
+///
+/// Takes `file` by value and hands it back on success: on Windows the
+/// handle must be closed before the caller can rename or delete the
+/// path, so ownership has to be explicit. On failure the partial file
+/// is closed and removed here, and the caller is given the response to
+/// return.
+async fn stream_body_into(
+    st: &S3State,
+    req: Request,
+    mut file: tokio::fs::File,
+    staging: &Path,
+    claimed_sha256: Option<&str>,
+) -> Result<(tokio::fs::File, BodyOutcome), Response> {
+    // Hash as we stream so the claimed payload digest can be checked
+    // without buffering the upload.
+    let verify_digest =
+        claimed_sha256.filter(|c| c.len() == 64 && c.bytes().all(|b| b.is_ascii_hexdigit()));
+    let mut hasher = Sha256::new();
+
+    // `STREAMING-AWS4-HMAC-SHA256-PAYLOAD` and
+    // `STREAMING-UNSIGNED-PAYLOAD-TRAILER` mean the body is
+    // `aws-chunked`-framed rather than the raw object. Those values are
+    // not 64 hex characters, so they fall out of `verify_digest` above —
+    // but the framing still has to come back off before the bytes hit
+    // the file, or the object is stored with chunk headers baked in.
+    let mut chunked = claimed_sha256
+        .is_some_and(|c| c.starts_with("streaming-"))
+        .then(AwsChunkedDecoder::new);
+    // The object length the client promises, once the framing is off.
+    let decoded_len: Option<u64> = req
+        .headers()
+        .get("x-amz-decoded-content-length")
+        .and_then(|v| v.to_str().ok())
+        .and_then(|v| v.trim().parse().ok());
+
+    // Every failure below closes the handle and removes the partial
+    // file before answering.
+    macro_rules! fail {
+        ($file:expr, $status:expr, $code:expr, $msg:expr) => {{
+            st.metrics.record_error();
+            drop($file);
+            let _ = tokio::fs::remove_file(staging).await;
+            return Err(s3_error($status, $code, $msg));
+        }};
+    }
+
+    let mut body = req.into_body();
+    let mut written: u64 = 0;
+    let mut decoded = Vec::new();
+    loop {
+        match body.frame().await {
+            Some(Ok(frame)) => {
+                if let Ok(raw) = frame.into_data() {
+                    let data: bytes::Bytes = if let Some(dec) = chunked.as_mut() {
+                        decoded.clear();
+                        if let Err(msg) = dec.push(&raw, &mut decoded) {
+                            fail!(file, StatusCode::BAD_REQUEST, "IncompleteBody", msg);
+                        }
+                        bytes::Bytes::copy_from_slice(&decoded)
+                    } else {
+                        raw
+                    };
+                    if data.is_empty() {
+                        continue;
+                    }
+                    hasher.update(&data);
+                    if let Err(e) = file.write_all(&data).await {
+                        let msg = e.to_string();
+                        fail!(
+                            file,
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            "InternalError",
+                            &msg
+                        );
+                    }
+                    written += data.len() as u64;
+                }
+            }
+            Some(Err(_)) => {
+                fail!(
+                    file,
+                    StatusCode::BAD_REQUEST,
+                    "IncompleteBody",
+                    "error reading request body"
+                );
+            }
+            None => break,
+        }
+    }
+    if let Err(e) = file.flush().await {
+        let msg = e.to_string();
+        fail!(
+            file,
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "InternalError",
+            &msg
+        );
+    }
+
+    // A framed upload must have ended on its zero-length chunk, and must
+    // have produced exactly the number of bytes the client promised.
+    // This is what binds body to signature on the streaming path, where
+    // there is no whole-body digest to compare against.
+    if let Some(dec) = chunked.as_ref() {
+        let complete = dec.finished();
+        let length_ok = decoded_len.is_none_or(|want| want == written);
+        if !complete || !length_ok {
+            fail!(
+                file,
+                StatusCode::BAD_REQUEST,
+                "IncompleteBody",
+                "aws-chunked body was truncated or did not match \
+                 x-amz-decoded-content-length"
+            );
+        }
+    }
+
+    let sha256_hex = hex::encode(hasher.finalize());
+
+    // Signature covered the *claimed* digest; make the body match it or
+    // the write never happened. Without this, one observed authenticated
+    // PUT could be replayed forever with attacker-chosen content.
+    if let Some(want) = verify_digest {
+        if !ct_eq(&sha256_hex, want) {
+            fail!(
+                file,
+                StatusCode::BAD_REQUEST,
+                "XAmzContentSHA256Mismatch",
+                "the provided x-amz-content-sha256 does not match the body"
+            );
+        }
+    }
+
+    Ok((
+        file,
+        BodyOutcome {
+            bytes: written,
+            sha256_hex,
+        },
+    ))
+}
+
 fn collect_entries(root: &Path, dir: &Path, out: &mut Vec<Entry>) -> std::io::Result<()> {
     collect_entries_depth(root, dir, out, 0)
 }
@@ -1007,6 +1577,14 @@ fn collect_entries_depth(
         };
         let path = entry.path();
         if file_type.is_dir() {
+            // In-flight multipart uploads stage under the root so the
+            // final assembly is a same-filesystem rename. They are not
+            // objects, so they must not appear in a listing — a client
+            // that saw them would try to GET a part that vanishes the
+            // moment the upload completes.
+            if depth == 0 && path.file_name().is_some_and(|n| n == MULTIPART_DIR) {
+                continue;
+            }
             collect_entries_depth(root, &path, out, depth + 1)?;
         } else if file_type.is_file() {
             let Ok(rel) = path.strip_prefix(root) else {

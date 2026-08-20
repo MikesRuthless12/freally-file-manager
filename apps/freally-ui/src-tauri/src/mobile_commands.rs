@@ -558,9 +558,16 @@ pub(crate) fn build_signer_for(
             if persisted.apns_p8_pem.is_empty() {
                 return Err("APNs p8 key not configured".into());
             }
+            // APNs refuses a push with no `apns-topic`, so an unset
+            // bundle id disables the provider the same way a missing key
+            // does — better a clear message here than a 400 from Apple.
+            if persisted.apns_bundle_id.trim().is_empty() {
+                return Err("APNs bundle id not configured".into());
+            }
             let signer = ApnsSigner::new(
                 persisted.apns_team_id.clone(),
                 persisted.apns_key_id.clone(),
+                persisted.apns_bundle_id.clone(),
                 persisted.apns_p8_pem.as_bytes().to_vec(),
             )?;
             Ok(Some(Arc::new(signer)))

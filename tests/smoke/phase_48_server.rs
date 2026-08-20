@@ -411,6 +411,206 @@ async fn sftp_put_get_roundtrip() {
 /// S3 acceptance test (open access): PUT a 64 KiB object, GET it back
 /// byte-equal, confirm ListObjectsV2 XML carries the key, and prove the
 /// path jail refuses an encoded `..` escape (4xx, nothing written).
+/// Multipart upload, end to end over the real HTTP surface.
+///
+/// The AWS SDKs and `aws-cli` switch to multipart above 8 MB without
+/// being asked, so before this existed every large upload from a
+/// default-configured client got a 405. Exercises the whole sequence:
+/// create, two parts, complete — then checks the assembled object is
+/// byte-exact and that the staging directory is gone.
+#[tokio::test]
+async fn s3_multipart_upload_roundtrip() {
+    let dir = tempfile::tempdir().unwrap();
+    let cfg = ServerConfig {
+        bind_addr: "127.0.0.1:0".into(),
+        protocols: vec![Protocol::S3],
+        auth: AuthMode::None,
+        root: dir.path().to_path_buf(),
+        readonly: false,
+    };
+    let handle = serve(cfg).await.expect("serve should bind S3");
+    let base = format!("http://{}", handle.local_addr());
+    let client = reqwest::Client::new();
+
+    // Two distinguishable parts, so a wrong join order shows up as a
+    // content mismatch rather than a length one.
+    let part1: Vec<u8> = (0..40 * 1024usize).map(|i| (i % 251) as u8).collect();
+    let part2: Vec<u8> = (0..24 * 1024usize).map(|i| (i % 97) as u8).collect();
+
+    // 1. CreateMultipartUpload.
+    let created = client
+        .post(format!("{base}/bucket/big/obj.bin?uploads"))
+        .send()
+        .await
+        .unwrap();
+    assert!(
+        created.status().is_success(),
+        "create: {}",
+        created.status()
+    );
+    let xml = created.text().await.unwrap();
+    let upload_id =
+        between(&xml, "<UploadId>", "</UploadId>").expect("the response must carry an UploadId");
+    assert_eq!(upload_id.len(), 32, "upload id shape: {upload_id}");
+
+    // 2. UploadPart, twice. Each answers with the ETag we must echo.
+    let mut etags = Vec::new();
+    for (n, body) in [(1usize, &part1), (2usize, &part2)] {
+        let resp = client
+            .put(format!(
+                "{base}/bucket/big/obj.bin?partNumber={n}&uploadId={upload_id}"
+            ))
+            .body(body.clone())
+            .send()
+            .await
+            .unwrap();
+        assert!(resp.status().is_success(), "part {n}: {}", resp.status());
+        let etag = resp
+            .headers()
+            .get("etag")
+            .and_then(|v| v.to_str().ok())
+            .expect("a part must answer with an ETag")
+            .to_string();
+        etags.push(etag);
+    }
+
+    // The object must not exist yet — only completing publishes it.
+    assert!(
+        !dir.path().join("big").join("obj.bin").exists(),
+        "the object must not appear until the upload is completed"
+    );
+
+    // 3. CompleteMultipartUpload.
+    let complete_body = format!(
+        "<CompleteMultipartUpload>\
+         <Part><PartNumber>1</PartNumber><ETag>{}</ETag></Part>\
+         <Part><PartNumber>2</PartNumber><ETag>{}</ETag></Part>\
+         </CompleteMultipartUpload>",
+        etags[0], etags[1],
+    );
+    let done = client
+        .post(format!("{base}/bucket/big/obj.bin?uploadId={upload_id}"))
+        .body(complete_body)
+        .send()
+        .await
+        .unwrap();
+    assert!(done.status().is_success(), "complete: {}", done.status());
+
+    // The assembled object is the two parts, in order.
+    let got = client
+        .get(format!("{base}/bucket/big/obj.bin"))
+        .send()
+        .await
+        .unwrap();
+    assert!(got.status().is_success(), "GET: {}", got.status());
+    let body = got.bytes().await.unwrap();
+    let mut expected = part1.clone();
+    expected.extend_from_slice(&part2);
+    assert_eq!(
+        body.as_ref(),
+        expected.as_slice(),
+        "the assembled object must be the parts joined in ascending order"
+    );
+
+    // Staging is cleaned up, and never appeared in a listing.
+    assert!(
+        !dir.path().join(".freally-uploads").exists(),
+        "the staging directory must not outlive the upload"
+    );
+    let listing = client
+        .get(format!("{base}/bucket"))
+        .send()
+        .await
+        .unwrap()
+        .text()
+        .await
+        .unwrap();
+    assert!(listing.contains("big/obj.bin"), "listing: {listing}");
+    assert!(
+        !listing.contains(".freally-uploads"),
+        "in-flight upload staging must never be listed as an object: {listing}"
+    );
+
+    handle.shutdown().await;
+}
+
+/// A part the client never uploaded must not complete an object, and
+/// an abort must take the staging with it.
+#[tokio::test]
+async fn s3_multipart_rejects_unknown_parts_and_aborts_cleanly() {
+    let dir = tempfile::tempdir().unwrap();
+    let cfg = ServerConfig {
+        bind_addr: "127.0.0.1:0".into(),
+        protocols: vec![Protocol::S3],
+        auth: AuthMode::None,
+        root: dir.path().to_path_buf(),
+        readonly: false,
+    };
+    let handle = serve(cfg).await.expect("serve should bind S3");
+    let base = format!("http://{}", handle.local_addr());
+    let client = reqwest::Client::new();
+
+    let xml = client
+        .post(format!("{base}/bucket/k.bin?uploads"))
+        .send()
+        .await
+        .unwrap()
+        .text()
+        .await
+        .unwrap();
+    let upload_id = between(&xml, "<UploadId>", "</UploadId>").unwrap();
+
+    // Completing with a part that was never sent must fail, not produce
+    // a short object.
+    let bad = client
+        .post(format!("{base}/bucket/k.bin?uploadId={upload_id}"))
+        .body(
+            "<CompleteMultipartUpload><Part><PartNumber>7</PartNumber>\
+             <ETag>\"deadbeef\"</ETag></Part></CompleteMultipartUpload>"
+                .to_string(),
+        )
+        .send()
+        .await
+        .unwrap();
+    assert!(bad.status().is_client_error(), "status {}", bad.status());
+    assert!(!dir.path().join("k.bin").exists());
+
+    // An unknown upload id is a 404, not a 500 or a traversal.
+    let unknown = client
+        .put(format!(
+            "{base}/bucket/k.bin?partNumber=1&uploadId=../../etc"
+        ))
+        .body(vec![0u8; 4])
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(unknown.status().as_u16(), 404, "a bad upload id must 404");
+
+    // Abort removes the staging directory.
+    let aborted = client
+        .delete(format!("{base}/bucket/k.bin?uploadId={upload_id}"))
+        .send()
+        .await
+        .unwrap();
+    assert!(aborted.status().is_success(), "abort: {}", aborted.status());
+    assert!(
+        !dir.path()
+            .join(".freally-uploads")
+            .join(&upload_id)
+            .exists(),
+        "abort must remove the staging directory"
+    );
+
+    handle.shutdown().await;
+}
+
+/// Slice between two markers — the tests only need this much of an XML
+/// reader.
+fn between(haystack: &str, open: &str, close: &str) -> Option<String> {
+    let start = haystack.find(open)? + open.len();
+    let end = haystack[start..].find(close)? + start;
+    Some(haystack[start..end].to_string())
+}
 #[tokio::test]
 async fn s3_noauth_roundtrip() {
     let dir = tempfile::tempdir().unwrap();

@@ -792,6 +792,8 @@ export interface MobileSettingsDto {
   apnsP8Pem: string;
   apnsTeamId: string;
   apnsKeyId: string;
+  /** iOS app bundle id, sent as the mandatory `apns-topic` header. */
+  apnsBundleId: string;
   fcmServiceAccountJson: string;
 }
 

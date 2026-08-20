@@ -18,7 +18,9 @@ use std::process::Command;
 use std::time::Duration;
 
 use freally_helper::capability::Capability;
-use freally_helper::rpc::{PROTOCOL_VERSION, Request, Response, generate_pipe_name};
+#[cfg(windows)]
+use freally_helper::rpc::generate_pipe_name;
+use freally_helper::rpc::{PROTOCOL_VERSION, Request, Response};
 use tokio::io::{AsyncBufReadExt, AsyncRead, AsyncWrite, AsyncWriteExt, BufReader};
 
 const HELPER: &str = env!("CARGO_BIN_EXE_freally-helper");
@@ -61,26 +63,25 @@ async fn connect_helper(caps: &str) -> (impl AsyncRead + AsyncWrite, std::proces
 
 #[cfg(all(unix, not(windows)))]
 async fn connect_helper(caps: &str) -> (impl AsyncRead + AsyncWrite, std::process::Child) {
-    // macOS sun_path is ~104 bytes and $TMPDIR is a long /var/folders/...
-    // path, so a socket under tempfile::tempdir() overflows SUN_LEN there
-    // ("path must be shorter than SUN_LEN"). Bind directly under /tmp
-    // (short on both Linux + macOS); the 64-hex random basename keeps the
-    // path unguessable.
-    let name = generate_pipe_name("freally-helper-").unwrap();
-    let sock = std::path::Path::new("/tmp").join(&name);
-    let listener = tokio::net::UnixListener::bind(&sock).unwrap();
+    // Loopback, not a socket file. The helper no longer accepts
+    // `--socket=<path>`: a filesystem rendezvous can be unlinked and
+    // re-bound by any process running as the same uid while the consent
+    // dialog is up, which handed the root helper to the attacker. This
+    // mirrors what `elevate.rs` now does — bind first, hold the
+    // listener, pass only the port.
+    let listener = tokio::net::TcpListener::bind((std::net::Ipv4Addr::LOCALHOST, 0))
+        .await
+        .expect("bind loopback");
+    let port = listener.local_addr().expect("local_addr").port();
     let child = Command::new(HELPER)
-        .arg(format!("--socket={}", sock.display()))
+        .arg(format!("--port={port}"))
         .arg(format!("--capabilities={caps}"))
         .spawn()
         .expect("spawn helper");
     let (stream, _addr) = tokio::time::timeout(TIMEOUT, listener.accept())
         .await
         .expect("helper did not connect in time")
-        .expect("socket accept failed");
-    // Connection established; the on-disk socket node is no longer needed
-    // (removing it doesn't affect the live stream).
-    let _ = std::fs::remove_file(&sock);
+        .expect("accept failed");
     (stream, child)
 }
 

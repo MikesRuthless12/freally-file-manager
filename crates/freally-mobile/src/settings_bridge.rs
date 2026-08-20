@@ -34,6 +34,7 @@ pub fn to_persisted(
     apns_p8_pem: String,
     apns_team_id: String,
     apns_key_id: String,
+    apns_bundle_id: String,
     fcm_service_account_json: String,
 ) -> freally_settings::MobileSettings {
     freally_settings::MobileSettings {
@@ -45,6 +46,7 @@ pub fn to_persisted(
         apns_p8_pem,
         apns_team_id,
         apns_key_id,
+        apns_bundle_id,
         fcm_service_account_json,
     }
 }
@@ -168,6 +170,7 @@ mod tests {
         };
         let persisted = to_persisted(
             &runtime,
+            String::new(),
             String::new(),
             String::new(),
             String::new(),

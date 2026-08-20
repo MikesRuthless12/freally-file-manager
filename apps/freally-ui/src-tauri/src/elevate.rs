@@ -26,7 +26,11 @@ use std::path::Path;
 use std::time::Duration;
 
 use freally_helper::capability::Capability;
-use freally_helper::rpc::{PROTOCOL_VERSION, Request, Response, generate_pipe_name};
+use freally_helper::rpc::{PROTOCOL_VERSION, Request, Response};
+// Windows-only now: the Unix side rendezvouses on a loopback port, which
+// has no name to generate.
+#[cfg(windows)]
+use freally_helper::rpc::generate_pipe_name;
 use tokio::io::{AsyncBufReadExt, AsyncRead, AsyncWrite, AsyncWriteExt, BufReader};
 
 /// How long to wait for the elevated helper to connect back after the
@@ -47,6 +51,16 @@ pub enum ElevateError {
     /// mismatch, capability not granted, malformed/short line).
     #[error("handshake failed: {0}")]
     Handshake(String),
+    /// A peer connected but never got as far as being granted
+    /// anything — it spoke the wrong protocol, or said nothing at all.
+    ///
+    /// Separate from [`Self::Handshake`] because it is recoverable:
+    /// nothing privileged has been asked for yet, so the listener can
+    /// drop this connection and keep waiting for the real helper. That
+    /// is what stops any local process from consuming the single
+    /// accept the helper needs just by connecting first.
+    #[error("peer failed to authenticate: {0}")]
+    PeerRejected(String),
 }
 
 /// Spawn `freally-helper` elevated and run the `ElevatedRetry`
@@ -140,58 +154,42 @@ async fn elevated_retry_windows(
 async fn elevated_retry_unix(
     pairs: &[(std::path::PathBuf, std::path::PathBuf)],
 ) -> Result<Vec<Response>, ElevateError> {
-    use std::os::unix::fs::PermissionsExt;
-    use tokio::net::UnixListener;
+    use std::net::{Ipv4Addr, SocketAddr};
 
-    // macOS `sun_path` is only ~104 bytes, so the socket path must stay
-    // short. Bind in $XDG_RUNTIME_DIR when set (already a 0700 per-user
-    // dir — /run/user/<uid> on Linux), else /tmp (short on both Linux and
-    // macOS; NOT $TMPDIR, which is a long /var/folders path on macOS that
-    // overflows SUN_LEN). No intermediate dir: the 64-hex random basename
-    // is the unguessable moat (an attacker can't discover the path to race
-    // our listener before the helper dials in, and even a winning race
-    // yields no privilege — the racer can't perform the elevated copy), and
-    // we tighten the socket node to 0600 once it exists.
-    let sock_name = generate_pipe_name("freally-helper-")
-        .map_err(|e| ElevateError::Unavailable(format!("socket name: {e}")))?;
-    // `XDG_RUNTIME_DIR` is an XDG concept with no meaning on macOS, where
-    // it is normally unset — but a same-user process can set it for a
-    // GUI-launched app (`launchctl setenv`), and on macOS this value is
-    // interpolated into a root `do shell script`. Only honour it on Linux,
-    // where it is `/run/user/<uid>` (0700, per-user) and the spawn is
-    // argv-based via pkexec rather than a shell string.
-    let base = if cfg!(target_os = "linux") {
-        std::env::var("XDG_RUNTIME_DIR")
-            .ok()
-            .filter(|d| !d.is_empty())
-            .map(std::path::PathBuf::from)
-            .unwrap_or_else(|| std::path::PathBuf::from("/tmp"))
-    } else {
-        std::path::PathBuf::from("/tmp")
-    };
-    let sock_path = base.join(&sock_name);
-    let listener = UnixListener::bind(&sock_path)
-        .map_err(|e| ElevateError::Unavailable(format!("bind: {e}")))?;
-    let _ = std::fs::set_permissions(&sock_path, std::fs::Permissions::from_mode(0o600));
+    use tokio::net::TcpListener;
 
-    // Unlink on *every* exit path, not just the one where the helper
-    // connects. The common failure is the user cancelling the consent
-    // dialog: `accept` then times out and each of the four `?` below
-    // returned without unlinking, so every cancelled elevation left a
-    // socket node behind in $XDG_RUNTIME_DIR (or /tmp) for the life of
-    // the machine.
-    struct SockGuard(std::path::PathBuf);
-    impl Drop for SockGuard {
-        fn drop(&mut self) {
-            let _ = std::fs::remove_file(&self.0);
-        }
-    }
-    let _sock_guard = SockGuard(sock_path.clone());
+    // Bind the rendezvous BEFORE the spawn and hold it for the whole
+    // consent window.
+    //
+    // This used to be a `UnixListener` at a random path under
+    // $XDG_RUNTIME_DIR or /tmp, which is not defensible: a process
+    // running as the same uid can `unlink` our node and `bind` its own
+    // while the polkit / osascript dialog is on screen. The user then
+    // authenticates, the now-root helper dials that path, reaches the
+    // attacker, and does what it is told — `elevated_retry` with
+    // `dst: /etc/sudoers.d/…` is a root write and `src: /etc/shadow` a
+    // root read. Neither an unguessable name nor a shared secret helps,
+    // because the child is handed both on an argv the attacker can read.
+    //
+    // A loopback listener has no filesystem node to unlink, and a bound
+    // listening port cannot be taken over by a second `bind` unless
+    // every holder opted into `SO_REUSEPORT`, which we never do. Port 0
+    // lets the kernel pick, so the number is not predictable before we
+    // hold it.
+    let listener = TcpListener::bind(SocketAddr::from((Ipv4Addr::LOCALHOST, 0)))
+        .await
+        .map_err(|e| ElevateError::Unavailable(format!("bind loopback: {e}")))?;
+    let port = listener
+        .local_addr()
+        .map_err(|e| ElevateError::Unavailable(format!("local_addr: {e}")))?
+        .port();
 
     let helper = sibling_helper()?;
-    let sock_str = sock_path.to_string_lossy().into_owned();
-    let (program, args) =
-        freally_helper::build_spawn_command(&helper, &sock_str, &[Capability::ElevatedRetry]);
+    let (program, args) = freally_helper::build_spawn_command(
+        &helper,
+        &port.to_string(),
+        &[Capability::ElevatedRetry],
+    );
     let child = std::process::Command::new(&program)
         .args(&args)
         .stdin(std::process::Stdio::null())
@@ -209,16 +207,46 @@ async fn elevated_retry_unix(
         let _ = child.wait();
     });
 
-    let (stream, _addr) = tokio::time::timeout(CONNECT_TIMEOUT, listener.accept())
-        .await
-        .map_err(|_| ElevateError::Unavailable("accept timed out (consent cancelled?)".into()))?
-        .map_err(|e| ElevateError::Unavailable(format!("accept: {e}")))?;
-    // Drop the socket node as soon as the helper is through, rather
-    // than waiting for `_sock_guard` at end of scope. The guard still
-    // covers the error paths above; this just shortens the window.
-    let _ = std::fs::remove_file(&sock_path);
+    // Accept until someone completes the handshake, or the budget runs
+    // out. Anything on the machine can connect to a loopback port, and
+    // a single `accept` would let a process that connects first and
+    // then says nothing starve the real helper. A peer that fails
+    // before being granted anything is dropped and we keep waiting;
+    // once capabilities are granted, the outcome is the outcome.
+    let deadline = tokio::time::Instant::now() + CONNECT_TIMEOUT;
+    loop {
+        let remaining = deadline.saturating_duration_since(tokio::time::Instant::now());
+        if remaining.is_zero() {
+            return Err(ElevateError::Unavailable(
+                "accept timed out (consent cancelled?)".into(),
+            ));
+        }
+        let accepted = tokio::time::timeout(remaining, listener.accept()).await;
+        let (stream, peer) = match accepted {
+            Err(_elapsed) => {
+                return Err(ElevateError::Unavailable(
+                    "accept timed out (consent cancelled?)".into(),
+                ));
+            }
+            Ok(Ok(pair)) => pair,
+            Ok(Err(e)) => return Err(ElevateError::Unavailable(format!("accept: {e}"))),
+        };
+        // Small newline-delimited frames, each one blocking someone.
+        let _ = stream.set_nodelay(true);
 
-    run_handshake(stream, pairs).await
+        match run_handshake(stream, pairs).await {
+            Err(ElevateError::PeerRejected(why)) => {
+                tracing::warn!(
+                    target: "freally::elevate",
+                    %peer,
+                    reason = %why,
+                    "a peer connected to the elevation port but did not authenticate; \
+                     still waiting for the helper"
+                );
+            }
+            outcome => return outcome,
+        }
+    }
 }
 
 /// Drive the handshake over a connected duplex stream and return one
@@ -251,7 +279,7 @@ where
     match read_response(&mut reader).await? {
         Response::HelloOk { version, .. } if version == PROTOCOL_VERSION => {}
         other => {
-            return Err(ElevateError::Handshake(format!(
+            return Err(ElevateError::PeerRejected(format!(
                 "expected HelloOk v{PROTOCOL_VERSION}, got {other:?}"
             )));
         }
@@ -269,7 +297,7 @@ where
         Response::CapabilitiesGranted { granted }
             if granted.contains(&Capability::ElevatedRetry) => {}
         other => {
-            return Err(ElevateError::Handshake(format!(
+            return Err(ElevateError::PeerRejected(format!(
                 "ElevatedRetry capability not granted: {other:?}"
             )));
         }

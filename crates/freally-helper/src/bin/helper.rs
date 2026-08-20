@@ -1,12 +1,24 @@
 //! `freally-helper` binary entry point.
 //!
 //! Spawned by the main process via the OS-native elevation flow.
-//! Speaks newline-delimited JSON-RPC over either (a) a
-//! `--pipe=`/`--socket=` endpoint the caller created with a
-//! restrictive DACL / 0700 dir (Phase 17d — required when UAC's
-//! `Start-Process -Verb RunAs` severs std-handle inheritance so the
-//! elevated child can't be driven over stdio), or (b) stdin/stdout
-//! when neither arg is given (back-compat + in-process tests).
+//! Speaks newline-delimited JSON-RPC over either (a) an endpoint the
+//! caller created and still holds — `--pipe=` on Windows (a named
+//! pipe with a restrictive DACL), `--port=` on Unix (a `127.0.0.1`
+//! listener) — or (b) stdin/stdout when neither is given, which keeps
+//! back-compat and the in-process tests working.
+//!
+//! The endpoint exists because elevation severs std-handle inheritance.
+//! UAC's `Start-Process -Verb RunAs` on Windows, and `do shell script`
+//! on macOS, both hand the child a fresh set, so it cannot be driven
+//! over the stdio of the process that launched it.
+//!
+//! `--socket=<path>` is deliberately gone. A rendezvous by filesystem
+//! path cannot be defended against a same-uid attacker: they unlink
+//! the node and bind their own while the consent dialog is up, and
+//! this process — running as root by then — connects to them and
+//! does as it is told. `--port=` names a listener the parent already
+//! holds, which nothing else can take over. See
+//! `freally_helper::spawn` for the full reasoning.
 //!
 //! This binary is **never user-facing** — running it directly is
 //! a no-op that reads from a tty and exits as soon as stdin
@@ -33,19 +45,22 @@ fn main() {
         }
     };
 
-    // Phase 17d — when the caller passes `--pipe=` (Windows named pipe)
-    // or `--socket=` (Unix socket), dial that endpoint instead of
-    // stdin/stdout. The elevated child can't inherit the parent's std
-    // handles through UAC, so it connects back over the per-launch
-    // random pipe/socket the parent created + named on the argv.
+    // Phase 17d — when the caller passes `--pipe=` (Windows named
+    // pipe) or `--port=` (Unix loopback listener), dial that endpoint
+    // instead of stdin/stdout. The elevated child cannot inherit the
+    // parent's std handles, so it connects back to the rendezvous the
+    // parent created and named on the argv.
     let endpoint = args.iter().find_map(|a| {
         a.strip_prefix("--pipe=")
-            .or_else(|| a.strip_prefix("--socket="))
-            .map(|s| s.to_string())
+            .map(|s| Endpoint::Pipe(s.to_string()))
+            .or_else(|| {
+                a.strip_prefix("--port=")
+                    .map(|s| Endpoint::LoopbackPort(s.to_string()))
+            })
     });
 
     let exit_code = match endpoint {
-        Some(ep) => match run_over_endpoint(&ep, &argv_requested) {
+        Some(ref ep) => match run_over_endpoint(ep, &argv_requested) {
             Ok(code) => code,
             Err(e) => {
                 eprintln!("freally-helper: endpoint error: {e}");
@@ -67,41 +82,78 @@ fn main() {
     std::process::exit(exit_code);
 }
 
-/// Defence-in-depth: the endpoint's final path component must match the
+/// Where to dial back to. Shaped by the platform, because the two have
+/// nothing in common beyond "the parent already owns it".
+enum Endpoint {
+    /// Windows named pipe path.
+    Pipe(String),
+    /// Decimal TCP port on `127.0.0.1`.
+    LoopbackPort(String),
+}
+
+/// Defence-in-depth: the pipe's final path component must match the
 /// `freally-helper-<64 hex>` shape `rpc::generate_pipe_name` produces,
-/// so a tampered argv can't point the helper at an arbitrary pipe /
-/// socket (e.g. a system pipe). The parent additionally restricts the
-/// pipe DACL / socket-dir perms; this is the helper-side check.
-fn endpoint_name_ok(endpoint: &str) -> bool {
+/// so a tampered argv cannot point the helper at an arbitrary pipe
+/// (e.g. a system one). The parent additionally restricts the pipe
+/// DACL; this is the helper-side check.
+fn pipe_name_ok(endpoint: &str) -> bool {
     let basename = endpoint.rsplit(['/', '\\']).next().unwrap_or(endpoint);
     parse_pipe_name("freally-helper-", basename).is_some()
+}
+
+/// The matching check for `--port=`: a real port, and loopback-only by
+/// construction since the host is hard-coded rather than taken from
+/// the argv. Port 0 is rejected — it means "assign me one", never a
+/// destination.
+fn parse_loopback_port(raw: &str) -> Option<u16> {
+    match raw.parse::<u16>() {
+        Ok(0) | Err(_) => None,
+        Ok(p) => Some(p),
+    }
 }
 
 /// Connect to the caller-created pipe / socket and drive the run-loop
 /// over it; returns the process exit code. No unsafe, no tokio — the
 /// client handle is a plain blocking `File` (Windows pipe) /
 /// `UnixStream` (Unix), `try_clone`d to split read + write halves.
-fn run_over_endpoint(endpoint: &str, argv_requested: &[Capability]) -> std::io::Result<i32> {
-    if !endpoint_name_ok(endpoint) {
-        eprintln!("freally-helper: refusing endpoint with unexpected name shape");
-        return Ok(2);
+fn run_over_endpoint(endpoint: &Endpoint, argv_requested: &[Capability]) -> std::io::Result<i32> {
+    match endpoint {
+        Endpoint::Pipe(name) => {
+            if !pipe_name_ok(name) {
+                eprintln!("freally-helper: refusing pipe with unexpected name shape");
+                return Ok(2);
+            }
+            let pipe = std::fs::OpenOptions::new()
+                .read(true)
+                .write(true)
+                .open(name)?;
+            let mut reader = buf_reader(pipe.try_clone()?);
+            let mut writer = pipe;
+            finish(run_loop(&mut reader, &mut writer, argv_requested))
+        }
+        Endpoint::LoopbackPort(raw) => {
+            let Some(port) = parse_loopback_port(raw) else {
+                eprintln!("freally-helper: refusing endpoint that is not a port");
+                return Ok(2);
+            };
+            // Hard-coded loopback: the argv carries a port and nothing
+            // else, so a tampered argv cannot aim this process at a
+            // host off the machine.
+            let sock = std::net::TcpStream::connect((std::net::Ipv4Addr::LOCALHOST, port))?;
+            // Nagle would sit on our small newline-delimited frames
+            // waiting for more to send; every message here is a
+            // request or a reply someone is blocked on.
+            let _ = sock.set_nodelay(true);
+            let mut reader = buf_reader(sock.try_clone()?);
+            let mut writer = sock;
+            finish(run_loop(&mut reader, &mut writer, argv_requested))
+        }
     }
+}
 
-    #[cfg(windows)]
-    let (mut reader, mut writer) = {
-        let pipe = std::fs::OpenOptions::new()
-            .read(true)
-            .write(true)
-            .open(endpoint)?;
-        (buf_reader(pipe.try_clone()?), pipe)
-    };
-    #[cfg(unix)]
-    let (mut reader, mut writer) = {
-        let sock = std::os::unix::net::UnixStream::connect(endpoint)?;
-        (buf_reader(sock.try_clone()?), sock)
-    };
-
-    match run_loop(&mut reader, &mut writer, argv_requested) {
+/// Map a run-loop outcome onto the process exit code.
+fn finish(outcome: Result<(), TransportError>) -> std::io::Result<i32> {
+    match outcome {
         Ok(()) => Ok(0),
         Err(e) => {
             eprintln!("freally-helper: transport error: {e}");
@@ -332,22 +384,44 @@ mod tests {
         assert_eq!(eff, vec![Capability::ElevatedRetry]);
     }
 
-    /// Phase 17d — the endpoint guard accepts only the
-    /// `freally-helper-<64 hex>` basename shape, on either a Windows
-    /// pipe path or a Unix socket path, and rejects arbitrary targets.
+    /// Phase 17d — the pipe guard accepts only the
+    /// `freally-helper-<64 hex>` basename shape and rejects arbitrary
+    /// targets. Windows-only now: the Unix rendezvous is a port.
     #[test]
-    fn endpoint_name_ok_accepts_generated_shape_rejects_others() {
+    fn pipe_name_ok_accepts_generated_shape_rejects_others() {
         let win = format!(r"\\.\pipe\freally-helper-{}", "a".repeat(64));
-        let unix = format!("/run/user/1000/freally-helper-{}", "b".repeat(64));
-        assert!(endpoint_name_ok(&win));
-        assert!(endpoint_name_ok(&unix));
-        // System pipe, arbitrary file, wrong-length suffix:
-        assert!(!endpoint_name_ok(r"\\.\pipe\lsass"));
-        assert!(!endpoint_name_ok("/etc/passwd"));
-        assert!(!endpoint_name_ok("freally-helper-tooshort"));
-        assert!(!endpoint_name_ok(&format!(
-            "freally-helper-{}",
-            "z".repeat(64)
-        )));
+        assert!(pipe_name_ok(&win));
+        assert!(pipe_name_ok(&format!("freally-helper-{}", "b".repeat(64))));
+        // System pipe, arbitrary file, wrong-length suffix, non-hex:
+        assert!(!pipe_name_ok(r"\\.\pipe\lsass"));
+        assert!(!pipe_name_ok("/etc/passwd"));
+        assert!(!pipe_name_ok("freally-helper-tooshort"));
+        assert!(!pipe_name_ok(&format!("freally-helper-{}", "z".repeat(64))));
+    }
+
+    /// `--port=` is the whole of the Unix rendezvous, so what it
+    /// accepts is a security boundary rather than a parsing detail.
+    /// Port 0 means "assign me one" to `bind` and is never a
+    /// destination; anything that is not a port must not reach
+    /// `connect`; and the host is ours to choose, so an `addr:port`
+    /// string must not be honoured either.
+    #[test]
+    fn loopback_port_accepts_only_a_real_port() {
+        assert_eq!(parse_loopback_port("49871"), Some(49871));
+        assert_eq!(parse_loopback_port("1"), Some(1));
+        assert_eq!(parse_loopback_port("65535"), Some(65535));
+
+        assert_eq!(
+            parse_loopback_port("0"),
+            None,
+            "port 0 is not a destination"
+        );
+        assert_eq!(parse_loopback_port("65536"), None, "out of range");
+        assert_eq!(parse_loopback_port("-1"), None);
+        assert_eq!(parse_loopback_port(""), None);
+        assert_eq!(parse_loopback_port("49871 "), None, "no stray whitespace");
+        assert_eq!(parse_loopback_port("/tmp/freally-helper-abc"), None);
+        assert_eq!(parse_loopback_port("127.0.0.1:49871"), None);
+        assert_eq!(parse_loopback_port("10.0.0.5:49871"), None);
     }
 }

@@ -3,7 +3,37 @@
 //! Orchestrates launching the `freally-helper` binary ELEVATED
 //! (Windows UAC `Start-Process -Verb RunAs` / Linux `pkexec` / macOS
 //! `osascript … with administrator privileges`) and driving the
-//! JSON-RPC handshake over a per-launch random named pipe / socket.
+//! JSON-RPC handshake over a per-launch rendezvous the parent owns.
+//!
+//! # Why Unix rendezvouses on a loopback port, not a socket file
+//!
+//! The Unix side used to bind a `UnixListener` at a random path and
+//! hand that path to the elevated child. A filesystem rendezvous is
+//! not defensible against an attacker running as the **same uid**:
+//! they can `unlink` our node and `bind` their own while the consent
+//! dialog is up. The user then authenticates, the root helper dials
+//! the attacker, and the attacker drives it — `elevated_retry` with
+//! `dst: /etc/sudoers.d/…` is a root write, `src: /etc/shadow` a root
+//! read. An unguessable name does not help (the child is given it on
+//! an argv anyone can read), and neither does a shared secret, for
+//! the same reason.
+//!
+//! A listening TCP socket on `127.0.0.1` has no filesystem node to
+//! unlink and cannot be taken over: the parent binds port 0, holds
+//! the listener across the whole consent window, and never sets
+//! `SO_REUSEPORT`, so a second `bind` of that port fails. There is no
+//! window in which the child can reach anyone but us.
+//!
+//! What this does not stop: a same-uid attacker can still *connect*
+//! to that port and answer as if it were the helper. That costs them
+//! nothing and gains them nothing — they are the client, so they can
+//! spoof a result but cannot ask for a privileged operation. The
+//! parent keeps accepting until a peer completes the handshake, so a
+//! connection that stays silent or speaks the wrong protocol cannot
+//! consume the one accept the real helper needs. Distinguishing the
+//! two properly needs `SO_PEERCRED` / `LOCAL_PEERPID`, which means
+//! `libc` and `unsafe` in two crates that forbid it; the escalation
+//! path is closed either way, which is the part that mattered.
 //!
 //! This crate stays `#![forbid(unsafe_code)]`: the actual elevated
 //! exec uses `std::process::Command` (safe), and the secure
@@ -38,18 +68,28 @@ pub fn should_escalate(resp: &Response) -> bool {
 }
 
 /// Build the OS-native command that launches `helper_path` elevated,
-/// telling it which pipe / socket to connect back on and which
-/// capabilities the caller requests (the argv UPPER bound of the
-/// Phase 17j two-phase grant — the matching lower bound is sent over
-/// the pipe via `Request::GrantCapabilities`).
+/// telling it where to connect back and which capabilities the caller
+/// requests (the argv UPPER bound of the Phase 17j two-phase grant —
+/// the matching lower bound is sent over the connection via
+/// `Request::GrantCapabilities`).
+///
+/// `endpoint` is platform-shaped, and the caller must supply the
+/// matching form:
+///
+/// - **Windows** — the named pipe, from
+///   [`crate::rpc::generate_pipe_name`]. The pipe server is created
+///   before the spawn with `FILE_FLAG_FIRST_PIPE_INSTANCE` and a
+///   two-ACE DACL, so it cannot be pre-empted or unlinked.
+/// - **Unix** — the decimal port of a `127.0.0.1` listener the parent
+///   already holds. See the module docs for why this is not a socket
+///   path.
 ///
 /// Pure: returns `(program, args)` for a `std::process::Command`
 /// WITHOUT spawning, so the consent-flow argv can be asserted in
 /// tests where the real UAC / polkit dialog cannot be driven.
-/// `pipe_or_socket` MUST come from [`crate::rpc::generate_pipe_name`].
 pub fn build_spawn_command(
     helper_path: &str,
-    pipe_or_socket: &str,
+    endpoint: &str,
     capabilities: &[Capability],
 ) -> (String, Vec<String>) {
     let caps = capabilities
@@ -70,7 +110,7 @@ pub fn build_spawn_command(
             "Start-Process -Verb RunAs -WindowStyle Hidden -FilePath '{}' \
              -ArgumentList @('--pipe={}','--capabilities={}')",
             ps_escape(helper_path),
-            ps_escape(pipe_or_socket),
+            ps_escape(endpoint),
             ps_escape(&caps),
         );
         (
@@ -86,11 +126,14 @@ pub fn build_spawn_command(
     #[cfg(target_os = "linux")]
     {
         // GUI consent via polkit; headless callers fall back to `sudo`.
+        // `--port=`, not `--socket=`: the rendezvous is a loopback
+        // listener the parent holds, so there is no node for a
+        // same-uid process to unlink out from under us.
         (
             "pkexec".to_string(),
             vec![
                 helper_path.to_string(),
-                format!("--socket={pipe_or_socket}"),
+                format!("--port={endpoint}"),
                 format!("--capabilities={caps}"),
             ],
         )
@@ -98,18 +141,23 @@ pub fn build_spawn_command(
     #[cfg(target_os = "macos")]
     {
         // System auth dialog; the child runs as root.
+        // `--port=`, not `--socket=` — see the module docs. This
+        // matters more here than on Linux: `do shell script` cannot
+        // inherit a file descriptor, so a socketpair is not available
+        // as an alternative and the loopback listener is the only way
+        // to hold the rendezvous ourselves.
         let script = format!(
-            "do shell script \"{} --socket={} --capabilities={}\" \
+            "do shell script \"{} --port={} --capabilities={}\" \
              with administrator privileges",
             sh_escape(helper_path),
-            sh_escape(pipe_or_socket),
+            sh_escape(endpoint),
             sh_escape(&caps),
         );
         ("osascript".to_string(), vec!["-e".to_string(), script])
     }
     #[cfg(not(any(target_os = "windows", target_os = "linux", target_os = "macos")))]
     {
-        let _ = (helper_path, pipe_or_socket, caps);
+        let _ = (helper_path, endpoint, caps);
         ("true".to_string(), Vec::new())
     }
 }
@@ -240,18 +288,29 @@ mod tests {
         }));
     }
 
+    /// The endpoint the caller passes is platform-shaped: a pipe name
+    /// on Windows, a loopback port on Unix.
+    fn endpoint_for_host() -> &'static str {
+        if cfg!(windows) {
+            "freally-helper-pipe-0123456789abcdef"
+        } else {
+            "49871"
+        }
+    }
+
     #[test]
     fn build_spawn_command_carries_pipe_and_capability() {
+        let endpoint = endpoint_for_host();
         let (program, args) = build_spawn_command(
             "/opt/freally/freally-helper",
-            "freally-helper-pipe-0123456789abcdef",
+            endpoint,
             &[Capability::ElevatedRetry],
         );
         let joined = args.join(" ");
         assert!(!program.is_empty(), "program must be set");
         assert!(
-            joined.contains("freally-helper-pipe-0123456789abcdef"),
-            "the pipe/socket name must be forwarded: {joined}"
+            joined.contains(endpoint),
+            "the endpoint must be forwarded: {joined}"
         );
         assert!(
             joined.contains("elevated_retry"),
@@ -260,6 +319,32 @@ mod tests {
         assert!(
             joined.contains("freally-helper") || program.contains("freally-helper"),
             "the helper path must be referenced: program={program} args={joined}"
+        );
+    }
+
+    /// The Unix spawn must never name a filesystem rendezvous.
+    ///
+    /// `--socket=<path>` was the vulnerability: a process running as
+    /// the same uid unlinks that node and binds its own while the
+    /// consent dialog is up, so the helper — root by then — connects
+    /// to the attacker and takes instructions. A port names a listener
+    /// the parent already holds and cannot be taken from it.
+    #[cfg(all(unix, not(windows)))]
+    #[test]
+    fn unix_spawn_rendezvouses_on_a_port_not_a_path() {
+        let (_program, args) = build_spawn_command(
+            "/opt/freally/freally-helper",
+            "49871",
+            &[Capability::ElevatedRetry],
+        );
+        let joined = args.join(" ");
+        assert!(
+            joined.contains("--port=49871"),
+            "must pass the port: {joined}"
+        );
+        assert!(
+            !joined.contains("--socket="),
+            "must not rendezvous on a filesystem path: {joined}"
         );
     }
 

@@ -2596,6 +2596,11 @@ pub struct MobileSettings {
     pub apns_team_id: String,
     /// Apple-issued key identifier (10 chars).
     pub apns_key_id: String,
+    /// The iOS app bundle identifier, sent as the mandatory
+    /// `apns-topic` header. APNs rejects a push without it, so an
+    /// empty value disables APNs the same way a missing key does.
+    #[serde(default)]
+    pub apns_bundle_id: String,
     /// Google service-account JSON for FCM HTTP v1. Empty string
     /// disables FCM pushes.
     pub fcm_service_account_json: String,

@@ -26,6 +26,25 @@ use std::path::{Path, PathBuf};
 /// For a path that does not exist yet (a create/write target) the parent
 /// directory is what must be contained — the final component is the name
 /// we are about to create.
+/// `ensure_within_root` for async callers.
+///
+/// The sync form issues `canonicalize` plus one `symlink_metadata`
+/// per missing ancestor, and every request on the S3 and SFTP
+/// surfaces makes at least one such call. Run directly from a handler
+/// those syscalls block a tokio worker: on a local disk that is
+/// microseconds and invisible, but this server exists to publish an
+/// arbitrary directory, and when that directory is an NFS or SMB
+/// mount a stat can hang for seconds. One stalled worker stalls every
+/// other request scheduled on it, so the cost lands on clients doing
+/// nothing wrong.
+///
+/// `spawn_blocking` puts it on the pool that exists for exactly this.
+pub(crate) async fn ensure_within_root_async(path: PathBuf, root: PathBuf) -> io::Result<()> {
+    tokio::task::spawn_blocking(move || ensure_within_root(&path, &root))
+        .await
+        .map_err(|e| io::Error::other(format!("jail check panicked: {e}")))?
+}
+
 pub(crate) fn ensure_within_root(path: &Path, root: &Path) -> io::Result<()> {
     let real_root = root.canonicalize()?;
 

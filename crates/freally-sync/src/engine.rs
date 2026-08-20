@@ -33,7 +33,7 @@ use crate::types::{
     Conflict, ConflictKind, CopyHookFactory, Direction, FileMeta, SideState, SyncAction, SyncEvent,
     SyncMode, SyncOptions, SyncPair, SyncReport,
 };
-use crate::walker::{join_relpath, scan_side};
+use crate::walker::{fold_relpath, is_case_insensitive, join_relpath, scan_side};
 
 /// The one public entry point.
 ///
@@ -127,10 +127,31 @@ pub async fn sync(
 
     // Collect the universe of relpaths seen on either side + any
     // relpath with a live baseline row.
+    let db_keys: Vec<String> = db.all_files()?.into_iter().map(|(k, _)| k).collect();
+
+    // On a case-insensitive volume two spellings name one file, and the
+    // two sides are walked independently, so nothing stops them
+    // reporting different ones. Collapse them before the union or the
+    // engine sees two files that are each "missing" from the other
+    // side — see `unify_case_variants` for what that costs.
+    let (left, right) = if is_case_insensitive(&pair.left) || is_case_insensitive(&pair.right) {
+        unify_case_variants(left, right, &db_keys)
+    } else {
+        (left, right)
+    };
+
     let mut relpaths: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
     relpaths.extend(left.keys().cloned());
     relpaths.extend(right.keys().cloned());
-    for (k, _) in db.all_files()? {
+    // A baseline row spelled differently from the live sides must not
+    // enter the union as a third, phantom relpath — it would be planned
+    // as a deletion of a file that is present under its other spelling.
+    let seen_folds: std::collections::HashSet<String> =
+        relpaths.iter().map(|r| fold_relpath(r)).collect();
+    for k in db_keys {
+        if seen_folds.contains(&fold_relpath(&k)) {
+            continue;
+        }
         relpaths.insert(k);
     }
 
@@ -730,6 +751,65 @@ pub fn decide_action(
     }
 }
 
+/// Collapse case-variant spellings of the same file onto one relpath.
+///
+/// On NTFS, exFAT and a default-configured APFS, `Foo.txt` and
+/// `foo.txt` are the same file. The two sides are walked
+/// independently, so nothing stops them reporting different spellings —
+/// a file renamed only in case, or two roots seeded from different
+/// sources. With byte-exact keys the engine then saw two files, each
+/// absent from the other side, and planned a copy in both directions.
+/// Both writes land on the same on-disk file, so the second undoes the
+/// first; under a mirror mode the follow-up pass sees the loser
+/// missing and deletes it.
+///
+/// Only the map *key* is folded. `SideState::relpath` keeps a real
+/// on-disk spelling, because that is what has to be opened.
+///
+/// The surviving spelling is the baseline's if it has one, else the
+/// left side's, else the right's. Preferring what the database already
+/// records keeps the baseline key from churning between runs, which
+/// would otherwise re-seed the row every pass.
+fn unify_case_variants(
+    left: std::collections::BTreeMap<String, SideState>,
+    right: std::collections::BTreeMap<String, SideState>,
+    db_keys: &[String],
+) -> (
+    std::collections::BTreeMap<String, SideState>,
+    std::collections::BTreeMap<String, SideState>,
+) {
+    use std::collections::{BTreeMap, HashMap};
+
+    let mut canonical: HashMap<String, String> = HashMap::new();
+    // Lowest-priority first, so a later insert overwrites: right, then
+    // left, then the baseline.
+    for k in right.keys().chain(left.keys()) {
+        canonical.insert(fold_relpath(k), k.clone());
+    }
+    for k in db_keys {
+        canonical.insert(fold_relpath(k), k.clone());
+    }
+
+    let rekey = |side: BTreeMap<String, SideState>| -> BTreeMap<String, SideState> {
+        let mut out: BTreeMap<String, SideState> = BTreeMap::new();
+        for (key, mut state) in side {
+            let chosen = canonical
+                .get(&fold_relpath(&key))
+                .cloned()
+                .unwrap_or_else(|| key.clone());
+            state.relpath = chosen.clone();
+            // Two spellings on ONE side can only happen on a volume
+            // that is case-sensitive after all — the probe can be
+            // wrong about a network mount. Keep the first and leave
+            // the other alone rather than silently dropping a file.
+            out.entry(chosen).or_insert(state);
+        }
+        out
+    };
+
+    (rekey(left), rekey(right))
+}
+
 fn matches_baseline(current: Option<&FileMeta>, baseline: Option<&FileRecord>) -> bool {
     match (current, baseline) {
         (Some(c), Some(b)) => c.blake3 == b.blake3 && c.size == b.size,
@@ -1199,6 +1279,89 @@ mod tests {
             size: 4,
             blake3: [blake3_byte; 32],
         }
+    }
+
+    fn side_map(
+        entries: &[(&str, Option<FileMeta>)],
+    ) -> std::collections::BTreeMap<String, SideState> {
+        entries
+            .iter()
+            .map(|(p, m)| ((*p).to_string(), side_state(p, m.clone())))
+            .collect()
+    }
+
+    /// `Foo.txt` on one side and `foo.txt` on the other are one file on
+    /// a case-insensitive volume. Keyed byte-exactly they looked like
+    /// two files, each absent from the other side, so the engine
+    /// planned a copy in both directions onto the same on-disk file —
+    /// and a mirror pass then deleted the loser.
+    #[test]
+    fn case_variants_collapse_to_one_relpath() {
+        let left = side_map(&[("Photos/Foo.txt", Some(meta(1, 100)))]);
+        let right = side_map(&[("photos/foo.txt", Some(meta(1, 100)))]);
+
+        let (l, r) = unify_case_variants(left, right, &[]);
+
+        assert_eq!(l.len(), 1);
+        assert_eq!(r.len(), 1);
+        let lk = l.keys().next().unwrap();
+        let rk = r.keys().next().unwrap();
+        assert_eq!(lk, rk, "both sides must land on one key");
+        assert_eq!(
+            lk, "Photos/Foo.txt",
+            "with no baseline, the left spelling wins"
+        );
+        // The stored relpath is a real on-disk spelling, not the fold.
+        assert_eq!(r.values().next().unwrap().relpath, "Photos/Foo.txt");
+    }
+
+    /// The baseline spelling wins over both sides, so the database key
+    /// does not churn from run to run and re-seed the row every pass.
+    #[test]
+    fn the_baseline_spelling_is_preferred() {
+        let left = side_map(&[("Report.PDF", Some(meta(1, 100)))]);
+        let right = side_map(&[("report.pdf", Some(meta(1, 100)))]);
+        let db_keys = vec!["RePoRt.pdf".to_string()];
+
+        let (l, r) = unify_case_variants(left, right, &db_keys);
+
+        assert_eq!(l.keys().next().unwrap(), "RePoRt.pdf");
+        assert_eq!(r.keys().next().unwrap(), "RePoRt.pdf");
+    }
+
+    /// Distinct names must not be merged just because they share a
+    /// prefix or differ by more than case.
+    #[test]
+    fn genuinely_different_names_stay_separate() {
+        let left = side_map(&[
+            ("a.txt", Some(meta(1, 100))),
+            ("a2.txt", Some(meta(2, 100))),
+            ("dir/a.txt", Some(meta(3, 100))),
+        ]);
+        let (l, _r) = unify_case_variants(left, side_map(&[]), &[]);
+        assert_eq!(
+            l.len(),
+            3,
+            "no over-merging: {:?}",
+            l.keys().collect::<Vec<_>>()
+        );
+    }
+
+    /// If the probe is wrong about a volume — a case-sensitive network
+    /// mount, say — one side can legitimately hold both spellings.
+    /// Dropping one would lose a file, so the first is kept and the
+    /// second left where it is rather than silently discarded.
+    #[test]
+    fn two_spellings_on_one_side_do_not_lose_a_file() {
+        let left = side_map(&[
+            ("Foo.txt", Some(meta(1, 100))),
+            ("foo.txt", Some(meta(2, 200))),
+        ]);
+        let (l, _r) = unify_case_variants(left, side_map(&[]), &[]);
+        assert_eq!(l.len(), 1, "they fold onto one key by construction");
+        // Whichever survives must carry a real spelling.
+        let kept = l.values().next().unwrap();
+        assert!(kept.relpath == "Foo.txt" || kept.relpath == "foo.txt");
     }
 
     #[test]
