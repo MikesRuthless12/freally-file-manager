@@ -338,8 +338,12 @@ mod tests {
             &[Capability::ElevatedRetry],
         );
         let joined = args.join(" ");
+        // macOS POSIX-quotes every field before the AppleScript layer,
+        // so the port arrives as --port=(quote)49871(quote) there and bare
+        // on Linux. Both are correct; asserting only the Linux shape made
+        // this fail on the one platform that cannot be run locally.
         assert!(
-            joined.contains("--port=49871"),
+            joined.contains("--port=49871") || joined.contains("--port='49871'"),
             "must pass the port: {joined}"
         );
         assert!(
