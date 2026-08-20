@@ -1,5 +1,5 @@
-app-name = Freally File Manager v0.22.0
-window-title = Freally File Manager v0.22.0
+app-name = Freally File Manager v1.0.0
+window-title = Freally File Manager v1.0.0
 shred-ssd-advisory = 경고: 이 대상은 SSD에 있습니다. 웨어 레벨링과 오버 프로비저닝으로 인해 데이터가 논리 블록 주소 밖으로 이동하기 때문에 다중 패스 덮어쓰기로는 플래시 메모리를 안정적으로 소거할 수 없습니다. 솔리드 스테이트 미디어에는 ATA SECURE ERASE, Secure Erase를 사용한 NVMe Format, 또는 키를 폐기하는 전체 디스크 암호화를 사용하세요.
 
 # Global aggregate states (header pill)

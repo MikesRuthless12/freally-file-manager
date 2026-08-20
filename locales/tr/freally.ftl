@@ -1,5 +1,5 @@
-app-name = Freally File Manager v0.22.0
-window-title = Freally File Manager v0.22.0
+app-name = Freally File Manager v1.0.0
+window-title = Freally File Manager v1.0.0
 shred-ssd-advisory = Uyarı: bu hedef bir SSD üzerinde bulunuyor. Çok geçişli üzerine yazmalar flash belleği güvenilir şekilde temizlemez; çünkü aşınma dengeleme ve fazla yer ayırma, verileri mantıksal blok adresinin altından taşır. Katı hal ortamları için ATA SECURE ERASE, Güvenli Silmeli NVMe Format veya anahtarı imha edilen tam disk şifrelemesini tercih edin.
 
 # Global aggregate states (header pill)

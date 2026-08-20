@@ -255,4 +255,27 @@ ignore = [
     # 0.8 → 0.9 ecosystem (age 0.12, rsa 0.10, etc.); single-bump
     # cascade waits on `age` upstream.
     "RUSTSEC-2026-0097",
+    # `arrayref` — the ENTIRE 0.3.x line was yanked by the author on
+    # 2026-08-20, and the one non-yanked release, 0.3.10, declares a
+    # dependency on `proc-macro1`: a name that does not exist on
+    # crates.io and is one character off `proc-macro2`. Resolution
+    # against 0.3.10 fails outright, so it is not a version anything
+    # can move to, and its shape is the shape of a typosquat rather
+    # than a fix.
+    #
+    # `blake3 1.8.4` requires `arrayref ^0.3.5`, so every version it can
+    # accept is yanked. There is no lockfile edit that clears this.
+    #
+    # What is pinned here is 0.3.9 — the exact version this workspace
+    # has always built and tested against, checksum
+    # 76a2e8124351fda1ef8aaaa3bbd7ebbcb486bbcd4225aca0aa0d84bb2db8fecb,
+    # which cargo verifies on every fetch. A yank does not alter or
+    # withdraw published bytes; it only stops *new* resolutions from
+    # selecting the version. So this is an availability signal, not a
+    # compromise of the code in the lockfile, and cargo-audit reports no
+    # advisory against it.
+    #
+    # Re-audit when `blake3` widens its requirement or `arrayref`
+    # publishes a 0.3.x that resolves. Drop this entry then.
+    { crate = "arrayref@0.3.9", reason = "whole 0.3.x line yanked upstream; 0.3.10 depends on the non-existent `proc-macro1`, so no reachable version is unyanked" },
 ]

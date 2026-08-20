@@ -397,7 +397,7 @@ export const test = base.extend<Fixtures>({
         path: "",
       }));
       reg.setHandlerIfMissing("bug_report_context", () => ({
-        version: "0.22.0",
+        version: "1.0.0",
         os: "windows",
         arch: "x86_64",
         hasCrash: false,

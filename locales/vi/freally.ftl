@@ -1,5 +1,5 @@
-app-name = Freally File Manager v0.22.0
-window-title = Freally File Manager v0.22.0
+app-name = Freally File Manager v1.0.0
+window-title = Freally File Manager v1.0.0
 shred-ssd-advisory = Cảnh báo: ổ đích này là SSD. Ghi đè nhiều lượt không thể xóa sạch bộ nhớ flash một cách đáng tin cậy vì cơ chế cân bằng hao mòn và dự phòng dung lượng đẩy dữ liệu ra khỏi địa chỉ khối logic. Với ổ thể rắn, hãy dùng ATA SECURE ERASE, NVMe Format kèm Secure Erase, hoặc mã hóa toàn ổ rồi hủy khóa.
 
 # Global aggregate states (header pill)

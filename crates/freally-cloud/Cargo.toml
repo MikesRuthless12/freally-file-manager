@@ -58,12 +58,12 @@ futures = "0.3"
 bytes = "1"
 async-trait = "0.1"
 # Phase 32b — CloudSink adapter against freally-core's trait bound.
-freally-core = { path = "../freally-core", version = "0.22" }
+freally-core = { path = "../freally-core", version = "1.0" }
 # Portable installs cannot use the host keychain (the entry would
 # outlive the stick), so the fallback store is an age-encrypted file.
 # Reuses the Phase 47 crypt pipeline rather than depending on `age`
 # directly, so both paths share one audited encrypt/decrypt seam.
-freally-crypt = { path = "../freally-crypt", version = "0.22" }
+freally-crypt = { path = "../freally-crypt", version = "1.0" }
 # `SecretString` for the passphrase — same major as freally-crypt so
 # the two unify on one type.
 secrecy = "0.10"
@@ -128,11 +128,11 @@ tokio = { version = "1", features = [
     "test-util",
 ] }
 toml = "0.9"
-freally-settings = { path = "../freally-settings", version = "0.22" }
+freally-settings = { path = "../freally-settings", version = "1.0" }
 # Phase 32d — smoke exercises the `copy_file` engine-level cloud-sink
 # branch end-to-end. Dev-only so the release graph stays independent
 # of freally-core.
-freally-core = { path = "../freally-core", version = "0.22" }
+freally-core = { path = "../freally-core", version = "1.0" }
 
 
 [[test]]

@@ -201,3 +201,7 @@ REVIEW-BACKLOG.md
 # product. Unshipped-product planning, same class as docs/ROADMAP.md
 # above, and this repo is public.
 /vendor/freally-central/Freally-Central-Feature-Roadmap.md
+
+# cargo-mutants run output. Regenerated per run and machine-specific.
+/mutants.out/
+/mutants.out.old/

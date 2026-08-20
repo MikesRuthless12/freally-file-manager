@@ -1,5 +1,5 @@
-app-name = Freally File Manager v0.22.0
-window-title = Freally File Manager v0.22.0
+app-name = Freally File Manager v1.0.0
+window-title = Freally File Manager v1.0.0
 shred-ssd-advisory = Warnung: Dieses Ziel liegt auf einer SSD. Mehrfaches Überschreiben säubert Flash-Speicher nicht zuverlässig, da Wear-Leveling und Over-Provisioning die Daten unter der logischen Blockadresse wegbewegen. Für Solid-State-Medien nutze stattdessen ATA SECURE ERASE, NVMe Format mit Secure Erase oder eine vollständige Festplattenverschlüsselung mit verworfenem Schlüssel.
 
 # Global aggregate states (header pill)

@@ -1,5 +1,5 @@
-app-name = Freally File Manager v0.22.0
-window-title = Freally File Manager v0.22.0
+app-name = Freally File Manager v1.0.0
+window-title = Freally File Manager v1.0.0
 shred-ssd-advisory = تحذير: هذا الهدف موجود على قرص SSD. عمليات الكتابة فوق البيانات متعددة المرات لا تمسح ذاكرة الفلاش بشكل موثوق، لأن موازنة التآكل والتخصيص الزائد ينقلان البيانات بعيدًا عن عنوان الكتلة المنطقي. بالنسبة لوسائط الحالة الصلبة، يُفضّل استخدام ATA SECURE ERASE أو NVMe Format مع المسح الآمن أو التشفير الكامل للقرص مع التخلص من المفتاح.
 
 # Global aggregate states (header pill)

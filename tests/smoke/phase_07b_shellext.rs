@@ -159,7 +159,7 @@ fn class_registration_separates_threading_model_from_default() {
     let keys = class_registration_keys(
         InstallScope::PerUser,
         CLSID_MOVE_STR,
-        "Freally File Manager v0.22.0 — Move command",
+        "Freally File Manager v1.0.0 — Move command",
         r"C:\x.dll",
     );
     // Three tuples: class-key default + InprocServer32 default + InprocServer32 ThreadingModel.

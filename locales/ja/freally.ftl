@@ -1,5 +1,5 @@
-app-name = Freally File Manager v0.22.0
-window-title = Freally File Manager v0.22.0
+app-name = Freally File Manager v1.0.0
+window-title = Freally File Manager v1.0.0
 shred-ssd-advisory = 警告: この対象は SSD 上にあります。ウェアレベリングとオーバープロビジョニングによりデータが論理ブロックアドレスの下から移動するため、複数回の上書きではフラッシュメモリを確実に消去できません。ソリッドステートメディアには、ATA SECURE ERASE、NVMe Format（Secure Erase 付き）、または鍵を破棄した全ディスク暗号化を推奨します。
 
 # Global aggregate states (header pill)

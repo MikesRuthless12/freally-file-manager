@@ -147,6 +147,32 @@ fn sh_escape(s: &str) -> String {
 mod tests {
     use super::*;
 
+    /// Undo the AppleScript-literal layer so a test can assert on what
+    /// `/bin/sh` actually receives. AppleScript turns `\\` back into
+    /// `\` and `\"` into `"`. Decoding in one pass, rather than two
+    /// chained `replace` calls, avoids re-decoding the output of the
+    /// first pass.
+    #[cfg(target_os = "macos")]
+    fn applescript_decode(s: &str) -> String {
+        let mut out = String::with_capacity(s.len());
+        let mut chars = s.chars();
+        while let Some(c) = chars.next() {
+            if c != '\\' {
+                out.push(c);
+                continue;
+            }
+            match chars.next() {
+                Some(next @ ('\\' | '"')) => out.push(next),
+                Some(next) => {
+                    out.push('\\');
+                    out.push(next);
+                }
+                None => out.push('\\'),
+            }
+        }
+        out
+    }
+
     /// `do shell script` runs its argument through `/bin/sh` as root, so
     /// every shell metacharacter has to be neutralised — not just the two
     /// AppleScript-literal ones. A path containing `$(...)` must survive
@@ -165,10 +191,26 @@ mod tests {
         );
 
         // An embedded single quote must not be able to close the literal.
+        //
+        // The result carries TWO layers: the POSIX `'\''` idiom for
+        // /bin/sh, and then the AppleScript escaping applied on top,
+        // which doubles that backslash. Asserting on the raw string
+        // therefore has to look for `'\\''` — checking for the
+        // single-backslash form tested the intermediate value, not what
+        // `sh_escape` returns.
         let with_quote = sh_escape("/tmp/it's/sock");
-        assert!(
-            with_quote.contains(r"'\''"),
-            "embedded quote must be escaped as '\\'': {with_quote}"
+        assert_eq!(
+            with_quote, r"'/tmp/it'\\''s/sock'",
+            "both escaping layers must be present"
+        );
+
+        // And the layer that matters: after AppleScript unescapes it,
+        // /bin/sh must see a well-formed single-quoted literal whose
+        // embedded quote closes and reopens rather than terminating it.
+        assert_eq!(
+            applescript_decode(&with_quote),
+            r"'/tmp/it'\''s/sock'",
+            "the shell must receive the POSIX-quoted form"
         );
 
         // Spaces stay inside one argument rather than splitting it.

@@ -1,5 +1,5 @@
-app-name = Freally File Manager v0.22.0
-window-title = Freally File Manager v0.22.0
+app-name = Freally File Manager v1.0.0
+window-title = Freally File Manager v1.0.0
 shred-ssd-advisory = 警告：此目标位于 SSD 上。多次覆写无法可靠清除闪存数据，因为磨损均衡和预留空间会将数据从逻辑块地址下移走。对于固态存储介质，请优先使用 ATA SECURE ERASE、带安全擦除的 NVMe Format，或使用全盘加密并丢弃密钥。
 
 # Global aggregate states (header pill)

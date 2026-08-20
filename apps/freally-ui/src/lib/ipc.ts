@@ -640,7 +640,7 @@ export function defaultOffloadOpts(): OffloadOptsDto {
     // Injected by Vite from package.json, which is bumped in lockstep
     // with Cargo.toml — mirroring the Rust side's
     // `concat!("v", env!("CARGO_PKG_VERSION"))`. This was hardcoded
-    // `"v1.0.0"` against a 0.22.0 workspace, so the wizard's prefilled
+    // `"v1.0.0"` against a 0.22.0 workspace (the workspace is 1.0.0 now), so the wizard's prefilled
     // default produced a template fetching an artifact that does not
     // exist. Same bug as commit fe850b7, on the TypeScript side.
     freallyRelease: `v${__APP_VERSION__}`,

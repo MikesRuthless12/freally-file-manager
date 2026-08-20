@@ -1,5 +1,5 @@
-app-name = Freally File Manager v0.22.0
-window-title = Freally File Manager v0.22.0
+app-name = Freally File Manager v1.0.0
+window-title = Freally File Manager v1.0.0
 shred-ssd-advisory = Attention : cette cible se trouve sur un SSD. Les réécritures multipasses ne nettoient pas la mémoire flash de façon fiable, car le nivellement d'usure et le surprovisionnement déplacent les données hors de l'adresse de bloc logique. Pour les supports SSD, préférez ATA SECURE ERASE, NVMe Format avec Secure Erase ou le chiffrement intégral du disque avec destruction de la clé.
 
 # Global aggregate states (header pill)

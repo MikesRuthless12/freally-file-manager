@@ -97,7 +97,7 @@ pub enum CliError {
 /// Short CLI help text printed by `--help` / `-h`. Not localised; see
 /// [`CliError`] note above.
 pub const HELP: &str = "\
-Freally File Manager v0.22.0 — shell-integration CLI
+Freally File Manager v1.0.0 — shell-integration CLI
 
 Usage:
     freally                                  Launch the GUI

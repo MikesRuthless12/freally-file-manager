@@ -9,7 +9,7 @@ const host = process.env.TAURI_DEV_HOST;
 // `package.json` is bumped in lockstep with `Cargo.toml` and
 // `tauri.conf.json` at release time, so reading it here removes the
 // class of bug where a hardcoded version silently rots: the offload
-// wizard shipped `freallyRelease: "v1.0.0"` against a 0.22.0 workspace,
+// wizard shipped `freallyRelease: "v1.0.0"` against a 0.22.0 workspace (the workspace is 1.0.0 now),
 // which rendered a cloud-init template pointing at a release artifact
 // that does not exist — the VM boots, fails to download the binary, and
 // self-destructs an hour later having done nothing.

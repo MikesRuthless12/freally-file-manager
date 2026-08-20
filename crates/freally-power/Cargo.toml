@@ -16,7 +16,7 @@ workspace = true
 # Phase 21 stub enums live in `freally-shape` — re-used here so the
 # Network Settings tab and the Power & State tab share one vocabulary
 # for `NetworkClass`.
-freally-shape = { path = "../freally-shape", version = "0.22" }
+freally-shape = { path = "../freally-shape", version = "1.0" }
 # Cross-platform battery probe. Apache-2.0 OR MIT. Phase 21 brief
 # flagged this as the crate to pull in during Phase 31; it exposes a
 # safe enumerator + `Manager::batteries()` + per-battery
@@ -50,7 +50,7 @@ raw-cpuid = "11"
 x11rb = { version = "0.13", default-features = false }
 
 [target.'cfg(target_os = "windows")'.dependencies]
-freally-platform = { path = "../freally-platform", version = "0.22" }
+freally-platform = { path = "../freally-platform", version = "1.0" }
 
 [dev-dependencies]
 tokio = { version = "1", features = [
@@ -65,7 +65,7 @@ tempfile = "3"
 # Phase 31 smoke exercises the TOML round-trip of
 # `PowerPoliciesSettings`. Dev-only so the power crate's release
 # graph stays independent of `freally-settings`.
-freally-settings = { path = "../freally-settings", version = "0.22" }
+freally-settings = { path = "../freally-settings", version = "1.0" }
 
 # Phase 31 smoke test lives at the workspace root so it's easy to find
 # alongside the other phase smokes.

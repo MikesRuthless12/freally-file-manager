@@ -120,7 +120,7 @@ pub fn render_cloudinit_template(src: &Backend, dst: &Backend, opts: &OffloadOpt
     // The Linux artifact name carries the version twice: once inside
     // `productName` (which itself includes the `v` prefix) and once from
     // Tauri's own version field —
-    // `Freally.File.Manager.v0.22.0_0.22.0_amd64.AppImage`. So the tag
+    // `Freally.File.Manager.v1.0.0_1.0.0_amd64.AppImage`. So the tag
     // and the bare version are both needed to address it.
     let version = release.strip_prefix('v').unwrap_or(&release);
     let watchdog_minutes = opts.self_destruct_minutes.max(1);

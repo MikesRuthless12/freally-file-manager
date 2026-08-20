@@ -1,5 +1,5 @@
-app-name = Freally File Manager v0.22.0
-window-title = Freally File Manager v0.22.0
+app-name = Freally File Manager v1.0.0
+window-title = Freally File Manager v1.0.0
 shred-ssd-advisory = Peringatan: target ini berada di SSD. Penimpaan multi-lintasan tidak dapat membersihkan memori flash secara andal karena wear-leveling dan over-provisioning memindahkan data keluar dari alamat blok logis. Untuk media solid-state, gunakan ATA SECURE ERASE, NVMe Format dengan Secure Erase, atau enkripsi seluruh disk dengan kunci yang dibuang.
 
 # Global aggregate states (header pill)

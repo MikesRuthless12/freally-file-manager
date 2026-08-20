@@ -271,6 +271,11 @@ jobs:
           # "Publish updater manifest" job — a later manual edit alone
           # does not refresh latest.json.
           generate_release_notes: true
+          # Explicit rather than relying on the action default: this tag
+          # is what /releases/latest and the docs-site download buttons
+          # resolve to, and the in-app updater reads latest.json from that
+          # same URL.
+          make_latest: true
           files: |
             release-staging/*
 

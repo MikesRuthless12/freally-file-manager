@@ -1,5 +1,5 @@
-app-name = Freally File Manager v0.22.0
-window-title = Freally File Manager v0.22.0
+app-name = Freally File Manager v1.0.0
+window-title = Freally File Manager v1.0.0
 shred-ssd-advisory = Ostrzeżenie: ten cel znajduje się na dysku SSD. Wielokrotne nadpisywanie nie czyści wiarygodnie pamięci flash, ponieważ wyrównywanie zużycia i nadmiarowa pojemność przenoszą dane spod logicznego adresu bloku. W przypadku nośników półprzewodnikowych użyj ATA SECURE ERASE, NVMe Format z bezpiecznym kasowaniem lub szyfrowania całego dysku z usunięciem klucza.
 
 # Global aggregate states (header pill)

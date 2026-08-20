@@ -67,8 +67,16 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
 # another there fails with "UID 1000 is not unique". Reuse it — the point
 # is simply "not root", and uid 1000 also matches what the GitHub runner
 # uses.
-RUN mkdir -p /target \
-    && chown -R 1000:1000 /target
+# Create BOTH volume mount points here, owned by uid 1000.
+#
+# Docker seeds a fresh named volume from whatever the image holds at
+# that path, ownership included. `$CARGO_HOME/registry` does not exist
+# until cargo first fetches, so mounting a volume there produced an
+# empty root-owned directory that uid 1000 could not write, and every
+# cargo step died with "failed to create directory ... Permission
+# denied".
+RUN mkdir -p /target ${CARGO_HOME}/registry \
+    && chown -R 1000:1000 /target ${CARGO_HOME}/registry
 
 USER 1000:1000
 WORKDIR /work

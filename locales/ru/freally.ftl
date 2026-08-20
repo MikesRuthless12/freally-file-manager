@@ -1,5 +1,5 @@
-app-name = Freally File Manager v0.22.0
-window-title = Freally File Manager v0.22.0
+app-name = Freally File Manager v1.0.0
+window-title = Freally File Manager v1.0.0
 shred-ssd-advisory = Внимание: этот объект расположен на SSD. Многопроходная перезапись не обеспечивает надёжную очистку флеш-памяти, поскольку выравнивание износа и резервирование перемещают данные из-под логического адреса блока. Для твердотельных накопителей используйте ATA SECURE ERASE, NVMe Format с безопасным стиранием или полнодисковое шифрование с уничтожением ключа.
 
 # Global aggregate states (header pill)

@@ -1,5 +1,5 @@
-app-name = Freally File Manager v0.22.0
-window-title = Freally File Manager v0.22.0
+app-name = Freally File Manager v1.0.0
+window-title = Freally File Manager v1.0.0
 shred-ssd-advisory = चेतावनी: यह लक्ष्य एक SSD पर मौजूद है। मल्टी-पास ओवरराइट फ़्लैश मेमोरी को विश्वसनीय रूप से साफ़ नहीं करते क्योंकि वियर-लेवलिंग और ओवर-प्रोविज़निंग डेटा को लॉजिकल ब्लॉक एड्रेस के नीचे से हटा देते हैं। सॉलिड-स्टेट मीडिया के लिए ATA SECURE ERASE, NVMe Format with Secure Erase, या डिस्कार्डेड की के साथ फ़ुल-डिस्क एन्क्रिप्शन को प्राथमिकता दें।
 
 # Global aggregate states (header pill)

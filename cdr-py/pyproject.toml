@@ -9,7 +9,7 @@ name = "cdr-py"
 # against one shared conformance corpus, so a reader on PyPI that
 # claims a different lineage than the repo it shipped from would be
 # actively confusing.
-version = "0.22.0"
+version = "1.0.0"
 description = "Pure-Python reference reader for CDR-0, the Common Dedup Repository format"
 readme = "README.md"
 requires-python = ">=3.9"

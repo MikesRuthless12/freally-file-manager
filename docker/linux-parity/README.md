@@ -16,7 +16,7 @@ docker build -t freally-linux-parity:latest docker/linux-parity
 docker run --rm --name freally-parity \
   -v "$PWD:/work" \
   -v freally-linux-target:/target \
-  -v freally-cargo-registry:/root/.cargo/registry \
+  -v freally-cargo-registry:/usr/local/cargo/registry \
   -e CARGO_TARGET_DIR=/target \
   freally-linux-parity:latest bash /work/docker/linux-parity/run-parity.sh
 ```
@@ -27,7 +27,7 @@ On Windows PowerShell, replace `$PWD` with the absolute repo path:
 docker run --rm --name freally-parity `
   -v "C:\Users\miken\Desktop\Havoc Software\Freally File Manager:/work" `
   -v freally-linux-target:/target `
-  -v freally-cargo-registry:/root/.cargo/registry `
+  -v freally-cargo-registry:/usr/local/cargo/registry `
   -e CARGO_TARGET_DIR=/target `
   freally-linux-parity:latest bash /work/docker/linux-parity/run-parity.sh
 ```

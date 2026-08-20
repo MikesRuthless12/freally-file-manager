@@ -1,4 +1,4 @@
-//! Freally File Manager v0.22.0 — Tauri 2.x application shell.
+//! Freally File Manager v1.0.0 — Tauri 2.x application shell.
 //!
 //! The Rust side wires the Phase 1–4 engines to the Svelte frontend:
 //!
@@ -1038,7 +1038,7 @@ pub fn run() {
             };
             let menu = build_tray_menu(&app.handle().clone(), &pinned_initial)?;
             let _tray = TrayIconBuilder::with_id(TRAY_ICON_ID)
-                .tooltip("Freally File Manager v0.22.0")
+                .tooltip("Freally File Manager v1.0.0")
                 .icon(app.default_window_icon().unwrap().clone())
                 .menu(&menu)
                 .show_menu_on_left_click(false)
@@ -1280,7 +1280,7 @@ pub fn run() {
             Ok(())
         })
         .build(tauri::generate_context!())
-        .expect("error while running Freally File Manager v0.22.0")
+        .expect("error while running Freally File Manager v1.0.0")
         .run(|app_handle, event| {
             // Phase 49 — on a remote-backed store the tail of the
             // current pack stays local until it rolls over at 512 MB.

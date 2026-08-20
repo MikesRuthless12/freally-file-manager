@@ -1,5 +1,5 @@
-app-name = Freally File Manager v0.22.0
-window-title = Freally File Manager v0.22.0
+app-name = Freally File Manager v1.0.0
+window-title = Freally File Manager v1.0.0
 shred-ssd-advisory = Attenzione: questa destinazione si trova su un SSD. Le sovrascritture multi-passaggio non sanificano in modo affidabile la memoria flash, perché il wear-leveling e l'over-provisioning spostano i dati al di fuori dell'indirizzo del blocco logico. Per i supporti a stato solido, preferisci ATA SECURE ERASE, NVMe Format con Secure Erase oppure la crittografia dell'intero disco con eliminazione della chiave.
 
 # Global aggregate states (header pill)

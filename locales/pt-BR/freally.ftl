@@ -1,5 +1,5 @@
-app-name = Freally File Manager v0.22.0
-window-title = Freally File Manager v0.22.0
+app-name = Freally File Manager v1.0.0
+window-title = Freally File Manager v1.0.0
 shred-ssd-advisory = Aviso: este destino está em um SSD. Sobrescritas em várias passagens não higienizam a memória flash de forma confiável, pois o nivelamento de desgaste e o provisionamento extra movem os dados para fora do endereço de bloco lógico. Para mídia de estado sólido, prefira ATA SECURE ERASE, NVMe Format com Secure Erase ou criptografia de disco inteiro com descarte da chave.
 
 # Global aggregate states (header pill)
