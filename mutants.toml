@@ -1,0 +1,52 @@
+# cargo-mutants configuration.
+#
+# Mutation testing answers the question the coverage number does not: not
+# "was this line executed" but "would anything have failed if it were
+# wrong". Run it against a module you have just changed, not the whole
+# workspace — the suite takes ~11 minutes per run, and cargo-mutants runs
+# it once per mutant.
+#
+# ## Running it on Windows
+#
+# Use `--in-place`. The default mode copies the workspace to a temp
+# directory, and that copy walks into `apps/freally-ui/node_modules`,
+# where pnpm's store is a tree of symlinks; creating those needs
+# SeCreateSymbolicLink, so the copy dies with os error 1314 before a
+# single mutant runs. `--in-place` mutates the checkout instead and
+# restores each file afterwards — safe as long as the tree is committed,
+# which is also how you recover if a run is interrupted.
+#
+#   cargo mutants --in-place -p freally-server \
+#       --file 'crates/freally-server/src/jail.rs' -- --lib
+#
+# Scope the inner test command too (`-- --lib`), or every mutant pays for
+# the integration suites as well.
+#
+# ## Reading a MISSED result
+#
+# A missed mutant is not automatically a missing test. Some are
+# equivalent mutants: the mutated code behaves identically, so no test
+# could tell the difference. `ensure_within_root`'s `p != probe` guard is
+# one — it stops an infinite loop if `Path::parent()` ever returned its
+# own input, which no real path does. Judge each one; do not chase the
+# score.
+
+# Timeout for a single mutant's test run. The baseline is a few seconds
+# for a `--lib` scope; 120s is generous headroom for a mutant that sends
+# something into a retry loop rather than failing outright.
+timeout_multiplier = 8.0
+minimum_test_timeout = 120
+
+# Directories with no Rust worth mutating, excluded so `--file` globs and
+# whole-crate runs do not wander into them.
+exclude_globs = [
+    "target/**",
+    "apps/freally-ui/node_modules/**",
+    "vendor/**",
+]
+
+# Generated and vendored sources: a mutant here tells you nothing about
+# this codebase.
+exclude_re = [
+    "^impl .* for .*Dto",
+]

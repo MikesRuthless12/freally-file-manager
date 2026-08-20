@@ -43,6 +43,13 @@ pub(crate) fn ensure_within_root(path: &Path, root: &Path) -> io::Result<()> {
     let mut probe: PathBuf = path.to_path_buf();
     while probe.symlink_metadata().is_err() {
         match probe.parent() {
+            // The `p != probe` half is a termination guard, not a
+            // containment check: it stops the loop dead if `parent()`
+            // ever hands back its own input. No path in std does that
+            // today, which is why mutating this guard to `true`
+            // survives the test suite — an equivalent mutant, not a
+            // missing test. It stays because the alternative failure
+            // mode is an infinite loop inside a request handler.
             Some(p) if p != probe => probe = p.to_path_buf(),
             _ => {
                 return Err(io::Error::new(
