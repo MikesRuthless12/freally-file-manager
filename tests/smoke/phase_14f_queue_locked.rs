@@ -144,9 +144,7 @@ fn cancel_terminates_quickly() {
     let dir = TempDir::new().unwrap();
     let root = dir.path().to_path_buf();
     let present = Arc::new(Mutex::new(vec![root.clone()]));
-    let probe = ScriptedProbe {
-        present: present.clone(),
-    };
+    let probe = ScriptedProbe { present };
     let cancel = VolumeWatchCancel::new();
     let cancel_for_loop = cancel.clone();
     let roots = vec![root];

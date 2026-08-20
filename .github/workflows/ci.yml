@@ -58,6 +58,20 @@ jobs:
       # dependency tree in a profile nothing else in CI reuses.
       - run: cargo run -p xtask -- i18n-lint
 
+  overlay-lint:
+    name: overlay Escape-to-close
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.97.1"
+      - uses: Swatinem/rust-cache@v2
+      # `escapeToClose` stamps `data-escape-closes` so an overlay's opt-in
+      # could be asserted, but nothing ever consumed it — which is how two
+      # drawers shipped where Escape only worked with focus already inside.
+      - run: cargo run -p xtask -- overlay-lint
+
   cargo-deny:
     name: cargo-deny (licenses + advisories)
     runs-on: ubuntu-latest

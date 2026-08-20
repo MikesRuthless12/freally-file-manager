@@ -75,6 +75,23 @@ impl FreallyCloudSink {
             .join()
             .map_err(|_| "runtime thread panicked".to_owned())?
     }
+
+    /// Upload an already-owned buffer.
+    ///
+    /// The `CloudSink::put_blocking` trait method takes `&[u8]`, so it
+    /// has to copy. Callers that already own their bytes go through
+    /// here instead and hand the allocation straight over.
+    fn put_owned_blocking(&self, path: &str, owned: Bytes) -> Result<u64, String> {
+        let target = self.target.clone();
+        let path = path.to_owned();
+        let len = owned.len() as u64;
+        let thread_name = format!("freally-cloud-sink-{}", target.name());
+        Self::run_on_dedicated_thread(thread_name, move |rt| {
+            rt.block_on(async move { target.put(&path, owned).await })
+                .map_err(|e| e.to_string())
+        })?;
+        Ok(len)
+    }
 }
 
 impl CloudSink for FreallyCloudSink {
@@ -83,16 +100,7 @@ impl CloudSink for FreallyCloudSink {
     }
 
     fn put_blocking(&self, path: &str, bytes: &[u8]) -> Result<u64, String> {
-        let owned = Bytes::copy_from_slice(bytes);
-        let target = self.target.clone();
-        let path = path.to_owned();
-        let len = bytes.len() as u64;
-        let thread_name = format!("freally-cloud-sink-{}", target.name());
-        Self::run_on_dedicated_thread(thread_name, move |rt| {
-            rt.block_on(async move { target.put(&path, owned).await })
-                .map_err(|e| e.to_string())
-        })?;
-        Ok(len)
+        self.put_owned_blocking(path, Bytes::copy_from_slice(bytes))
     }
 
     /// Phase 32f — streaming override. When the wrapped `CopyTarget`
@@ -123,11 +131,16 @@ impl CloudSink for FreallyCloudSink {
         on_progress: &dyn Fn(u64),
     ) -> Result<u64, String> {
         let Some(operator) = self.target.as_opendal_operator().cloned() else {
-            // No operator → fall back to read-into-Vec.
+            // No operator → read the file in. `Bytes::from` takes the
+            // Vec by value; passing `&bytes` made `put_blocking` do a
+            // `copy_from_slice`, so this path — reached for every
+            // non-OpenDAL target — held two full copies of the file in
+            // memory at once, on the path whose whole point was to
+            // avoid buffering.
             let bytes = std::fs::read(source_path).map_err(|e| e.to_string())?;
             let n = bytes.len() as u64;
             on_progress(n);
-            return self.put_blocking(path, &bytes);
+            return self.put_owned_blocking(path, Bytes::from(bytes));
         };
 
         // Pre-measure the source file size so the worker thread can

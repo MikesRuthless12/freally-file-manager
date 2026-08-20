@@ -1735,3 +1735,31 @@ settings-favorites-hotkey = शॉर्टकट
 a11y-queue-status = { $running } चल रहे, { $done } पूर्ण, { $failed } विफल
 
 err-favorite-id-invalid = अमान्य पसंदीदा पहचानकर्ता
+
+# Previously hard-coded in the Svelte markup, so they stayed English
+# in every locale. Product names (Freally File Manager, PeerJS) and
+# the IAM / TRIM / QR / ID initialisms are intentionally untranslated.
+remote-account-name = खाता नाम
+remote-service-account = सेवा खाता
+remote-client-id = क्लाइंट ID
+remote-secret = सीक्रेट (एक्सेस की / पासवर्ड / टोकन)
+remote-job-name = जॉब नाम
+remote-instance-size = इंस्टेंस आकार
+remote-iam-role = IAM भूमिका / पहचान
+pair-always-connect = मोबाइल ऐप से हमेशा कनेक्ट करें
+pair-broker-url = PeerJS ब्रोकर URL (खाली = सार्वजनिक डिफ़ॉल्ट)
+pair-devices-heading = युग्मित डिवाइस
+pair-onboarding-title = Freally File Manager मोबाइल साथी ऐप प्राप्त करें
+pair-onboarding-loading-qr = QR लोड हो रहा है…
+sanitize-confirm-backup = मैं पुष्टि करता हूँ कि जो डेटा मैं रखना चाहता हूँ उसका बैकअप मेरे पास है
+sanitize-model-mismatch = ड्राइव मॉडल नाम मेल नहीं खाता।
+sanitize-trim-heading = खाली स्थान TRIM
+details-avg-speed = औसत गति
+pair-onboarding-body = निजी WebRTC लिंक के ज़रिए अपने फ़ोन से डेस्कटॉप के कॉपी / मूव / सिंक / सुरक्षित-डिलीट कार्य चलाएँ। नीचे दिए QR को फ़ोन के कैमरे से स्कैन करके इंस्टॉल URL ब्राउज़र में खोलें, फिर “Add to Home Screen” टैप करें — किसी App Store की ज़रूरत नहीं।
+pair-onboarding-have-app = मेरे पास ऐप है, अभी युग्मित करें
+pair-onboarding-later = शायद बाद में
+pair-no-device-warning = स्वतः-कनेक्ट चालू है, लेकिन अभी कोई फ़ोन युग्मित नहीं है। अपने फ़ोन पर Freally File Manager मोबाइल PWA इंस्टॉल करें (नीचे दिए QR को कैमरे से स्कैन करें), फिर “Start pairing” पर क्लिक करें ताकि डेस्कटॉप को पता चले कि कहाँ कनेक्ट करना है।
+pair-desktop-peer-id = डेस्कटॉप peer-id:
+sanitize-probe = क्षमताएँ जाँचें
+sanitize-run = सैनिटाइज़ चलाएँ
+sanitize-run-trim = खाली स्थान TRIM चलाएँ

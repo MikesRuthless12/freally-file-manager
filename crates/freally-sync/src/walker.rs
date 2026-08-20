@@ -43,9 +43,41 @@ pub fn scan_side(root: &Path, skip_filenames: &[&str]) -> Result<BTreeMap<String
             reason: "path is not a directory".to_string(),
         });
     }
+    // A symlinked / junctioned root must be refused loudly, never walked.
+    //
+    // `is_dir()` follows the link, so such a root passes the checks
+    // above. With `follow_root_links(false)` below the walk then yields
+    // only the root entry, which the loop skips — producing an EMPTY
+    // map. That is the most dangerous possible result here: the engine
+    // reads "left absent, had baseline, right present" and emits
+    // `SyncAction::Delete` for every file, so a mirror pass would wipe
+    // the other side. Fail the pass instead.
+    match std::fs::symlink_metadata(root) {
+        Ok(md) if md.file_type().is_symlink() => {
+            return Err(SyncError::RootNotAccessible {
+                path: root.to_path_buf(),
+                reason: "path is a symlink or junction; point the pair at the \
+                         real directory so a scan cannot come back empty"
+                    .to_string(),
+            });
+        }
+        Ok(_) => {}
+        Err(e) => {
+            return Err(SyncError::RootNotAccessible {
+                path: root.to_path_buf(),
+                reason: format!("cannot stat path: {e}"),
+            });
+        }
+    }
 
     let mut out = BTreeMap::new();
-    for entry in WalkDir::new(root).follow_links(false) {
+    // `follow_root_links` defaults to true, so this must be set explicitly
+    // or a symlinked sync root is walked into its target - and this listing
+    // drives destination deletions.
+    for entry in WalkDir::new(root)
+        .follow_links(false)
+        .follow_root_links(false)
+    {
         let entry = match entry {
             Ok(e) => e,
             Err(e) => {
@@ -122,16 +154,25 @@ pub(crate) fn normalize_relpath(p: &Path) -> String {
 /// row whose key escapes the pair root. Callers must treat `None`
 /// as a fatal-for-this-relpath outcome and skip the operation.
 pub(crate) fn join_relpath(root: &Path, relpath: &str) -> Option<PathBuf> {
-    if relpath.contains("..") || relpath.contains('\0') {
+    if relpath.contains('\0') {
         return None;
     }
     if relpath.chars().any(|c| c.is_control() && c != '\t') {
         return None;
     }
-    // A Windows drive prefix or absolute root inside the relpath
-    // would also escape; reject anything containing `:` (Windows
-    // drive separator) or beginning with a separator.
-    if relpath.starts_with('/') || relpath.starts_with('\\') || relpath.contains(':') {
+    // NOTE: no substring test for `..` here. The per-segment loop below
+    // does that correctly, and a `contains("..")` check also rejected
+    // ordinary filenames — `archive..2024.zip`, `photo..raw.cr2`. Every
+    // caller propagates a `None` with `?`, so one such file failed the
+    // entire pass and every action sorting after it, on every run,
+    // forever. Same reasoning for `:`, which is a perfectly legal
+    // filename character on Linux and macOS: the drive-prefix case is
+    // what matters, and that is a `:` at position 1 of the whole path.
+    if relpath.starts_with('/') || relpath.starts_with('\\') {
+        return None;
+    }
+    let b = relpath.as_bytes();
+    if b.len() >= 2 && b[1] == b':' && b[0].is_ascii_alphabetic() {
         return None;
     }
     let mut p = root.to_path_buf();
@@ -269,5 +310,50 @@ mod tests {
         assert!(join_relpath(root, "foo\\..\\bar").is_none());
         assert!(join_relpath(root, "foo\nbar").is_none());
         assert!(join_relpath(root, "foo\0bar").is_none());
+    }
+
+    /// Ordinary filenames that merely *contain* `..` or `:` must join.
+    ///
+    /// The guard used to be `relpath.contains("..")` and
+    /// `relpath.contains(':')`. Every caller propagates a `None` with
+    /// `?`, so a single file named `archive..2024.zip` failed the whole
+    /// sync pass — and every action sorting after it in `BTreeSet`
+    /// order — on every run, permanently.
+    #[test]
+    fn join_relpath_accepts_ordinary_names_with_dots_and_colons() {
+        let root = Path::new("/tmp/sync");
+        for name in [
+            "archive..2024.zip",
+            "photo..raw.cr2",
+            "a..b/c..d.txt",
+            "..leading-dots.txt",
+            "trailing..",
+            "notes:draft.md",
+            "12:30 meeting.txt",
+        ] {
+            assert!(
+                join_relpath(root, name).is_some(),
+                "{name} is an ordinary filename and must join",
+            );
+        }
+    }
+
+    /// …while a real `..` *segment* or drive prefix still cannot.
+    #[test]
+    fn join_relpath_still_rejects_real_escapes() {
+        let root = Path::new("/tmp/sync");
+        for name in [
+            "..",
+            "../x",
+            "a/../../x",
+            "a/..",
+            "D:/drive.txt",
+            "z:relative.txt",
+        ] {
+            assert!(
+                join_relpath(root, name).is_none(),
+                "{name} escapes the pair root and must be rejected",
+            );
+        }
     }
 }

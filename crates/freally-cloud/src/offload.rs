@@ -512,7 +512,16 @@ fn escape_terraform_heredoc(body: &str) -> String {
         .map(|line| {
             let trimmed = line.trim_end_matches('\n');
             if trimmed == "EOT" {
-                "    EOT_".to_string()
+                // Every other branch terminates its line; this one did
+                // not, so an `EOT` line was glued onto whatever
+                // followed it and the rendered cloud-init body came
+                // out malformed from that point on.
+                //
+                // The trailing underscore does alter the content — but
+                // a bare `EOT` at column 0 would close the Terraform
+                // heredoc early and break the whole template, so the
+                // line cannot be emitted as-is either.
+                "    EOT_\n".to_string()
             } else {
                 format!("    {trimmed}\n")
             }

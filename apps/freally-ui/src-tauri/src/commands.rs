@@ -851,7 +851,11 @@ pub fn error_log_export(
 /// can't be fixed by elevation, so they surface as-is without a
 /// consent prompt. The real UAC dialog is verified manually.
 #[tauri::command]
-pub async fn retry_elevated(id: u64, state: State<'_, AppState>) -> Result<u64, String> {
+pub async fn retry_elevated(
+    id: u64,
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+) -> Result<u64, String> {
     use freally_helper::capability::Capability;
     use freally_helper::handle_request;
     use freally_helper::rpc::{Request, Response};
@@ -893,7 +897,35 @@ pub async fn retry_elevated(id: u64, state: State<'_, AppState>) -> Result<u64, 
     };
 
     match resp {
-        Response::ElevatedRetryOk { bytes } => Ok(bytes),
+        Response::ElevatedRetryOk { bytes } => {
+            // The bytes are on disk, but the engine is still parked on
+            // this prompt's oneshot: `pending_paths` only peeks, and
+            // nothing else resolves it — not this command, and not
+            // `ErrorModal.svelte`, which awaits `retryElevated` and
+            // never calls `resolveError`. Without this the file's copy
+            // task stays blocked and the modal stays open with no sign
+            // anything happened; the job only moves again if the user
+            // separately clicks Skip.
+            //
+            // `Skip` is the correct engine action precisely *because*
+            // the retry succeeded — the helper already wrote the file,
+            // so the engine must not copy it a second time.
+            if let Ok(resolved) = state
+                .errors
+                .resolve(id, freally_core::ErrorAction::Skip, false)
+            {
+                use tauri::Emitter;
+                let _ = app.emit(
+                    crate::ipc::EVENT_ERROR_RESOLVED,
+                    crate::ipc::ErrorResolvedDto {
+                        id: resolved.id,
+                        job_id: resolved.job_id,
+                        action: crate::errors::action_name(resolved.action),
+                    },
+                );
+            }
+            Ok(bytes)
+        }
         Response::ElevatedRetryFailed { localized_key, .. } => Err(localized_key),
         Response::PathRejected { localized_key, .. } => Err(localized_key),
         Response::CapabilityDenied { .. } => Err("retry-elevated-unavailable".to_string()),
@@ -963,8 +995,18 @@ fn parse_collision_resolution(
             // Reject any directory component — keeps the user inside
             // the same parent folder and matches the engine's
             // `CollisionResolution::Rename` contract.
-            if name.contains('/') || name.contains('\\') {
-                return Err("rename_to must not contain a directory separator".to_string());
+            //
+            // Checking only for separators was not enough: on Windows a
+            // drive-relative name like `C:evil.dll` has a `Prefix` but no
+            // `RootDir`, so it contains neither `/` nor `\` yet
+            // `PathBuf::push` still replaces the base path with it. Require
+            // the name to be exactly one ordinary component instead, which
+            // rejects that, `..`, `.`, and rooted forms in one check.
+            let mut comps = Path::new(&name).components();
+            let single_normal = matches!(comps.next(), Some(std::path::Component::Normal(_)))
+                && comps.next().is_none();
+            if !single_normal {
+                return Err("rename_to must be a single file name, not a path".to_string());
             }
             Ok(freally_core::CollisionResolution::Rename(name))
         }
@@ -1470,6 +1512,48 @@ fn diff_setting_groups(
     }
     if before.server != after.server {
         groups.push("server");
+    }
+    // The twelve below were missing, so a change to any of them wrote a
+    // `SettingsChanged` audit record whose `field` read "unchanged" —
+    // the caller only emits when `prev != next`, so the record fired but
+    // named nothing. A compliance reviewer replaying the log saw an
+    // encryption toggle or a "move source to trash" flip recorded as a
+    // no-op change, which is worse than no record.
+    if before.safety != after.safety {
+        groups.push("safety");
+    }
+    if before.crypt != after.crypt {
+        groups.push("crypt");
+    }
+    if before.merge != after.merge {
+        groups.push("merge");
+    }
+    if before.backup != after.backup {
+        groups.push("backup");
+    }
+    if before.notifications != after.notifications {
+        groups.push("notifications");
+    }
+    if before.mobile != after.mobile {
+        groups.push("mobile");
+    }
+    if before.recovery != after.recovery {
+        groups.push("recovery");
+    }
+    if before.queue != after.queue {
+        groups.push("queue");
+    }
+    if before.repository != after.repository {
+        groups.push("repository");
+    }
+    if before.schedules != after.schedules {
+        groups.push("schedules");
+    }
+    if before.favorites != after.favorites {
+        groups.push("favorites");
+    }
+    if before.eula != after.eula {
+        groups.push("eula");
     }
     if groups.is_empty() {
         "unchanged".to_string()
@@ -2520,7 +2604,7 @@ pub fn set_active_conflict_profile(
     let active = if name.trim().is_empty() {
         None
     } else if live.conflict_profiles.profiles.contains_key(&name) {
-        Some(name.clone())
+        Some(name)
     } else {
         return Err("err-conflict-profile-not-found".to_string());
     };

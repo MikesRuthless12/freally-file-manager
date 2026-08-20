@@ -51,6 +51,16 @@ pub enum CopyEvent {
     Resumed,
     /// Per-file copy succeeded.
     Completed {
+        /// Source path this completion belongs to.
+        ///
+        /// Carried explicitly because consumers cannot infer it: with
+        /// `tree_concurrency > 1` several files are in flight at once,
+        /// so "the most recent `Started`" is usually a *different*
+        /// file. The runner used that as its key for the FFM-M23
+        /// stability verdict, which meant a torn source could be
+        /// recorded against whichever file happened to complete next —
+        /// or dropped entirely and written to history as `ok`.
+        src: PathBuf,
         /// Total bytes copied (== source size on success).
         bytes: u64,
         /// Wall-clock duration end-to-end including verify (if any).
@@ -400,10 +410,12 @@ impl Clone for CopyEvent {
             CopyEvent::Paused => CopyEvent::Paused,
             CopyEvent::Resumed => CopyEvent::Resumed,
             CopyEvent::Completed {
+                src,
                 bytes,
                 duration,
                 rate_bps,
             } => CopyEvent::Completed {
+                src: src.clone(),
                 bytes: *bytes,
                 duration: *duration,
                 rate_bps: *rate_bps,

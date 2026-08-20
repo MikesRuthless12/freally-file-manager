@@ -481,7 +481,18 @@ pub fn schedule_save_impl(state: &AppState, dto: &ScheduleDto) -> Result<Vec<Sch
         Some(existing) => *existing = entry.clone(),
         None => s.schedules.entries.push(entry.clone()),
     }
-    state.persist_settings(&s)?;
+    // Roll the in-memory mutation back if the write fails, exactly as
+    // the install path below does. A bare `?` here left the row live in
+    // the shared `Settings` after telling the caller the save failed —
+    // so `schedule_list` rendered it as "Missing from the system
+    // scheduler", it never fired, and the next successful settings write
+    // from any unrelated command (`update_settings`, favorites, …)
+    // persisted the whole struct, permanently writing the row the user
+    // was told had failed.
+    if let Err(e) = state.persist_settings(&s) {
+        s.schedules.entries = previous;
+        return Err(e);
+    }
 
     if let Err(e) = freally_platform::scheduler::install(&job) {
         tracing::warn!(target: "freally::schedule", id = %entry.id, error = %e, "install failed");
@@ -575,7 +586,7 @@ mod tests {
         // leaving one OS artifact where the user asked for two.
         let second = entry_from_dto(&d, std::slice::from_ref(&first)).unwrap();
         assert_eq!(second.id, "nightly-photos-2");
-        let third = entry_from_dto(&d, &[first.clone(), second.clone()]).unwrap();
+        let third = entry_from_dto(&d, &[first, second]).unwrap();
         assert_eq!(third.id, "nightly-photos-3");
     }
 

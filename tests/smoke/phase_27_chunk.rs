@@ -115,7 +115,7 @@ fn case2_one_byte_change_reuses_at_least_99_percent() {
     let (_, manifest_v1) = ingest_bytes(&store, &chunker, &bytes_v1, "/dst/fileA").unwrap();
 
     // Flip a byte at offset 50 MiB.
-    let mut bytes_v2 = bytes_v1.clone();
+    let mut bytes_v2 = bytes_v1;
     let mutate_at = bytes_v2.len() / 2;
     bytes_v2[mutate_at] ^= 0x5a;
 

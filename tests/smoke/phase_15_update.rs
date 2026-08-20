@@ -176,7 +176,7 @@ fn due_for_check_respects_24h_throttle() {
     assert!(u.due_for_check(1_748_736_000));
 
     // Just checked — not due for roughly 24 h.
-    let mut checked = u.clone();
+    let mut checked = u;
     checked.last_check_unix_secs = 1_748_736_000;
     assert!(!checked.due_for_check(1_748_736_000));
     assert!(!checked.due_for_check(1_748_736_000 + 86_399));

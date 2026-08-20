@@ -287,7 +287,7 @@ pub async fn mobile_pair_commit(
 
     Ok(MobilePairStatusDto {
         server_active: false,
-        desktop_peer_id: snapshot.mobile.desktop_peer_id.clone(),
+        desktop_peer_id: snapshot.mobile.desktop_peer_id,
         qr_url: None,
         qr_png_base64: None,
         desktop_pubkey_hex: None,

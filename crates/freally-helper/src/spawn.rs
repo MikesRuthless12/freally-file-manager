@@ -121,15 +121,60 @@ fn ps_escape(s: &str) -> String {
     s.replace('\'', "''")
 }
 
-/// AppleScript string escaping for the `do shell script "…"` literal.
+/// Quote a field for `do shell script`, which is **two** nested layers:
+/// AppleScript parses the `"…"` literal, then hands the result to
+/// `/bin/sh -c` — as root, under `with administrator privileges`.
+///
+/// The previous version escaped only `\` and `"`. That is correct for
+/// the AppleScript literal and does nothing for the shell underneath, so
+/// `$`, backtick, `;`, `|`, `&` and whitespace passed straight through
+/// to a root shell. The interpolated socket path is built from
+/// `$XDG_RUNTIME_DIR`, which any same-user process can set for a
+/// GUI-launched app via `launchctl setenv` — turning the ordinary
+/// admin-password prompt into root code execution. The helper path has
+/// the same shape, which is also why an app bundle installed under a
+/// path containing a space used to run the wrong program.
+///
+/// So: POSIX-quote first (wrap in `'…'`, rendering `'` as `'\''`), then
+/// apply the AppleScript escaping to that result.
 #[cfg(target_os = "macos")]
 fn sh_escape(s: &str) -> String {
-    s.replace('\\', "\\\\").replace('"', "\\\"")
+    let posix = format!("'{}'", s.replace('\'', r"'\''"));
+    posix.replace('\\', "\\\\").replace('"', "\\\"")
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// `do shell script` runs its argument through `/bin/sh` as root, so
+    /// every shell metacharacter has to be neutralised — not just the two
+    /// AppleScript-literal ones. A path containing `$(...)` must survive
+    /// as literal text.
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn sh_escape_neutralises_shell_metacharacters() {
+        let hostile = "/tmp/$(touch /tmp/pwned)/sock";
+        let out = sh_escape(hostile);
+        // Wrapped in a POSIX single-quoted literal, so `$(` is inert.
+        assert!(out.starts_with('\''), "must be single-quoted: {out}");
+        assert!(out.ends_with('\''), "must be single-quoted: {out}");
+        assert!(
+            out.contains("$(touch /tmp/pwned)"),
+            "content is preserved verbatim inside the quotes: {out}"
+        );
+
+        // An embedded single quote must not be able to close the literal.
+        let with_quote = sh_escape("/tmp/it's/sock");
+        assert!(
+            with_quote.contains(r"'\''"),
+            "embedded quote must be escaped as '\\'': {with_quote}"
+        );
+
+        // Spaces stay inside one argument rather than splitting it.
+        let spaced = sh_escape("/Applications/My App.app/helper");
+        assert!(spaced.starts_with('\'') && spaced.ends_with('\''));
+    }
 
     #[test]
     fn should_escalate_only_on_permission_denied() {

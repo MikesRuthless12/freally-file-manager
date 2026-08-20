@@ -1735,3 +1735,31 @@ settings-favorites-hotkey = 단축키
 a11y-queue-status = 실행 중 { $running }개, 완료 { $done }개, 실패 { $failed }개
 
 err-favorite-id-invalid = 즐겨찾기 식별자가 잘못되었습니다
+
+# Previously hard-coded in the Svelte markup, so they stayed English
+# in every locale. Product names (Freally File Manager, PeerJS) and
+# the IAM / TRIM / QR / ID initialisms are intentionally untranslated.
+remote-account-name = 계정 이름
+remote-service-account = 서비스 계정
+remote-client-id = 클라이언트 ID
+remote-secret = 비밀 값 (액세스 키 / 비밀번호 / 토큰)
+remote-job-name = 작업 이름
+remote-instance-size = 인스턴스 크기
+remote-iam-role = IAM 역할 / ID
+pair-always-connect = 항상 모바일 앱에 연결
+pair-broker-url = PeerJS 브로커 URL (비워두면 공개 기본값)
+pair-devices-heading = 페어링된 기기
+pair-onboarding-title = Freally File Manager 모바일 컴패니언 앱 받기
+pair-onboarding-loading-qr = QR 불러오는 중…
+sanitize-confirm-backup = 보관하려는 모든 데이터의 백업이 있음을 확인합니다
+sanitize-model-mismatch = 드라이브 모델 이름이 일치하지 않습니다.
+sanitize-trim-heading = 여유 공간 TRIM
+details-avg-speed = 평균 속도
+pair-onboarding-body = 비공개 WebRTC 링크를 통해 휴대폰에서 데스크톱의 복사 / 이동 / 동기화 / 안전 삭제 작업을 제어하세요. 아래 QR을 휴대폰 카메라로 스캔해 브라우저에서 설치 URL을 열고 "홈 화면에 추가"를 누르세요. 앱 스토어는 필요 없습니다.
+pair-onboarding-have-app = 앱이 있습니다. 지금 페어링
+pair-onboarding-later = 나중에
+pair-no-device-warning = 자동 연결이 켜져 있지만 아직 페어링된 휴대폰이 없습니다. 휴대폰에 Freally File Manager 모바일 PWA를 설치하고(아래 QR을 카메라로 스캔), "페어링 시작"을 클릭하면 데스크톱이 연결 대상을 알 수 있습니다.
+pair-desktop-peer-id = 데스크톱 peer-id:
+sanitize-probe = 기능 조회
+sanitize-run = 완전 삭제 실행
+sanitize-run-trim = 여유 공간 TRIM 실행

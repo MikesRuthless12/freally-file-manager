@@ -206,9 +206,17 @@ impl SyncDb {
         Ok(out)
     }
 
-    /// Append one history row. Seq is derived from the highest
-    /// `(ts, seq)` in the table — we don't need a separate counter
-    /// table because `(ts, seq)` keys are unique by construction.
+    /// Append one history row, keyed `(timestamp_ms, seq)`.
+    ///
+    /// **These keys are not unique across runs.** `seq` is a counter
+    /// the engine restarts at 0 for every sync pass, so two passes
+    /// inside the same millisecond collide and the later row silently
+    /// replaces the earlier one. This used to claim uniqueness "by
+    /// construction" and cite it as the reason no counter table is
+    /// needed. In practice the collision window is narrow — a pass has
+    /// to finish and another begin within one millisecond — so this is
+    /// documented rather than restructured; a monotonic counter here
+    /// would need a migration of every existing history table.
     pub fn append_history(&self, entry: &HistoryEntry) -> Result<()> {
         let json = serde_json::to_string(entry)?;
         let txn = self.inner.begin_write()?;

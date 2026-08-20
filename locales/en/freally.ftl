@@ -1732,3 +1732,31 @@ settings-favorites-hotkey = Shortcut
 a11y-queue-status = { $running } running, { $done } done, { $failed } failed
 
 err-favorite-id-invalid = Invalid favorite identifier
+
+# Previously hard-coded in the Svelte markup, so they stayed English
+# in every locale. Product names (Freally File Manager, PeerJS) and
+# the IAM / TRIM / QR / ID initialisms are intentionally untranslated.
+remote-account-name = Account name
+remote-service-account = Service account
+remote-client-id = Client ID
+remote-secret = Secret (access key / password / token)
+remote-job-name = Job name
+remote-instance-size = Instance size
+remote-iam-role = IAM role / identity
+pair-always-connect = Always connect to Mobile App
+pair-broker-url = PeerJS broker URL (blank = public default)
+pair-devices-heading = Paired devices
+pair-onboarding-title = Get the Freally File Manager mobile companion
+pair-onboarding-loading-qr = Loading QR…
+sanitize-confirm-backup = I confirm I have a backup of any data I want to keep
+sanitize-model-mismatch = Drive model name does not match.
+sanitize-trim-heading = Free-space TRIM
+details-avg-speed = Avg speed
+pair-onboarding-body = Drive your desktop's copy / move / sync / secure-delete jobs from your phone over a private WebRTC link. Scan the QR below with your phone's camera to open the install URL in your browser, then tap "Add to Home Screen" — no App Store needed.
+pair-onboarding-have-app = I have the app, pair now
+pair-onboarding-later = Maybe later
+pair-no-device-warning = Auto-connect is on, but no phone is paired yet. Install the Freally File Manager mobile PWA on your phone (scan the QR below with your camera), then click "Start pairing" so the desktop knows where to dial.
+pair-desktop-peer-id = Desktop peer-id:
+sanitize-probe = Probe capabilities
+sanitize-run = Run sanitize
+sanitize-run-trim = Run free-space TRIM

@@ -98,6 +98,10 @@ if (!uiOnly && hasRust) {
   // locale files, not a compute-bound one, and `--release` meant building the
   // whole xtask dependency tree in a profile no other step here reuses.
   step("rust: i18n-lint", "cargo run -p xtask -- i18n-lint", repoRoot);
+  // job: overlay-lint — same shape as i18n-lint, and the consumer that
+  // `escapeToClose`'s `data-escape-closes` marker never had. Two drawers
+  // shipped without Escape-to-close because nothing checked.
+  step("rust: overlay-lint", "cargo run -p xtask -- overlay-lint", repoRoot);
   // job: clippy-test
   step("rust: clippy", "cargo clippy --workspace --all-targets -- -D warnings", repoRoot);
   // Deliberately NOT cargo-nextest, even when it is installed. It cannot

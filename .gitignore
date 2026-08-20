@@ -177,3 +177,27 @@ libav*.so*
 libsw*.so*
 libav*.dylib
 libsw*.dylib
+
+# Same reasoning as docs/SECURITY_BACKLOG.md above: this repo is public,
+# and the review backlog names unfixed issues (including a local
+# root-privilege escalation) with enough detail to act on. Publishing it
+# would hand users' attackers a worked example before the fix ships.
+REVIEW-BACKLOG.md
+
+# Build handoff notes. Working documents between build sessions: they
+# quote unfixed findings, name file/line targets, and describe attacks
+# in enough detail to reproduce them. Same public-repo reasoning as
+# REVIEW-BACKLOG.md above.
+/BUILD3-HANDOFF.md
+/BUILD3-CLOSEOUT-TASKS.md
+/BUILD4-HANDOFF.md
+/TONIGHT-TASKS.md
+
+# Scratch icon drop — not the app icon (that lives under
+# apps/freally-ui/src-tauri/icons/) and nothing in the build reads it.
+/icon/
+
+# Forward-looking feature roadmap for the separate Freally Central
+# product. Unshipped-product planning, same class as docs/ROADMAP.md
+# above, and this repo is public.
+/vendor/freally-central/Freally-Central-Feature-Roadmap.md

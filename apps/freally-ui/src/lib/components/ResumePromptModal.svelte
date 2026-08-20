@@ -21,6 +21,7 @@
   import { invoke } from "@tauri-apps/api/core";
 
   import type { PendingResumeDto } from "../types";
+  import { escapeToClose } from "../a11y";
   import { t } from "../i18n";
 
   let { rows, autoResume = false, onClose }: {
@@ -102,16 +103,19 @@
 </script>
 
 {#if rows.length > 0 && !autoResume}
-  <div class="backdrop" role="presentation" onclick={onClose}>
+  <div
+    class="backdrop"
+    role="presentation"
+    onclick={(e) => {
+      if (e.target === e.currentTarget) onClose();
+    }}
+  >
     <div
       class="modal"
       role="dialog"
       aria-labelledby="resume-title"
       tabindex={-1}
-      onclick={(e) => e.stopPropagation()}
-      onkeydown={(e) => {
-        if (e.key === "Escape") onClose();
-      }}
+      use:escapeToClose={onClose}
     >
       <header>
         <h2 id="resume-title">{t("resume-prompt-title")}</h2>

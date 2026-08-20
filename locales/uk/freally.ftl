@@ -1735,3 +1735,31 @@ settings-favorites-hotkey = Сполучення клавіш
 a11y-queue-status = виконується: { $running }, готово: { $done }, з помилкою: { $failed }
 
 err-favorite-id-invalid = Недійсний ідентифікатор обраного
+
+# Previously hard-coded in the Svelte markup, so they stayed English
+# in every locale. Product names (Freally File Manager, PeerJS) and
+# the IAM / TRIM / QR / ID initialisms are intentionally untranslated.
+remote-account-name = Ім'я облікового запису
+remote-service-account = Сервісний обліковий запис
+remote-client-id = ID клієнта
+remote-secret = Секрет (ключ доступу / пароль / токен)
+remote-job-name = Назва завдання
+remote-instance-size = Розмір інстансу
+remote-iam-role = Роль / ідентичність IAM
+pair-always-connect = Завжди підключатися до мобільного застосунку
+pair-broker-url = URL брокера PeerJS (порожньо = публічний за замовчуванням)
+pair-devices-heading = Спарені пристрої
+pair-onboarding-title = Отримайте мобільний застосунок-компаньйон Freally File Manager
+pair-onboarding-loading-qr = Завантаження QR-коду…
+sanitize-confirm-backup = Підтверджую, що маю резервну копію всіх даних, які хочу зберегти
+sanitize-model-mismatch = Назва моделі накопичувача не збігається.
+sanitize-trim-heading = TRIM вільного простору
+details-avg-speed = Середня швидкість
+pair-onboarding-body = Керуйте завданнями копіювання / переміщення / синхронізації / безпечного видалення на комп'ютері з телефона через приватне WebRTC-з'єднання. Відскануйте QR-код нижче камерою телефона, відкрийте посилання встановлення у браузері й торкніться «На головний екран» — магазин застосунків не потрібен.
+pair-onboarding-have-app = Застосунок є, спарити зараз
+pair-onboarding-later = Можливо, пізніше
+pair-no-device-warning = Автопідключення увімкнено, але жоден телефон ще не спарено. Встановіть мобільний PWA Freally File Manager на телефон (відскануйте QR-код нижче камерою), а потім натисніть «Почати спарення», щоб комп'ютер знав, куди підключатися.
+pair-desktop-peer-id = Peer-id комп'ютера:
+sanitize-probe = Перевірити можливості
+sanitize-run = Запустити очищення
+sanitize-run-trim = Виконати TRIM вільного простору

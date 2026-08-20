@@ -7,6 +7,7 @@
   rows; every removal goes to the OS trash, never a permanent unlink.
 -->
 <script lang="ts">
+  import { escapeToClose } from "../a11y";
   import { t } from "../i18n";
   import { undoApply } from "../ipc";
   import { closeUndoPreview, pushToast } from "../stores";
@@ -50,8 +51,10 @@
     }
   }
 
-  function onKeydown(e: KeyboardEvent) {
-    if (e.key === "Escape" && !busy) closeUndoPreview();
+  // Escape is ignored mid-undo — closing then would orphan the running
+  // operation with no way back to its progress.
+  function escapeUnlessBusy() {
+    if (!busy) closeUndoPreview();
   }
 </script>
 
@@ -61,7 +64,7 @@
   aria-modal="true"
   aria-labelledby="undo-title"
   tabindex="-1"
-  onkeydown={onKeydown}
+  use:escapeToClose={escapeUnlessBusy}
 >
   <div class="panel">
     <h2 id="undo-title">

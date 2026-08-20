@@ -1735,3 +1735,31 @@ settings-favorites-hotkey = Pintasan
 a11y-queue-status = { $running } berjalan, { $done } selesai, { $failed } gagal
 
 err-favorite-id-invalid = Pengenal favorit tidak valid
+
+# Previously hard-coded in the Svelte markup, so they stayed English
+# in every locale. Product names (Freally File Manager, PeerJS) and
+# the IAM / TRIM / QR / ID initialisms are intentionally untranslated.
+remote-account-name = Nama akun
+remote-service-account = Akun layanan
+remote-client-id = ID klien
+remote-secret = Rahasia (kunci akses / kata sandi / token)
+remote-job-name = Nama tugas
+remote-instance-size = Ukuran instans
+remote-iam-role = Peran / identitas IAM
+pair-always-connect = Selalu sambungkan ke aplikasi seluler
+pair-broker-url = URL broker PeerJS (kosong = default publik)
+pair-devices-heading = Perangkat yang dipasangkan
+pair-onboarding-title = Dapatkan aplikasi pendamping seluler Freally File Manager
+pair-onboarding-loading-qr = Memuat QR…
+sanitize-confirm-backup = Saya mengonfirmasi memiliki cadangan semua data yang ingin saya simpan
+sanitize-model-mismatch = Nama model drive tidak cocok.
+sanitize-trim-heading = TRIM ruang kosong
+details-avg-speed = Kecepatan rata-rata
+pair-onboarding-body = Kendalikan tugas salin / pindah / sinkronisasi / hapus aman di desktop dari ponsel Anda melalui tautan WebRTC pribadi. Pindai QR di bawah dengan kamera ponsel untuk membuka URL pemasangan di peramban, lalu ketuk "Tambahkan ke Layar Utama" — tanpa App Store.
+pair-onboarding-have-app = Saya punya aplikasinya, pasangkan sekarang
+pair-onboarding-later = Mungkin nanti
+pair-no-device-warning = Sambung otomatis aktif, tetapi belum ada ponsel yang dipasangkan. Pasang PWA seluler Freally File Manager di ponsel Anda (pindai QR di bawah dengan kamera), lalu klik "Mulai pemasangan" agar desktop tahu ke mana harus menghubungi.
+pair-desktop-peer-id = Peer-id desktop:
+sanitize-probe = Periksa kemampuan
+sanitize-run = Jalankan sanitasi
+sanitize-run-trim = Jalankan TRIM ruang kosong

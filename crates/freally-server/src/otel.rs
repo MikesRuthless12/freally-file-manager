@@ -130,16 +130,43 @@ pub fn install_otel(config: &OtelConfig) -> Result<OtelGuard, OtelError> {
             .build()
     };
 
+    // Publish the provider globally *before* touching the subscriber.
+    //
+    // Without this, nothing outside this function could reach the SDK:
+    // the GUI installs its own global fmt subscriber at startup, long
+    // before `server_commands` runs, so `try_init` below always failed
+    // there and **zero spans were ever exported** — while the caller
+    // stored a live guard and reported success. The Phase 49q comment
+    // at the call site says this change exists precisely because
+    // "starting the server from the GUI therefore exported nothing,
+    // silently."
+    opentelemetry::global::set_tracer_provider(provider.clone());
+
     let tracer = provider.tracer("freally-server");
     let otel_layer = tracing_opentelemetry::layer().with_tracer(tracer);
 
-    if let Err(e) = tracing_subscriber::registry().with(otel_layer).try_init() {
-        // A subscriber is already installed (e.g. the host process set one
-        // up). Export is best-effort, so warn and keep serving rather than
-        // abort — the spans simply won't reach this OTel layer.
-        tracing::warn!(
+    // `RUST_LOG` if set, else `info`. Previously unfiltered, so the
+    // collector received everything down to TRACE.
+    let filter = tracing_subscriber::EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info"));
+
+    // Compose with a fmt layer. When this call is the one that installs
+    // the global subscriber (the CLI path, where nothing has yet), a
+    // registry holding *only* the OTel layer meant every
+    // `tracing::warn!`/`info!` in the process stopped reaching stderr.
+    if let Err(e) = tracing_subscriber::registry()
+        .with(filter)
+        .with(tracing_subscriber::fmt::layer())
+        .with(otel_layer)
+        .try_init()
+    {
+        // A subscriber is already installed (the GUI path). Spans still
+        // export through the global provider set above; they just do not
+        // flow through *this* layer.
+        tracing::debug!(
             error = %e,
-            "OpenTelemetry layer not installed: a tracing subscriber is already active"
+            "OpenTelemetry tracing layer not installed: a subscriber is already active; \
+             spans export via the global provider"
         );
     }
 

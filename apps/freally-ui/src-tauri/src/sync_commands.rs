@@ -47,11 +47,23 @@ impl SyncRegistry {
         Self::default()
     }
 
-    fn insert(&self, pair_id: String, handle: SyncHandle) {
-        self.inner
-            .write()
-            .expect("sync registry poisoned")
-            .insert(pair_id, handle);
+    /// Claim `pair_id` for a new run, or report that it is already
+    /// taken — under ONE lock acquisition.
+    ///
+    /// `start_sync` used to check `get()` and then `insert()`, two
+    /// separate acquisitions. Two concurrent starts for the same pair
+    /// both passed the check, both ran a pass over the same
+    /// `.freally-sync.db`, and whichever finished first executed
+    /// `registry.remove(&pair_id)` — deleting the *other* run's row,
+    /// leaving it uncancellable and reported as `running: false` while
+    /// it was still writing.
+    fn try_claim(&self, pair_id: String, handle: SyncHandle) -> bool {
+        let mut guard = self.inner.write().expect("sync registry poisoned");
+        if guard.contains_key(&pair_id) {
+            return false;
+        }
+        guard.insert(pair_id, handle);
+        true
     }
 
     fn remove(&self, pair_id: &str) {
@@ -117,7 +129,7 @@ pub fn add_sync_pair(
         .map(freally_settings::SyncModeChoice::from_wire)
         .unwrap_or(guard.sync.default_mode);
     let cfg = SyncPairConfig {
-        id: id.clone(),
+        id,
         label,
         left,
         right,
@@ -182,22 +194,21 @@ pub async fn start_sync(
             .find(|p| p.id == pair_id)
             .cloned()
             .ok_or_else(|| format!("unknown pair id: {pair_id}"))?;
-        let host = snap.sync.host_label_override.clone();
+        let host = snap.sync.host_label_override;
         (cfg, host)
     };
 
-    if state.syncs.get(&pair_id).is_some() {
-        return Err(format!("pair {pair_id} is already running"));
-    }
-
     let ctrl = SyncControl::new();
-    state.syncs.insert(
+    let claimed = state.syncs.try_claim(
         pair_id.clone(),
         SyncHandle {
             ctrl: ctrl.clone(),
             label: cfg.label.clone(),
         },
     );
+    if !claimed {
+        return Err(format!("pair {pair_id} is already running"));
+    }
 
     let left = PathBuf::from(&cfg.left);
     let right = PathBuf::from(&cfg.right);
@@ -244,7 +255,7 @@ pub async fn start_sync(
 
     let registry = state.syncs.clone();
     let started_at = Instant::now();
-    let app_for_run = app.clone();
+    let app_for_run = app;
     let pair_id_for_run = pair_id.clone();
     let settings_handle = state.settings.clone();
     let settings_path = state.settings_path.clone();
@@ -255,7 +266,7 @@ pub async fn start_sync(
     // decision engine must not change halfway through a run.
     let use_tri_tree = state.settings_snapshot().sync.tri_tree;
     let sync_right = cfg.right.clone();
-    let sync_label = cfg.label.clone();
+    let sync_label = cfg.label;
     let changed_for_run = changed;
 
     tokio::spawn(async move {
@@ -362,6 +373,26 @@ pub fn pause_sync(pair_id: String, state: tauri::State<'_, AppState>) -> Result<
     match state.syncs.get(&pair_id) {
         Some(h) => {
             h.ctrl.pause();
+            Ok(())
+        }
+        None => Err(format!("unknown or idle pair id: {pair_id}")),
+    }
+}
+
+/// Resume a paused sync by pair id. Idempotent — resuming a running
+/// sync is a no-op.
+///
+/// `pause_sync` shipped without this counterpart, so `SyncControl::resume`
+/// was unreachable from the IPC surface: a paused pass parked in
+/// `wait_while_paused()` awaiting a notify that nothing could send. The
+/// registry row persisted, so `list_sync_pairs` reported `running: true`
+/// forever, `start_sync` kept returning "already running", and the only
+/// exit was `cancel_sync` — which throws the whole pass away.
+#[tauri::command]
+pub fn resume_sync(pair_id: String, state: tauri::State<'_, AppState>) -> Result<(), String> {
+    match state.syncs.get(&pair_id) {
+        Some(h) => {
+            h.ctrl.resume();
             Ok(())
         }
         None => Err(format!("unknown or idle pair id: {pair_id}")),
@@ -515,8 +546,8 @@ fn update_last_run(
     );
     for p in guard.sync.pairs.iter_mut() {
         if p.id == pair_id {
-            p.last_run_at = now.clone();
-            p.last_run_summary = summary.clone();
+            p.last_run_at = now;
+            p.last_run_summary = summary;
             break;
         }
     }

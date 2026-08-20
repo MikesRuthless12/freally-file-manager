@@ -260,10 +260,7 @@ mod tests {
         let grant = Request::GrantCapabilities {
             capabilities: vec![Capability::ElevatedRetry],
         };
-        let retry = Request::ElevatedRetry {
-            src: src.clone(),
-            dst: dst.clone(),
-        };
+        let retry = Request::ElevatedRetry { src, dst };
         let stream = format!(
             "{}\n{}\n{}\n",
             serde_json::to_string(&grant).unwrap(),

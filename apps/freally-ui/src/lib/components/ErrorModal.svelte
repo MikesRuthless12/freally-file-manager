@@ -10,6 +10,7 @@
 -->
 <script lang="ts">
   import Icon from "../icons/Icon.svelte";
+  import { escapeToClose } from "../a11y";
   import { i18nVersion, t } from "../i18n";
   import { resolveError, retryElevated } from "../ipc";
   import { errorQueue, pushToast } from "../stores";
@@ -46,9 +47,7 @@
   <div
     class="backdrop"
     role="presentation"
-    onkeydown={(e) => {
-      if (e.key === "Escape") run("skip");
-    }}
+    use:escapeToClose={() => run("skip")}
   >
     {#key $i18nVersion}
     <div

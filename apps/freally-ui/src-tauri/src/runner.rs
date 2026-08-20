@@ -129,6 +129,48 @@ pub(crate) async fn run_job(job: RunJob) {
         .keep_awake_during_jobs
         .then(|| KeepAwakeGuard::arm(state.job_keep_awake.clone()));
 
+    // Phase 35 — build the crypt transform hook HERE, before any of the
+    // audit / history / journal side effects below.
+    //
+    // `build_encryption_policy` is fail-closed by design: an `Err` means
+    // the user asked for encryption and we cannot honour it (recipients
+    // file moved, unreadable, empty, or one typo'd `age1…` line).
+    // Continuing would copy the job to the destination in cleartext
+    // while Settings still reads "encrypting", so the job has to fail —
+    // but failing *after* `begin_job` / `record_history_start` would
+    // strand a journal row in `Running` (offering a phantom resume at
+    // every launch, forever) and a history row at `status = "running"`
+    // with nothing to sweep it. Deciding before those run keeps the
+    // failure clean.
+    let crypt_hook = {
+        let snap = state.settings_snapshot();
+        match crate::crypt_commands::build_hook(&snap.crypt) {
+            Ok(hook) => hook,
+            Err(e) => {
+                tracing::error!(
+                    error = %e,
+                    "crypt hook build failed; refusing to start the job rather than \
+                     copying in cleartext",
+                );
+                finish_fail(
+                    &app,
+                    &state,
+                    &queue,
+                    id,
+                    CopyError {
+                        kind: CopyErrorKind::IoOther,
+                        src: src.clone(),
+                        dst: dst.clone().unwrap_or_default(),
+                        raw_os_error: None,
+                        message: e,
+                    },
+                )
+                .await;
+                return;
+            }
+        }
+    };
+
     // Phase 34 — fire a `JobStarted` audit record on the active
     // sink. No-op when audit is disabled.
     let job_started_at = std::time::Instant::now();
@@ -229,25 +271,23 @@ pub(crate) async fn run_job(job: RunJob) {
     // the pipeline end-to-end (spawn_blocking + age + zstd); the
     // engine's `copy_file` short-circuits to it. Building the hook
     // once per queued job keeps the recipient-file parse + deny-
-    // set construction off the hot path. A build failure logs to
-    // stderr and falls through to a plain copy.
-    {
-        let snap = state.settings_snapshot();
-        match crate::crypt_commands::build_hook(&snap.crypt) {
-            Ok(Some(hook)) => {
-                copy_opts_with_verify.transform = Some(hook);
-                // Byte-exact verify cannot run against a
-                // transformed destination, so strip any verifier
-                // the DTO asked for. The audit + history record
-                // the transform happened via the eventual
-                // `CompressionSavings` event path.
-                copy_opts_with_verify.verify = None;
-            }
-            Ok(None) => {}
-            Err(e) => {
-                tracing::warn!(error = %e, "crypt hook build failed; falling back to plain copy");
-            }
-        }
+    // set construction off the hot path.
+    //
+    // `build_encryption_policy` is deliberately fail-closed and says
+    // so: every `Err` here means the user asked for encryption and we
+    // could not honour it (recipients file moved, unreadable, empty,
+    // or one typo'd `age1…` line). Continuing would write the whole
+    // job to the destination in cleartext while Settings still reads
+    // "encrypting" — and there is no UI surface that would contradict
+    // it, since `crypt_status` has no frontend caller. So fail the
+    // job instead, and let the user see why.
+    if let Some(hook) = crypt_hook {
+        copy_opts_with_verify.transform = Some(hook);
+        // Byte-exact verify cannot run against a transformed
+        // destination, so strip any verifier the DTO asked for. The
+        // audit + history record the transform happened via the
+        // eventual `CompressionSavings` event path.
+        copy_opts_with_verify.verify = None;
     }
 
     // Phase 49b — feed the unified content-addressed Repository. Two
@@ -653,7 +693,7 @@ async fn finish_fail(app: &AppHandle, state: &AppState, queue: &Queue, id: JobId
         EVENT_JOB_FAILED,
         JobFailedDto {
             id: id.as_u64(),
-            message: err.message.clone(),
+            message: err.message,
         },
     );
     emit_globals(app, state);
@@ -977,7 +1017,11 @@ async fn forward_events(
                     },
                 );
             }
-            CopyEvent::Completed { bytes, .. } => {
+            CopyEvent::Completed {
+                src: completed_src,
+                bytes,
+                ..
+            } => {
                 // In tree mode, per-file Completed events fire as
                 // each file finishes — but TreeProgress (fired by
                 // the tree engine right after) is the authoritative
@@ -1001,7 +1045,14 @@ async fn forward_events(
                 // the sense that the bytes landed, but it is not a
                 // faithful copy, so it must not be indistinguishable
                 // from a good one in history or in the activity list.
-                let torn = source_changed_by_src.remove(&last_activity_src);
+                // Key on the file that actually completed. Using
+                // `last_activity_src` (the most recent `Started`)
+                // mis-attributed the verdict under tree concurrency:
+                // file A could be flagged torn, file B start, then A
+                // complete — and the lookup would miss, writing A to
+                // history as a faithful `ok` copy while leaving its
+                // verdict in the map to be blamed on a later file.
+                let torn = source_changed_by_src.remove(&completed_src);
                 // Per-file "done" ping — flip the row's icon to a
                 // checkmark on the frontend side.
                 activity_seq += 1;

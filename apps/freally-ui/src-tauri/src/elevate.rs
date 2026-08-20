@@ -154,33 +154,68 @@ async fn elevated_retry_unix(
     // we tighten the socket node to 0600 once it exists.
     let sock_name = generate_pipe_name("freally-helper-")
         .map_err(|e| ElevateError::Unavailable(format!("socket name: {e}")))?;
-    let base = std::env::var("XDG_RUNTIME_DIR")
-        .ok()
-        .filter(|d| !d.is_empty())
-        .map(std::path::PathBuf::from)
-        .unwrap_or_else(|| std::path::PathBuf::from("/tmp"));
+    // `XDG_RUNTIME_DIR` is an XDG concept with no meaning on macOS, where
+    // it is normally unset — but a same-user process can set it for a
+    // GUI-launched app (`launchctl setenv`), and on macOS this value is
+    // interpolated into a root `do shell script`. Only honour it on Linux,
+    // where it is `/run/user/<uid>` (0700, per-user) and the spawn is
+    // argv-based via pkexec rather than a shell string.
+    let base = if cfg!(target_os = "linux") {
+        std::env::var("XDG_RUNTIME_DIR")
+            .ok()
+            .filter(|d| !d.is_empty())
+            .map(std::path::PathBuf::from)
+            .unwrap_or_else(|| std::path::PathBuf::from("/tmp"))
+    } else {
+        std::path::PathBuf::from("/tmp")
+    };
     let sock_path = base.join(&sock_name);
     let listener = UnixListener::bind(&sock_path)
         .map_err(|e| ElevateError::Unavailable(format!("bind: {e}")))?;
     let _ = std::fs::set_permissions(&sock_path, std::fs::Permissions::from_mode(0o600));
 
+    // Unlink on *every* exit path, not just the one where the helper
+    // connects. The common failure is the user cancelling the consent
+    // dialog: `accept` then times out and each of the four `?` below
+    // returned without unlinking, so every cancelled elevation left a
+    // socket node behind in $XDG_RUNTIME_DIR (or /tmp) for the life of
+    // the machine.
+    struct SockGuard(std::path::PathBuf);
+    impl Drop for SockGuard {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_file(&self.0);
+        }
+    }
+    let _sock_guard = SockGuard(sock_path.clone());
+
     let helper = sibling_helper()?;
     let sock_str = sock_path.to_string_lossy().into_owned();
     let (program, args) =
         freally_helper::build_spawn_command(&helper, &sock_str, &[Capability::ElevatedRetry]);
-    std::process::Command::new(&program)
+    let child = std::process::Command::new(&program)
         .args(&args)
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null())
         .spawn()
         .map_err(|e| ElevateError::Unavailable(format!("spawn {program}: {e}")))?;
+    // Reap it. `Child::drop` does not wait, so the pkexec / osascript
+    // consent process stayed a zombie in our process table after every
+    // elevation — one per batch, never harvested until the app exits.
+    // A detached waiter costs one short-lived thread and keeps the
+    // reap off this async task.
+    std::thread::spawn(move || {
+        let mut child = child;
+        let _ = child.wait();
+    });
 
     let (stream, _addr) = tokio::time::timeout(CONNECT_TIMEOUT, listener.accept())
         .await
         .map_err(|_| ElevateError::Unavailable("accept timed out (consent cancelled?)".into()))?
         .map_err(|e| ElevateError::Unavailable(format!("accept: {e}")))?;
-    // Best-effort: drop the socket node once the helper has connected.
+    // Drop the socket node as soon as the helper is through, rather
+    // than waiting for `_sock_guard` at end of scope. The guard still
+    // covers the error paths above; this just shortens the window.
     let _ = std::fs::remove_file(&sock_path);
 
     run_handshake(stream, pairs).await

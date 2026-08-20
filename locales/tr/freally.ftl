@@ -1735,3 +1735,31 @@ settings-favorites-hotkey = Kısayol
 a11y-queue-status = { $running } çalışıyor, { $done } tamamlandı, { $failed } başarısız
 
 err-favorite-id-invalid = Geçersiz sık kullanılan tanımlayıcısı
+
+# Previously hard-coded in the Svelte markup, so they stayed English
+# in every locale. Product names (Freally File Manager, PeerJS) and
+# the IAM / TRIM / QR / ID initialisms are intentionally untranslated.
+remote-account-name = Hesap adı
+remote-service-account = Hizmet hesabı
+remote-client-id = İstemci kimliği
+remote-secret = Gizli anahtar (erişim anahtarı / parola / belirteç)
+remote-job-name = İş adı
+remote-instance-size = Örnek boyutu
+remote-iam-role = IAM rolü / kimliği
+pair-always-connect = Mobil uygulamaya her zaman bağlan
+pair-broker-url = PeerJS aracı URL'si (boş = genel varsayılan)
+pair-devices-heading = Eşleştirilmiş cihazlar
+pair-onboarding-title = Freally File Manager mobil yardımcı uygulamasını edinin
+pair-onboarding-loading-qr = QR yükleniyor…
+sanitize-confirm-backup = Saklamak istediğim tüm verilerin yedeğine sahip olduğumu onaylıyorum
+sanitize-model-mismatch = Sürücü model adı eşleşmiyor.
+sanitize-trim-heading = Boş alan TRIM
+details-avg-speed = Ort. hız
+pair-onboarding-body = Masaüstündeki kopyalama / taşıma / eşitleme / güvenli silme işlerini özel bir WebRTC bağlantısı üzerinden telefonunuzdan yönetin. Aşağıdaki QR kodunu telefon kameranızla tarayıp kurulum adresini tarayıcıda açın, ardından "Ana Ekrana Ekle" seçeneğine dokunun — App Store gerekmez.
+pair-onboarding-have-app = Uygulama bende, şimdi eşleştir
+pair-onboarding-later = Belki daha sonra
+pair-no-device-warning = Otomatik bağlanma açık, ancak henüz eşleştirilmiş bir telefon yok. Telefonunuza Freally File Manager mobil PWA'sını kurun (aşağıdaki QR kodunu kamerayla tarayın), ardından masaüstünün nereye bağlanacağını bilmesi için "Eşleştirmeyi başlat"a tıklayın.
+pair-desktop-peer-id = Masaüstü peer-id:
+sanitize-probe = Yetenekleri sorgula
+sanitize-run = Temizlemeyi çalıştır
+sanitize-run-trim = Boş alan TRIM işlemini çalıştır

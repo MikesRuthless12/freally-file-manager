@@ -159,3 +159,9 @@ path = "../../tests/smoke/phase_41_preview.rs"
 name = "copy_bench"
 harness = false
 path = "benches/copy_bench.rs"
+
+# Locks in that a symlinked / junctioned tree root is refused loudly
+# rather than walked into a zero-file "successful" copy.
+[[test]]
+name = "symlink_root_refusal"
+path = "../../tests/smoke/symlink_root_refusal.rs"

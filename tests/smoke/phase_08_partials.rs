@@ -40,7 +40,7 @@ fn elevated_retry_via_helper_round_trips_a_real_file() {
     let granted = vec![Capability::ElevatedRetry];
     let resp = handle_request(
         &Request::ElevatedRetry {
-            src: src.clone(),
+            src,
             dst: dst.clone(),
         },
         &granted,

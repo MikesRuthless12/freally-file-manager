@@ -24,9 +24,9 @@ use axum::routing::get;
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD as BASE64;
 use bytes::Bytes;
-use dav_server::DavHandler;
 use dav_server::fakels::FakeLs;
 use dav_server::localfs::LocalFs;
+use dav_server::{DavHandler, DavMethodSet};
 use http_body::{Body as HttpBody, Frame};
 use subtle::ConstantTimeEq;
 
@@ -51,7 +51,7 @@ pub(crate) fn build_router(config: &ServerConfig, metrics: Arc<MetricsRegistry>)
         .protocols
         .iter()
         .any(|p| matches!(p, Protocol::WebDav | Protocol::Http));
-    let dav = serves_files.then(|| Arc::new(build_dav(&config.root)));
+    let dav = serves_files.then(|| Arc::new(build_dav(&config.root, config.readonly)));
 
     let state = HttpState {
         metrics,
@@ -68,11 +68,22 @@ pub(crate) fn build_router(config: &ServerConfig, metrics: Arc<MetricsRegistry>)
 
 /// A `DavHandler` over the local filesystem rooted at `root`, with a fake
 /// lock system so Windows / macOS WebDAV clients see locking support.
-fn build_dav(root: &Path) -> DavHandler {
-    DavHandler::builder()
+///
+/// When `readonly`, the handler's own method set is pinned to
+/// `WEBDAV_RO` as well. Leaving `allow` unset means dav-server permits
+/// every method it knows, so the read-only promise rested entirely on
+/// the caller-side check in `dav_fallback`. Two independent gates means
+/// one of them missing a verb is no longer a write primitive.
+fn build_dav(root: &Path, readonly: bool) -> DavHandler {
+    let builder = DavHandler::builder()
         .filesystem(LocalFs::new(root, false, false, cfg!(target_os = "macos")))
-        .locksystem(FakeLs::new())
-        .build_handler()
+        .locksystem(FakeLs::new());
+    let builder = if readonly {
+        builder.methods(DavMethodSet::WEBDAV_RO)
+    } else {
+        builder
+    };
+    builder.build_handler()
 }
 
 /// `GET /metrics` — Prometheus text exposition. Intentionally unauthenticated
@@ -187,11 +198,17 @@ where
 }
 
 /// WebDAV / HTTP methods that mutate the filesystem.
+///
+/// Deliberately an allow-list of the read-only verbs rather than a
+/// deny-list of the mutating ones. The deny-list form omitted `PATCH`,
+/// which dav-server routes to `handle_put` with `create = true` — so a
+/// `--readonly` server accepted `PATCH` and let an unauthenticated LAN
+/// client create files and write at arbitrary offsets. A deny-list is
+/// wrong by construction here: every method dav-server gains in a future
+/// release defaults to "permitted" until someone remembers to add it.
+/// This way an unknown verb is refused instead.
 fn is_write_method(method: &Method) -> bool {
-    matches!(
-        method.as_str(),
-        "PUT" | "DELETE" | "MKCOL" | "MOVE" | "COPY" | "PROPPATCH" | "LOCK" | "UNLOCK" | "POST"
-    )
+    !matches!(method.as_str(), "GET" | "HEAD" | "OPTIONS" | "PROPFIND")
 }
 
 /// Enforce the configured auth mode against a request's headers. Returns

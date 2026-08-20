@@ -107,6 +107,7 @@
   let storesCleanup: (() => void) | null = null;
   let themeCleanup: (() => void) | null = null;
   let f2KeyCleanup: (() => void) | null = null;
+  let taskListenersCleanup: (() => void) | null = null;
 
   // First-run EULA gate: `null` while the status loads, then the
   // backend's answer. Until the current EULA version is accepted the
@@ -190,7 +191,7 @@
   // resume prompts — runs only after the EULA gate clears.
   async function bootMain() {
     storesCleanup = await initStores();
-    void initTaskListeners();
+    taskListenersCleanup = await initTaskListeners();
     void refreshRepos();
     window.addEventListener("keydown", onF2Keydown);
     window.addEventListener("keydown", onUndoKeydown);
@@ -225,6 +226,7 @@
     storesCleanup?.();
     themeCleanup?.();
     f2KeyCleanup?.();
+    taskListenersCleanup?.();
   });
 
   // FFM-M22 — the text a screen reader hears when the queue changes

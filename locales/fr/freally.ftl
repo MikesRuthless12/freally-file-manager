@@ -1735,3 +1735,31 @@ settings-favorites-hotkey = Raccourci
 a11y-queue-status = { $running } en cours, { $done } terminés, { $failed } en échec
 
 err-favorite-id-invalid = Identifiant de favori invalide
+
+# Previously hard-coded in the Svelte markup, so they stayed English
+# in every locale. Product names (Freally File Manager, PeerJS) and
+# the IAM / TRIM / QR / ID initialisms are intentionally untranslated.
+remote-account-name = Nom du compte
+remote-service-account = Compte de service
+remote-client-id = ID client
+remote-secret = Secret (clé d'accès / mot de passe / jeton)
+remote-job-name = Nom de la tâche
+remote-instance-size = Taille de l'instance
+remote-iam-role = Rôle / identité IAM
+pair-always-connect = Toujours se connecter à l'application mobile
+pair-broker-url = URL du broker PeerJS (vide = valeur publique par défaut)
+pair-devices-heading = Appareils appairés
+pair-onboarding-title = Obtenez l'application mobile compagnon de Freally File Manager
+pair-onboarding-loading-qr = Chargement du QR…
+sanitize-confirm-backup = Je confirme disposer d'une sauvegarde de toutes les données que je souhaite conserver
+sanitize-model-mismatch = Le nom du modèle du disque ne correspond pas.
+sanitize-trim-heading = TRIM de l'espace libre
+details-avg-speed = Vitesse moyenne
+pair-onboarding-body = Pilotez depuis votre téléphone les tâches de copie / déplacement / synchronisation / suppression sécurisée de votre ordinateur via une liaison WebRTC privée. Scannez le QR ci-dessous avec l'appareil photo de votre téléphone pour ouvrir l'URL d'installation dans votre navigateur, puis appuyez sur « Sur l'écran d'accueil » — aucun App Store requis.
+pair-onboarding-have-app = J'ai l'application, appairer maintenant
+pair-onboarding-later = Plus tard
+pair-no-device-warning = La connexion automatique est activée, mais aucun téléphone n'est encore appairé. Installez la PWA mobile Freally File Manager sur votre téléphone (scannez le QR ci-dessous avec l'appareil photo), puis cliquez sur « Démarrer l'appairage » pour que l'ordinateur sache où se connecter.
+pair-desktop-peer-id = Peer-id du bureau :
+sanitize-probe = Sonder les capacités
+sanitize-run = Lancer l'effacement
+sanitize-run-trim = Lancer le TRIM de l'espace libre

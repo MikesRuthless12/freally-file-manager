@@ -20,10 +20,21 @@
  * <div class="drawer" use:escapeToClose={close}>…</div>
  * ```
  *
- * Stops propagation so a stacked overlay closes only the topmost one:
- * the innermost overlay mounts last, and its listener runs first
- * because `window` listeners fire in registration order.
+ * With overlays stacked (RestoreModal over LibraryDrawer), only the
+ * topmost one closes. That is enforced by the `openOverlays` stack
+ * below, not by `stopPropagation`: every instance listens on `window`,
+ * and `stopPropagation` does not suppress other listeners on the *same*
+ * target, so one Escape would otherwise fire all of them at once. The
+ * registration order runs the wrong way too — the innermost overlay
+ * mounts last, so its listener runs last, not first.
  */
+
+/**
+ * Mount order of the overlays currently listening for Escape. The last
+ * entry is the topmost, and only it acts on the key.
+ */
+const openOverlays: HTMLElement[] = [];
+
 export function escapeToClose(node: HTMLElement, onClose: () => void) {
   let handler = onClose;
 
@@ -32,10 +43,13 @@ export function escapeToClose(node: HTMLElement, onClose: () => void) {
     // Let a native control that owns Escape (an open <select> dropdown,
     // an IME composition) handle it first.
     if (event.defaultPrevented) return;
+    // Only the topmost overlay responds; the ones beneath stay open.
+    if (openOverlays[openOverlays.length - 1] !== node) return;
     event.stopPropagation();
     handler();
   }
 
+  openOverlays.push(node);
   window.addEventListener("keydown", onKeydown);
   // Mark the element so the e2e suite can assert an overlay opted in
   // rather than having to synthesise a key press per overlay.
@@ -47,6 +61,8 @@ export function escapeToClose(node: HTMLElement, onClose: () => void) {
     },
     destroy() {
       window.removeEventListener("keydown", onKeydown);
+      const i = openOverlays.lastIndexOf(node);
+      if (i >= 0) openOverlays.splice(i, 1);
     },
   };
 }

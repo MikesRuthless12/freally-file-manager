@@ -3,8 +3,10 @@
 //! The cursor opens its own read-only SQLite connection against the
 //! per-scan DB so it can run concurrently with an ongoing write
 //! stream (WAL mode makes this safe). Results are ordered by
-//! `rel_path ASC` — the same deterministic order the Scanner commits
-//! in, which is what resume-from-checkpoint depends on.
+//! `rowid ASC` — insertion order, which is the order the Scanner
+//! commits in and what resume-from-checkpoint depends on. It is not
+//! `rel_path ASC`, which this used to claim: the two coincide only by
+//! accident, since the walker does not visit paths in sorted order.
 //!
 //! Implementation note: rusqlite's `Statement` borrows from its
 //! `Connection`, so a naive `Iterator for (Connection, Statement)`

@@ -27,9 +27,15 @@
 //! keyed by the X25519-ECDH shared secret it derives from its
 //! private half + the desktop's long-term public key (carried in the
 //! pairing QR). The desktop verifies in constant time before the
-//! session unlocks. Subsequent privileged commands carry a
-//! monotonically-increasing counter that the desktop refuses to
-//! re-accept, so a passively-recorded session can't be replayed.
+//! session unlocks.
+//!
+//! A passively-recorded session cannot be replayed into a *new*
+//! session: each handshake installs a fresh nonce, so the recorded
+//! MAC no longer verifies. Within a live session, ordering rests on
+//! the sequenced WebRTC data channel — the per-command counter this
+//! used to describe is tracked but not yet checked, because no
+//! counter travels on the wire in this protocol revision. See
+//! `SessionAuth::last_counter`.
 
 use std::time::Instant;
 
@@ -416,9 +422,19 @@ pub struct SessionAuth {
     /// `ChallengeResponse`. `Some` between `Hello(paired)` and
     /// the matching `ChallengeResponse`.
     pending_challenge: Option<[u8; SESSION_NONCE_BYTES]>,
-    /// High-water counter — every `requires_counter` command must
-    /// arrive with `counter > last_counter`. Replays of any
-    /// command that landed under the same handshake fall here.
+    /// High-water counter for per-command replay rejection.
+    ///
+    /// **Not yet enforced.** Nothing on the wire carries a per-command
+    /// counter in this protocol revision, so there is no incoming value
+    /// to compare against: `ChallengeResponse` sets the floor and the
+    /// dispatcher then increments it locally. What actually keeps
+    /// commands monotone today is the sequenced WebRTC data channel,
+    /// plus the fresh nonce each handshake installs — a session
+    /// recorded off the wire cannot be replayed into a *new* handshake.
+    ///
+    /// This used to read as though every command were checked against
+    /// it. Keep the field: it is the floor the check will use once the
+    /// PWA sends a counter with each command.
     last_counter: u64,
     /// Last monotonic instant a `SetKeepAwake` toggle was honoured.
     /// `None` means "never". The dispatcher refuses any subsequent
@@ -449,9 +465,14 @@ impl SessionAuth {
     pub fn awaiting_challenge_response(&self) -> bool {
         self.pending_challenge.is_some()
     }
-    /// Reset the session to fresh state. Used by the dispatcher on
-    /// `Goodbye` or any auth-violation that warrants a redo of
-    /// the handshake (e.g. identity swap).
+    /// Drop the pairing identity and any in-flight challenge, forcing
+    /// a fresh handshake. Used by the dispatcher on `Goodbye` or on an
+    /// auth violation that warrants a redo (e.g. identity swap).
+    ///
+    /// Deliberately *not* a full reset, despite what this used to say:
+    /// `last_counter` and `last_keep_awake_toggle` both survive. Both
+    /// are anti-abuse floors, and clearing them would let a peer lift
+    /// a replay floor or a rate limit just by sending `Goodbye`.
     fn reset(&mut self) {
         self.paired_pubkey = None;
         self.pending_challenge = None;
@@ -604,18 +625,20 @@ pub async fn dispatch_with_auth<C: RemoteControl + ?Sized>(
         };
     }
 
-    // Phase 38 — every privileged command implicitly advances the
-    // counter via the wrapper; the WebRTC adapter already serializes
-    // commands in arrival order so we just bump-and-go. The PWA
-    // wraps each command with a monotonic counter at the JSON layer
-    // before transmission and the desktop verifies replay by
-    // refusing any counter <= the high-water mark. (The wire shape
-    // for the per-command counter rides in the next revision of the
-    // protocol; in this revision the ChallengeResponse counter sets
-    // the floor and the data-channel ordering keeps subsequent
-    // commands monotone — anything else is dropped before
-    // reaching the dispatcher because the PWA would refuse to send
-    // out-of-order requests on a single sequenced data channel.)
+    // Phase 38 — advance the local high-water mark.
+    //
+    // This is bookkeeping, not a check. No counter arrives with the
+    // command in this protocol revision, so there is nothing to
+    // compare: `ChallengeResponse` set the floor and each privileged
+    // command bumps it by one. Ordering is what the sequenced WebRTC
+    // data channel provides, and cross-session replay is blocked by
+    // the fresh nonce every handshake installs.
+    //
+    // The comment here used to describe the desktop as "verifying
+    // replay by refusing any counter <= the high-water mark", which is
+    // the design, not the code. When the PWA starts sending a counter,
+    // reject `counter <= auth.last_counter` here and assign rather than
+    // increment.
     if cmd.requires_counter() {
         auth.last_counter = auth.last_counter.saturating_add(1);
     }
@@ -707,7 +730,7 @@ pub fn compute_challenge_mac(
     out
 }
 
-fn hex_lower(bytes: &[u8]) -> String {
+pub(crate) fn hex_lower(bytes: &[u8]) -> String {
     const HEX: &[u8; 16] = b"0123456789abcdef";
     let mut s = String::with_capacity(bytes.len() * 2);
     for b in bytes {
@@ -717,7 +740,7 @@ fn hex_lower(bytes: &[u8]) -> String {
     s
 }
 
-fn decode_hex_array<const N: usize>(s: &str) -> Result<[u8; N], ()> {
+pub(crate) fn decode_hex_array<const N: usize>(s: &str) -> Result<[u8; N], ()> {
     if s.len() != N * 2 {
         return Err(());
     }

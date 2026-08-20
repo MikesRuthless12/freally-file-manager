@@ -780,6 +780,13 @@ pub enum QueueMergeError {
     /// `src` does not name a queue currently held by the registry.
     #[error("unknown source queue: {0}")]
     UnknownSrc(QueueId),
+    /// No queue in the registry holds this job, so there is no source
+    /// queue id to report. The lookup failure used to be reported as
+    /// `UnknownSrc(dst)` — naming the *destination* queue, which was
+    /// found perfectly well — so the message pointed at the wrong
+    /// queue entirely.
+    #[error("no queue holds job {0}")]
+    UnknownJob(JobId),
     /// `dst` does not name a queue currently held by the registry.
     #[error("unknown destination queue: {0}")]
     UnknownDst(QueueId),
@@ -1207,7 +1214,7 @@ impl QueueRegistry {
                 .iter()
                 .find(|e| e.queue.get(job).is_some())
                 .map(|e| e.queue.clone())
-                .ok_or(QueueMergeError::UnknownSrc(dst))?;
+                .ok_or(QueueMergeError::UnknownJob(job))?;
             (src_queue, dst_queue)
         };
         if src_queue.id() == dst {

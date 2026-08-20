@@ -153,7 +153,7 @@ async fn phase_24_policy_filter_drops_stream() {
         preserve_xattrs: false,
         ..MetaPolicy::default()
     };
-    let mut filtered = snap.clone();
+    let mut filtered = snap;
     policy.filter(&mut filtered);
     assert_eq!(
         filtered.ads.len(),

@@ -32,6 +32,7 @@ use std::process::ExitCode;
 
 mod bench;
 mod conformance;
+mod overlay;
 mod plugins;
 mod qa;
 mod release;
@@ -67,6 +68,13 @@ fn main() -> ExitCode {
             Ok(()) => ExitCode::SUCCESS,
             Err(e) => {
                 eprintln!("xtask i18n-lint: {e}");
+                ExitCode::FAILURE
+            }
+        },
+        Some("overlay-lint") => match overlay::run() {
+            Ok(()) => ExitCode::SUCCESS,
+            Err(e) => {
+                eprintln!("xtask overlay-lint: {e}");
                 ExitCode::FAILURE
             }
         },
@@ -148,7 +156,9 @@ fn main() -> ExitCode {
 
 fn print_help() {
     println!(
-        "Usage: xtask <command>\n\nCommands:\n  i18n-lint              Verify key parity, literal-key coverage, and Fluent syntax\n                         across locales/<code>/freally.ftl\n  bench                  Run the Criterion bench suite at full size\n  bench-ci               Run the Criterion bench suite at CI-scaled sizes\n  bench-vs               Time our engine against OS copy tools on PATH\n  release                Drive the Phase 16 free-first packaging path (pnpm tauri build)\n  qa-automate            Run every automatable QualityAssuranceChecklist item\n                         (§0 pre-flight + §1 static + §2 tests + §3 security + §5 perf)\n                         and emit a pass/fail report. Use `qa-automate --help` for flags.\n  build-sample-plugins   Compile every Phase 46.5 sample plugin under\n                         apps/freally-ui/plugins/ to wasm32-unknown-unknown.\n"
+        "Usage: xtask <command>\n\nCommands:\n  i18n-lint              Verify key parity, literal-key coverage, and Fluent syntax\n                         across locales/<code>/freally.ftl\n  overlay-lint           Verify every dialog/drawer opts into Escape-to-close
+                         via `use:escapeToClose` (src/lib/a11y.ts)
+  bench                  Run the Criterion bench suite at full size\n  bench-ci               Run the Criterion bench suite at CI-scaled sizes\n  bench-vs               Time our engine against OS copy tools on PATH\n  release                Drive the Phase 16 free-first packaging path (pnpm tauri build)\n  qa-automate            Run every automatable QualityAssuranceChecklist item\n                         (§0 pre-flight + §1 static + §2 tests + §3 security + §5 perf)\n                         and emit a pass/fail report. Use `qa-automate --help` for flags.\n  build-sample-plugins   Compile every Phase 46.5 sample plugin under\n                         apps/freally-ui/plugins/ to wasm32-unknown-unknown.\n"
     );
 }
 

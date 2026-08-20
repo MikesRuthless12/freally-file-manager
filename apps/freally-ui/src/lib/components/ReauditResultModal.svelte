@@ -7,6 +7,7 @@
   list of files that drifted. Matching files are counted, never listed.
 -->
 <script lang="ts">
+  import { escapeToClose } from "../a11y";
   import { t } from "../i18n";
   import { closeReauditResult } from "../stores";
   import type { ReauditReport } from "../ipc";
@@ -35,10 +36,6 @@
         return t("reaudit-status-error");
     }
   }
-
-  function onKeydown(e: KeyboardEvent) {
-    if (e.key === "Escape") closeReauditResult();
-  }
 </script>
 
 <div
@@ -47,7 +44,7 @@
   aria-modal="true"
   aria-labelledby="reaudit-title"
   tabindex="-1"
-  onkeydown={onKeydown}
+  use:escapeToClose={closeReauditResult}
 >
   <div class="panel">
     <h2 id="reaudit-title" class:ok={clean} class:bad={!clean}>

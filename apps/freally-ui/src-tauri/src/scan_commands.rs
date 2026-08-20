@@ -121,7 +121,7 @@ pub async fn scan_start(
     tokio::spawn(forward_scan_events(app_for_events, scan_id, rx));
 
     let app_for_run = app.clone();
-    let db_for_started = db_path.clone();
+    let db_for_started = db_path;
     let _ = app.emit(
         EVENT_SCAN_STARTED,
         ScanStartedDto {
@@ -131,7 +131,7 @@ pub async fn scan_start(
         },
     );
 
-    let registry_for_cleanup = registry.clone();
+    let registry_for_cleanup = registry;
     let started_at = Instant::now();
     tokio::spawn(async move {
         let result = scanner.run(ctrl, tx).await;
@@ -165,7 +165,7 @@ pub async fn scan_start(
                     EVENT_SCAN_FAILED,
                     ScanFailedDto {
                         scan_id: scan_id.as_str(),
-                        message: err.message.clone(),
+                        message: err.message,
                     },
                 );
             }

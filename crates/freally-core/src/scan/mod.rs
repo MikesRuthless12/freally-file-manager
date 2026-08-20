@@ -230,6 +230,30 @@ impl Scanner {
             index_path,
         } = self;
 
+        // Refuse a symlinked / junctioned root outright when root
+        // following is off. With `follow_root_links(false)` the walk
+        // would otherwise yield only the root entry, the enumerator
+        // discards it, and the scan finalises `ScanStatus::Complete`
+        // with an EMPTY item table — which `copy_tree_from_scan` then
+        // faithfully copies as zero files and reports as success.
+        if !opts.follow_symlinks {
+            match std::fs::symlink_metadata(&root) {
+                Ok(md) if md.file_type().is_symlink() => {
+                    return Err(CopyError {
+                        kind: CopyErrorKind::IoOther,
+                        src: root.clone(),
+                        dst: db_path.clone(),
+                        raw_os_error: None,
+                        message: "scan root is a symlink or junction; enable \
+                                  follow-symlinks or scan the target directory"
+                            .to_string(),
+                    });
+                }
+                Ok(_) => {}
+                Err(e) => return Err(CopyError::from_io(&root, &db_path, e)),
+            }
+        }
+
         let _ = events
             .send(ScanEvent::Started {
                 scan_id,
@@ -381,7 +405,7 @@ impl Scanner {
                             Err(e) => {
                                 let err = rusqlite_err(&writer_root, &writer_db_path, e);
                                 if first_error.is_none() {
-                                    first_error = Some(err.clone());
+                                    first_error = Some(err);
                                 }
                                 writer_ctrl.cancel();
                                 break;
@@ -423,6 +447,13 @@ impl Scanner {
 
         // Close the hash-request channel; workers exit once drained.
         drop(writer_hash_tx);
+
+        // And close the item channel, for the same reason. The walker
+        // runs on a blocking thread and parks in `blocking_send` until
+        // the receiver is gone; joining it while `item_rx` is still
+        // alive deadlocks whenever the loop above exited early — which
+        // is exactly what a cancelled scan does.
+        drop(item_rx);
 
         // Join walker.
         match walker_handle.await {
@@ -481,16 +512,36 @@ impl Scanner {
         {
             let c = conn.lock().expect("scan conn poisoned");
             let _ = set_meta(&c, "finished_at_ms", &now_ms().to_string());
-            let _ = set_meta(
-                &c,
-                "total_files",
-                &files_written.load(Ordering::Relaxed).to_string(),
-            );
-            let _ = set_meta(
-                &c,
-                "total_bytes",
-                &bytes_discovered.load(Ordering::Relaxed).to_string(),
-            );
+            // Persist the *table's* totals, not this invocation's
+            // counters. `files_written` / `bytes_discovered` start at 0
+            // every run, including a resume, so finishing a resumed scan
+            // overwrote a complete `total_files` with just the delta —
+            // 1 000 files indexed, 50 more after resume, and the meta
+            // then claimed the scan held 50. Progress denominators read
+            // this key, so they were wrong in both directions.
+            match read_stats(&c) {
+                Ok(stats) => {
+                    let _ = set_meta(&c, "total_files", &stats.total_files.to_string());
+                    let _ = set_meta(&c, "total_bytes", &stats.total_bytes.to_string());
+                }
+                Err(e) => {
+                    tracing::warn!(
+                        target: "freally::scan",
+                        error = %e,
+                        "could not read final scan totals; falling back to this run's counters"
+                    );
+                    let _ = set_meta(
+                        &c,
+                        "total_files",
+                        &files_written.load(Ordering::Relaxed).to_string(),
+                    );
+                    let _ = set_meta(
+                        &c,
+                        "total_bytes",
+                        &bytes_discovered.load(Ordering::Relaxed).to_string(),
+                    );
+                }
+            }
             let _ = set_meta(&c, "status", terminal_status.as_str());
         }
         if let Some(ip) = &index_path
@@ -703,8 +754,11 @@ fn enumerate_into_channel(
     events: mpsc::Sender<ScanEvent>,
     item_tx: mpsc::Sender<RawItem>,
 ) -> std::io::Result<()> {
+    // walkdir defaults `follow_root_links` to true, so `follow_links(false)`
+    // alone still descends a symlinked scan root into its target tree.
     let mut it = walkdir::WalkDir::new(&root)
         .follow_links(follow)
+        .follow_root_links(follow)
         .sort_by_file_name()
         .into_iter();
     let mut since_last_progress: u32 = 0;

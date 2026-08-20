@@ -463,8 +463,8 @@ export async function refreshTasks(): Promise<void> {
 let taskListenersStarted = false;
 /** Subscribe once at startup to task lifecycle events, upserting each
  * emitted `TaskDto` into the store so the Footer badge + center stay live. */
-export async function initTaskListeners(): Promise<void> {
-  if (taskListenersStarted) return;
+export async function initTaskListeners(): Promise<() => void> {
+  if (taskListenersStarted) return () => {};
   taskListenersStarted = true;
   await refreshTasks();
   const upsert = (dto: TaskDto) =>
@@ -477,6 +477,12 @@ export async function initTaskListeners(): Promise<void> {
       }
       return [dto, ...list];
     });
+  // Keep every unlisten fn. These were all discarded, and
+  // `taskListenersStarted` never reset, so each remount of the
+  // main UI (the EULA gate re-runs `bootMain`) stacked another
+  // five live Tauri listeners on the same five events with no way
+  // to detach them.
+  const unlisten: Array<() => void> = [];
   for (const ev of [
     "task-started",
     "task-progress",
@@ -484,8 +490,12 @@ export async function initTaskListeners(): Promise<void> {
     "task-failed",
     "task-cancelled",
   ]) {
-    await onEvent<TaskDto>(ev, upsert);
+    unlisten.push(await onEvent<TaskDto>(ev, upsert));
   }
+  return () => {
+    for (const un of unlisten) un();
+    taskListenersStarted = false;
+  };
 }
 
 // Error display mode — readable + write-through setter. SettingsModal
@@ -563,26 +573,36 @@ export const currentCopyDirs: Readable<Map<number, CurrentCopyDirs>> = derived(
     return out;
   },
 );
+// One reused collator, pinned at module scope. `localeCompare` goes
+// through a cached-collator lookup on every call; hoisting skips that
+// and fixes the locale. `.compare` is an accessor (not a method), so
+// the sorts read it once into `activityCompare` rather than per
+// comparison — ~4.5M times over a full ACTIVITY_LIMIT list.
+const activityCollator = new Intl.Collator();
+const activityCompare = activityCollator.compare;
+
 export const sortedFileActivity: Readable<FileActivityRow[]> = derived(
   [fileActivityStore, activitySortStore],
   ([$rows, $mode]) => {
     if ($mode === "insertion") return $rows;
-    const copy = $rows.slice();
-    copy.sort((a, b) => {
-      switch ($mode) {
-        case "name-asc":
-          return basenameOf(a.src).localeCompare(basenameOf(b.src));
-        case "name-desc":
-          return basenameOf(b.src).localeCompare(basenameOf(a.src));
-        case "size-asc":
-          return (a.bytesTotal || 0) - (b.bytesTotal || 0);
-        case "size-desc":
-          return (b.bytesTotal || 0) - (a.bytesTotal || 0);
-        default:
-          return 0;
-      }
-    });
-    return copy;
+    if ($mode === "size-asc" || $mode === "size-desc") {
+      const dir = $mode === "size-asc" ? 1 : -1;
+      const copy = $rows.slice();
+      copy.sort((a, b) => dir * ((a.bytesTotal || 0) - (b.bytesTotal || 0)));
+      return copy;
+    }
+    if ($mode === "name-asc" || $mode === "name-desc") {
+      // Decorate-sort-undecorate: basenameOf ran twice per comparison,
+      // so O(n log n) string scans become O(n).
+      const dir = $mode === "name-asc" ? 1 : -1;
+      const decorated = $rows.map((row) => ({ row, key: basenameOf(row.src) }));
+      decorated.sort((a, b) => dir * activityCompare(a.key, b.key));
+      return decorated.map((d) => d.row);
+    }
+    // Reachable: the mode is seeded from an unvalidated localStorage
+    // cast, so a stale key lands here. Return the list as-is rather
+    // than copying up to ACTIVITY_LIMIT rows to no effect.
+    return $rows;
   },
 );
 
@@ -708,12 +728,21 @@ export async function preseedBeforeEnqueue(
         const existingKeys = new Set($rows.map((r) => r.key));
         const toAdd: FileActivityRow[] = [];
         for (const f of slice) {
+          // Longest match, and only on a directory boundary. A bare
+          // `startsWith` with first-match-wins meant dropping
+          // `D:\Photos` and `D:\Photos2` together keyed every file of
+          // the second folder under the first: `adoptPreseededForJob`
+          // then re-keyed them onto the wrong job, and the second job
+          // took the adopt branch, matched nothing, and skipped its
+          // fallback pre-seed — so every one of its files appeared
+          // twice, one row stuck at `pending` forever.
           let rootSrc = "";
           for (const s of sources) {
-            if (f.path === s || f.path.startsWith(s)) {
-              rootSrc = s;
-              break;
-            }
+            const isUnder =
+              f.path === s ||
+              f.path.startsWith(s.endsWith("/") || s.endsWith("\\") ? s : `${s}/`) ||
+              f.path.startsWith(s.endsWith("/") || s.endsWith("\\") ? s : `${s}\\`);
+            if (isUnder && s.length > rootSrc.length) rootSrc = s;
           }
           const key = `pending-${rootSrc}:${f.path}`;
           if (existingKeys.has(key)) continue;
@@ -731,7 +760,17 @@ export async function preseedBeforeEnqueue(
             addedAtMs: now,
           });
         }
-        return [...$rows, ...toAdd];
+        // Enforce ACTIVITY_LIMIT here too. The sibling lazy-append
+        // path tail-slices; this one did not, and its `res.overflow`
+        // guard only fires at the Rust enumerator's 500 000 HARD_LIMIT.
+        // So a 400 000-file tree — under that limit, so `overflow` is
+        // false — committed all 400 000 reactive rows, 150 000 past the
+        // cap, reproducing the renderer OOM the comment above was
+        // written to prevent.
+        const appended = [...$rows, ...toAdd];
+        return appended.length > ACTIVITY_LIMIT
+          ? appended.slice(appended.length - ACTIVITY_LIMIT)
+          : appended;
       });
       // Yield to the renderer between batches so it can paint
       // the partial list and avoid a blocking mega-update.
@@ -762,18 +801,22 @@ export async function preseedBeforeEnqueue(
 /// batch regardless of how many events landed in between.
 let activityQueue: FileActivityDto[] = [];
 let activityFlushScheduled = false;
+let activityFlushTimer: ReturnType<typeof setTimeout> | null = null;
 const ACTIVITY_FLUSH_MS = 100;
+
+function scheduleActivityFlush(): void {
+  activityFlushScheduled = true;
+  activityFlushTimer = setTimeout(flushActivityQueue, ACTIVITY_FLUSH_MS);
+}
 
 function queueActivityEvent(p: FileActivityDto): void {
   activityQueue.push(p);
-  if (!activityFlushScheduled) {
-    activityFlushScheduled = true;
-    setTimeout(flushActivityQueue, ACTIVITY_FLUSH_MS);
-  }
+  if (!activityFlushScheduled) scheduleActivityFlush();
 }
 
 function flushActivityQueue(): void {
   activityFlushScheduled = false;
+  activityFlushTimer = null;
   const batch = activityQueue;
   if (batch.length === 0) return;
   activityQueue = [];
@@ -848,9 +891,27 @@ function flushActivityQueue(): void {
   });
   // If more events arrived during the flush, schedule another.
   if (activityQueue.length > 0 && !activityFlushScheduled) {
-    activityFlushScheduled = true;
-    setTimeout(flushActivityQueue, ACTIVITY_FLUSH_MS);
+    scheduleActivityFlush();
   }
+}
+
+/// Drop rows seeded by `preseedBeforeEnqueue` when the enqueue that
+/// was supposed to adopt them never happened. `preseed` commits
+/// optimistically so the Activity list is populated the instant the
+/// copy starts; without this, a `start_copy` that throws (bad
+/// destination, queue locked, denied elevation) strands one
+/// `pending` row per file — thousands of them — with no job to ever
+/// move them off `pending`.
+export function discardPreseededFor(sources: string[]): void {
+  const prefixes = sources.map((s) => `pending-${s}:`);
+  if (prefixes.length === 0) return;
+  fileActivityStore.update(($rows) => {
+    const next = $rows.filter(
+      (r) => !prefixes.some((p) => r.key.startsWith(p)),
+    );
+    return next.length === $rows.length ? $rows : next;
+  });
+  for (const s of sources) pendingPreseedPaths.delete(s);
 }
 
 function adoptPreseededForJob(jobId: number, src: string): void {
@@ -1179,6 +1240,13 @@ export async function initStores(): Promise<() => void> {
     }),
     onEvent<JobIdDto>(EVENTS.jobRemoved, (p) => {
       jobsStore.update(($jobs) => $jobs.filter((j) => j.id !== p.id));
+      // Two comments in this file already say the conflict batch is
+      // cleared on job removal; nothing did it. Removing a job that had
+      // raised collisions left ConflictBatchModal on screen — it renders
+      // on `rows.length > 0` — with `firstJobId` pointing at a dead job,
+      // so `addConflictRule` and `currentConflictRules` both rejected
+      // and the rows could never be resolved.
+      clearConflictBatch(p.id);
     }),
     onEvent<GlobalsDto>(EVENTS.globalsTick, (g) => {
       globalsStore.set(g);
@@ -1354,6 +1422,18 @@ export async function initStores(): Promise<() => void> {
 
   return () => {
     for (const un of unlisten) un();
+    // Both of these outlived the component that started them: a
+    // pending flush would fire into a torn-down store, and the
+    // queue-refresh timer would issue an IPC after teardown.
+    if (activityFlushTimer !== null) {
+      clearTimeout(activityFlushTimer);
+      activityFlushTimer = null;
+      activityFlushScheduled = false;
+    }
+    if (queueRouteRefreshTimer !== null) {
+      clearTimeout(queueRouteRefreshTimer);
+      queueRouteRefreshTimer = null;
+    }
   };
 }
 

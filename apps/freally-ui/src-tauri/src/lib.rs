@@ -778,6 +778,7 @@ pub fn run() {
             sync_commands::sync_engine_get,
             sync_commands::sync_engine_set,
             sync_commands::pause_sync,
+            sync_commands::resume_sync,
             sync_commands::cancel_sync,
             // Phase 26 — live-mirror loop lifecycle.
             live_mirror::start_live_mirror,

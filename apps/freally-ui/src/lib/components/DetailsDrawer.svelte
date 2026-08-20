@@ -103,7 +103,7 @@
     </dd>
     <dt>{t("details-speed")}</dt>
     <dd>{formatRate(job.rateBps)}</dd>
-    <dt>Avg speed</dt>
+    <dt>{t("details-avg-speed")}</dt>
     <dd>{avgRate > 0 ? formatRate(avgRate) : "—"}</dd>
     <dt>{t("details-eta")}</dt>
     <dd>{formatEtaVerbose(job.etaSeconds)}</dd>

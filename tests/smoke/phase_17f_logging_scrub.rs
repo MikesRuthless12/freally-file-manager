@@ -52,7 +52,7 @@ fn audit_layer_drops_sensitive_fields() {
     let sink = Arc::new(
         AuditSink::open(&path, AuditFormat::JsonLines, WormMode::Off).expect("open audit sink"),
     );
-    let layer = AuditLayer::new(sink.clone());
+    let layer = AuditLayer::new(sink);
     let subscriber = tracing_subscriber::registry().with(layer);
 
     tracing::subscriber::with_default(subscriber, || {

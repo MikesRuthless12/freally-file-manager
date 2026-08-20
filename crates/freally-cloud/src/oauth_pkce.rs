@@ -49,7 +49,7 @@
 //! compiles + unit-tests cleanly with or without a real app.
 
 use std::net::{SocketAddr, TcpListener};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use base64::Engine;
 use sha2::Digest;
@@ -158,7 +158,14 @@ pub fn begin_pkce_flow(
 /// browser shows a success message.
 ///
 /// `listener` must be the `TcpListener` returned from
-/// [`begin_pkce_flow`]. `timeout` bounds the wait; default 120 s.
+/// [`begin_pkce_flow`]. `timeout` bounds the whole wait, accept
+/// included; default 120 s.
+///
+/// Connections carrying neither `code` nor `state` are answered and
+/// skipped rather than failing the flow. Browsers routinely open a
+/// speculative TCP connection to a host before the real request, and
+/// accepting exactly once meant that preconnect consumed the single
+/// accept while the genuine redirect was never read.
 pub fn run_pkce_redirect_listener(
     listener: TcpListener,
     flow: &PkceFlow,
@@ -166,65 +173,117 @@ pub fn run_pkce_redirect_listener(
 ) -> Result<String, OAuthError> {
     use std::io::{BufRead, BufReader, Write};
 
+    let budget = timeout.unwrap_or_else(|| Duration::from_secs(120));
+    let deadline = Instant::now() + budget;
+
+    // Poll for connections instead of blocking in `accept()`. A blocking
+    // `accept` has no timeout of its own, so a login the user walked
+    // away from parked this call forever — and with it the
+    // `spawn_blocking` pool thread running it. That leaked one pool
+    // thread per abandoned login, for the life of the process.
     listener
-        .set_nonblocking(false)
-        .map_err(|e| OAuthError::Http(format!("set blocking: {e}")))?;
+        .set_nonblocking(true)
+        .map_err(|e| OAuthError::Http(format!("set nonblocking: {e}")))?;
 
-    let (mut stream, _peer) = listener
-        .accept()
-        .map_err(|e| OAuthError::Http(format!("accept: {e}")))?;
+    loop {
+        let remaining = deadline.saturating_duration_since(Instant::now());
+        if remaining.is_zero() {
+            return Err(OAuthError::Http(
+                "timed out waiting for the browser redirect".into(),
+            ));
+        }
 
-    // Honour the timeout on the accepted stream — a hostile local
-    // process can race-connect to the loopback port (the port is
-    // randomised but enumerable) and hold the socket open
-    // indefinitely without sending a request line, wedging the
-    // PKCE flow forever. With a default 120 s read timeout the
-    // user can cancel and retry.
-    let stream_timeout = timeout.unwrap_or_else(|| Duration::from_secs(120));
-    let _ = stream.set_read_timeout(Some(stream_timeout));
-    let _ = stream.set_write_timeout(Some(stream_timeout));
+        let (mut stream, _peer) = match listener.accept() {
+            Ok(pair) => pair,
+            Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
+                std::thread::sleep(POLL_INTERVAL.min(remaining));
+                continue;
+            }
+            Err(e) => return Err(OAuthError::Http(format!("accept: {e}"))),
+        };
 
-    // Parse the HTTP request line only: `GET /?code=...&state=... HTTP/1.1`.
-    let mut reader = BufReader::new(
-        stream
-            .try_clone()
-            .map_err(|e| OAuthError::Http(format!("stream clone: {e}")))?,
-    );
-    let mut request_line = String::new();
-    reader
-        .read_line(&mut request_line)
-        .map_err(|e| OAuthError::Http(format!("read request: {e}")))?;
+        // An accepted socket inherits the non-blocking flag on some
+        // platforms; the read below wants blocking-with-timeout.
+        let _ = stream.set_nonblocking(false);
+        // Bound the read per connection, NOT by the whole remaining
+        // budget. A hostile local process can race-connect to the
+        // loopback port (randomised but enumerable) and hold the socket
+        // open without ever sending a request line — and so, more
+        // mundanely, can a browser preconnect. Giving one silent
+        // connection the full 120 s would stall the redirect behind it;
+        // a few seconds is far more than a loopback client needs to put
+        // a request line on the wire. Never zero: to the OS, a zero
+        // timeout means *no* timeout.
+        let read_budget = PER_CONNECTION_READ
+            .min(remaining)
+            .max(Duration::from_millis(1));
+        let _ = stream.set_read_timeout(Some(read_budget));
+        let _ = stream.set_write_timeout(Some(read_budget));
 
-    let path_and_query = request_line
-        .split_whitespace()
-        .nth(1)
-        .ok_or_else(|| OAuthError::Parse("malformed HTTP request line".into()))?;
-    let query = path_and_query.split_once('?').map(|(_, q)| q).unwrap_or("");
-    let (code, state) = parse_code_and_state(query);
+        // Parse the HTTP request line only: `GET /?code=...&state=... HTTP/1.1`.
+        let Ok(clone) = stream.try_clone() else {
+            continue;
+        };
+        let mut reader = BufReader::new(clone);
+        let mut request_line = String::new();
+        if reader.read_line(&mut request_line).is_err() {
+            // Timed out or reset before sending anything. Move on to the
+            // next connection rather than failing the whole flow.
+            continue;
+        }
 
-    // Send a minimal success page before returning.
-    let body = if code.is_none() {
-        "<h1>Freally File Manager — authorization failed</h1><p>Please return to the app.</p>"
-    } else {
-        "<h1>Freally File Manager — authorization complete</h1><p>You can close this window.</p>"
-    };
-    let response = format!(
-        "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
-        body.len(),
-        body
-    );
-    let _ = stream.write_all(response.as_bytes());
-    let _ = stream.flush();
+        let query = request_line
+            .split_whitespace()
+            .nth(1)
+            .and_then(|p| p.split_once('?'))
+            .map(|(_, q)| q)
+            .unwrap_or("");
+        let (code, state) = parse_code_and_state(query);
 
-    let code = code.ok_or_else(|| OAuthError::Provider("no `code` in redirect".into()))?;
-    let state = state.unwrap_or_default();
-    if state != flow.state {
-        return Err(OAuthError::Provider(
-            "redirect `state` mismatch — possible CSRF".into(),
-        ));
+        // A connection carrying neither field is a browser preconnect or
+        // a stray probe, not the redirect. Close it and keep waiting.
+        if code.is_none() && state.is_none() {
+            let _ = stream.write_all(EMPTY_RESPONSE.as_bytes());
+            let _ = stream.flush();
+            continue;
+        }
+
+        // Send a minimal success page before returning.
+        let body = if code.is_none() {
+            "<h1>Freally File Manager — authorization failed</h1><p>Please return to the app.</p>"
+        } else {
+            "<h1>Freally File Manager — authorization complete</h1><p>You can close this window.</p>"
+        };
+        let response = format!(
+            "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+            body.len(),
+            body
+        );
+        let _ = stream.write_all(response.as_bytes());
+        let _ = stream.flush();
+
+        let code = code.ok_or_else(|| OAuthError::Provider("no `code` in redirect".into()))?;
+        let state = state.unwrap_or_default();
+        if state != flow.state {
+            return Err(OAuthError::Provider(
+                "redirect `state` mismatch — possible CSRF".into(),
+            ));
+        }
+        return Ok(code);
     }
-    Ok(code)
 }
+
+/// How long to sleep between `accept` polls while waiting for the
+/// browser. Short enough that the redirect feels instant, long enough
+/// that a 120 s wait costs ~2 400 cheap syscalls rather than a spin.
+const POLL_INTERVAL: Duration = Duration::from_millis(50);
+
+/// Longest a single connection may take to send its request line before
+/// the listener gives up on it and accepts the next one.
+const PER_CONNECTION_READ: Duration = Duration::from_secs(5);
+
+/// Reply used to close out a connection that is not the redirect.
+const EMPTY_RESPONSE: &str = "HTTP/1.1 204 No Content\r\nConnection: close\r\n\r\n";
 
 /// Step 7 — POST the auth code + verifier + redirect_uri to the
 /// token endpoint. Returns the full token response.
@@ -384,6 +443,65 @@ fn url_decode(s: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Browsers commonly open a speculative connection before issuing
+    /// the real request. The listener accepted exactly once, so that
+    /// preconnect consumed the accept and the genuine redirect — which
+    /// carries the auth code — was never read. Both connection styles
+    /// are covered: one that closes immediately, and one that is opened
+    /// and simply held.
+    #[test]
+    fn preconnect_does_not_consume_the_redirect() {
+        use std::io::{Read, Write};
+        use std::net::TcpStream;
+
+        let (flow, listener) =
+            begin_pkce_flow(&PkceProvider::DROPBOX, "test-client-id", None, None).expect("begin");
+        let port = flow.listen_port;
+        let state = flow.state.clone();
+
+        let client = std::thread::spawn(move || {
+            let addr = format!("127.0.0.1:{port}");
+            // 1. Preconnect that closes without sending anything.
+            drop(TcpStream::connect(&addr).expect("preconnect"));
+            // 2. Preconnect that stays open and silent for the whole
+            //    test. Held in scope so it is not closed early.
+            let _held = TcpStream::connect(&addr).expect("held preconnect");
+            // 3. The real redirect.
+            let mut real = TcpStream::connect(&addr).expect("redirect");
+            let req = format!(
+                "GET /?code=the-auth-code&state={state} HTTP/1.1\r\nHost: localhost\r\n\r\n"
+            );
+            real.write_all(req.as_bytes()).expect("write redirect");
+            real.flush().ok();
+            let mut sink = Vec::new();
+            let _ = real.read_to_end(&mut sink);
+        });
+
+        // Generous enough to absorb the 5 s per-connection read cap the
+        // held preconnect burns, without ever reaching the outer budget.
+        let code = run_pkce_redirect_listener(listener, &flow, Some(Duration::from_secs(30)))
+            .expect("the redirect must survive both preconnects");
+        assert_eq!(code, "the-auth-code");
+        client.join().expect("client thread");
+    }
+
+    /// An abandoned login must give the thread back rather than parking
+    /// on `accept()` forever.
+    #[test]
+    fn listener_gives_up_when_no_redirect_arrives() {
+        let (flow, listener) =
+            begin_pkce_flow(&PkceProvider::DROPBOX, "test-client-id", None, None).expect("begin");
+        let started = Instant::now();
+        let err = run_pkce_redirect_listener(listener, &flow, Some(Duration::from_millis(300)))
+            .expect_err("no redirect should time out");
+        assert!(matches!(err, OAuthError::Http(_)), "got {err:?}");
+        assert!(
+            started.elapsed() < Duration::from_secs(10),
+            "must return promptly, took {:?}",
+            started.elapsed(),
+        );
+    }
 
     #[test]
     fn code_verifier_is_long_and_url_safe() {

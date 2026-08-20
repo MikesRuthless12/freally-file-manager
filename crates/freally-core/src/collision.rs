@@ -22,8 +22,10 @@ pub enum CollisionPolicy {
     Overwrite,
     /// Overwrite only if `src`'s mtime is strictly newer than `dst`'s.
     OverwriteIfNewer,
-    /// Insert a unique suffix (e.g. `foo.txt` → `foo (1).txt`) so both
-    /// files exist at the destination.
+    /// Insert a unique suffix so both files exist at the destination.
+    /// The suffix is `_N` starting at 2 — `foo.txt` becomes
+    /// `foo_2.txt`, not the Explorer-style `foo (1).txt` this used to
+    /// claim.
     KeepBoth,
     /// Use this filename instead of the original. No directory part —
     /// the file still lands in the same destination directory.

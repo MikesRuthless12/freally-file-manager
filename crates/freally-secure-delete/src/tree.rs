@@ -212,8 +212,12 @@ fn enumerate(root: &Path) -> (Vec<FileEntry>, Vec<PathBuf>, u64) {
     let mut dirs: Vec<PathBuf> = Vec::new();
     let mut total_bytes: u64 = 0;
 
+    // Defence in depth: `shred_tree` already rejects a symlink root via
+    // `symlink_metadata` before reaching here, but walkdir defaults
+    // `follow_root_links` to true and this walk feeds a DELETE.
     for entry in walkdir::WalkDir::new(root)
         .follow_links(false)
+        .follow_root_links(false)
         .contents_first(true)
         .into_iter()
         .filter_map(|e| e.ok())

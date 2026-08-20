@@ -68,6 +68,11 @@
   // The third confirmation requires typing the drive's model name
   // exactly. Defense in depth: the Tauri command also enforces this
   // on the Rust side so a hostile frontend cannot bypass it.
+  // Every `$device` placeholder resolves through this one value, so the
+  // three confirmation strings can't disagree about what is being wiped.
+  let deviceLabel = $derived(
+    devicePath.trim().length > 0 ? devicePath : "(no device chosen)",
+  );
   let modelMatches = $derived(
     modelTyped.trim().length > 0
       && driveModel !== "(probe to populate)"
@@ -208,9 +213,7 @@
         bind:value={devicePath}
       />
     {/if}
-    <button type="button" class="secondary" onclick={onProbeCapabilities}>
-      Probe capabilities
-    </button>
+    <button type="button" class="secondary" onclick={onProbeCapabilities}>{t("sanitize-probe")}</button>
     {#if busLabel}
       <small class="hint">Bus: {busLabel} · Model: {driveModel}</small>
     {/if}
@@ -229,28 +232,24 @@
 
   <div class="confirm-block">
     <p class="warn">
-      {#if devicePath.trim().length > 0}
-        {t("sanitize-confirm-1", { device: devicePath })}
-      {:else}
-        {t("sanitize-confirm-1", { device: "(no device chosen)" })}
-      {/if}
+      {t("sanitize-confirm-1", { device: deviceLabel })}
     </p>
 
     <label class="row">
       <input type="checkbox" bind:checked={confirm1} />
-      <span>{t("sanitize-confirm-2")}</span>
+      <span>{t("sanitize-confirm-2", { device: deviceLabel })}</span>
     </label>
 
     <label class="row">
       <input type="checkbox" bind:checked={confirm2} />
-      <span>I confirm I have a backup of any data I want to keep</span>
+      <span>{t("sanitize-confirm-backup")}</span>
     </label>
 
     <label class="field">
       <span>{t("sanitize-confirm-3", { model: driveModel })}</span>
       <input type="text" bind:value={modelTyped} placeholder={driveModel} />
       {#if modelTyped.trim().length > 0 && !modelMatches}
-        <small class="error">Drive model name does not match.</small>
+        <small class="error">{t("sanitize-model-mismatch")}</small>
       {/if}
     </label>
   </div>
@@ -260,13 +259,11 @@
     class="danger"
     onclick={onRunSanitize}
     disabled={!runReady}
-  >
-    Run sanitize
-  </button>
+  >{t("sanitize-run")}</button>
 
   {#if running}
     <p class="status">
-      {t("sanitize-running", { device: devicePath, mode: t(MODE_LABEL_KEYS[mode]) })}
+      {t("sanitize-running", { device: deviceLabel, mode: t(MODE_LABEL_KEYS[mode]) })}
     </p>
     {#if progressPercent !== null}
       <progress max="100" value={progressPercent}></progress>
@@ -276,7 +273,7 @@
 
   <hr />
 
-  <h4>Free-space TRIM</h4>
+  <h4>{t("sanitize-trim-heading")}</h4>
   <p class="hint">
     macOS-only in this build. TRIMs the unallocated regions on a flash
     drive without touching the live filesystem. Linux + Windows return
@@ -287,9 +284,7 @@
     class="secondary"
     onclick={onFreeSpaceTrim}
     disabled={!devicePath.trim() || running}
-  >
-    Run free-space TRIM
-  </button>
+  >{t("sanitize-run-trim")}</button>
 </section>
 
 <style>

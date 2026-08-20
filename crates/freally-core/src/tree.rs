@@ -174,6 +174,7 @@ pub async fn copy_tree_from_scan(
                 let source_changed_task = source_changed.clone();
                 let on_error_task = on_error;
                 let kind = scan_item.kind;
+                let src_root_task = src_root_buf.clone();
                 let entry_src_task = entry_src.clone();
                 let entry_dst_task = entry_dst.clone();
                 let total_files_denom = total_files;
@@ -204,7 +205,13 @@ pub async fn copy_tree_from_scan(
                         Decision::Abort => Ok(FileOutcome::Aborted),
                         Decision::Write(dst_final) => match kind {
                             ScanEntryKind::Symlink => {
-                                match copy_symlink_entry(&entry_src_task, &dst_final).await {
+                                match copy_symlink_entry(
+                                    &entry_src_task,
+                                    &dst_final,
+                                    &src_root_task,
+                                )
+                                .await
+                                {
                                     Ok(()) => Ok(FileOutcome::Done(0)),
                                     Err(err) => {
                                         handle_per_file_error(
@@ -288,6 +295,13 @@ pub async fn copy_tree_from_scan(
             }
         }
     }
+
+    // Close the channel first — see the matching note in `copy_tree`.
+    // The cursor thread parks in `blocking_send` until the receiver is
+    // gone, so joining while `item_rx` is still alive deadlocks on any
+    // early `break` out of the loop above (cancel, or a failed
+    // `create_dir_all`).
+    drop(item_rx);
 
     // Drain the cursor task so its blocking thread exits cleanly.
     let _ = cursor_handle.await;
@@ -389,6 +403,7 @@ pub async fn move_file(
             };
             let _ = events
                 .send(CopyEvent::Completed {
+                    src: report.src.clone(),
                     bytes,
                     duration: Duration::ZERO,
                     rate_bps: 0,
@@ -506,7 +521,15 @@ pub async fn move_tree(
     let src_for_delete = src_dir.to_path_buf();
     let dst_for_delete = dst_dir.to_path_buf();
     let delete_result = tokio::task::spawn_blocking(move || -> Result<(), CopyError> {
-        for entry in walkdir::WalkDir::new(&src_for_delete).contents_first(true) {
+        // `follow_root_links(false)` so the delete half enumerates the
+        // same set the copy half did. Left at walkdir's default `true`,
+        // a junctioned source root would be descended into and the
+        // *target's* contents deleted — while the copy half, which now
+        // refuses that root outright, had copied nothing.
+        for entry in walkdir::WalkDir::new(&src_for_delete)
+            .follow_root_links(false)
+            .contents_first(true)
+        {
             let entry = match entry {
                 Ok(e) => e,
                 Err(e) => {
@@ -618,7 +641,8 @@ async fn copy_tree_inner(
         return Err(CopyError::path_escape(&src_root, &dst_root, e));
     }
 
-    // Validate source.
+    // Validate source. `metadata` follows links, so a symlinked root
+    // passes `is_dir()` — check the link itself separately below.
     let src_meta = tokio::fs::metadata(&src_root)
         .await
         .map_err(|e| CopyError::from_io(&src_root, &dst_root, e))?;
@@ -630,6 +654,33 @@ async fn copy_tree_inner(
             raw_os_error: None,
             message: "copy_tree source is not a directory".to_string(),
         });
+    }
+    // A symlinked / junctioned root with root-following disabled must be
+    // refused *explicitly*, never walked.
+    //
+    // walkdir defaults `follow_root_links` to true, so `follow_links(false)`
+    // alone let a junction root be descended into and its target copied
+    // out-of-tree. Setting it to false stops that — but then the walk
+    // yields only the root entry, which the enumerator discards, and the
+    // job reports `files: 0` as a SUCCESS. Worse, `move_tree`'s delete
+    // half would then run against a source the copy half never read.
+    // A loud error is the only honest outcome here.
+    if !opts.follow_symlinks_in_tree {
+        let link_meta = tokio::fs::symlink_metadata(&src_root)
+            .await
+            .map_err(|e| CopyError::from_io(&src_root, &dst_root, e))?;
+        if link_meta.file_type().is_symlink() {
+            return Err(CopyError {
+                kind: CopyErrorKind::IoOther,
+                src: src_root.clone(),
+                dst: dst_root.clone(),
+                raw_os_error: None,
+                message: "copy_tree source root is a symlink or junction; \
+                          enable follow-symlinks to copy what it points at, \
+                          or select the target directory itself"
+                    .to_string(),
+            });
+        }
     }
 
     // Ensure destination root exists.
@@ -763,6 +814,7 @@ async fn copy_tree_inner(
             let events_task = events.clone();
             let opts_file = opts.file.clone();
             let collision = opts.collision.clone();
+            let src_root_task = src_root.clone();
             let dst_root_task = dst_root.clone();
             let bytes_done_task = bytes_done.clone();
             let files_done_task = files_done.clone();
@@ -794,7 +846,7 @@ async fn copy_tree_inner(
                     Decision::Abort => Ok(FileOutcome::Aborted),
                     Decision::Write(dst_final) => match entry.kind {
                         EntryKind::Symlink => {
-                            match copy_symlink_entry(&entry.src, &dst_final).await {
+                            match copy_symlink_entry(&entry.src, &dst_final, &src_root_task).await {
                                 Ok(()) => Ok(FileOutcome::Done(0)),
                                 Err(err) => {
                                     handle_per_file_error(
@@ -880,6 +932,14 @@ async fn copy_tree_inner(
             }
         }
     }
+
+    // Close the channel before joining. Every `break` above leaves the
+    // walker blocked in `blocking_send` on a receiver that still
+    // exists, so it never observes the disconnect and never returns —
+    // and with a chunk capacity of 2 it blocks almost immediately.
+    // `walker_handle.await` then waits forever, which is what a
+    // cancelled tree copy actually did.
+    drop(chunk_rx);
 
     // Join the walker task itself so we can surface walker errors
     // (permission-denied on the root, non-dir source, etc.).
@@ -1175,8 +1235,13 @@ fn enumerate_streaming(
     let mut skipped_by_filter: u64 = 0;
     let mut chunks_sent: u64 = 0;
 
+    // `follow_links(false)` does NOT cover the root: walkdir defaults
+    // `follow_root_links` to true, so a symlinked/junctioned tree root was
+    // still descended into and its target copied out-of-tree, contradicting
+    // "copy this folder, do not chase shortcuts".
     let mut it = walkdir::WalkDir::new(&root)
         .follow_links(follow_symlinks)
+        .follow_root_links(follow_symlinks)
         .sort_by_file_name()
         .into_iter();
     while let Some(entry) = it.next() {
@@ -1302,24 +1367,34 @@ fn enumerate_streaming(
     Ok(())
 }
 
-async fn copy_symlink_entry(src: &Path, dst: &Path) -> Result<(), CopyError> {
+async fn copy_symlink_entry(src: &Path, dst: &Path, src_root: &Path) -> Result<(), CopyError> {
     // Best effort: remove dst if present, then re-create the symlink.
     let _ = tokio::fs::remove_file(dst).await;
     let target = tokio::fs::read_link(src)
         .await
         .map_err(|e| CopyError::from_io(src, dst, e))?;
-    create_symlink(&target, dst, src)
+    create_symlink(&target, dst, src, src_root)
         .await
         .map_err(|e| CopyError::from_io(src, dst, e))
 }
 
 #[cfg(unix)]
-async fn create_symlink(target: &Path, link: &Path, _probe: &Path) -> std::io::Result<()> {
+async fn create_symlink(
+    target: &Path,
+    link: &Path,
+    _probe: &Path,
+    _src_root: &Path,
+) -> std::io::Result<()> {
     tokio::fs::symlink(target, link).await
 }
 
 #[cfg(windows)]
-async fn create_symlink(target: &Path, link: &Path, probe: &Path) -> std::io::Result<()> {
+async fn create_symlink(
+    target: &Path,
+    link: &Path,
+    probe: &Path,
+    src_root: &Path,
+) -> std::io::Result<()> {
     // Probe the *source-side* target to decide file vs. dir symlink.
     let src_target = probe
         .parent()
@@ -1352,6 +1427,34 @@ async fn create_symlink(target: &Path, link: &Path, probe: &Path) -> std::io::Re
     // Unprivileged fallback: copy the resolved target as a regular
     // file. User ends up with a plain file where the source had a
     // symlink, but no data is lost.
+    //
+    // The target comes from `read_link`, so on untrusted media it is
+    // attacker-controlled: `Path::join` absorbs an absolute target
+    // outright, and a relative `..\..\..` climbs out just as well.
+    // Without this gate, copying a folder containing a link named
+    // `resume.pdf` -> `%APPDATA%\...\key4.db` read the victim's file
+    // and wrote its bytes into the destination — and on stock Windows
+    // this branch is the *default*, since creating a symlink needs
+    // SeCreateSymbolicLink or Developer Mode. Refuse anything that
+    // resolves outside the tree being copied and let the per-file
+    // error policy surface it.
+    match crate::safety::is_within_root(&src_target, src_root) {
+        Ok(true) => {}
+        Ok(false) => {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::PermissionDenied,
+                format!(
+                    "symlink target {} resolves outside the source tree {}; \
+                     refusing to copy its contents",
+                    src_target.display(),
+                    src_root.display()
+                ),
+            ));
+        }
+        // Canonicalization failed (dangling link, permission denied).
+        // Fail closed: we cannot prove containment.
+        Err(e) => return Err(e),
+    }
     tokio::fs::copy(&src_target, link).await.map(|_| ())
 }
 

@@ -52,18 +52,20 @@
 //! Pause / resume / cancel mirror the freally-core `CopyControl`
 //! shape — see [`SyncControl`].
 //!
-//! # Why vector clocks?
+//! # Vector clocks: recorded, not yet consulted
 //!
-//! mtime-only sync silently overwrites concurrent edits. Per-file
-//! vector clocks let us recognise three distinct outcomes:
+//! [`VersionVector`] is maintained per file and persisted alongside
+//! the baseline, and [`clock::resolve_concurrent`] merges the two
+//! sides after a winner is chosen. That is the whole of it today.
 //!
-//! - **One side is an ancestor of the other** — safe to propagate.
-//! - **Both sides descend from a common ancestor independently** —
-//!   conflict (surfaced, never auto-overwritten).
-//! - **Equal vectors with different content** — corrupt, conflict.
-//!
-//! The algorithm is well-known (Syncthing, Git-annex, Dropbox's
-//! pre-Nucleus "three-way" engine) and cheap at per-file granularity.
+//! The engine decides which side wins from presence and mtime
+//! against the baseline — it never calls [`VersionVector::compare`],
+//! so the ancestor / concurrent / equal distinction the vectors could
+//! draw does not currently influence any outcome. This section used
+//! to describe that distinction as the algorithm in use; it is the
+//! algorithm the recorded data would *support*, once something reads
+//! it. The vectors are written now so the history is already there
+//! when it is.
 
 #![forbid(unsafe_code)]
 

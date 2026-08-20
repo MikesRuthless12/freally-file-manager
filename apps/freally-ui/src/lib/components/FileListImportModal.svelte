@@ -13,6 +13,7 @@
 <script lang="ts">
   import { untrack } from "svelte";
 
+  import { escapeToClose } from "../a11y";
   import { t } from "../i18n";
   import { closeFileListImport, pushToast } from "../stores";
   import {
@@ -75,10 +76,6 @@
       busy = false;
     }
   }
-
-  function onKeydown(e: KeyboardEvent) {
-    if (e.key === "Escape") closeFileListImport();
-  }
 </script>
 
 <div
@@ -87,7 +84,7 @@
   aria-modal="true"
   aria-labelledby="filelist-title"
   tabindex="-1"
-  onkeydown={onKeydown}
+  use:escapeToClose={closeFileListImport}
 >
   <div class="panel">
     <h2 id="filelist-title">{t("filelist-title")}</h2>

@@ -216,6 +216,14 @@ impl Settings {
         self.sync
             .host_label_override
             .clone_from(&prev.sync.host_label_override);
+        // `merge` is written by the Merge view (ffmpeg opt-in + path) and
+        // `sync.tri_tree` by the Phase 52 toggle — neither has a home in
+        // the Settings modal's DTO, so without carrying them an unrelated
+        // save (changing the theme) silently reset both to defaults:
+        // ffmpeg previews turned themselves off, and the three-tree sync
+        // engine reverted to the vector-clock matrix.
+        self.merge = prev.merge.clone();
+        self.sync.tri_tree = prev.sync.tri_tree;
     }
 
     /// Copy only the **per-install records** from `prev` onto `self` —

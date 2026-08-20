@@ -20,6 +20,7 @@
   import { open as openDialog } from "@tauri-apps/plugin-dialog";
 
   import Icon from "../icons/Icon.svelte";
+  import { escapeToClose } from "../a11y";
   import { t } from "../i18n";
   import { startCopy, startMove, systemPaste } from "../ipc";
   import { closePasteChooser, pushToast, setDropped } from "../stores";
@@ -82,10 +83,6 @@
     setDropped(request.paths);
     closePasteChooser();
   }
-
-  function onKeydown(e: KeyboardEvent) {
-    if (e.key === "Escape") closePasteChooser();
-  }
 </script>
 
 <div
@@ -94,7 +91,7 @@
   aria-modal="true"
   aria-labelledby="paste-chooser-title"
   tabindex="-1"
-  onkeydown={onKeydown}
+  use:escapeToClose={closePasteChooser}
 >
   <div class="panel">
     <div class="head">

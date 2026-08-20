@@ -89,8 +89,7 @@ pub fn handle_paste_press(app: &AppHandle) {
         .state::<AppState>()
         .settings_snapshot()
         .general
-        .paste_shortcut
-        .clone();
+        .paste_shortcut;
     if paths.is_empty() {
         // Tell the UI so it can toast; don't pop the staging dialog
         // for an empty clipboard or a text paste.
@@ -142,8 +141,7 @@ pub fn is_paste_combo(app: &AppHandle, combo: &str) -> bool {
         .state::<AppState>()
         .settings_snapshot()
         .general
-        .paste_shortcut
-        .clone();
+        .paste_shortcut;
     combo.eq_ignore_ascii_case(&want)
 }
 

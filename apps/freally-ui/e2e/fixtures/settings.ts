@@ -91,9 +91,12 @@ export function fullSettings(overrides: Record<string, unknown> = {}): Record<st
       mode: "off",
       fixedBytesPerSecond: 0,
       scheduleSpec: "",
-      autoOnMetered: { mode: "off", fixedBytesPerSecond: 0 },
-      autoOnBattery: { mode: "off", fixedBytesPerSecond: 0 },
-      autoOnCellular: { mode: "off", fixedBytesPerSecond: 0 },
+      // `AutoThrottleRuleDto` is a kind-tagged union
+      // (unchanged | pause | cap), not a nested bandwidth mode — the
+      // Network pane reads `.kind` and threw on the old shape.
+      autoOnMetered: { kind: "unchanged" },
+      autoOnBattery: { kind: "unchanged" },
+      autoOnCellular: { kind: "unchanged" },
     },
     audit: {
       enabled: true,

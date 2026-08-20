@@ -17,6 +17,7 @@
     />
 -->
 <script lang="ts">
+  import { escapeToClose } from "../a11y";
   import { t } from "../i18n";
   import { computeTreeDiff, type TreeDiffDto } from "../ipc";
   import FilenameDoctorPanel from "./FilenameDoctorPanel.svelte";
@@ -102,7 +103,13 @@
   }
 </script>
 
-<div class="tree-diff-preview" role="dialog" aria-modal="true" aria-labelledby="preview-title">
+<div
+  class="tree-diff-preview"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="preview-title"
+  use:escapeToClose={onCancel}
+>
   <h2 id="preview-title">{t("preview-modal-title")}</h2>
 
   {#if loading}

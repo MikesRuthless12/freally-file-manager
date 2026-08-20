@@ -5,6 +5,7 @@
   // at-rest encryption (that arrives in a later release).
   import { open as openDialog } from "@tauri-apps/plugin-dialog";
 
+  import { escapeToClose } from "../a11y";
   import { i18nVersion, t } from "../i18n";
   import {
     repositoryChangePassword,
@@ -160,7 +161,13 @@
 
 {#if $repositoryWizardOpen}
   <div class="scrim backdrop" role="presentation" onclick={closeRepositoryWizard}></div>
-  <div class="modal" role="dialog" aria-modal="true" aria-label={t("repo-wizard-title")}>
+  <div
+    class="modal"
+    role="dialog"
+    aria-modal="true"
+    aria-label={t("repo-wizard-title")}
+    use:escapeToClose={closeRepositoryWizard}
+  >
     {#key $i18nVersion}
       <header>
         <h2>{t("repo-wizard-title")}</h2>

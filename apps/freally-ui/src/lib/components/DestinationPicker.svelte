@@ -15,6 +15,7 @@
     folder" on the current breadcrumb or drops onto a writable row.
 -->
 <script lang="ts">
+  import { escapeToClose } from "../a11y";
   import { onMount } from "svelte";
   import DropTarget from "./DropTarget.svelte";
   import { listDirectory, listRoots } from "../ipc";
@@ -121,7 +122,12 @@
   });
 </script>
 
-<div class="destpicker" role="dialog" aria-label={t("dropzone-picker-title")}>
+<div
+  class="destpicker"
+  role="dialog"
+  aria-label={t("dropzone-picker-title")}
+  use:escapeToClose={() => onCancel?.()}
+>
   <header>
     <button type="button" class="up" onclick={navigateUp} disabled={currentPath === null}>
       ← {t("dropzone-picker-up")}

@@ -231,6 +231,7 @@ async fn emit_completed(withheld: bool, events: &mpsc::Sender<CopyEvent>, report
     }
     let _ = events
         .send(CopyEvent::Completed {
+            src: report.src.clone(),
             bytes: report.bytes,
             duration: report.duration,
             rate_bps: report.rate_bps,
@@ -576,6 +577,7 @@ async fn copy_file_once(
         } else {
             let _ = events
                 .send(CopyEvent::Completed {
+                    src: src.to_path_buf(),
                     bytes: total,
                     duration: Duration::ZERO,
                     rate_bps: 0,
@@ -983,6 +985,7 @@ async fn copy_file_once(
             } else {
                 let _ = events
                     .send(CopyEvent::Completed {
+                        src: src.to_path_buf(),
                         bytes: copied,
                         duration: elapsed,
                         rate_bps: rate,
@@ -1603,6 +1606,7 @@ async fn copy_file_sparse_aware(
         .await;
     let _ = events
         .send(CopyEvent::Completed {
+            src: src_path.clone(),
             bytes: copied,
             duration: elapsed,
             rate_bps: rate,
@@ -1738,6 +1742,7 @@ async fn copy_file_to_cloud_sink(
         .await;
     let _ = events
         .send(CopyEvent::Completed {
+            src: src_path.clone(),
             bytes: written,
             duration: elapsed,
             rate_bps,
@@ -1824,6 +1829,7 @@ async fn copy_file_to_transform(
 
     let _ = events
         .send(CopyEvent::Completed {
+            src: src_path.clone(),
             bytes: outcome.input_bytes,
             duration: elapsed,
             rate_bps,
@@ -1871,7 +1877,7 @@ async fn copy_symlink(
         return Err(err);
     }
     let start = Instant::now();
-    let created = create_symlink(&target, dst).await;
+    let created = create_symlink(&target, dst, src).await;
     if let Err(e) = created {
         let err = CopyError::from_io(src, dst, e);
         let _ = events.send(CopyEvent::Failed { err: err.clone() }).await;
@@ -1880,6 +1886,7 @@ async fn copy_symlink(
     let elapsed = start.elapsed();
     let _ = events
         .send(CopyEvent::Completed {
+            src: src.to_path_buf(),
             bytes: 0,
             duration: elapsed,
             rate_bps: 0,
@@ -2399,16 +2406,28 @@ async fn open_src_with_retry(
 }
 
 #[cfg(unix)]
-async fn create_symlink(target: &Path, link: &Path) -> std::io::Result<()> {
+async fn create_symlink(target: &Path, link: &Path, _probe: &Path) -> std::io::Result<()> {
     tokio::fs::symlink(target, link).await
 }
 
 #[cfg(windows)]
-async fn create_symlink(target: &Path, link: &Path) -> std::io::Result<()> {
+async fn create_symlink(target: &Path, link: &Path, probe: &Path) -> std::io::Result<()> {
     // Windows distinguishes file vs. directory symlinks. Probe the
     // target; if it's a directory, use the directory variant so the
     // resulting link actually points to something traversable.
-    let md = tokio::fs::metadata(target).await;
+    //
+    // `target` comes from `read_link`, so for a relative link it only
+    // means anything relative to the *source symlink's* directory.
+    // Probing it bare resolved it against the process CWD instead, so
+    // `metadata` answered about whatever happened to sit next to the
+    // working directory — and a directory link created as a file link
+    // is not traversable. `tree.rs::create_symlink` already resolves
+    // it this way.
+    let src_target = probe
+        .parent()
+        .map(|p| p.join(target))
+        .unwrap_or_else(|| target.to_path_buf());
+    let md = tokio::fs::metadata(&src_target).await;
     match md {
         Ok(m) if m.is_dir() => tokio::fs::symlink_dir(target, link).await,
         _ => tokio::fs::symlink_file(target, link).await,

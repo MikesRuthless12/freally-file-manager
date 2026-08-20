@@ -289,7 +289,7 @@ mod tests {
         // Arrival rather than a fixed sleep: a loaded CI runner can starve
         // the watcher thread well past a couple poll intervals, which
         // flaked this test on macOS ("no Arrival event observed: []").
-        present.lock().unwrap().push(root.clone());
+        present.lock().unwrap().push(root);
         let deadline = std::time::Instant::now() + Duration::from_secs(5);
         while std::time::Instant::now() < deadline
             && !observed
@@ -344,9 +344,7 @@ mod tests {
         let dir = TempDir::new().unwrap();
         let root = dir.path().to_path_buf();
         let present = Arc::new(Mutex::new(vec![root.clone()]));
-        let probe = ScriptedProbe {
-            present: present.clone(),
-        };
+        let probe = ScriptedProbe { present };
         let cancel = VolumeWatchCancel::new();
         let cancel_for_loop = cancel.clone();
         let roots_for_loop = vec![root];

@@ -1302,7 +1302,7 @@ mod tests {
                 let h = fnv1a_32(&s);
                 if let Some(other) = seen.get(&h) {
                     if other != &s {
-                        pair = Some((other.clone(), s.clone(), h));
+                        pair = Some((other.clone(), s, h));
                         break 'outer;
                     }
                 } else {

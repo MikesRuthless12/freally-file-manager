@@ -219,8 +219,11 @@ pub struct SftpConfig {
     /// When non-empty, the SFTP handshake pins the server key
     /// against entries matching `(host, port)` in this file;
     /// missing entries + mismatches surface as an auth error.
-    /// When empty, falls back to trust-on-first-use (Phase 32f
-    /// default — safe only on private networks / dev setups).
+    ///
+    /// When empty the handshake **fails closed** — it does not trust
+    /// on first use, which is what this used to promise. Accepting an
+    /// unknown key is the exact MITM a host-key check exists to stop,
+    /// so an unset path means "not configured", not "trust anything".
     #[serde(default)]
     pub known_hosts_path: String,
 }

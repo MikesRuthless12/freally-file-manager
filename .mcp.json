@@ -3,6 +3,21 @@
     "playwright": {
       "command": "npx",
       "args": ["@playwright/mcp@latest"]
+    },
+    "semgrep": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-v",
+        "C:\\Users\\miken\\Desktop\\Havoc Software\\Freally File Manager:/src",
+        "-w",
+        "/src",
+        "ghcr.io/semgrep/mcp",
+        "-t",
+        "stdio"
+      ]
     }
   }
 }

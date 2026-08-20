@@ -1735,3 +1735,31 @@ settings-favorites-hotkey = Scorciatoia
 a11y-queue-status = { $running } in corso, { $done } completati, { $failed } non riusciti
 
 err-favorite-id-invalid = Identificatore del preferito non valido
+
+# Previously hard-coded in the Svelte markup, so they stayed English
+# in every locale. Product names (Freally File Manager, PeerJS) and
+# the IAM / TRIM / QR / ID initialisms are intentionally untranslated.
+remote-account-name = Nome account
+remote-service-account = Account di servizio
+remote-client-id = ID client
+remote-secret = Segreto (chiave di accesso / password / token)
+remote-job-name = Nome del processo
+remote-instance-size = Dimensione dell'istanza
+remote-iam-role = Ruolo / identità IAM
+pair-always-connect = Connetti sempre all'app mobile
+pair-broker-url = URL del broker PeerJS (vuoto = predefinito pubblico)
+pair-devices-heading = Dispositivi accoppiati
+pair-onboarding-title = Ottieni l'app complementare mobile di Freally File Manager
+pair-onboarding-loading-qr = Caricamento QR…
+sanitize-confirm-backup = Confermo di avere un backup di tutti i dati che voglio conservare
+sanitize-model-mismatch = Il nome del modello dell'unità non corrisponde.
+sanitize-trim-heading = TRIM dello spazio libero
+details-avg-speed = Velocità media
+pair-onboarding-body = Gestisci dal telefono le operazioni di copia / spostamento / sincronizzazione / eliminazione sicura del desktop tramite un collegamento WebRTC privato. Inquadra il QR qui sotto con la fotocamera del telefono per aprire l'URL di installazione nel browser, poi tocca "Aggiungi a Home" — nessun App Store necessario.
+pair-onboarding-have-app = Ho l'app, accoppia ora
+pair-onboarding-later = Forse più tardi
+pair-no-device-warning = La connessione automatica è attiva, ma nessun telefono è ancora accoppiato. Installa la PWA mobile di Freally File Manager sul telefono (inquadra il QR qui sotto con la fotocamera), poi fai clic su "Avvia accoppiamento" così il desktop sa dove connettersi.
+pair-desktop-peer-id = Peer-id del desktop:
+sanitize-probe = Rileva funzionalità
+sanitize-run = Esegui sanificazione
+sanitize-run-trim = Esegui TRIM dello spazio libero

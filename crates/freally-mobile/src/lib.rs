@@ -64,10 +64,17 @@
 //!    `phone_pub || nonce || counter_le` with HMAC-SHA-256 keyed
 //!    by the X25519 ECDH shared secret, and the desktop verifies
 //!    the MAC in constant time before unlocking any privileged
-//!    command. The first counter the phone supplies installs the
-//!    high-water mark; subsequent privileged commands advance it
-//!    monotonically and any out-of-order arrival is dropped at
-//!    the dispatcher.
+//!    command. Because the nonce is fresh per handshake, a
+//!    recorded session cannot be replayed into a new one.
+//!
+//!    The first counter the phone supplies installs the high-water
+//!    mark. Beyond that the mark is advanced locally rather than
+//!    checked: this protocol revision puts no counter on the wire
+//!    with each command, so within a live session ordering rests on
+//!    the sequenced WebRTC data channel. This used to claim
+//!    out-of-order arrivals were dropped at the dispatcher — that is
+//!    the design the field exists for, not what runs today. See
+//!    [`server::SessionAuth`] and its `last_counter` field.
 //! 2. *Identity-swap invalidation.* A mid-session `Hello` that
 //!    presents a *different* pubkey wipes the entire
 //!    [`server::SessionAuth`] before the new key gets a fresh

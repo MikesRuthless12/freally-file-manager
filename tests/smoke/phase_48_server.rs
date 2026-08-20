@@ -54,11 +54,14 @@ fn webhook_payloads_carry_the_right_keys() {
     let discord = format_webhook_payload(WebhookTarget::Discord, &ev);
     assert!(discord.get("content").is_some());
 
+    // ntfy does not go out as JSON at all — `WebhookSink::deliver`
+    // posts a plain-text body to the configured topic URL (see
+    // `webhook::send_ntfy`). This envelope is only the root-endpoint
+    // form, and its `topic` is deliberately empty: the event carries no
+    // topic, and filling it with `event.kind` meant publishing to a
+    // topic named after the job type.
     let ntfy = format_webhook_payload(WebhookTarget::Ntfy, &ev);
-    assert_eq!(
-        ntfy.get("topic").and_then(|v| v.as_str()),
-        Some("job_completed")
-    );
+    assert_eq!(ntfy.get("topic").and_then(|v| v.as_str()), Some(""));
     assert!(ntfy.get("message").is_some());
 
     let push = format_webhook_payload(WebhookTarget::Pushover, &ev);
@@ -221,6 +224,33 @@ async fn readonly_rejects_writes() {
         .unwrap();
     assert_eq!(put.status().as_u16(), 403, "read-only must reject PUT");
     assert!(!dir.path().join("nope.bin").exists());
+
+    // PATCH was absent from the write-method deny-list, and dav-server
+    // routes it to `handle_put` with `create = true` — so this created
+    // and wrote a file on a "read-only" server, unauthenticated. The
+    // gate is now an allow-list of the read verbs; every other verb,
+    // including ones a future dav-server release adds, is refused.
+    let patch = client
+        .patch(format!("{base}/sneaky.bin"))
+        .header("Content-Type", "application/x-sabredav-partialupdate")
+        .header("X-Update-Range", "bytes=0-4")
+        .body(b"PWNED".to_vec())
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(patch.status().as_u16(), 403, "read-only must reject PATCH");
+    assert!(
+        !dir.path().join("sneaky.bin").exists(),
+        "PATCH must not create a file on a read-only server",
+    );
+
+    // Reads still work — the allow-list must not have over-rotated.
+    let get = client.get(format!("{base}/")).send().await.unwrap();
+    assert!(
+        get.status().is_success() || get.status().as_u16() == 404,
+        "read-only must still allow GET, got {}",
+        get.status(),
+    );
 
     handle.shutdown().await;
 }
@@ -460,17 +490,55 @@ async fn s3_noauth_roundtrip() {
     handle.shutdown().await;
 }
 
-/// Fixed SigV4 inputs the test signs with; the values themselves are
-/// irrelevant to the maths as long as the client and server agree.
-const AMZ_DATE: &str = "20240101T000000Z";
-const SCOPE_DATE: &str = "20240101";
 const REGION: &str = "us-east-1";
 const PAYLOAD_HASH: &str = "UNSIGNED-PAYLOAD";
+
+/// `x-amz-date` for *now*, as `YYYYMMDDTHHMMSSZ`.
+///
+/// This used to be a hardcoded `20240101T000000Z`. The server folded
+/// that value into the string-to-sign but never compared it to the
+/// clock, so the test was replaying a years-old signature and passing —
+/// encoding the very bug it should have caught. The server now enforces
+/// AWS's ±15-minute window, so the test has to sign for the present.
+fn amz_now() -> (String, String) {
+    let secs = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs() as i64;
+    let (days, rem) = (secs.div_euclid(86_400), secs.rem_euclid(86_400));
+    // civil_from_days (Howard Hinnant), the inverse of the server's parse.
+    let z = days + 719_468;
+    let era = if z >= 0 { z } else { z - 146_096 } / 146_097;
+    let doe = z - era * 146_097;
+    let yoe = (doe - doe / 1_460 + doe / 36_524 - doe / 146_096) / 365;
+    let y = yoe + era * 400;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = doy - (153 * mp + 2) / 5 + 1;
+    let m = if mp < 10 { mp + 3 } else { mp - 9 };
+    let y = if m <= 2 { y + 1 } else { y };
+    let scope = format!("{y:04}{m:02}{d:02}");
+    let stamp = format!(
+        "{scope}T{:02}{:02}{:02}Z",
+        rem / 3_600,
+        (rem % 3_600) / 60,
+        rem % 60
+    );
+    (stamp, scope)
+}
 
 /// Compute an `Authorization: AWS4-HMAC-SHA256 …` header for a request,
 /// using the same canonical-request → string-to-sign → signing-key → HMAC
 /// chain the server verifies. Signs `host;x-amz-content-sha256;x-amz-date`.
-fn sigv4_auth(akid: &str, secret: &str, host: &str, method: &str, path: &str) -> String {
+fn sigv4_auth(
+    akid: &str,
+    secret: &str,
+    host: &str,
+    method: &str,
+    path: &str,
+    amz_date: &str,
+    scope_date: &str,
+) -> String {
     use hmac::{Hmac, Mac};
     use sha2::{Digest, Sha256};
     type HmacSha256 = Hmac<Sha256>;
@@ -483,22 +551,22 @@ fn sigv4_auth(akid: &str, secret: &str, host: &str, method: &str, path: &str) ->
 
     let signed_headers = "host;x-amz-content-sha256;x-amz-date";
     let canonical_headers =
-        format!("host:{host}\nx-amz-content-sha256:{PAYLOAD_HASH}\nx-amz-date:{AMZ_DATE}\n");
+        format!("host:{host}\nx-amz-content-sha256:{PAYLOAD_HASH}\nx-amz-date:{amz_date}\n");
     // Empty canonical query string for these requests.
     let canonical_request =
         format!("{method}\n{path}\n\n{canonical_headers}\n{signed_headers}\n{PAYLOAD_HASH}");
     let hashed_request = hex::encode(Sha256::digest(canonical_request.as_bytes()));
-    let scope = format!("{SCOPE_DATE}/{REGION}/s3/aws4_request");
-    let string_to_sign = format!("AWS4-HMAC-SHA256\n{AMZ_DATE}\n{scope}\n{hashed_request}");
+    let scope = format!("{scope_date}/{REGION}/s3/aws4_request");
+    let string_to_sign = format!("AWS4-HMAC-SHA256\n{amz_date}\n{scope}\n{hashed_request}");
 
-    let k_date = mac(format!("AWS4{secret}").as_bytes(), SCOPE_DATE.as_bytes());
+    let k_date = mac(format!("AWS4{secret}").as_bytes(), scope_date.as_bytes());
     let k_region = mac(&k_date, REGION.as_bytes());
     let k_service = mac(&k_region, b"s3");
     let k_signing = mac(&k_service, b"aws4_request");
     let signature = hex::encode(mac(&k_signing, string_to_sign.as_bytes()));
 
     format!(
-        "AWS4-HMAC-SHA256 Credential={akid}/{SCOPE_DATE}/{REGION}/s3/aws4_request, \
+        "AWS4-HMAC-SHA256 Credential={akid}/{scope_date}/{REGION}/s3/aws4_request, \
          SignedHeaders={signed_headers}, Signature={signature}"
     )
 }
@@ -523,13 +591,22 @@ async fn s3_sigv4_auth() {
     let base = format!("http://{host}");
     let path = "/bucket/signed.bin";
     let client = reqwest::Client::new();
+    let (amz_date, scope_date) = amz_now();
 
     // Correctly-signed PUT → accepted.
-    let auth = sigv4_auth("AKIDEXAMPLE", "secret", &host, "PUT", path);
+    let auth = sigv4_auth(
+        "AKIDEXAMPLE",
+        "secret",
+        &host,
+        "PUT",
+        path,
+        &amz_date,
+        &scope_date,
+    );
     let ok = client
         .put(format!("{base}{path}"))
         .header("host", &host)
-        .header("x-amz-date", AMZ_DATE)
+        .header("x-amz-date", &amz_date)
         .header("x-amz-content-sha256", PAYLOAD_HASH)
         .header("authorization", &auth)
         .body(b"hello sigv4".to_vec())
@@ -544,11 +621,19 @@ async fn s3_sigv4_auth() {
     assert!(dir.path().join("signed.bin").is_file());
 
     // Wrong signature (signed with the wrong secret) → 403.
-    let bad = sigv4_auth("AKIDEXAMPLE", "wrong-secret", &host, "PUT", path);
+    let bad = sigv4_auth(
+        "AKIDEXAMPLE",
+        "wrong-secret",
+        &host,
+        "PUT",
+        path,
+        &amz_date,
+        &scope_date,
+    );
     let wrong = client
         .put(format!("{base}{path}"))
         .header("host", &host)
-        .header("x-amz-date", AMZ_DATE)
+        .header("x-amz-date", &amz_date)
         .header("x-amz-content-sha256", PAYLOAD_HASH)
         .header("authorization", &bad)
         .body(b"nope".to_vec())
@@ -561,7 +646,7 @@ async fn s3_sigv4_auth() {
     let anon = client
         .put(format!("{base}{path}"))
         .header("host", &host)
-        .header("x-amz-date", AMZ_DATE)
+        .header("x-amz-date", &amz_date)
         .header("x-amz-content-sha256", PAYLOAD_HASH)
         .body(b"nope".to_vec())
         .send()
@@ -571,6 +656,87 @@ async fn s3_sigv4_auth() {
         anon.status().as_u16(),
         403,
         "missing Authorization must be 403"
+    );
+
+    handle.shutdown().await;
+}
+
+/// A directory larger than one `readdir` batch must list completely.
+///
+/// `readdir` used to return the whole listing in a single
+/// `SSH_FXP_NAME`. `russh_sftp` fills in a `longname` (an `ls -l` line)
+/// beside each filename and attrs, so an entry costs ~110-160 bytes and
+/// OpenSSH caps a message at `SFTP_MAX_MSG_LENGTH` (256 KiB) — `ls` on a
+/// folder of more than roughly 2,000 files aborted the client with
+/// "Received message too long". The server now emits bounded batches and
+/// returns `Eof` only once the cursor is exhausted, which is the
+/// protocol's intended shape.
+///
+/// Scope, stated honestly: 250 entries spans three 100-entry batches
+/// but would NOT exceed OpenSSH's 256 KiB cap, so this does not
+/// reproduce the original overflow — that needs >2,000 files and a real
+/// OpenSSH client. What it does guard is the regression the batching
+/// itself introduces: a cursor that fails to advance (infinite loop) or
+/// advances wrongly (dropped or duplicated entries). That is the part
+/// most likely to break, and it was previously untested because every
+/// existing SFTP test lists a directory of one or two files.
+#[tokio::test]
+async fn sftp_readdir_pages_a_large_directory() {
+    use std::sync::Arc;
+
+    use russh_sftp::client::SftpSession;
+
+    let dir = tempfile::tempdir().unwrap();
+    const N: usize = 250;
+    for i in 0..N {
+        std::fs::write(dir.path().join(format!("f{i:04}.bin")), b"x").unwrap();
+    }
+
+    let cfg = ServerConfig {
+        bind_addr: "127.0.0.1:0".into(),
+        protocols: vec![Protocol::Sftp],
+        auth: AuthMode::None,
+        root: dir.path().to_path_buf(),
+        readonly: false,
+    };
+    let handle = serve(cfg).await.expect("serve should bind SFTP");
+    let addr = handle.local_addr();
+
+    let mut ssh = russh::client::connect(
+        Arc::new(russh::client::Config::default()),
+        addr,
+        AcceptAnyHostKey,
+    )
+    .await
+    .expect("ssh connect");
+    assert!(
+        ssh.authenticate_password("anyuser", "")
+            .await
+            .expect("auth call")
+            .success(),
+        "AuthMode::None must accept",
+    );
+
+    let channel = ssh.channel_open_session().await.unwrap();
+    channel.request_subsystem(true, "sftp").await.unwrap();
+    let sftp = SftpSession::new(channel.into_stream())
+        .await
+        .expect("sftp handshake");
+
+    // `read_dir` drives readdir until Eof, so it exercises the paging.
+    let listed = sftp.read_dir(".").await.expect("read_dir");
+    let names: Vec<String> = listed.map(|e| e.file_name()).collect();
+
+    assert_eq!(
+        names.len(),
+        N,
+        "every entry must be listed across batches, got {} of {N}",
+        names.len(),
+    );
+    assert!(names.contains(&"f0000.bin".to_string()));
+    assert!(
+        names.contains(&"f0249.bin".to_string()),
+        "the last entry must survive paging",
     );
 
     handle.shutdown().await;

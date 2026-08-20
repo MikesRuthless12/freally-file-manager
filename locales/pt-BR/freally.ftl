@@ -1735,3 +1735,31 @@ settings-favorites-hotkey = Atalho
 a11y-queue-status = { $running } em execução, { $done } concluídos, { $failed } com falha
 
 err-favorite-id-invalid = Identificador de favorito inválido
+
+# Previously hard-coded in the Svelte markup, so they stayed English
+# in every locale. Product names (Freally File Manager, PeerJS) and
+# the IAM / TRIM / QR / ID initialisms are intentionally untranslated.
+remote-account-name = Nome da conta
+remote-service-account = Conta de serviço
+remote-client-id = ID do cliente
+remote-secret = Segredo (chave de acesso / senha / token)
+remote-job-name = Nome do trabalho
+remote-instance-size = Tamanho da instância
+remote-iam-role = Função / identidade IAM
+pair-always-connect = Sempre conectar ao aplicativo móvel
+pair-broker-url = URL do broker PeerJS (vazio = padrão público)
+pair-devices-heading = Dispositivos pareados
+pair-onboarding-title = Obtenha o aplicativo complementar móvel do Freally File Manager
+pair-onboarding-loading-qr = Carregando QR…
+sanitize-confirm-backup = Confirmo que tenho um backup de todos os dados que quero manter
+sanitize-model-mismatch = O nome do modelo da unidade não corresponde.
+sanitize-trim-heading = TRIM de espaço livre
+details-avg-speed = Velocidade média
+pair-onboarding-body = Controle os trabalhos de cópia / movimentação / sincronização / exclusão segura do seu desktop pelo celular através de um link WebRTC privado. Escaneie o QR abaixo com a câmera do celular para abrir a URL de instalação no navegador e toque em "Adicionar à tela inicial" — sem precisar da App Store.
+pair-onboarding-have-app = Já tenho o app, parear agora
+pair-onboarding-later = Talvez depois
+pair-no-device-warning = A conexão automática está ativada, mas nenhum telefone foi pareado ainda. Instale o PWA móvel do Freally File Manager no seu telefone (escaneie o QR abaixo com a câmera) e clique em "Iniciar pareamento" para que o desktop saiba para onde discar.
+pair-desktop-peer-id = Peer-id do desktop:
+sanitize-probe = Sondar capacidades
+sanitize-run = Executar sanitização
+sanitize-run-trim = Executar TRIM de espaço livre

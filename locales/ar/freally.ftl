@@ -1735,3 +1735,31 @@ settings-favorites-hotkey = الاختصار
 a11y-queue-status = { $running } قيد التنفيذ، { $done } مكتملة، { $failed } فاشلة
 
 err-favorite-id-invalid = معرّف مفضّلة غير صالح
+
+# Previously hard-coded in the Svelte markup, so they stayed English
+# in every locale. Product names (Freally File Manager, PeerJS) and
+# the IAM / TRIM / QR / ID initialisms are intentionally untranslated.
+remote-account-name = اسم الحساب
+remote-service-account = حساب الخدمة
+remote-client-id = معرّف العميل
+remote-secret = السر (مفتاح الوصول / كلمة المرور / الرمز)
+remote-job-name = اسم المهمة
+remote-instance-size = حجم المثيل
+remote-iam-role = دور / هوية IAM
+pair-always-connect = الاتصال دائمًا بتطبيق الجوال
+pair-broker-url = عنوان وسيط PeerJS (فارغ = الافتراضي العام)
+pair-devices-heading = الأجهزة المقترنة
+pair-onboarding-title = احصل على تطبيق Freally File Manager المرافق للجوال
+pair-onboarding-loading-qr = جارٍ تحميل رمز QR…
+sanitize-confirm-backup = أؤكد أن لدي نسخة احتياطية من أي بيانات أرغب في الاحتفاظ بها
+sanitize-model-mismatch = اسم طراز محرك الأقراص غير مطابق.
+sanitize-trim-heading = TRIM للمساحة الحرة
+details-avg-speed = متوسط السرعة
+pair-onboarding-body = تحكّم في مهام النسخ / النقل / المزامنة / الحذف الآمن على سطح المكتب من هاتفك عبر رابط WebRTC خاص. امسح رمز QR أدناه بكاميرا هاتفك لفتح رابط التثبيت في المتصفح، ثم اضغط على "إضافة إلى الشاشة الرئيسية" — دون الحاجة إلى متجر التطبيقات.
+pair-onboarding-have-app = لديّ التطبيق، اقترن الآن
+pair-onboarding-later = ربما لاحقًا
+pair-no-device-warning = الاتصال التلقائي مفعّل، لكن لم يتم اقتران أي هاتف بعد. ثبّت تطبيق Freally File Manager المحمول (PWA) على هاتفك (امسح رمز QR أدناه بالكاميرا)، ثم انقر على "بدء الاقتران" ليعرف سطح المكتب وجهة الاتصال.
+pair-desktop-peer-id = معرّف نظير سطح المكتب:
+sanitize-probe = فحص القدرات
+sanitize-run = تشغيل التطهير
+sanitize-run-trim = تشغيل TRIM للمساحة الحرة

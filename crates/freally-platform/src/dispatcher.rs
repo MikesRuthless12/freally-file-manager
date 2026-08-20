@@ -140,6 +140,7 @@ pub async fn fast_copy(
                     .await;
                 let _ = events
                     .send(CopyEvent::Completed {
+                        src: src_owned.clone(),
                         bytes: total,
                         duration: elapsed,
                         rate_bps: rate,
@@ -185,6 +186,7 @@ pub async fn fast_copy(
                 let rate = rate_bps(bytes, elapsed);
                 let _ = events
                     .send(CopyEvent::Completed {
+                        src: src_owned.clone(),
                         bytes,
                         duration: elapsed,
                         rate_bps: rate,

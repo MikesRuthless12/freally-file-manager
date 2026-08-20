@@ -131,7 +131,15 @@ pub fn waveform(bytes: &[u8], ext_hint: Option<&str>, buckets: usize) -> Result<
         for &s in chunk {
             lo = lo.min(s);
             hi = hi.max(s);
-            sq += (s as f64) * (s as f64);
+            // NOT `mul_add`: nothing here sets `target-feature=+fma`, so
+            // LLVM cannot emit `vfmadd*` and lowers it to a CRT `fma`
+            // call — a software extended-precision routine, far slower
+            // than a mul+add pair. This runs once per decoded sample,
+            // four full passes per comparison.
+            #[allow(clippy::suboptimal_flops)]
+            {
+                sq += (s as f64) * (s as f64);
+            }
         }
         peaks.push((lo, hi));
         rms.push((sq / chunk.len() as f64).sqrt() as f32);

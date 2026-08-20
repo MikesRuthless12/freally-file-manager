@@ -1,0 +1,93 @@
+name: Visual smoke (Roadmap Gate 1)
+
+# Roadmap Gate 1: "run the visual smoke to confirm **every** panel renders
+# (no blank/broken dialogs) across the OSes."
+#
+# The "across the OSes" half is why this is a workflow and not something a
+# developer runs locally — no one has all three machines on a desk. Each
+# runner renders every panel and uploads the PNGs as an artifact, because
+# the gate is explicitly about *looking* at them: `visual-smoke.spec.ts`
+# is "not an assertion suite … assertions catch 'the element exists'; they
+# do not catch text overflowing its box, a control rendered off-screen,
+# unreadable contrast, or a pane that is technically present but visually
+# broken."
+#
+# Honest scope: each runner uses the engine that OS actually ships
+# (WebView2/Chromium on Windows, WKWebView and WebKitGTK via Playwright's
+# `webkit` elsewhere), so the layout, font metrics and control sizing are
+# the real ones. What is still mocked is the IPC layer — this is a
+# browser boot with a Tauri shim, not the packaged app, because
+# `tauri-driver` is installed but not yet wired. So it proves every pane
+# renders correctly on each platform's engine; it does not prove the
+# packaged binary starts.
+#
+# Not part of the `CI` workflow: it is a gate run, and the artifact upload
+# only makes sense when someone is going to review the images.
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: read
+
+jobs:
+  visual-smoke:
+    name: visual smoke (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        # Engine per OS, matching what Tauri 2.x actually renders in:
+        # WebView2 (Chromium) on Windows, WKWebView on macOS, WebKitGTK
+        # on Linux. Running Chromium everywhere would photograph an
+        # engine two of the three platforms never ship, which is the
+        # opposite of what a cross-OS visual gate is for.
+        include:
+          - os: windows-latest
+            browser: chromium
+          - os: macos-latest
+            browser: webkit
+          - os: ubuntu-latest
+            browser: webkit
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: apps/freally-ui/pnpm-lock.yaml
+
+      - name: Install frontend deps
+        working-directory: apps/freally-ui
+        run: pnpm install --frozen-lockfile
+
+      # One engine per runner - the one that OS actually ships. `--with-deps`
+      # pulls the shared libraries WebKitGTK needs on the Linux runner.
+      - name: Install Playwright ${{ matrix.browser }}
+        working-directory: apps/freally-ui
+        run: pnpm exec playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Render every panel
+        working-directory: apps/freally-ui
+        env:
+          VISUAL_SMOKE: "1"
+        run: pnpm exec playwright test e2e/visual-smoke.spec.ts --project=${{ matrix.browser }} --reporter=list
+
+      # `if: always()` so a failed render still uploads whatever it got —
+      # a half-drawn pane is often the most informative image in the set.
+      - name: Upload panel renders
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-smoke-${{ matrix.os }}-${{ matrix.browser }}
+          path: target/visual-smoke/
+          if-no-files-found: error
+          retention-days: 30

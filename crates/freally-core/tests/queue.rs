@@ -109,7 +109,7 @@ async fn mark_failed_records_error_on_job() {
         raw_os_error: Some(5),
         message: "nope".into(),
     };
-    q.mark_failed(id, err.clone());
+    q.mark_failed(id, err);
     let job = q.get(id).unwrap();
     assert_eq!(job.state, JobState::Failed);
     assert_eq!(

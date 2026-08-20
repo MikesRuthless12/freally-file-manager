@@ -109,24 +109,6 @@ fn now_ms() -> i64 {
         .unwrap_or(0)
 }
 
-/// `Path::exists()` with a brief retry loop (3 attempts spaced 50 ms
-/// apart) to ride out transient stat races. Used at registry-load
-/// time, where a concurrent deletion between the on-disk JSON read
-/// and the in-memory rebuild can otherwise let a stale path slip
-/// in. Total worst-case latency: 150 ms per missing entry.
-fn path_exists_with_retry(p: &Path) -> bool {
-    if p.exists() {
-        return true;
-    }
-    for _ in 0..2 {
-        std::thread::sleep(std::time::Duration::from_millis(50));
-        if p.exists() {
-            return true;
-        }
-    }
-    false
-}
-
 /// Path equality with platform-aware case-folding. On Windows / macOS
 /// the comparison is case-insensitive (NTFS / HFS+ / APFS-CI treat
 /// `C:\File.txt` and `c:\file.txt` as the same file); on Linux and
@@ -229,6 +211,16 @@ impl DropStackRegistry {
 
         let mut missing: Vec<PathBuf> = Vec::new();
         let mut kept: Vec<DropStackEntry> = Vec::with_capacity(parsed.entries.len());
+        // Entries whose first `exists()` said no. They get ONE shared
+        // re-stat pass after a single sleep, rather than 100 ms of
+        // sleeping each — `load()` runs synchronously on the Tauri
+        // setup thread, so a stack of 300 paths from an unplugged
+        // external drive froze the window for 30 s before it was
+        // usable (and ~200 s at MAX_ENTRIES). The retry exists to ride
+        // out a transient stat race, and one shared pass does that just
+        // as well as N sequential ones.
+        let mut recheck: Vec<DropStackEntry> = Vec::new();
+        let mut dropped_invalid = false;
         for e in parsed.entries {
             // Phase 17e — re-gate every stored path through the IPC
             // validator. A hand-edited `dropstack.json` containing
@@ -241,18 +233,28 @@ impl DropStackRegistry {
                     "dropstack: dropping path that fails IPC validation on load: {}",
                     raw
                 );
+                // Track it: without this the entry vanished from memory
+                // but the save below never fired, so `dropstack.json`
+                // kept it and re-parsed and re-logged it on every launch.
+                dropped_invalid = true;
                 continue;
             }
-            // Brief retry loop (3× 50 ms) to ride out transient
-            // filesystem stat races: between `exists()` and
-            // `kept.push()`, a concurrent deletion can let a stale
-            // path enter the registry. Cheap re-stat closes the
-            // window without blocking startup meaningfully (worst
-            // case 150 ms across all entries combined).
-            if path_exists_with_retry(&e.path) {
+            if e.path.exists() {
                 kept.push(e);
             } else {
-                missing.push(e.path);
+                recheck.push(e);
+            }
+        }
+
+        // One sleep for the whole load, then a single re-stat pass.
+        if !recheck.is_empty() {
+            std::thread::sleep(std::time::Duration::from_millis(50));
+            for e in recheck {
+                if e.path.exists() {
+                    kept.push(e);
+                } else {
+                    missing.push(e.path);
+                }
             }
         }
 
@@ -262,7 +264,7 @@ impl DropStackRegistry {
         }
         // Persist the trimmed list immediately so a later crash
         // doesn't re-present the missing paths on the next launch.
-        if !missing.is_empty() {
+        if !missing.is_empty() || dropped_invalid {
             self.save()?;
         }
         Ok(missing)
@@ -622,10 +624,15 @@ async fn dispatch_all(
         None,
         None,
     );
-    // Clear only if we actually enqueued anything; if `ids` came
-    // back empty the user gave us an empty list after filtering.
+    // Remove exactly what we dispatched, not whatever the registry
+    // holds *now*. `clear()` wiped the current contents, so anything
+    // dragged onto the Drop Stack window while the enqueue was in
+    // flight was silently deleted without ever being enqueued — and
+    // the returned `paths` never mentioned it.
     if !ids.is_empty() {
-        state.dropstack.clear().map_err(|e| e.to_string())?;
+        for entry in &snap {
+            let _ = state.dropstack.remove(&entry.path);
+        }
         emit_changed(&app, &state.dropstack);
     }
     Ok(paths)
@@ -693,7 +700,7 @@ mod tests {
 
         let reg2 = DropStackRegistry::new(tmp.path().join("ds.json"));
         let missing = reg2.load().unwrap();
-        assert_eq!(missing, vec![deleted.clone()]);
+        assert_eq!(missing, vec![deleted]);
         assert_eq!(reg2.len(), 1);
         assert_eq!(reg2.snapshot()[0].path, kept);
 
@@ -712,7 +719,7 @@ mod tests {
         std::fs::write(&p, "x").unwrap();
         let reg = DropStackRegistry::new(tmp.path().join("ds.json"));
         let first = reg.add([p.clone()]).unwrap();
-        let second = reg.add([p.clone()]).unwrap();
+        let second = reg.add([p]).unwrap();
         assert_eq!(first, 1);
         assert_eq!(second, 0);
         assert_eq!(reg.len(), 1);
@@ -726,7 +733,7 @@ mod tests {
         std::fs::write(&a, "A").unwrap();
         std::fs::write(&b, "B").unwrap();
         let reg = DropStackRegistry::new(tmp.path().join("ds.json"));
-        reg.add([a.clone(), b.clone()]).unwrap();
+        reg.add([a.clone(), b]).unwrap();
         assert!(reg.remove(&a).unwrap());
         assert!(!reg.remove(&a).unwrap(), "second remove is idempotent");
         assert_eq!(reg.len(), 1);

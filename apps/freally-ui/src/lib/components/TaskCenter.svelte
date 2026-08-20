@@ -3,6 +3,7 @@
   // progress bar + Cancel) and recently-finished ones. State is fed by the
   // `tasks` store, which the app keeps live via `initTaskListeners`.
   import Icon from "../icons/Icon.svelte";
+  import { escapeToClose } from "../a11y";
   import { i18nVersion, t } from "../i18n";
   import { taskCancel } from "../ipc";
   import { closeTaskCenter, pushToast, taskCenterOpen, tasks } from "../stores";
@@ -24,7 +25,7 @@
 </script>
 
 {#if $taskCenterOpen}
-  <aside class="drawer" aria-label={t("tasks-title")}>
+  <aside class="drawer" aria-label={t("tasks-title")} use:escapeToClose={closeTaskCenter}>
     {#key $i18nVersion}
       <header>
         <h2>{t("tasks-title")}</h2>

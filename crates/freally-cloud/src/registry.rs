@@ -148,7 +148,7 @@ mod tests {
         b.config = BackendConfig::LocalFs(LocalFsConfig {
             root: "/new-root".into(),
         });
-        reg.upsert(b.clone());
+        reg.upsert(b);
         assert_eq!(reg.len(), 1);
         match reg.get("edit").expect("present").config {
             BackendConfig::LocalFs(cfg) => assert_eq!(cfg.root, "/new-root"),

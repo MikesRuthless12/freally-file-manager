@@ -212,6 +212,23 @@ impl CollisionRegistry {
     /// Cancelled so a later job with the same id (impossible today
     /// but defensive) doesn't inherit stale rules.
     pub fn clear_job(&self, job_id: u64) {
+        // `pending` was named in the doc above but never actually
+        // cleared. With tree concurrency > 1 and `ErrorPolicy::Abort`,
+        // one file's hard error ends the job while another's collision
+        // prompt is still registered — so the prompt (and its paths and
+        // oneshot `Sender`) outlived the job for the process lifetime,
+        // and ConflictBatchModal kept rendering a live prompt for a job
+        // that had already finished, blocking the view. Answering it
+        // then sent into a dropped receiver.
+        //
+        // Dropping the senders here also makes the engine's `rx.await`
+        // resolve to the `Skip` default, which is the right terminal
+        // behaviour for a job that is already over.
+        self.inner
+            .pending
+            .lock()
+            .expect("collision registry poisoned")
+            .retain(|_, p| p.job_id != job_id);
         self.inner
             .apply_all
             .lock()

@@ -67,7 +67,7 @@ impl Drop for WatcherHandle {
 pub fn spawn(app: AppHandle) -> WatcherHandle {
     let stop = Arc::new(AtomicBool::new(false));
     let stop_clone = stop.clone();
-    let app_clone = app.clone();
+    let app_clone = app;
 
     tauri::async_runtime::spawn(async move {
         const POLL_INTERVAL: Duration = Duration::from_millis(500);

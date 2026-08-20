@@ -16,6 +16,8 @@
 -->
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
+  import { escapeToClose } from "../a11y";
+  import { t } from "../i18n";
   import { onMount } from "svelte";
 
   type Props = {
@@ -77,20 +79,12 @@
     aria-modal="true"
     aria-labelledby="mobile-onboarding-title"
     tabindex="-1"
-    onkeydown={(e) => {
-      if (e.key === "Escape") dismiss();
-    }}
+    use:escapeToClose={dismiss}
   >
     <div class="modal">
       <img src="/icons/icon-128.png" alt="Freally File Manager" class="logo" />
-      <h2 id="mobile-onboarding-title">Get the Freally File Manager mobile companion</h2>
-      <p class="hint">
-        Drive your desktop's copy / move / sync / secure-delete jobs
-        from your phone over a private WebRTC link. Scan the QR
-        below with your phone's camera to open the install URL in
-        your browser, then tap "Add to Home Screen" — no App Store
-        needed.
-      </p>
+      <h2 id="mobile-onboarding-title">{t("pair-onboarding-title")}</h2>
+      <p class="hint">{t("pair-onboarding-body")}</p>
       {#if qrPngBase64}
         <img
           class="qr"
@@ -99,7 +93,7 @@
         />
         <p class="addr">{pwaUrl}</p>
       {:else}
-        <p class="hint muted">Loading QR…</p>
+        <p class="hint muted">{t("pair-onboarding-loading-qr")}</p>
       {/if}
       <div class="actions">
         <button
@@ -107,17 +101,13 @@
           class="primary"
           onclick={openSettings}
           disabled={busy}
-        >
-          I have the app, pair now
-        </button>
+        >{t("pair-onboarding-have-app")}</button>
         <button
           type="button"
           class="secondary"
           onclick={dismiss}
           disabled={busy}
-        >
-          Maybe later
-        </button>
+        >{t("pair-onboarding-later")}</button>
       </div>
     </div>
   </div>

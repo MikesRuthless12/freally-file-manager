@@ -154,7 +154,7 @@ impl TaskRegistry {
         if state != "cancelled" {
             rec.dto.progress = 1.0;
         }
-        let dto = rec.dto.clone();
+        let dto = rec.dto;
         g.recent.push_front(dto.clone());
         while g.recent.len() > RECENT_CAP {
             g.recent.pop_back();

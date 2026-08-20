@@ -206,9 +206,24 @@ impl SshHandler for SshConn {
 
 /// An open handle returned to the client: either a file (for read/write at
 /// an offset) or a directory whose entries are sent in one `readdir` batch.
+/// SFTP protocol limit to respect when answering `readdir`.
+///
+/// `russh_sftp` fills in a `longname` (an `ls -l` line) beside each
+/// filename and attrs, so an entry costs roughly 110-160 bytes.
+/// OpenSSH caps a single message at `SFTP_MAX_MSG_LENGTH` (256 KiB),
+/// so returning a whole directory in one `SSH_FXP_NAME` made `ls` on a
+/// folder of more than roughly 2,000 files abort the client with
+/// "Received message too long". Batching is the protocol's intended
+/// shape anyway: the client re-issues `readdir` until it gets `Eof`.
+const READDIR_BATCH: usize = 100;
+
 enum OpenHandle {
     File(std::fs::File),
-    Dir { entries: Vec<SftpFile>, sent: bool },
+    /// `cursor` is how far through `entries` the client has read.
+    Dir {
+        entries: Vec<SftpFile>,
+        cursor: usize,
+    },
 }
 
 /// The SFTP subsystem handler for one channel — the path jail lives here.
@@ -263,6 +278,24 @@ impl SftpHandler {
         // this, but re-verify the final path is genuinely under the root.
         if !normalized.starts_with(&*self.root) {
             return Err(StatusCode::PermissionDenied);
+        }
+        // The walk above is *lexical* — it stops `..` and absolute paths,
+        // but it cannot see a symlink or Windows junction under the root
+        // whose target is outside it. Every caller of `resolve` then opens
+        // the path with ordinary filesystem calls, which follow links. Do
+        // the containment re-check here so it covers every SFTP op rather
+        // than only the ones someone remembered to guard.
+        //
+        // A path that does not exist yet is legitimate (create/mkdir), and
+        // `ensure_within_root` judges those by their parent.
+        if let Err(e) = crate::jail::ensure_within_root(&normalized, &self.root) {
+            // Preserve the distinction clients act on: a missing path is
+            // NO_SUCH_FILE ("create it"), not PERMISSION_DENIED ("give
+            // up"). Only a genuine containment failure is the latter.
+            return Err(match e.kind() {
+                std::io::ErrorKind::NotFound => StatusCode::NoSuchFile,
+                _ => StatusCode::PermissionDenied,
+            });
         }
         Ok(normalized)
     }
@@ -348,28 +381,22 @@ impl russh_sftp::server::Handler for SftpHandler {
             entries.push(SftpFile::new(name, attrs));
         }
         let handle = self.fresh_handle();
-        self.handles.insert(
-            handle.clone(),
-            OpenHandle::Dir {
-                entries,
-                sent: false,
-            },
-        );
+        self.handles
+            .insert(handle.clone(), OpenHandle::Dir { entries, cursor: 0 });
         Ok(Handle { id, handle })
     }
 
     async fn readdir(&mut self, id: u32, handle: String) -> Result<Name, Self::Error> {
         match self.handles.get_mut(&handle) {
-            Some(OpenHandle::Dir { entries, sent }) => {
-                if *sent {
-                    // Whole listing already delivered — signal end-of-dir.
+            Some(OpenHandle::Dir { entries, cursor }) => {
+                if *cursor >= entries.len() {
+                    // Everything delivered - signal end-of-dir.
                     Err(StatusCode::Eof)
                 } else {
-                    *sent = true;
-                    Ok(Name {
-                        id,
-                        files: std::mem::take(entries),
-                    })
+                    let end = (*cursor + READDIR_BATCH).min(entries.len());
+                    let batch = entries[*cursor..end].to_vec();
+                    *cursor = end;
+                    Ok(Name { id, files: batch })
                 }
             }
             _ => Err(StatusCode::Failure),

@@ -1735,3 +1735,31 @@ settings-favorites-hotkey = 快捷键
 a11y-queue-status = 进行中 { $running } 个，已完成 { $done } 个，失败 { $failed } 个
 
 err-favorite-id-invalid = 收藏标识符无效
+
+# Previously hard-coded in the Svelte markup, so they stayed English
+# in every locale. Product names (Freally File Manager, PeerJS) and
+# the IAM / TRIM / QR / ID initialisms are intentionally untranslated.
+remote-account-name = 账户名称
+remote-service-account = 服务账户
+remote-client-id = 客户端 ID
+remote-secret = 密钥（访问密钥 / 密码 / 令牌）
+remote-job-name = 任务名称
+remote-instance-size = 实例规格
+remote-iam-role = IAM 角色 / 身份
+pair-always-connect = 始终连接到移动应用
+pair-broker-url = PeerJS 代理服务器地址（留空 = 公共默认值）
+pair-devices-heading = 已配对设备
+pair-onboarding-title = 获取 Freally File Manager 移动端伴侣应用
+pair-onboarding-loading-qr = 正在加载二维码…
+sanitize-confirm-backup = 我确认已备份所有我想保留的数据
+sanitize-model-mismatch = 驱动器型号名称不匹配。
+sanitize-trim-heading = 空闲空间 TRIM
+details-avg-speed = 平均速度
+pair-onboarding-body = 通过专用 WebRTC 链接，从手机操控桌面端的复制 / 移动 / 同步 / 安全删除任务。用手机相机扫描下方二维码，在浏览器中打开安装网址，然后点按“添加到主屏幕”——无需应用商店。
+pair-onboarding-have-app = 我已安装应用，立即配对
+pair-onboarding-later = 稍后再说
+pair-no-device-warning = 自动连接已开启，但尚未配对任何手机。请在手机上安装 Freally File Manager 移动版 PWA（用相机扫描下方二维码），然后点击“开始配对”，让桌面端知道要连接到哪里。
+pair-desktop-peer-id = 桌面端 peer-id：
+sanitize-probe = 探测设备能力
+sanitize-run = 执行清除
+sanitize-run-trim = 执行空闲空间 TRIM

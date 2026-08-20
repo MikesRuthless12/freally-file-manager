@@ -185,7 +185,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("audit.log");
         let sink = Arc::new(AuditSink::open(&path, AuditFormat::JsonLines, WormMode::Off).unwrap());
-        let layer = AuditLayer::new(sink.clone());
+        let layer = AuditLayer::new(sink);
 
         let subscriber = tracing_subscriber::registry().with(layer);
         tracing::subscriber::with_default(subscriber, || {
@@ -202,7 +202,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("audit.log");
         let sink = Arc::new(AuditSink::open(&path, AuditFormat::JsonLines, WormMode::Off).unwrap());
-        let layer = AuditLayer::new(sink.clone());
+        let layer = AuditLayer::new(sink);
 
         let subscriber = tracing_subscriber::registry().with(layer);
         tracing::subscriber::with_default(subscriber, || {

@@ -15,6 +15,7 @@
   import { untrack } from "svelte";
 
   import Icon from "../icons/Icon.svelte";
+  import { escapeToClose } from "../a11y";
   import { t } from "../i18n";
   import { formatBytes } from "../format";
   import { closeHashInspector, pushToast } from "../stores";
@@ -111,10 +112,6 @@
     }
   }
 
-  function onKeydown(e: KeyboardEvent): void {
-    if (e.key === "Escape") closeHashInspector();
-  }
-
   // Seed (and re-seed) from the store. A second Explorer "Hash with
   // Freally File Manager" while the panel is already open replaces the
   // selection and re-hashes. Every write below is untracked so the
@@ -137,7 +134,7 @@
   aria-modal="true"
   aria-labelledby="hash-inspector-title"
   tabindex="-1"
-  onkeydown={onKeydown}
+  use:escapeToClose={closeHashInspector}
 >
   <div class="panel">
     <h2 id="hash-inspector-title">{t("hash-inspector-title")}</h2>

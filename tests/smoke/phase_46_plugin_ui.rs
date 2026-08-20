@@ -158,7 +158,7 @@ fn case3_grant_revoke_round_trip_and_manifest_gate() {
     // Both manifest-declared caps round-trip cleanly.
     grant(&store, "smoke-organize", "read_fs:source").unwrap();
     let dto = grant(&store, "smoke-organize", "write_fs:dest").unwrap();
-    let mut got = dto.granted_capabilities.clone();
+    let mut got = dto.granted_capabilities;
     got.sort();
     assert_eq!(got, vec!["read_fs:source", "write_fs:dest"]);
 }

@@ -1735,3 +1735,31 @@ settings-favorites-hotkey = ショートカット
 a11y-queue-status = 実行中 { $running } 件、完了 { $done } 件、失敗 { $failed } 件
 
 err-favorite-id-invalid = お気に入り ID が無効です
+
+# Previously hard-coded in the Svelte markup, so they stayed English
+# in every locale. Product names (Freally File Manager, PeerJS) and
+# the IAM / TRIM / QR / ID initialisms are intentionally untranslated.
+remote-account-name = アカウント名
+remote-service-account = サービスアカウント
+remote-client-id = クライアント ID
+remote-secret = シークレット（アクセスキー / パスワード / トークン）
+remote-job-name = ジョブ名
+remote-instance-size = インスタンスサイズ
+remote-iam-role = IAM ロール / アイデンティティ
+pair-always-connect = 常にモバイルアプリに接続する
+pair-broker-url = PeerJS ブローカー URL（空欄 = 公開デフォルト）
+pair-devices-heading = ペアリング済みデバイス
+pair-onboarding-title = Freally File Manager のモバイルコンパニオンを入手
+pair-onboarding-loading-qr = QR を読み込み中…
+sanitize-confirm-backup = 保持したいデータのバックアップがあることを確認しました
+sanitize-model-mismatch = ドライブのモデル名が一致しません。
+sanitize-trim-heading = 空き領域の TRIM
+details-avg-speed = 平均速度
+pair-onboarding-body = プライベートな WebRTC 接続で、デスクトップのコピー / 移動 / 同期 / 安全な削除のジョブをスマートフォンから操作できます。下の QR をスマートフォンのカメラで読み取り、ブラウザーでインストール URL を開いて「ホーム画面に追加」をタップしてください。App Store は不要です。
+pair-onboarding-have-app = アプリを持っています。今すぐペアリング
+pair-onboarding-later = 後で
+pair-no-device-warning = 自動接続は有効ですが、まだスマートフォンがペアリングされていません。スマートフォンに Freally File Manager モバイル PWA をインストールし（下の QR をカメラで読み取り）、「ペアリングを開始」をクリックすると、デスクトップが接続先を認識します。
+pair-desktop-peer-id = デスクトップの peer-id:
+sanitize-probe = 機能を調べる
+sanitize-run = サニタイズを実行
+sanitize-run-trim = 空き領域の TRIM を実行

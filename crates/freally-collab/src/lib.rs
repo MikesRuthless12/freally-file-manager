@@ -526,7 +526,7 @@ mod tests {
         assert!(!forged.verify(&admin_pub));
 
         // So must replaying it at a different epoch.
-        let mut replayed = token.clone();
+        let mut replayed = token;
         replayed.epoch += 1;
         assert!(!replayed.verify(&admin_pub));
 

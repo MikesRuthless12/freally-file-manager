@@ -1735,3 +1735,31 @@ settings-favorites-hotkey = Tastenkürzel
 a11y-queue-status = { $running } laufend, { $done } fertig, { $failed } fehlgeschlagen
 
 err-favorite-id-invalid = Ungültige Favoritenkennung
+
+# Previously hard-coded in the Svelte markup, so they stayed English
+# in every locale. Product names (Freally File Manager, PeerJS) and
+# the IAM / TRIM / QR / ID initialisms are intentionally untranslated.
+remote-account-name = Kontoname
+remote-service-account = Dienstkonto
+remote-client-id = Client-ID
+remote-secret = Geheimnis (Zugriffsschlüssel / Passwort / Token)
+remote-job-name = Auftragsname
+remote-instance-size = Instanzgröße
+remote-iam-role = IAM-Rolle / -Identität
+pair-always-connect = Immer mit der mobilen App verbinden
+pair-broker-url = PeerJS-Broker-URL (leer = öffentlicher Standard)
+pair-devices-heading = Gekoppelte Geräte
+pair-onboarding-title = Hol dir die mobile Begleit-App von Freally File Manager
+pair-onboarding-loading-qr = QR wird geladen…
+sanitize-confirm-backup = Ich bestätige, dass ich eine Sicherung aller Daten habe, die ich behalten möchte
+sanitize-model-mismatch = Der Modellname des Laufwerks stimmt nicht überein.
+sanitize-trim-heading = TRIM des freien Speichers
+details-avg-speed = Durchschnittsgeschw.
+pair-onboarding-body = Steuere die Kopier-, Verschiebe-, Synchronisierungs- und Sicher-Löschen-Aufträge deines Desktops vom Handy aus über eine private WebRTC-Verbindung. Scanne den QR-Code unten mit der Handykamera, öffne die Installations-URL im Browser und tippe auf „Zum Home-Bildschirm“ — kein App Store nötig.
+pair-onboarding-have-app = App ist installiert, jetzt koppeln
+pair-onboarding-later = Vielleicht später
+pair-no-device-warning = Automatische Verbindung ist aktiv, aber es ist noch kein Telefon gekoppelt. Installiere die mobile PWA von Freally File Manager auf deinem Telefon (scanne den QR-Code unten mit der Kamera) und klicke dann auf „Kopplung starten“, damit der Desktop weiß, wohin er sich verbinden soll.
+pair-desktop-peer-id = Desktop-Peer-ID:
+sanitize-probe = Fähigkeiten ermitteln
+sanitize-run = Bereinigung ausführen
+sanitize-run-trim = TRIM des freien Speichers ausführen

@@ -1735,3 +1735,31 @@ settings-favorites-hotkey = Sneltoets
 a11y-queue-status = { $running } bezig, { $done } klaar, { $failed } mislukt
 
 err-favorite-id-invalid = Ongeldige favoriet-id
+
+# Previously hard-coded in the Svelte markup, so they stayed English
+# in every locale. Product names (Freally File Manager, PeerJS) and
+# the IAM / TRIM / QR / ID initialisms are intentionally untranslated.
+remote-account-name = Accountnaam
+remote-service-account = Serviceaccount
+remote-client-id = Client-ID
+remote-secret = Geheim (toegangssleutel / wachtwoord / token)
+remote-job-name = Taaknaam
+remote-instance-size = Instantiegrootte
+remote-iam-role = IAM-rol / -identiteit
+pair-always-connect = Altijd verbinden met mobiele app
+pair-broker-url = PeerJS-broker-URL (leeg = openbare standaard)
+pair-devices-heading = Gekoppelde apparaten
+pair-onboarding-title = Download de mobiele metgezel-app van Freally File Manager
+pair-onboarding-loading-qr = QR laden…
+sanitize-confirm-backup = Ik bevestig dat ik een back-up heb van alle gegevens die ik wil behouden
+sanitize-model-mismatch = De modelnaam van de schijf komt niet overeen.
+sanitize-trim-heading = TRIM van vrije ruimte
+details-avg-speed = Gem. snelheid
+pair-onboarding-body = Bestuur de kopieer-, verplaats-, synchronisatie- en veilig-verwijderentaken van je desktop vanaf je telefoon via een privé-WebRTC-verbinding. Scan de QR hieronder met je telefooncamera om de installatie-URL in je browser te openen en tik daarna op "Zet op beginscherm" — geen App Store nodig.
+pair-onboarding-have-app = Ik heb de app, nu koppelen
+pair-onboarding-later = Misschien later
+pair-no-device-warning = Automatisch verbinden staat aan, maar er is nog geen telefoon gekoppeld. Installeer de mobiele PWA van Freally File Manager op je telefoon (scan de QR hieronder met je camera) en klik daarna op "Koppelen starten" zodat de desktop weet waarheen te verbinden.
+pair-desktop-peer-id = Desktop-peer-id:
+sanitize-probe = Mogelijkheden opvragen
+sanitize-run = Wissen uitvoeren
+sanitize-run-trim = TRIM van vrije ruimte uitvoeren

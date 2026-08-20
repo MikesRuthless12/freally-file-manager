@@ -60,16 +60,37 @@ pub async fn sync(
             side: Direction::LeftToRight,
         })
         .await;
-    let skip = [".freally-sync.db"];
+    // Files the walk must never treat as user data.
+    //
+    // This was the hardcoded default name alone. Nothing stops a pair
+    // from being configured with a `db_path` *inside* one of its own
+    // roots, and when it is, the baseline was walked like any other
+    // file: propagated to the other side, and — once it changed under
+    // the walk, which it does constantly — deleted there. On Linux,
+    // where nothing holds an exclusive lock on it, that is a route to
+    // destroying the baseline mid-run. Derive the list from the path
+    // actually in use, sidecars included.
+    let mut skip: Vec<String> = vec![".freally-sync.db".to_string()];
+    if let Some(name) = pair.db_path.file_name().and_then(|n| n.to_str()) {
+        for suffix in ["", "-wal", "-shm", ".lock"] {
+            let candidate = format!("{name}{suffix}");
+            if !skip.contains(&candidate) {
+                skip.push(candidate);
+            }
+        }
+    }
     let left = {
         let root = pair.left.clone();
-        let skip_vec: Vec<&'static str> = skip.to_vec();
-        tokio::task::spawn_blocking(move || scan_side(&root, &skip_vec))
-            .await
-            .map_err(|e| SyncError::Io {
-                path: pair.left.clone(),
-                source: std::io::Error::other(e.to_string()),
-            })??
+        let skip_vec = skip.clone();
+        tokio::task::spawn_blocking(move || {
+            let refs: Vec<&str> = skip_vec.iter().map(String::as_str).collect();
+            scan_side(&root, &refs)
+        })
+        .await
+        .map_err(|e| SyncError::Io {
+            path: pair.left.clone(),
+            source: std::io::Error::other(e.to_string()),
+        })??
     };
     let _ = events
         .send(SyncEvent::WalkCompleted {
@@ -86,13 +107,16 @@ pub async fn sync(
         .await;
     let right = {
         let root = pair.right.clone();
-        let skip_vec: Vec<&'static str> = skip.to_vec();
-        tokio::task::spawn_blocking(move || scan_side(&root, &skip_vec))
-            .await
-            .map_err(|e| SyncError::Io {
-                path: pair.right.clone(),
-                source: std::io::Error::other(e.to_string()),
-            })??
+        let skip_vec = skip.clone();
+        tokio::task::spawn_blocking(move || {
+            let refs: Vec<&str> = skip_vec.iter().map(String::as_str).collect();
+            scan_side(&root, &refs)
+        })
+        .await
+        .map_err(|e| SyncError::Io {
+            path: pair.right.clone(),
+            source: std::io::Error::other(e.to_string()),
+        })??
     };
     let _ = events
         .send(SyncEvent::WalkCompleted {
@@ -171,7 +195,22 @@ pub async fn sync(
 
     let mut history_seq: u64 = 0;
     for action in &actions {
-        ctrl.wait_while_paused().await?;
+        // A cancel that lands while the run is *paused* wakes
+        // `wait_while_paused` with `SyncError::Cancelled`. Propagating
+        // that with `?` turned an ordinary user cancel into a hard
+        // failure and discarded the report — including the count of
+        // actions already applied, which the UI needs to tell the user
+        // what actually happened before they hit cancel. Cancelling
+        // while *running* already took the clean path just below; both
+        // now end the same way.
+        match ctrl.wait_while_paused().await {
+            Ok(()) => {}
+            Err(SyncError::Cancelled) => {
+                report.cancelled = true;
+                break;
+            }
+            Err(e) => return Err(e),
+        }
         if ctrl.is_cancelled() {
             report.cancelled = true;
             break;
@@ -268,6 +307,9 @@ pub async fn sync(
                 let baseline = db.get_file(relpath)?;
                 let outcome = apply_delete(pair, relpath, *direction, baseline.as_ref()).await?;
                 match outcome {
+                    // Nothing changed on disk — leave the baseline,
+                    // the counters and the history untouched.
+                    DeleteOutcome::Skipped => {}
                     DeleteOutcome::Deleted => {
                         db.delete_file(relpath)?;
                         match direction {
@@ -531,7 +573,7 @@ pub fn decide_action(
             }),
         // Both added at the same relpath with different content — add/add conflict.
         (true, true, false) => {
-            let (winner, loser) = pick_winner_by_mtime(lm.unwrap(), rm.unwrap());
+            let (winner, loser) = resolve_conflict_sides(mode, lm.unwrap(), rm.unwrap());
             SyncAction::KeepConflict {
                 relpath: relpath.to_string(),
                 winner,
@@ -548,22 +590,46 @@ pub fn decide_action(
                     relpath: relpath.to_string(),
                 },
                 (true, false) => {
-                    // Right changed, propagate R→L.
-                    if matches!(mode, SyncMode::ContributeLeftToRight) {
-                        // In contribute mode we never apply remote-side changes.
-                        SyncAction::Noop {
+                    // Right changed since baseline.
+                    //
+                    // Copying R→L is only correct when the mode permits
+                    // writing to the left. This arm used to do it for
+                    // every mode except Contribute, so a
+                    // `MirrorLeftToRight` propagated the *replica's*
+                    // edit back over its own authoritative source —
+                    // a mirror overwriting the thing it mirrors.
+                    match mode {
+                        // Contribute donates left→right but never reaches
+                        // back to overwrite what the far side did with it.
+                        SyncMode::ContributeLeftToRight => SyncAction::Noop {
                             relpath: relpath.to_string(),
-                        }
-                    } else {
-                        SyncAction::Copy {
+                        },
+                        // The right is a replica here and it drifted:
+                        // restore it from the authoritative left.
+                        SyncMode::MirrorLeftToRight => SyncAction::Copy {
+                            relpath: relpath.to_string(),
+                            direction: Direction::LeftToRight,
+                        },
+                        // TwoWay, and MirrorRightToLeft where the right
+                        // *is* authoritative.
+                        _ => SyncAction::Copy {
                             relpath: relpath.to_string(),
                             direction: Direction::RightToLeft,
-                        }
+                        },
                     }
                 }
-                (false, true) => SyncAction::Copy {
-                    relpath: relpath.to_string(),
-                    direction: Direction::LeftToRight,
+                (false, true) => match mode {
+                    // Left is the replica under a right-authoritative
+                    // mirror; restore it rather than pushing its edit
+                    // onto the source.
+                    SyncMode::MirrorRightToLeft => SyncAction::Copy {
+                        relpath: relpath.to_string(),
+                        direction: Direction::RightToLeft,
+                    },
+                    _ => SyncAction::Copy {
+                        relpath: relpath.to_string(),
+                        direction: Direction::LeftToRight,
+                    },
                 },
                 (false, false) => {
                     // Both changed. If the new contents agree, no-op
@@ -573,7 +639,7 @@ pub fn decide_action(
                             relpath: relpath.to_string(),
                         }
                     } else {
-                        let (winner, loser) = pick_winner_by_mtime(l, r);
+                        let (winner, loser) = resolve_conflict_sides(mode, l, r);
                         SyncAction::KeepConflict {
                             relpath: relpath.to_string(),
                             winner,
@@ -690,6 +756,32 @@ fn pick_winner_by_mtime(left: &FileMeta, right: &FileMeta) -> (Direction, Direct
     }
 }
 
+/// Resolve a conflict's `(winner, loser)` for `mode`.
+///
+/// In a one-way mode the authoritative side always wins, regardless of
+/// mtime. Deciding by mtime alone was actively destructive: on a first
+/// `MirrorLeftToRight` run against a pre-populated destination there is
+/// no baseline, so every differing file is an add/add conflict — and
+/// copy tools stamp destination mtimes at copy time, so the destination
+/// usually looked "newer" and won. `apply_conflict` would then rename
+/// the *source* file to `name.sync-conflict-…` and overwrite it from the
+/// replica.
+///
+/// Two-way keeps the mtime heuristic, which is the only signal it has.
+fn resolve_conflict_sides(
+    mode: SyncMode,
+    left: &FileMeta,
+    right: &FileMeta,
+) -> (Direction, Direction) {
+    match mode {
+        SyncMode::MirrorLeftToRight | SyncMode::ContributeLeftToRight => {
+            (Direction::LeftToRight, Direction::RightToLeft)
+        }
+        SyncMode::MirrorRightToLeft => (Direction::RightToLeft, Direction::LeftToRight),
+        SyncMode::TwoWay => pick_winner_by_mtime(left, right),
+    }
+}
+
 async fn apply_copy(
     pair: &SyncPair,
     relpath: &str,
@@ -729,6 +821,17 @@ enum DeleteOutcome {
     /// Destination no longer present after apply (either we removed
     /// it, or it was already gone).
     Deleted,
+    /// The delete was deliberately not performed and nothing changed
+    /// on disk — the caller must leave the baseline, the counters and
+    /// the history alone.
+    ///
+    /// Previously this case returned `Deleted`, so a suppressed delete
+    /// still pruned the baseline row, incremented `deleted_*`, and
+    /// wrote a `HistoryKind::Deleted` audit entry for a file that is
+    /// present on both sides. Dropping the baseline row is the
+    /// damaging part: the next round sees "no baseline" and re-derives
+    /// the pair's state from scratch.
+    Skipped,
     /// Source path reappeared with content that differs from the
     /// baseline between scan and apply — the delete was aborted to
     /// preserve the re-created content. Carries the conflict record
@@ -802,7 +905,7 @@ async fn apply_delete(
                 // nothing was renamed, but the field has to point
                 // at a real file on disk so the UI's "open conflict"
                 // affordance has something to open.
-                loser_preservation_path: src.clone(),
+                loser_preservation_path: src,
             }));
         }
         // Source's re-created content is byte-identical to the
@@ -811,7 +914,10 @@ async fn apply_delete(
         // that same content, so deleting now would create a
         // baseline desync. Abort silently — the next sync round
         // will see both sides agree and advance the baseline.
-        return Ok(DeleteOutcome::Deleted);
+        //
+        // `Skipped`, not `Deleted`: nothing was removed, so the caller
+        // must not prune the baseline row or count a deletion.
+        return Ok(DeleteOutcome::Skipped);
     }
 
     if dst.exists() {
@@ -1514,7 +1620,7 @@ mod tests {
                 assert_eq!(c.winner, Direction::RightToLeft);
                 assert_eq!(c.loser, Direction::LeftToRight);
             }
-            DeleteOutcome::Deleted => {
+            DeleteOutcome::Deleted | DeleteOutcome::Skipped => {
                 panic!("expected RaceAbortedAsConflict; the dest should NOT have been removed")
             }
         }
@@ -1537,7 +1643,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn apply_delete_proceeds_when_source_recreated_with_baseline_bytes() {
+    async fn apply_delete_skips_when_source_recreated_with_baseline_bytes() {
         // Edge case: source was re-created but with byte-identical
         // content to the last-synced baseline. There's no real
         // conflict (nothing was lost), but the delete should still
@@ -1563,11 +1669,15 @@ mod tests {
         )
         .await
         .expect("apply_delete returns Ok");
-        // The race-recheck branch returns Deleted (no conflict
-        // surfaced) but does not actually remove the destination —
-        // the source's reappearance with baseline bytes means we
-        // back off to "let the next round reconcile".
-        assert!(matches!(outcome, DeleteOutcome::Deleted));
+        // `Skipped`, not `Deleted`. This branch never removes the
+        // destination — the source reappearing with baseline bytes
+        // means we back off and let the next round reconcile — and it
+        // used to say `Deleted` anyway, which made the caller prune the
+        // baseline row, count a deletion that did not happen, and write
+        // a `HistoryKind::Deleted` audit entry for a file present on
+        // both sides. Losing the baseline row is the damaging part: the
+        // next round then re-derives the pair from scratch.
+        assert!(matches!(outcome, DeleteOutcome::Skipped));
         assert!(right.path().join("doc.txt").exists());
         assert!(left.path().join("doc.txt").exists());
     }

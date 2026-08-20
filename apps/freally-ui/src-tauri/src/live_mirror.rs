@@ -113,7 +113,7 @@ pub async fn start_live_mirror(
             .find(|p| p.id == pair_id)
             .cloned()
             .ok_or_else(|| format!("unknown pair id: {pair_id}"))?;
-        (cfg, snap.sync.host_label_override.clone())
+        (cfg, snap.sync.host_label_override)
     };
 
     let stop = Arc::new(AtomicBool::new(false));
@@ -134,7 +134,7 @@ pub async fn start_live_mirror(
 
     let registry = state.live_mirrors.clone();
     let pair_id_for_task = pair_id.clone();
-    let app_for_task = app.clone();
+    let app_for_task = app;
     tokio::spawn(async move {
         run_loop(
             pair_id_for_task.clone(),

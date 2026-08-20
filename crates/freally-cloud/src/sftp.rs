@@ -26,12 +26,14 @@
 //!
 //! Phase 32h implements `known_hosts` pinning. When
 //! [`SftpConfig::known_hosts_path`] is non-empty, the handshake
-//! compares the server's public key against entries matching the
-//! configured `(host, port)` in the file; a missing entry or a
-//! mismatch rejects the connection. When the field is empty, the
-//! handshake falls back to the Phase 32f trust-on-first-use
-//! behavior (safe only on private networks or for interactive
-//! development).
+//! compares the server's public key against every entry matching the
+//! configured `(host, port)` — one per key type — and a missing entry
+//! or a mismatch rejects the connection.
+//!
+//! When the field is empty the handshake **fails closed**. It does
+//! not fall back to trust-on-first-use, which is what this used to
+//! say: accepting an unknown key is the MITM the check exists to
+//! stop.
 //!
 //! # Scope
 //!
@@ -63,12 +65,19 @@ use crate::backend::SftpConfig;
 use crate::error::BackendError;
 use crate::target::{CopyTarget, EntryMeta};
 
-/// Phase 32h — host-key verifier. `expected` is the hex-encoded
-/// SHA-256 fingerprint of the server key parsed from a
-/// `known_hosts` entry. When `None`, falls back to trust-on-first-use
-/// semantics (the Phase 32f default).
+/// Phase 32h — host-key verifier. `expected_sha256_hex` holds the
+/// hex-encoded SHA-256 fingerprint of *every* key pinned for this
+/// host in `known_hosts`, one per key type. An empty set means the
+/// host is not pinned, and the handshake fails closed.
+///
+/// This was a single `Option<String>` holding whichever entry came
+/// first in the file. A `known_hosts` seeded normally by OpenSSH
+/// carries three lines per host (ssh-rsa, ecdsa-sha2-nistp256,
+/// ssh-ed25519), and the server picks the type during negotiation —
+/// so a correctly-pinned host was refused whenever the negotiated
+/// type was not the one listed first.
 struct HostKeyVerifier {
-    expected_sha256_hex: Option<String>,
+    expected_sha256_hex: Vec<String>,
 }
 
 impl client::Handler for HostKeyVerifier {
@@ -87,12 +96,30 @@ impl client::Handler for HostKeyVerifier {
         let expected = self.expected_sha256_hex.clone();
         let actual_hex = sha256_fingerprint_hex(server_public_key);
         async move {
-            match expected {
-                None => Ok(true),
-                Some(exp) => Ok(actual_hex.eq_ignore_ascii_case(&exp)),
-            }
+            // Fail closed on an empty set. This used to `Ok(true)` —
+            // accept any host key — whenever no expected fingerprint
+            // was configured, which is exactly the MITM the host-key
+            // check exists to stop.
+            //
+            // Any pinned key for the host is acceptable: every line the
+            // user keeps for that host is one they already trust, and
+            // the server chooses which type to present.
+            Ok(expected
+                .iter()
+                .any(|exp| actual_hex.eq_ignore_ascii_case(exp)))
         }
     }
+}
+
+/// True when an SFTP error means "this path does not exist", as
+/// opposed to "I could not tell you whether it does".
+fn is_absent(e: &russh_sftp::client::error::Error) -> bool {
+    use russh_sftp::protocol::StatusCode;
+    matches!(
+        e,
+        russh_sftp::client::error::Error::Status(s)
+            if s.status_code == StatusCode::NoSuchFile
+    )
 }
 
 /// Phase 32h — pool state. `None` = never connected / torn down.
@@ -146,9 +173,13 @@ fn sha256_fingerprint_hex(key: &russh::keys::ssh_key::PublicKey) -> String {
 }
 
 /// Parse an OpenSSH `known_hosts` file and return the server key's
-/// expected SHA-256 hex fingerprint for the given `(host, port)`.
-/// Returns `Ok(None)` when there's no matching entry. Errors on
-/// unreadable file / malformed content.
+/// SHA-256 hex fingerprint of every key pinned for the given
+/// `(host, port)` — one per key type present. Returns an empty `Vec`
+/// when no entry matches. Errors on unreadable / malformed content.
+///
+/// All matching lines are returned, not just the first: OpenSSH seeds
+/// a host with one line per key type, and which one the server
+/// presents is decided during negotiation.
 ///
 /// Supports three entry forms:
 /// - Plain `host key-type base64-key` (default port 22).
@@ -159,16 +190,17 @@ fn sha256_fingerprint_hex(key: &russh::keys::ssh_key::PublicKey) -> String {
 ///   entries as "unknown" and falls through — matching hashes
 ///   requires HMAC-SHA1 and the live host string, which we'd
 ///   need to accept on the callback's `&mut self` side.
-pub(crate) fn expected_host_key_fingerprint(
+pub(crate) fn expected_host_key_fingerprints(
     known_hosts_path: &std::path::Path,
     host: &str,
     port: u16,
-) -> std::io::Result<Option<String>> {
+) -> std::io::Result<Vec<String>> {
     use std::io::{BufRead, BufReader};
     let file = std::fs::File::open(known_hosts_path)?;
     let reader = BufReader::new(file);
     let search_plain = host.to_ascii_lowercase();
     let search_bracketed = format!("[{}]:{port}", host.to_ascii_lowercase());
+    let mut found: Vec<String> = Vec::new();
     for line in reader.lines() {
         let line = line?;
         let line = line.trim();
@@ -208,9 +240,9 @@ pub(crate) fn expected_host_key_fingerprint(
         use sha2::Digest;
         let mut hasher = sha2::Sha256::new();
         hasher.update(&bytes);
-        return Ok(Some(hex::encode(hasher.finalize())));
+        found.push(hex::encode(hasher.finalize()));
     }
-    Ok(None)
+    Ok(found)
 }
 
 /// SFTP backend. Construct with [`SftpTarget::new`]; call through
@@ -310,10 +342,10 @@ impl SftpTarget {
             }
         );
         // Phase 32h — build the verifier. If `known_hosts_path` is
-        // set, lift the expected fingerprint for this (host, port);
-        // otherwise fall back to trust-on-first-use.
+        // set, lift every pinned fingerprint for this (host, port).
+        // An unset path yields an empty set, which fails closed.
         let expected_fp = if !self.config.known_hosts_path.is_empty() {
-            expected_host_key_fingerprint(
+            expected_host_key_fingerprints(
                 std::path::Path::new(&self.config.known_hosts_path),
                 &self.config.host,
                 if self.config.port == 0 {
@@ -324,12 +356,12 @@ impl SftpTarget {
             )
             .map_err(|e| BackendError::InvalidConfig(format!("known_hosts read: {e}")))?
         } else {
-            None
+            Vec::new()
         };
         if self.config.known_hosts_path.is_empty() {
-            // Explicit no-pin mode — use an empty expected value
-            // (matches everything via the verifier's `None` branch).
-        } else if expected_fp.is_none() {
+            // Explicit no-pin mode — an empty set, which the verifier
+            // rejects. Fail closed rather than trust on first use.
+        } else if expected_fp.is_empty() {
             return Err(BackendError::InvalidConfig(format!(
                 "sftp known_hosts has no entry for {}:{}",
                 self.config.host, self.config.port
@@ -531,7 +563,14 @@ impl CopyTarget for SftpTarget {
                     etag: None,
                     content_md5: None,
                 }),
-                Err(_) => None,
+                // Only a genuine "not there" is `Ok(None)`. A blanket
+                // `Err(_) => None` reported permission-denied, a dropped
+                // connection, and a protocol error as "the object does
+                // not exist" — so an overwrite guard built on `stat`
+                // would sail straight past a file it simply could not
+                // read.
+                Err(e) if is_absent(&e) => None,
+                Err(e) => return Err(BackendError::Transport(e.to_string())),
             };
             Ok((result, sftp))
         })
@@ -541,8 +580,15 @@ impl CopyTarget for SftpTarget {
     async fn delete(&self, path: &str) -> Result<(), BackendError> {
         let remote = self.resolve(path);
         self.with_session(|sftp| async move {
-            // Idempotent delete — treat missing as success.
-            let _ = sftp.remove_file(&remote).await;
+            // Idempotent delete — a missing file is success, anything
+            // else is not. The discarded result meant a delete refused
+            // for permissions reported success and the caller moved on
+            // believing the object was gone.
+            match sftp.remove_file(&remote).await {
+                Ok(()) => {}
+                Err(e) if is_absent(&e) => {}
+                Err(e) => return Err(BackendError::Transport(e.to_string())),
+            }
             Ok(((), sftp))
         })
         .await
@@ -552,6 +598,78 @@ impl CopyTarget for SftpTarget {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A `known_hosts` seeded by OpenSSH holds one line per key type
+    /// for the same host. All of them must be honoured: the server
+    /// decides which type it presents during negotiation, so returning
+    /// only the first line refused hosts that were correctly pinned.
+    #[test]
+    fn known_hosts_returns_every_key_type_for_a_host() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let path = dir.path().join("known_hosts");
+        // Three distinct (valid-base64) key blobs for one host, plus a
+        // line for an unrelated host that must not be picked up.
+        std::fs::write(
+            &path,
+            concat!(
+                "# comment line
+",
+                "example.com ssh-rsa AAAAB3NzaC1yc2EAAAA=
+",
+                "example.com ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTI=
+",
+                "example.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5
+",
+                "other.example ssh-ed25519 AAAAC3NzaC1lZDI1NTE6
+",
+            ),
+        )
+        .expect("write known_hosts");
+
+        let fps =
+            expected_host_key_fingerprints(&path, "example.com", 22).expect("read known_hosts");
+        assert_eq!(fps.len(), 3, "one fingerprint per key type: {fps:?}");
+        // Distinct key blobs must hash to distinct fingerprints, so a
+        // server presenting any of the three verifies.
+        let unique: std::collections::HashSet<&String> = fps.iter().collect();
+        assert_eq!(unique.len(), 3, "fingerprints must be distinct");
+
+        // An unpinned host yields an empty set, which fails closed.
+        let none =
+            expected_host_key_fingerprints(&path, "nobody.example", 22).expect("read known_hosts");
+        assert!(none.is_empty());
+    }
+
+    /// Non-default ports are pinned under the bracketed form, and must
+    /// not match the plain hostname line.
+    #[test]
+    fn known_hosts_matches_bracketed_port_form() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let path = dir.path().join("known_hosts");
+        std::fs::write(
+            &path,
+            concat!(
+                "[example.com]:2222 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5
+",
+                "[example.com]:2222 ssh-rsa AAAAB3NzaC1yc2EAAAA=
+",
+            ),
+        )
+        .expect("write known_hosts");
+
+        assert_eq!(
+            expected_host_key_fingerprints(&path, "example.com", 2222)
+                .expect("read")
+                .len(),
+            2,
+        );
+        assert!(
+            expected_host_key_fingerprints(&path, "example.com", 22)
+                .expect("read")
+                .is_empty(),
+            "port 22 must not match a :2222 pin",
+        );
+    }
 
     #[test]
     fn resolve_handles_empty_root_and_leading_slash() {

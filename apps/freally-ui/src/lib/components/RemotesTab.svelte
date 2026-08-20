@@ -436,19 +436,19 @@
         {/if}
         {#if showsAccount(formKind)}
           <label>
-            <span>Account name</span>
+            <span>{t("remote-account-name")}</span>
             <input type="text" bind:value={formConfig.accountName} required />
           </label>
         {/if}
         {#if showsServiceAccount(formKind)}
           <label>
-            <span>Service account</span>
+            <span>{t("remote-service-account")}</span>
             <input type="text" bind:value={formConfig.serviceAccount} />
           </label>
         {/if}
         {#if showsClientId(formKind)}
           <label>
-            <span>Client ID</span>
+            <span>{t("remote-client-id")}</span>
             <input type="text" bind:value={formConfig.clientId} />
           </label>
         {/if}
@@ -477,7 +477,7 @@
         {/if}
         {#if formKind !== "local-fs"}
           <label>
-            <span>Secret (access key / password / token)</span>
+            <span>{t("remote-secret")}</span>
             <input type="password" bind:value={formSecret} autocomplete="off" />
           </label>
           <label>
@@ -546,7 +546,7 @@
         </div>
         <div class="offload-pair">
           <label>
-            <span>Job name</span>
+            <span>{t("remote-job-name")}</span>
             <input type="text" bind:value={offloadOpts.jobName} />
           </label>
           <label>
@@ -556,11 +556,11 @@
         </div>
         <div class="offload-pair">
           <label>
-            <span>Instance size</span>
+            <span>{t("remote-instance-size")}</span>
             <input type="text" bind:value={offloadOpts.instanceSize} />
           </label>
           <label>
-            <span>IAM role / identity</span>
+            <span>{t("remote-iam-role")}</span>
             <input type="text" bind:value={offloadOpts.iamRole} />
           </label>
         </div>

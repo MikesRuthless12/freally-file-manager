@@ -49,6 +49,40 @@ type HmacSha256 = Hmac<Sha256>;
 const EMPTY_PAYLOAD_SHA256: &str =
     "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
 
+/// Accepted `x-amz-date` drift, matching AWS's own 15-minute window.
+const MAX_CLOCK_SKEW_SECS: i64 = 900;
+
+/// Parse SigV4's fixed-width `YYYYMMDDTHHMMSSZ` into a Unix timestamp.
+///
+/// Hand-rolled rather than pulling a date crate into this crate's
+/// dependency set (and therefore into cargo-deny / cargo-vet) for one
+/// fixed-format field. Returns `None` for anything that is not exactly
+/// that shape, so a malformed header fails closed.
+fn parse_amz_date(s: &str) -> Option<i64> {
+    let b = s.as_bytes();
+    if b.len() != 16 || b[8] != b'T' || b[15] != b'Z' {
+        return None;
+    }
+    if !b[..8].iter().chain(&b[9..15]).all(u8::is_ascii_digit) {
+        return None;
+    }
+    let n = |r: std::ops::Range<usize>| s.get(r)?.parse::<i64>().ok();
+    let (y, mo, d) = (n(0..4)?, n(4..6)?, n(6..8)?);
+    let (h, mi, sec) = (n(9..11)?, n(11..13)?, n(13..15)?);
+    if !(1..=12).contains(&mo) || !(1..=31).contains(&d) || h > 23 || mi > 59 || sec > 60 {
+        return None;
+    }
+    // days_from_civil (Howard Hinnant's civil-calendar algorithm).
+    let y = if mo <= 2 { y - 1 } else { y };
+    let era = if y >= 0 { y } else { y - 399 } / 400;
+    let yoe = y - era * 400;
+    let mp = (mo + 9) % 12;
+    let doy = (153 * mp + 2) / 5 + d - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    let days = era * 146_097 + doe - 719_468;
+    Some(days * 86_400 + h * 3_600 + mi * 60 + sec)
+}
+
 /// RFC 3986 *unreserved* set: percent-encode everything EXCEPT
 /// `A-Za-z0-9-_.~`. Used to re-encode the SigV4 canonical query string.
 const SIGV4_UNRESERVED: &AsciiSet = &NON_ALPHANUMERIC
@@ -192,6 +226,28 @@ async fn get_object(State(st): State<S3State>, req: Request) -> Response {
         return access_denied();
     };
 
+    // `resolve_key` is lexical only — it cannot see a symlink or Windows
+    // junction *under* the root whose target is outside it.
+    if crate::jail::ensure_within_root(&path, &st.root).is_err() {
+        return access_denied();
+    }
+
+    // Stat first and refuse anything that is not a regular file.
+    // `fs::read` on a directory errors with `PermissionDenied` on
+    // Windows and `IsADirectory` on Linux — neither is `NotFound`, so
+    // both fell through to the generic arm and a `GET` of a directory
+    // key returned **500** plus an `errors_total` bump. `head_object`
+    // gets this right, so GET and HEAD disagreed on the same key.
+    match tokio::fs::metadata(&path).await {
+        Ok(m) if !m.is_file() => {
+            return s3_error(StatusCode::NOT_FOUND, "NoSuchKey", "the key does not exist");
+        }
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            return s3_error(StatusCode::NOT_FOUND, "NoSuchKey", "the key does not exist");
+        }
+        _ => {}
+    }
+
     match tokio::fs::read(&path).await {
         Ok(bytes) => {
             let modified = tokio::fs::metadata(&path)
@@ -238,6 +294,10 @@ async fn head_object(State(st): State<S3State>, req: Request) -> Response {
     let Some(path) = resolve_key(&st.root, &raw_key) else {
         return StatusCode::FORBIDDEN.into_response();
     };
+    // Same post-resolution containment re-check the GET path does.
+    if crate::jail::ensure_within_root(&path, &st.root).is_err() {
+        return StatusCode::FORBIDDEN.into_response();
+    }
 
     match tokio::fs::metadata(&path).await {
         Ok(meta) if meta.is_file() => {
@@ -262,11 +322,139 @@ async fn head_object(State(st): State<S3State>, req: Request) -> Response {
 
 /// `PUT /{bucket}/{*key}` — PutObject. Streams the body to `root/key`
 /// (creating parent directories), returning 200 with an `ETag` header.
+/// Longest `<hex-size>;chunk-signature=<sig>` line accepted. A real one
+/// is well under 100 bytes; the cap stops a body that never sends a
+/// newline from growing the header buffer without bound.
+const MAX_CHUNK_HEADER: usize = 1024;
+
+/// Where the decoder is within one `aws-chunked` frame.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ChunkState {
+    /// Accumulating a `<hex-size>[;chunk-signature=...]` line.
+    Header,
+    /// Emitting payload; this many bytes of the current chunk remain.
+    Data(u64),
+    /// Consuming the CRLF that terminates chunk data.
+    DataCrlf,
+    /// The zero-length chunk arrived; the rest is trailer headers.
+    Trailer,
+}
+
+/// Incremental decoder for the `aws-chunked` content encoding that the
+/// AWS SDKs and `aws-cli` use whenever `x-amz-content-sha256` is one of
+/// the `STREAMING-...` values — which is their default over plain HTTP.
+///
+/// The body on the wire is not the object. It is a sequence of
+/// `<hex-size>;chunk-signature=<sig>\r\n<data>\r\n` frames terminated by a
+/// zero-length chunk. Writing that verbatim — which is what happened
+/// before this existed — stores the framing *inside* the object, so
+/// every upload from a default-configured `aws-cli` landed corrupt.
+///
+/// Per-chunk signatures are not verified. That chain re-derives the
+/// signing key for every frame, and the resulting trust level would
+/// still be the one the server already grants `UNSIGNED-PAYLOAD`.
+/// `x-amz-decoded-content-length` is enforced by the caller instead, so
+/// a truncated or padded body is still rejected.
+struct AwsChunkedDecoder {
+    state: ChunkState,
+    header: Vec<u8>,
+}
+
+impl AwsChunkedDecoder {
+    fn new() -> Self {
+        Self {
+            state: ChunkState::Header,
+            header: Vec::new(),
+        }
+    }
+
+    /// Feed raw wire bytes; append any decoded payload to `out`.
+    fn push(&mut self, input: &[u8], out: &mut Vec<u8>) -> Result<(), &'static str> {
+        let mut rest = input;
+        loop {
+            match self.state {
+                ChunkState::Trailer => return Ok(()),
+                ChunkState::Header => {
+                    let Some(nl) = rest.iter().position(|&b| b == b'\n') else {
+                        self.header.extend_from_slice(rest);
+                        if self.header.len() > MAX_CHUNK_HEADER {
+                            return Err("aws-chunked header line too long");
+                        }
+                        return Ok(());
+                    };
+                    self.header.extend_from_slice(&rest[..nl]);
+                    rest = &rest[nl + 1..];
+                    if self.header.len() > MAX_CHUNK_HEADER {
+                        return Err("aws-chunked header line too long");
+                    }
+                    let line = std::mem::take(&mut self.header);
+                    let line = line.strip_suffix(b"\r").unwrap_or(&line);
+                    // An empty line between frames is tolerated; a size of
+                    // zero ends the payload.
+                    if line.is_empty() {
+                        continue;
+                    }
+                    // `<hex-size>` optionally followed by `;chunk-signature=...`.
+                    let size_part = match line.iter().position(|&b| b == b';') {
+                        Some(i) => &line[..i],
+                        None => line,
+                    };
+                    let size_str = std::str::from_utf8(size_part)
+                        .map_err(|_| "aws-chunked size is not valid utf-8")?;
+                    let size = u64::from_str_radix(size_str.trim(), 16)
+                        .map_err(|_| "aws-chunked size is not valid hex")?;
+                    self.state = if size == 0 {
+                        ChunkState::Trailer
+                    } else {
+                        ChunkState::Data(size)
+                    };
+                }
+                ChunkState::Data(remaining) => {
+                    if rest.is_empty() {
+                        return Ok(());
+                    }
+                    let take = std::cmp::min(remaining, rest.len() as u64);
+                    let take_usize = usize::try_from(take).unwrap_or(usize::MAX);
+                    out.extend_from_slice(&rest[..take_usize]);
+                    rest = &rest[take_usize..];
+                    self.state = if remaining == take {
+                        ChunkState::DataCrlf
+                    } else {
+                        ChunkState::Data(remaining - take)
+                    };
+                }
+                ChunkState::DataCrlf => {
+                    // Skip the CR and/or LF closing the chunk data.
+                    let Some(nl) = rest.iter().position(|&b| b == b'\n') else {
+                        return Ok(());
+                    };
+                    rest = &rest[nl + 1..];
+                    self.state = ChunkState::Header;
+                }
+            }
+        }
+    }
+
+    /// True once the terminating zero-length chunk has been seen.
+    fn finished(&self) -> bool {
+        self.state == ChunkState::Trailer
+    }
+}
+
 /// Rejected with 403 when the server is read-only.
 async fn put_object(State(st): State<S3State>, req: Request) -> Response {
     if let Some(resp) = authorize(&st, &req) {
         return resp;
     }
+    // The SigV4 canonical request folds in whatever the client *claims*
+    // the body hashes to. Capture that claim now so the streaming write
+    // below can check it — otherwise a captured signature replays with
+    // an arbitrary body, because nothing else binds the two.
+    let claimed_sha256 = req
+        .headers()
+        .get("x-amz-content-sha256")
+        .and_then(|v| v.to_str().ok())
+        .map(str::to_ascii_lowercase);
     if st.readonly {
         return s3_error(StatusCode::FORBIDDEN, "AccessDenied", "server is read-only");
     }
@@ -282,6 +470,12 @@ async fn put_object(State(st): State<S3State>, req: Request) -> Response {
         return access_denied();
     };
 
+    // Jail check BEFORE create_dir_all: creating the parent first meant
+    // `PUT /bucket/link/evil/x.txt`, where `link` escapes the root, made
+    // `<target>/evil` on disk before the 403 was returned.
+    if crate::jail::ensure_within_root(&path, &st.root).is_err() {
+        return access_denied();
+    }
     if let Some(parent) = path.parent() {
         if let Err(e) = tokio::fs::create_dir_all(parent).await {
             st.metrics.record_error();
@@ -291,8 +485,20 @@ async fn put_object(State(st): State<S3State>, req: Request) -> Response {
                 &e.to_string(),
             );
         }
+        // Re-check: create_dir_all may have materialised a path that
+        // now resolves differently.
+        if crate::jail::ensure_within_root(&path, &st.root).is_err() {
+            return access_denied();
+        }
     }
-    let mut file = match tokio::fs::File::create(&path).await {
+
+    // Stage to a temp file and rename only once the body is complete and
+    // its digest verified. Writing straight to `path` meant a failed PUT
+    // destroyed the object that was already there: `File::create`
+    // truncates, and a digest mismatch then deleted it outright. Real S3
+    // leaves the previous object intact.
+    let staging = path.with_extension(format!("freally-part-{}", std::process::id()));
+    let mut file = match tokio::fs::File::create(&staging).await {
         Ok(f) => f,
         Err(e) => {
             st.metrics.record_error();
@@ -306,14 +512,59 @@ async fn put_object(State(st): State<S3State>, req: Request) -> Response {
 
     // Stream the body frame-by-frame so a large upload is never fully
     // buffered in memory.
+    // Hash as we stream so the claimed payload digest can be checked
+    // without buffering the upload.
+    let verify_digest = claimed_sha256
+        .as_deref()
+        .filter(|c| c.len() == 64 && c.bytes().all(|b| b.is_ascii_hexdigit()));
+    let mut hasher = verify_digest.is_some().then(Sha256::new);
+
+    // `STREAMING-AWS4-HMAC-SHA256-PAYLOAD` and
+    // `STREAMING-UNSIGNED-PAYLOAD-TRAILER` mean the body is
+    // `aws-chunked`-framed rather than the raw object. Those values are
+    // not 64 hex characters, so they fall out of `verify_digest` above —
+    // but the framing still has to come back off before the bytes hit
+    // the file, or the object is stored with chunk headers baked in.
+    let mut chunked = claimed_sha256
+        .as_deref()
+        .is_some_and(|c| c.starts_with("streaming-"))
+        .then(AwsChunkedDecoder::new);
+    // The object length the client promises, once the framing is off.
+    let decoded_len: Option<u64> = req
+        .headers()
+        .get("x-amz-decoded-content-length")
+        .and_then(|v| v.to_str().ok())
+        .and_then(|v| v.trim().parse().ok());
+
     let mut body = req.into_body();
     let mut written: u64 = 0;
+    let mut decoded = Vec::new();
     loop {
         match body.frame().await {
             Some(Ok(frame)) => {
-                if let Ok(data) = frame.into_data() {
+                if let Ok(raw) = frame.into_data() {
+                    let data: bytes::Bytes = if let Some(dec) = chunked.as_mut() {
+                        decoded.clear();
+                        if let Err(msg) = dec.push(&raw, &mut decoded) {
+                            st.metrics.record_error();
+                            drop(file);
+                            let _ = tokio::fs::remove_file(&staging).await;
+                            return s3_error(StatusCode::BAD_REQUEST, "IncompleteBody", msg);
+                        }
+                        bytes::Bytes::copy_from_slice(&decoded)
+                    } else {
+                        raw
+                    };
+                    if data.is_empty() {
+                        continue;
+                    }
+                    if let Some(h) = hasher.as_mut() {
+                        h.update(&data);
+                    }
                     if let Err(e) = file.write_all(&data).await {
                         st.metrics.record_error();
+                        drop(file);
+                        let _ = tokio::fs::remove_file(&staging).await;
                         return s3_error(
                             StatusCode::INTERNAL_SERVER_ERROR,
                             "InternalError",
@@ -325,6 +576,8 @@ async fn put_object(State(st): State<S3State>, req: Request) -> Response {
             }
             Some(Err(_)) => {
                 st.metrics.record_error();
+                drop(file);
+                let _ = tokio::fs::remove_file(&staging).await;
                 return s3_error(
                     StatusCode::BAD_REQUEST,
                     "IncompleteBody",
@@ -336,6 +589,58 @@ async fn put_object(State(st): State<S3State>, req: Request) -> Response {
     }
     if let Err(e) = file.flush().await {
         st.metrics.record_error();
+        drop(file);
+        let _ = tokio::fs::remove_file(&staging).await;
+        return s3_error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "InternalError",
+            &e.to_string(),
+        );
+    }
+
+    // A framed upload must have ended on its zero-length chunk, and must
+    // have produced exactly the number of bytes the client promised.
+    // This is what binds body to signature on the streaming path, where
+    // there is no whole-body digest to compare against.
+    if let Some(dec) = chunked.as_ref() {
+        let complete = dec.finished();
+        let length_ok = decoded_len.is_none_or(|want| want == written);
+        if !complete || !length_ok {
+            drop(file);
+            let _ = tokio::fs::remove_file(&staging).await;
+            st.metrics.record_error();
+            return s3_error(
+                StatusCode::BAD_REQUEST,
+                "IncompleteBody",
+                "aws-chunked body was truncated or did not match \
+                 x-amz-decoded-content-length",
+            );
+        }
+    }
+
+    // Signature covered the *claimed* digest; make the body match it or
+    // the write never happened. Without this, one observed authenticated
+    // PUT could be replayed forever with attacker-chosen content.
+    if let (Some(h), Some(want)) = (hasher, verify_digest) {
+        let got = hex::encode(h.finalize());
+        if !ct_eq(&got, want) {
+            drop(file);
+            let _ = tokio::fs::remove_file(&staging).await;
+            st.metrics.record_error();
+            return s3_error(
+                StatusCode::BAD_REQUEST,
+                "XAmzContentSHA256Mismatch",
+                "the provided x-amz-content-sha256 does not match the body",
+            );
+        }
+    }
+
+    // Body is complete and its digest checked — publish atomically. Only
+    // now does the previously-stored object get replaced.
+    drop(file);
+    if let Err(e) = tokio::fs::rename(&staging, &path).await {
+        let _ = tokio::fs::remove_file(&staging).await;
+        st.metrics.record_error();
         return s3_error(
             StatusCode::INTERNAL_SERVER_ERROR,
             "InternalError",
@@ -344,7 +649,11 @@ async fn put_object(State(st): State<S3State>, req: Request) -> Response {
     }
 
     st.metrics.record_copy(written);
-    let modified = file.metadata().await.ok().and_then(|m| m.modified().ok());
+    // `file` was dropped by the rename above; stat the published path.
+    let modified = tokio::fs::metadata(&path)
+        .await
+        .ok()
+        .and_then(|m| m.modified().ok());
     (
         StatusCode::OK,
         [(header::ETAG, content_etag(written, modified))],
@@ -373,6 +682,10 @@ async fn delete_object(State(st): State<S3State>, req: Request) -> Response {
     let Some(path) = resolve_key(&st.root, &raw_key) else {
         return access_denied();
     };
+    // A delete must not follow a link out of the served root either.
+    if crate::jail::ensure_within_root(&path, &st.root).is_err() {
+        return access_denied();
+    }
 
     match tokio::fs::remove_file(&path).await {
         Ok(()) => StatusCode::NO_CONTENT.into_response(),
@@ -464,8 +777,48 @@ fn verify_sigv4(req: &Request, akid_want: &str, secret: &str) -> Option<Response
             "missing x-amz-date header",
         ));
     };
+
+    // `x-amz-date` went into the string-to-sign but was never compared
+    // against the clock, so a signature stayed valid forever. This
+    // surface speaks plaintext HTTP, so one observed request could be
+    // replayed indefinitely — with a different body, since the payload
+    // hash is also client-asserted (see `put_object`). AWS enforces a
+    // 15-minute window; do the same, and require the header's date half
+    // to agree with the credential scope's.
+    match parse_amz_date(amz_date) {
+        Some(ts) => {
+            let now = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_secs() as i64)
+                .unwrap_or(0);
+            if (now - ts).abs() > MAX_CLOCK_SKEW_SECS {
+                return Some(s3_error(
+                    StatusCode::FORBIDDEN,
+                    "RequestTimeTooSkewed",
+                    "the request date is outside the accepted window",
+                ));
+            }
+        }
+        None => {
+            return Some(s3_error(
+                StatusCode::FORBIDDEN,
+                "AccessDenied",
+                "malformed x-amz-date header",
+            ));
+        }
+    }
+    if !amz_date.starts_with(&parsed.date) {
+        return Some(s3_error(
+            StatusCode::FORBIDDEN,
+            "AccessDenied",
+            "x-amz-date disagrees with the credential scope date",
+        ));
+    }
+
     // Payload hash is taken verbatim from the header (`UNSIGNED-PAYLOAD` or
     // the hex SHA-256 of the body); absent → the empty-body hash.
+    // `put_object` re-hashes the streamed body and rejects a mismatch, so
+    // this value cannot be asserted freely on a write.
     let payload_hash = headers
         .get("x-amz-content-sha256")
         .and_then(|v| v.to_str().ok())
@@ -619,18 +972,47 @@ struct Entry {
 /// `root` (with `/` separators). `DirEntry::file_type` does not follow
 /// symlinks, so a symlink (neither a plain file nor a real dir here) is
 /// skipped — the listing never escapes the jail through one.
+/// Deepest directory nesting the listing will descend.
+///
+/// Bounds both stack depth and the cost of a single listing; a
+/// pathological tree (or one containing a directory cycle reached some
+/// other way) cannot take the process down.
+const LIST_MAX_DEPTH: usize = 64;
+
 fn collect_entries(root: &Path, dir: &Path, out: &mut Vec<Entry>) -> std::io::Result<()> {
-    for entry in std::fs::read_dir(dir)? {
-        let entry = entry?;
-        let file_type = entry.file_type()?;
+    collect_entries_depth(root, dir, out, 0)
+}
+
+fn collect_entries_depth(
+    root: &Path,
+    dir: &Path,
+    out: &mut Vec<Entry>,
+    depth: usize,
+) -> std::io::Result<()> {
+    if depth >= LIST_MAX_DEPTH {
+        return Ok(());
+    }
+    // A single unreadable entry must not fail the whole listing. This
+    // used to `?` on `read_dir`, `file_type` and `metadata`, so one
+    // permission-denied file or subfolder anywhere in the tree turned
+    // the entire ListObjectsV2 into a 500 — the rest of the bucket
+    // became invisible because of one file the operator could not read.
+    let Ok(reader) = std::fs::read_dir(dir) else {
+        return Ok(());
+    };
+    for entry in reader {
+        let Ok(entry) = entry else { continue };
+        let Ok(file_type) = entry.file_type() else {
+            continue;
+        };
         let path = entry.path();
         if file_type.is_dir() {
-            collect_entries(root, &path, out)?;
+            collect_entries_depth(root, &path, out, depth + 1)?;
         } else if file_type.is_file() {
             let Ok(rel) = path.strip_prefix(root) else {
                 continue;
             };
-            let meta = entry.metadata()?;
+            let Ok(meta) = entry.metadata() else { continue };
             let modified = meta.modified().ok();
             out.push(Entry {
                 key: rel.to_string_lossy().replace('\\', "/"),
@@ -649,8 +1031,17 @@ fn render_list_xml(bucket: &str, prefix: &str, entries: &[Entry]) -> String {
     out.push_str("<ListBucketResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">");
     out.push_str(&format!("<Name>{}</Name>", xml_escape(bucket)));
     out.push_str(&format!("<Prefix>{}</Prefix>", xml_escape(prefix)));
+    // `MaxKeys` must reflect what was actually returned, and
+    // `IsTruncated` must agree with it. Hardcoding `1000`/`false` while
+    // `KeyCount` reported the real total produced self-contradictory
+    // XML for any bucket over 1000 objects — a client that trusts
+    // `IsTruncated` stops there and silently sees a partial bucket as
+    // the whole thing.
     out.push_str(&format!("<KeyCount>{}</KeyCount>", entries.len()));
-    out.push_str("<MaxKeys>1000</MaxKeys><IsTruncated>false</IsTruncated>");
+    out.push_str(&format!(
+        "<MaxKeys>{}</MaxKeys><IsTruncated>false</IsTruncated>",
+        entries.len().max(1),
+    ));
     for e in entries {
         let modified = e.modified.map(rfc3339).unwrap_or_default();
         out.push_str(&format!(
@@ -797,6 +1188,75 @@ fn civil_from_days(z: i64) -> (i64, u32, u32) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Feed a body through the decoder in one shot.
+    fn decode_all(input: &[u8]) -> Result<Vec<u8>, &'static str> {
+        let mut d = AwsChunkedDecoder::new();
+        let mut out = Vec::new();
+        d.push(input, &mut out)?;
+        assert!(d.finished(), "decoder should have seen the final chunk");
+        Ok(out)
+    }
+
+    /// The shape `aws-cli` actually sends when
+    /// `x-amz-content-sha256: STREAMING-AWS4-HMAC-SHA256-PAYLOAD`.
+    /// Written to disk verbatim, the chunk headers ended up inside the
+    /// stored object.
+    #[test]
+    fn aws_chunked_strips_framing() {
+        let sig = "chunk-signature=0123456789abcdef0123456789abcdef\
+0123456789abcdef0123456789abcdef";
+        let body = format!("5;{sig}\r\nhello\r\n6;{sig}\r\n world\r\n0;{sig}\r\n\r\n");
+        let out = decode_all(body.as_bytes()).expect("decode");
+        assert_eq!(out, b"hello world");
+    }
+
+    /// `STREAMING-UNSIGNED-PAYLOAD-TRAILER` omits the signature suffix
+    /// and appends trailer headers after the zero chunk.
+    #[test]
+    fn aws_chunked_handles_unsigned_trailer_form() {
+        let body = "b\r\nhello world\r\n0\r\nx-amz-checksum-crc32:abcd\r\n\r\n";
+        let out = decode_all(body.as_bytes()).expect("decode");
+        assert_eq!(out, b"hello world");
+    }
+
+    /// Real bodies arrive split across arbitrary frame boundaries — the
+    /// decoder has to hold state across a header, a chunk, and a CRLF
+    /// that each land in different reads.
+    #[test]
+    fn aws_chunked_survives_arbitrary_splits() {
+        let body = b"5;chunk-signature=aa\r\nhello\r\n6;chunk-signature=bb\r\n world\r\n0;chunk-signature=cc\r\n\r\n";
+        for split in 1..body.len() {
+            let mut d = AwsChunkedDecoder::new();
+            let mut out = Vec::new();
+            d.push(&body[..split], &mut out).expect("first half");
+            d.push(&body[split..], &mut out).expect("second half");
+            assert_eq!(out, b"hello world", "split at {split}");
+            assert!(d.finished(), "split at {split}");
+        }
+    }
+
+    /// A body that stops before its terminating chunk must not read as
+    /// complete — that is what the caller turns into an IncompleteBody.
+    #[test]
+    fn aws_chunked_truncated_body_is_not_finished() {
+        let mut d = AwsChunkedDecoder::new();
+        let mut out = Vec::new();
+        d.push(b"5;chunk-signature=aa\r\nhel", &mut out)
+            .expect("partial");
+        assert!(!d.finished());
+        assert_eq!(out, b"hel");
+    }
+
+    #[test]
+    fn aws_chunked_rejects_a_bad_size_line() {
+        let mut d = AwsChunkedDecoder::new();
+        let mut out = Vec::new();
+        assert!(
+            d.push(b"zzz;chunk-signature=aa\r\nhi\r\n", &mut out)
+                .is_err()
+        );
+    }
 
     fn canonical_root() -> (tempfile::TempDir, PathBuf) {
         let dir = tempfile::tempdir().unwrap();

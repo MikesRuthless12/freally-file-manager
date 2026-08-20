@@ -1735,3 +1735,31 @@ settings-favorites-hotkey = Phím tắt
 a11y-queue-status = { $running } đang chạy, { $done } xong, { $failed } thất bại
 
 err-favorite-id-invalid = Mã mục ưa thích không hợp lệ
+
+# Previously hard-coded in the Svelte markup, so they stayed English
+# in every locale. Product names (Freally File Manager, PeerJS) and
+# the IAM / TRIM / QR / ID initialisms are intentionally untranslated.
+remote-account-name = Tên tài khoản
+remote-service-account = Tài khoản dịch vụ
+remote-client-id = ID ứng dụng khách
+remote-secret = Khoá bí mật (khoá truy cập / mật khẩu / token)
+remote-job-name = Tên tác vụ
+remote-instance-size = Kích thước máy ảo
+remote-iam-role = Vai trò / danh tính IAM
+pair-always-connect = Luôn kết nối với ứng dụng di động
+pair-broker-url = URL broker PeerJS (để trống = mặc định công khai)
+pair-devices-heading = Thiết bị đã ghép nối
+pair-onboarding-title = Tải ứng dụng đồng hành di động của Freally File Manager
+pair-onboarding-loading-qr = Đang tải mã QR…
+sanitize-confirm-backup = Tôi xác nhận đã sao lưu mọi dữ liệu tôi muốn giữ lại
+sanitize-model-mismatch = Tên kiểu ổ đĩa không khớp.
+sanitize-trim-heading = TRIM vùng trống
+details-avg-speed = Tốc độ trung bình
+pair-onboarding-body = Điều khiển các tác vụ sao chép / di chuyển / đồng bộ / xoá an toàn trên máy tính từ điện thoại qua liên kết WebRTC riêng tư. Quét mã QR bên dưới bằng camera điện thoại để mở URL cài đặt trong trình duyệt, rồi chạm "Thêm vào màn hình chính" — không cần App Store.
+pair-onboarding-have-app = Tôi đã có ứng dụng, ghép nối ngay
+pair-onboarding-later = Để sau
+pair-no-device-warning = Tự động kết nối đang bật, nhưng chưa có điện thoại nào được ghép nối. Hãy cài PWA di động Freally File Manager trên điện thoại (quét mã QR bên dưới bằng camera), rồi nhấp "Bắt đầu ghép nối" để máy tính biết cần kết nối tới đâu.
+pair-desktop-peer-id = Peer-id máy tính:
+sanitize-probe = Dò khả năng hỗ trợ
+sanitize-run = Chạy xoá sạch
+sanitize-run-trim = Chạy TRIM vùng trống

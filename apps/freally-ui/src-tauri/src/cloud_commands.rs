@@ -3,7 +3,7 @@
 //! The frontend Settings → Remotes tab calls these commands to
 //! enumerate configured backends, create or edit them, delete them,
 //! and round-trip a "test connection" request through
-//! `freally_cloud::make_operator` + a live `stat("/")` call.
+//! `freally_cloud::make_target` + a live `stat("/")` call.
 //!
 //! Secrets (access keys, OAuth tokens, SFTP passwords) are passed to
 //! `add_backend` as a single opaque `secret` string and written to
@@ -13,12 +13,12 @@
 //! if the user needs to rotate it.
 
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 
 use freally_cloud::{
-    AzureBlobConfig, Backend, BackendConfig, BackendKind, BackendRegistry, CopyTarget, Credentials,
-    FtpConfig, GcsConfig, LocalFsConfig, OAuthConfig, OperatorTarget, S3Config, SftpConfig,
-    WebdavConfig, copy_from_target, copy_to_target, make_operator, opendal,
+    AzureBlobConfig, Backend, BackendConfig, BackendKind, BackendRegistry, Credentials, FtpConfig,
+    GcsConfig, LocalFsConfig, OAuthConfig, S3Config, SftpConfig, WebdavConfig, copy_from_target,
+    copy_to_target, make_target,
 };
 use freally_settings::{
     AzureBlobBackendConfig, BackendConfigEntry, BackendKindChoice, FtpBackendConfig,
@@ -422,7 +422,7 @@ pub fn remove_backend(name: String, state: tauri::State<'_, AppState>) -> Result
 }
 
 /// Test a configured backend by building an
-/// [`freally_cloud::opendal::Operator`] + issuing a `stat("/")`.
+/// [`freally_cloud::CopyTarget`] + issuing a `stat("/")`.
 /// Returns a DTO the frontend renders as "Connection successful" /
 /// "Connection failed — `<reason>`". The outer `Result` is always
 /// `Ok` — failures are reported in-band via `TestConnectionResult`
@@ -472,8 +472,14 @@ pub async fn test_backend_connection(
         }
     };
 
-    let operator = match make_operator(&backend, secret.as_deref()) {
-        Ok(op) => op,
+    // `make_target`, not `make_operator`: SFTP has no OpenDAL driver
+    // in this build (`services-sftp` pulls the GPL `openssh` crate and
+    // does not build on Windows), so `make_operator` returns
+    // `BackendNotEnabled` for it. `make_target` routes SFTP to the
+    // in-tree `SftpTarget`. Every SFTP remote failed its connection
+    // test — and both transfer directions below — until this changed.
+    let target = match make_target(&backend, secret.as_deref()) {
+        Ok(t) => t,
         Err(e) => {
             return Ok(TestConnectionResult {
                 ok: false,
@@ -488,24 +494,19 @@ pub async fn test_backend_connection(
     // without this timeout the Tauri command pins a runtime worker
     // and any concurrent settings IPC blocks behind the read lock the
     // wizard re-takes on every keystroke.
-    match tokio::time::timeout(std::time::Duration::from_secs(15), operator.stat("/")).await {
+    // `CopyTarget::stat` already folds "absent" into `Ok(None)`, so both
+    // `Ok` shapes mean the endpoint answered. That matters for flat S3
+    // buckets, where `stat("/")` legitimately reports NotFound for the
+    // root prefix even though the bucket exists.
+    match tokio::time::timeout(std::time::Duration::from_secs(15), target.stat("/")).await {
         Ok(Ok(_)) => Ok(TestConnectionResult {
-            ok: true,
-            reason: None,
-            detail: None,
-        }),
-        Ok(Err(e)) if e.kind() == opendal::ErrorKind::NotFound => Ok(TestConnectionResult {
-            // stat("/") on some backends (flat S3 buckets) legitimately
-            // reports NotFound for the root prefix even when the bucket
-            // exists. Treat as success — a bucket-scoped `list("/")`
-            // round-trip confirms reachability without false-negatives.
             ok: true,
             reason: None,
             detail: None,
         }),
         Ok(Err(e)) => Ok(TestConnectionResult {
             ok: false,
-            reason: Some(map_opendal_kind(e.kind())),
+            reason: Some(e.fluent_key().trim_start_matches("cloud-error-")),
             detail: Some(e.to_string()),
         }),
         Err(_elapsed) => Ok(TestConnectionResult {
@@ -514,6 +515,34 @@ pub async fn test_backend_connection(
             detail: Some("test connection timed out after 15s".to_string()),
         }),
     }
+}
+
+/// Reject a remote object key that would escape the backend root.
+///
+/// `dst_key` / `src_key` arrive over IPC and reach the backend
+/// verbatim. Object stores treat the key as an opaque name, but the
+/// LocalFs and SFTP targets resolve it against a filesystem root,
+/// where a `..` segment, a backslash (a separator on Windows), or a
+/// drive prefix walks straight out of it. This is the key-typed
+/// sibling of [`validate_ipc_path`], which guards the *local* side
+/// of the same two commands.
+fn validate_object_key(key: &str) -> Result<(), crate::ipc_safety::IpcError> {
+    use crate::ipc_safety::IpcError;
+    if key.trim().is_empty() {
+        return Err(IpcError::EmptyPath);
+    }
+    if key.contains('\\') || key.contains('\0') {
+        return Err(IpcError::PathEscape);
+    }
+    // Only a *drive prefix* is rejected, not `:` in general — object
+    // keys legitimately carry timestamps (`logs/2026-08-19T12:00:00Z`).
+    if key.as_bytes().get(1) == Some(&b':') {
+        return Err(IpcError::PathEscape);
+    }
+    if key.split('/').any(|seg| seg == "..") {
+        return Err(IpcError::PathEscape);
+    }
+    Ok(())
 }
 
 /// Phase 32c — transfer a single local file to a configured backend.
@@ -533,6 +562,7 @@ pub async fn copy_local_to_backend(
     // attacker-controlled IPC payload could exfiltrate files via
     // `..` traversal (the LocalFs path the engine ultimately opens).
     let src = validate_ipc_path(&src_path).map_err(err_string)?;
+    validate_object_key(&dst_key).map_err(err_string)?;
     // Phase 31b — a cloud upload is always network-bound, so refuse to
     // start one while the metered/cellular power rule is active (it
     // would burn metered/cellular data).
@@ -546,8 +576,7 @@ pub async fn copy_local_to_backend(
     let secret = credential_store(&state)?
         .load(&backend.name)
         .map_err(|e| e.to_string())?;
-    let operator = make_operator(&backend, secret.as_deref()).map_err(|e| e.to_string())?;
-    let target: Arc<dyn CopyTarget> = Arc::new(OperatorTarget::new(backend.name.clone(), operator));
+    let target = make_target(&backend, secret.as_deref()).map_err(|e| e.to_string())?;
     run_cloud_transfer(&app, state.inner(), async move {
         copy_to_target(&src, &target, &dst_key).await
     })
@@ -568,6 +597,7 @@ pub async fn copy_backend_to_local(
     // IPC payload with `..` segments would otherwise let the download
     // land outside the user's chosen destination.
     let dst = validate_ipc_path(&dst_path).map_err(err_string)?;
+    validate_object_key(&src_key).map_err(err_string)?;
     // Phase 31b — a cloud download consumes the connection too; refuse
     // to start one while the metered/cellular power rule is active.
     if state.cloud_transfers.is_paused() {
@@ -580,8 +610,7 @@ pub async fn copy_backend_to_local(
     let secret = credential_store(&state)?
         .load(&backend.name)
         .map_err(|e| e.to_string())?;
-    let operator = make_operator(&backend, secret.as_deref()).map_err(|e| e.to_string())?;
-    let target: Arc<dyn CopyTarget> = Arc::new(OperatorTarget::new(backend.name.clone(), operator));
+    let target = make_target(&backend, secret.as_deref()).map_err(|e| e.to_string())?;
     run_cloud_transfer(&app, state.inner(), async move {
         copy_from_target(&target, &src_key, &dst).await
     })
@@ -651,14 +680,6 @@ pub fn hydrate_registry_from_settings(
 // ---------------------------------------------------------------------
 // DTO / entry / Backend mappers
 // ---------------------------------------------------------------------
-
-fn map_opendal_kind(kind: opendal::ErrorKind) -> &'static str {
-    match kind {
-        opendal::ErrorKind::NotFound => "not-found",
-        opendal::ErrorKind::PermissionDenied => "permission",
-        _ => "network",
-    }
-}
 
 fn entry_to_dto(entry: &BackendConfigEntry) -> BackendDto {
     let mut cfg = BackendConfigDto::default();
@@ -998,6 +1019,39 @@ fn oauth_to_cloud(c: Option<&OAuthBackendConfig>) -> OAuthConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn object_key_guard_accepts_ordinary_keys() {
+        for k in [
+            "file.bin",
+            "nested/dir/file.bin",
+            "logs/2026-08-19T12:00:00Z.json",
+            "has spaces and (parens).txt",
+            "unicode/é—日本語.bin",
+            "..leading-dots-are-fine.txt",
+            "dir/..hidden/f",
+        ] {
+            assert!(validate_object_key(k).is_ok(), "should accept {k:?}");
+        }
+    }
+
+    #[test]
+    fn object_key_guard_rejects_escapes() {
+        for k in [
+            "",
+            "   ",
+            "../secrets",
+            "a/../../etc/passwd",
+            "dir/..",
+            "..",
+            "windows\\path\\file",
+            "C:/Windows/System32/config",
+            "d:relative",
+            "nul\0byte",
+        ] {
+            assert!(validate_object_key(k).is_err(), "should reject {k:?}");
+        }
+    }
 
     #[tokio::test]
     async fn cloud_transfers_track_and_cancel() {

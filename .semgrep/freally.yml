@@ -1,0 +1,119 @@
+# Project-specific Semgrep rules.
+#
+# Semgrep's stock packs are strongest on JS/TS; its Rust support is
+# beta-tier. So the value here is not the generic packs — it is encoding
+# the *specific* defects this codebase has actually shipped, so they
+# cannot come back silently. Every rule below is a real bug that reached
+# main, not a hypothetical.
+
+rules:
+  # --------------------------------------------------------------------
+  # Shipped: `t("sanitize-confirm-2")` was called with no args while the
+  # string contains `{ $device }`. `substitute()` returns the template
+  # verbatim when args is undefined, so the whole-drive erase
+  # confirmation rendered a literal `{ $device }` to the user.
+  # --------------------------------------------------------------------
+  - id: freally-i18n-missing-args
+    languages: [typescript, javascript]
+    severity: WARNING
+    message: >-
+      t() is called with no arguments. If this key's string contains a
+      `{ $var }` placeholder, i18n.ts's substitute() returns the template
+      verbatim and the user sees the raw placeholder. Check the key in
+      locales/en/freally.ftl; if it takes a variable, pass it.
+      (Shipped once on the whole-drive erase confirmation.)
+    patterns:
+      - pattern: t("$KEY")
+      - pattern-not-inside: t("$KEY", ...)
+    paths:
+      include:
+        - apps/freally-ui/src/**
+
+  # --------------------------------------------------------------------
+  # Shipped: `is_write_method` was a deny-list that omitted PATCH, so a
+  # --readonly WebDAV server accepted an anonymous PATCH write.
+  # A deny-list of dangerous verbs is wrong by construction: anything the
+  # library adds later defaults to permitted.
+  # --------------------------------------------------------------------
+  - id: freally-http-method-denylist
+    languages: [rust]
+    severity: WARNING
+    message: >-
+      HTTP/WebDAV method gate looks like a deny-list of mutating verbs.
+      Prefer an allow-list of the read-only verbs so an unrecognised
+      method fails closed. (A missing PATCH in exactly this shape gave
+      anonymous write access to a read-only server.)
+    patterns:
+      - pattern-regex: 'matches!\s*\(\s*\w+(\.as_str\(\))?\s*,\s*"(PUT|DELETE|MKCOL|MOVE|COPY|PROPPATCH|LOCK|UNLOCK|POST)"'
+      - pattern-not-regex: '!\s*matches!'
+    paths:
+      include:
+        - crates/freally-server/**
+
+  # --------------------------------------------------------------------
+  # Shipped: walkdir's `follow_root_links` defaults to TRUE, so
+  # `.follow_links(false)` did not stop a symlinked/junctioned tree ROOT
+  # from being descended into and copied out-of-tree.
+  # --------------------------------------------------------------------
+  - id: freally-walkdir-root-links
+    languages: [rust]
+    severity: ERROR
+    message: >-
+      WalkDir::follow_links() set without follow_root_links(). walkdir
+      defaults follow_root_links to true, so the ROOT is still followed
+      even when follow_links(false) — a symlinked source directory gets
+      walked into its target. Set .follow_root_links(...) explicitly.
+    # Matched as a whole statement via regex rather than as a syntactic
+    # chain: a builder chain carries an arbitrary number of further calls
+    # (`.sort_by_file_name().into_iter()`), and a syntactic `pattern-not`
+    # would have to enumerate every arity. `pattern-not-regex` applies to
+    # the matched text, so anchoring the match to the end of the statement
+    # lets one negative cover every shape.
+    patterns:
+      - pattern-regex: 'WalkDir::new\([\s\S]{0,300}?\.follow_links\([\s\S]{0,300}?[;{]'
+      - pattern-not-regex: 'follow_root_links'
+
+  # --------------------------------------------------------------------
+  # Shipped: build_hook()'s Err arm was swallowed with a warn!() and the
+  # job continued as a PLAINTEXT copy, despite the producer documenting
+  # fail-closed as "the only safe choice".
+  # --------------------------------------------------------------------
+  - id: freally-crypto-error-swallowed
+    languages: [rust]
+    severity: ERROR
+    message: >-
+      A crypt/encryption error is being logged and then execution
+      continues. An encryption policy that fails to build must fail the
+      operation, never fall through to an unencrypted path — the user's
+      settings still say "encrypting". (Shipped: a moved recipients file
+      silently produced cleartext copies.)
+    # Regex rather than a syntactic pattern: a bare match arm is not a
+    # standalone Rust expression, so Semgrep cannot parse it as a pattern.
+    # Scoped to the two files where an encryption policy is built, so this
+    # does not fire on every legitimate warn-and-continue in the tree.
+    # Anchored on `build_hook` — the crypt entry point — rather than on
+    # every `Err` arm in the file. Without the anchor this also flagged
+    # the journal `begin_job` warn, which is a legitimate
+    # warn-and-continue: losing the journal must not fail the job.
+    patterns:
+      - pattern-regex: '(?s)build_hook\([\s\S]{0,400}?Err\([^)]{0,40}\)\s*=>\s*\{[^}]{0,300}?tracing::(warn|info)!'
+
+  # --------------------------------------------------------------------
+  # Shipped: the SFTP host-key verifier returned Ok(true) — accept ANY
+  # host key — whenever no expected fingerprint was configured.
+  # --------------------------------------------------------------------
+  - id: freally-host-key-fail-open
+    languages: [rust]
+    severity: ERROR
+    message: >-
+      Host-key / certificate verification returns true on the "nothing
+      configured" branch. That is accept-anything, i.e. the MITM the
+      check exists to stop. Fail closed instead.
+    # Regex for the same reason as above — `None => Ok(true)` is a match
+    # arm, not a standalone expression.
+    patterns:
+      - pattern-regex: 'None\s*=>\s*Ok\(true\)'
+    paths:
+      include:
+        - crates/freally-cloud/**
+        - crates/freally-server/**

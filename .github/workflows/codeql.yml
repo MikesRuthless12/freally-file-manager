@@ -1,0 +1,71 @@
+name: CodeQL
+
+# Interprocedural dataflow / taint analysis over both halves of the app.
+#
+# This exists because the bug class it automates is one this project has
+# actually shipped: an attacker-controlled `read_link` target reaching
+# `tokio::fs::copy` with no containment check, and a lexical path jail
+# whose resolved output was then opened with symlink-following calls.
+# Those are source-to-sink flows across function boundaries — exactly
+# what CodeQL is for and what clippy, by design, will never find.
+#
+# Free for this public repo, and the analysis runs inside GitHub — no
+# source leaves the org, which matters given the IP-scrub posture.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly, so a newly-published query finds old code without waiting
+    # for someone to touch the file it lives in.
+    - cron: "23 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      packages: read
+      actions: read
+      contents: read
+    timeout-minutes: 60
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Rust left public preview and is GA as of CodeQL 2.23.x, and
+          # `build-mode: none` means this does NOT compile the workspace —
+          # a full cargo build here would double CI cost for no analysis
+          # benefit.
+          - language: rust
+            build-mode: none
+          # Covers the Svelte frontend's .ts as well as the vendored
+          # React panel.
+          - language: javascript-typescript
+            build-mode: none
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          # `security-extended` over the default `security` set: the
+          # findings this project cares about (path traversal, symlink
+          # following, unvalidated sinks) sit in the extended pack.
+          queries: security-extended
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"

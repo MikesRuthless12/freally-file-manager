@@ -1938,7 +1938,7 @@
               {/if}
 
               {#if settings.network.mode === "schedule"}
-                <label class="row column">
+                <label class="row stacked">
                   <span class="label">{t("settings-network-schedule")}</span>
                   <textarea
                     rows="3"
@@ -1991,8 +1991,8 @@
                 <ul class="collab-members">
                   {#each collab.members as m (m.label)}
                     <li>
-                      <span>{m.label}</span>
-                      <code>{m.recipient}</code>
+                      <span class="member-label">{m.label}</span>
+                      <code title={m.recipient}>{m.recipient}</code>
                       <button type="button" onclick={() => void collabRemove(m.label)}>
                         {t("collab-remove")}
                       </button>
@@ -2066,8 +2066,8 @@
                 <p class="hint">{t("bugreport-pending")}</p>
               {/if}
 
-              <label>
-                {t("bugreport-description-label")}
+              <label class="row stacked">
+                <span class="label">{t("bugreport-description-label")}</span>
                 <textarea rows="5" bind:value={bugDescription}></textarea>
               </label>
 
@@ -2606,6 +2606,77 @@
   .row .label {
     min-width: 140px;
     color: var(--fg-dim, #6a6a6a);
+  }
+
+  /* `stacked` / `column` were used in the markup but never defined, and
+     no rule ever gave a textarea a width — so every multi-line field
+     fell back to the browser's ~20-column default (167px inside a 529px
+     pane) with its caption stranded on the baseline beside it. */
+  .row.stacked {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+
+  .row.stacked > .label {
+    min-width: 0;
+  }
+
+  /* Chrome copied from the `.row select / input` group rather than
+     joining it: that rule sets `flex: 1`, which grows a control along
+     the container's main axis. In a stacked row that axis is vertical,
+     so it would stretch the textarea instead of widening it. */
+  .tabpanel textarea {
+    width: 100%;
+    box-sizing: border-box;
+    resize: vertical;
+    padding: 4px 6px;
+    font: inherit;
+    font-size: 12px;
+    border: 1px solid var(--border, rgba(128, 128, 128, 0.3));
+    border-radius: 4px;
+    background: var(--surface, #ffffff);
+    color: inherit;
+  }
+
+  /* Phase 51 — collaborator rows. A recipient is a 62-character age1
+     key with no break opportunity, so with no track to sit in it forced
+     Remove onto a line of its own and rows stopped matching each other.
+     Fixed label + elastic key + natural-width button keeps every row on
+     one line; the full key stays reachable via the title tooltip. */
+  .collab-members {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .collab-members li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .collab-members .member-label,
+  .collab-members code {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .collab-members .member-label {
+    flex: 0 0 120px;
+  }
+
+  .collab-members code {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .collab-members button {
+    flex: 0 0 auto;
   }
 
   .row select,

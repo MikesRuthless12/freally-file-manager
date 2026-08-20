@@ -132,6 +132,14 @@ opentelemetry-otlp = { version = "0.32", default-features = false, features = [
 tracing-opentelemetry = "0.33"
 tracing-subscriber = { version = "0.3", default-features = false, features = [
     "registry",
+    # `fmt` + `env-filter`: when this crate installs the OTel layer it must
+    # not become the *only* layer. In the CLI (no subscriber yet) a
+    # registry holding just the OTel layer swallowed every
+    # `tracing::warn!`/`info!` in the process — including the
+    # unauthenticated-exposure warning — and, with no filter, shipped a
+    # TRACE-level firehose to the collector.
+    "fmt",
+    "env-filter",
 ] }
 
 [dev-dependencies]

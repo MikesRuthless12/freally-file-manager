@@ -69,6 +69,11 @@ pub fn blend(a: &[u8], b: &[u8], alpha: f32) -> Result<Vec<u8>> {
             let pb = ib.get_pixel(x, y).0;
             let mut px = [0u8; 4];
             for c in 0..4 {
+                // NOT `mul_add`: without `target-feature=+fma` this
+                // lowers to a `fmaf` libm call, which defeats both the
+                // unroll of this constant-trip loop and its SSE
+                // packing — in the innermost loop of a per-pixel blend.
+                #[allow(clippy::suboptimal_flops)]
                 let v = pa[c] as f32 * (1.0 - alpha) + pb[c] as f32 * alpha;
                 px[c] = v.round().clamp(0.0, 255.0) as u8;
             }

@@ -35,12 +35,20 @@ pub enum BackendError {
     /// 404, permission, etc.).
     #[error("opendal error: {0}")]
     OpenDal(#[from] opendal::Error),
+
+    /// The backend was reachable but the operation failed on the wire:
+    /// a dropped connection, a protocol error, a permission refusal
+    /// from the remote. Distinct from [`Self::InvalidConfig`], which
+    /// means the request was never well-formed enough to send. The
+    /// non-OpenDAL backends (SFTP) need this — they have no
+    /// `opendal::Error` to fold into [`Self::OpenDal`].
+    #[error("backend transport error: {0}")]
+    Transport(String),
 }
 
 impl BackendError {
     /// Stable Fluent key for end-user surface. Maps every variant to
-    /// one of the five `cloud-error-*` keys in
-    /// `locales/*/freally.ftl`.
+    /// one of the `cloud-error-*` keys in `locales/*/freally.ftl`.
     pub fn fluent_key(&self) -> &'static str {
         match self {
             BackendError::Credentials(_) => "cloud-error-keychain",
@@ -53,6 +61,7 @@ impl BackendError {
             },
             BackendError::BackendNotEnabled { .. } => "cloud-error-invalid-config",
             BackendError::AlreadyExists(_) => "cloud-error-invalid-config",
+            BackendError::Transport(_) => "cloud-error-network",
         }
     }
 }

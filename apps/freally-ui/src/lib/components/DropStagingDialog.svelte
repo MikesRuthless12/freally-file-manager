@@ -16,7 +16,12 @@
   import { i18nVersion, t } from "../i18n";
   import { onEvent, pathMetadata, startCopy, startMove } from "../ipc";
   import { formatBytes } from "../format";
-  import { clearDropped, preseedBeforeEnqueue, pushToast } from "../stores";
+  import {
+    clearDropped,
+    discardPreseededFor,
+    preseedBeforeEnqueue,
+    pushToast,
+  } from "../stores";
   import type { CollisionPolicyWire } from "../types";
 
   interface Props {
@@ -323,10 +328,19 @@
         pushToast("info", "toast-enumeration-deferred");
       }
       busyLabel = t("drop-dialog-busy-starting");
-      if (kind === "copy") {
-        await startCopy(finalPaths, destination, { collision });
-      } else {
-        await startMove(finalPaths, destination, { collision });
+      try {
+        if (kind === "copy") {
+          await startCopy(finalPaths, destination, { collision });
+        } else {
+          await startMove(finalPaths, destination, { collision });
+        }
+      } catch (startErr) {
+        // The pre-seed above committed one `pending` row per file
+        // on the assumption a job would arrive to adopt them. No
+        // job means no adopter, and the rows sit at `pending`
+        // forever — thousands of them for a large selection.
+        if (seed.completed) discardPreseededFor(finalPaths);
+        throw startErr;
       }
       pushToast("info", kind === "copy" ? "toast-copy-queued" : "toast-move-queued");
       clearDropped();

@@ -971,16 +971,16 @@ pub struct TreeOptions {
     pub preserve_directory_times: bool,
     /// Phase 14 — destination free-space reserve, in bytes.
     ///
-    /// When `> 0`, the tree engine re-probes the destination volume's
-    /// free bytes before each file and halts cleanly (emitting a
-    /// `TreeStopped` event + terminal state "succeeded_partial") if
-    /// writing the next file would push free space below this reserve.
-    /// `0` disables the guard; the Phase 1-13 behaviour (copy until
-    /// the volume is physically full) is preserved for opt-out
-    /// callers. The UI preflight check surfaces overflow before the
-    /// engine is even entered; this field is the safety net that
-    /// catches files that grow during the copy or partial-fit
-    /// selections that still happen to overflow.
+    /// **Not implemented.** Nothing reads this field: the engine never
+    /// re-probes free space, there is no `TreeStopped` event, and no
+    /// "succeeded_partial" terminal state. It was documented as a
+    /// per-file safety net that catches files growing mid-copy — a
+    /// guarantee the engine does not make. The UI preflight check is
+    /// the only free-space guard that actually runs, and it happens
+    /// once, before the engine is entered.
+    ///
+    /// Kept so the option shape stays wire-compatible with settings
+    /// already on disk. Wire it up or delete it; do not rely on it.
     pub reserve_dst_bytes: u64,
     /// Phase 14a — enumeration-time include/exclude filters.
     ///

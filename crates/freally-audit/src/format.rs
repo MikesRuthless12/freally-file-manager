@@ -377,7 +377,7 @@ fn cef_extension(event: &AuditEvent, prev_hash_hex: &str) -> String {
     let ts = event.ts_iso8601();
     let host = host_field(event);
     let mut parts: Vec<(&'static str, String)> = vec![
-        ("rt", ts.clone()),
+        ("rt", ts),
         ("dhost", host.to_string()),
         ("duser", event.user().to_string()),
         ("cs1Label", "prev_hash".into()),
@@ -553,7 +553,7 @@ fn leef_extension(event: &AuditEvent, prev_hash_hex: &str) -> String {
     let ts = event.ts_iso8601();
     let host = host_field(event);
     let mut parts: Vec<(&'static str, String)> = vec![
-        ("devTime", ts.clone()),
+        ("devTime", ts),
         ("dstHost", host.to_string()),
         ("usrName", event.user().to_string()),
         ("sev", event.severity().cef_severity().to_string()),

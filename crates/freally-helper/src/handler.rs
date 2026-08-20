@@ -362,7 +362,7 @@ mod tests {
         std::fs::write(&src, b"hello").unwrap();
         let r = handle_request(
             &Request::ElevatedRetry {
-                src: src.clone(),
+                src,
                 dst: dst.clone(),
             },
             &all_caps(),

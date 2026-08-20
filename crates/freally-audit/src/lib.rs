@@ -19,9 +19,30 @@
 //!   LEEF are the three enterprise SIEMs cover.
 //! - [`AuditSink`] — the append-only writer. Opens a file (or
 //!   pipes-to-syslog bridge), appends one record per event, maintains
-//!   a rolling BLAKE3 chain hash so the file is end-to-end tamper-
-//!   evident, and optionally flips the file into [`WormMode::On`] so
-//!   even a root user can't truncate it without explicit ACL removal.
+//!   a rolling BLAKE3 chain hash, and optionally flips the file into
+//!   [`WormMode::On`] so even a root user can't truncate it without
+//!   explicit ACL removal.
+//!
+//! # What the chain hash does and does not prove
+//!
+//! The chain is `chain[n+1] = BLAKE3(chain[n] || redacted_line)` — an
+//! **unkeyed** hash, seeded from zero, whose links are stored in the
+//! same file they authenticate. It therefore detects accidental
+//! corruption, truncation, and a naive single-line edit, and that is
+//! what `freally audit verify` reports on.
+//!
+//! It is **not** a defence against a deliberate edit. Anyone who can
+//! write the file can delete a record, recompute the chain with these
+//! same public functions, rewrite the downstream `prev_hash` columns,
+//! and the verifier will report a clean log — which is worse than no
+//! verifier, because it turns "we cannot tell" into a false
+//! attestation. Resisting that needs a key the editor does not have
+//! (an HMAC / `blake3::keyed_hash` under the credential store), a
+//! signature over the tail via [`freally_provenance`], or an anchor
+//! value held outside the log (ship the tail hash to the SIEM and have
+//! the verifier require it). [`WormMode`] is the compensating control
+//! today, and it is partial: the Windows fallback is only
+//! `FILE_ATTRIBUTE_READONLY`, which any same-user process can clear.
 //! - [`AuditLayer`] — a [`tracing_subscriber::Layer`] that fans
 //!   events off the process-wide `tracing` bus into the active sink
 //!   when [`AuditSink::install_tracing_layer`] has been called. The

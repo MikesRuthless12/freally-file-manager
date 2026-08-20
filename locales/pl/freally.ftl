@@ -1735,3 +1735,31 @@ settings-favorites-hotkey = Skrót
 a11y-queue-status = { $running } w toku, { $done } ukończonych, { $failed } nieudanych
 
 err-favorite-id-invalid = Nieprawidłowy identyfikator ulubionego
+
+# Previously hard-coded in the Svelte markup, so they stayed English
+# in every locale. Product names (Freally File Manager, PeerJS) and
+# the IAM / TRIM / QR / ID initialisms are intentionally untranslated.
+remote-account-name = Nazwa konta
+remote-service-account = Konto usługi
+remote-client-id = Identyfikator klienta
+remote-secret = Sekret (klucz dostępu / hasło / token)
+remote-job-name = Nazwa zadania
+remote-instance-size = Rozmiar instancji
+remote-iam-role = Rola / tożsamość IAM
+pair-always-connect = Zawsze łącz z aplikacją mobilną
+pair-broker-url = Adres URL brokera PeerJS (puste = publiczny domyślny)
+pair-devices-heading = Sparowane urządzenia
+pair-onboarding-title = Pobierz mobilną aplikację towarzyszącą Freally File Manager
+pair-onboarding-loading-qr = Ładowanie kodu QR…
+sanitize-confirm-backup = Potwierdzam, że mam kopię zapasową wszystkich danych, które chcę zachować
+sanitize-model-mismatch = Nazwa modelu dysku nie zgadza się.
+sanitize-trim-heading = TRIM wolnego miejsca
+details-avg-speed = Śr. prędkość
+pair-onboarding-body = Steruj z telefonu zadaniami kopiowania / przenoszenia / synchronizacji / bezpiecznego usuwania na komputerze przez prywatne połączenie WebRTC. Zeskanuj poniższy kod QR aparatem telefonu, otwórz adres instalacji w przeglądarce, a następnie dotknij „Dodaj do ekranu głównego” — sklep z aplikacjami nie jest potrzebny.
+pair-onboarding-have-app = Mam aplikację, sparuj teraz
+pair-onboarding-later = Może później
+pair-no-device-warning = Automatyczne łączenie jest włączone, ale żaden telefon nie został jeszcze sparowany. Zainstaluj mobilną aplikację PWA Freally File Manager na telefonie (zeskanuj poniższy kod QR aparatem), a następnie kliknij „Rozpocznij parowanie”, aby komputer wiedział, dokąd się łączyć.
+pair-desktop-peer-id = Peer-id komputera:
+sanitize-probe = Sprawdź możliwości
+sanitize-run = Uruchom wymazywanie
+sanitize-run-trim = Uruchom TRIM wolnego miejsca

@@ -72,3 +72,15 @@ tokio = { version = "1", features = [
 [[test]]
 name = "phase_25_sync"
 path = "../../tests/smoke/phase_25_sync.rs"
+
+# A symlinked sync root must error, never scan empty — an empty listing
+# is read by the engine as mass deletion on the other side.
+[[test]]
+name = "sync_symlink_root"
+path = "../../tests/smoke/sync_symlink_root.rs"
+
+# A one-way sync must never write to, or rename a file on, its own
+# authoritative side.
+[[test]]
+name = "sync_one_way_safety"
+path = "../../tests/smoke/sync_one_way_safety.rs"

@@ -30,6 +30,7 @@ use thiserror::Error;
 use tokio::sync::oneshot;
 
 mod http;
+mod jail;
 mod otel;
 mod s3;
 mod sftp;
@@ -439,8 +440,16 @@ pub fn format_webhook_payload(target: WebhookTarget, event: &JobNotification) ->
     match target {
         WebhookTarget::Slack => serde_json::json!({ "text": text }),
         WebhookTarget::Discord => serde_json::json!({ "content": text }),
+        // ntfy only accepts this JSON envelope at the server *root*,
+        // where `topic` selects the destination. Delivery does not use
+        // it — `WebhookSink::deliver` routes ntfy through
+        // `send_ntfy`, which posts a plain-text body to the configured
+        // topic URL. `topic` is left empty because the event carries no
+        // topic: it used to be filled with `event.kind` ("copy",
+        // "sync"), which would have published to a topic named after
+        // the job type had this payload ever reached the root endpoint.
         WebhookTarget::Ntfy => serde_json::json!({
-            "topic": event.kind,
+            "topic": "",
             "title": event.title,
             "message": event.body,
         }),

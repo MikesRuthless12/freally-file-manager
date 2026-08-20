@@ -6,6 +6,7 @@
   list of files that failed or went missing.
 -->
 <script lang="ts">
+  import { escapeToClose } from "../a11y";
   import { t } from "../i18n";
   import { closeSidecarVerify } from "../stores";
   import type { SidecarVerifyReport } from "../ipc";
@@ -16,10 +17,6 @@
 
   let { report }: Props = $props();
   const clean = $derived(report.failed === 0 && report.missing === 0);
-
-  function onKeydown(e: KeyboardEvent) {
-    if (e.key === "Escape") closeSidecarVerify();
-  }
 </script>
 
 <div
@@ -28,7 +25,7 @@
   aria-modal="true"
   aria-labelledby="sidecar-title"
   tabindex="-1"
-  onkeydown={onKeydown}
+  use:escapeToClose={closeSidecarVerify}
 >
   <div class="panel">
     <h2 id="sidecar-title" class:ok={clean} class:bad={!clean}>

@@ -45,7 +45,7 @@ fn case1_add_persist_reload_round_trip() {
     assert_eq!(reg.add(paths.clone()).unwrap(), 0);
 
     // Cold reopen.
-    let reg2 = DropStackRegistry::new(json.clone());
+    let reg2 = DropStackRegistry::new(json);
     let missing = reg2.load().unwrap();
     assert!(missing.is_empty());
     let snap = reg2.snapshot();
@@ -70,13 +70,12 @@ fn case2_reload_drops_missing_and_surfaces_the_path() {
     write(&kept_a, "A");
     write(&kept_b, "B");
     write(&doomed, "D");
-    reg.add([kept_a.clone(), kept_b.clone(), doomed.clone()])
-        .unwrap();
+    reg.add([kept_a, kept_b, doomed.clone()]).unwrap();
     std::fs::remove_file(&doomed).unwrap();
 
     let reg2 = DropStackRegistry::new(json.clone());
     let missing = reg2.load().unwrap();
-    assert_eq!(missing, vec![doomed.clone()]);
+    assert_eq!(missing, vec![doomed]);
     assert_eq!(reg2.len(), 2);
 
     // Case 3 inline: a second cold open on the already-trimmed
@@ -105,8 +104,7 @@ fn case4_dispatch_enqueues_jobs_and_clears_stack() {
     std::fs::create_dir_all(&dst_root).unwrap();
 
     let reg = DropStackRegistry::new(json);
-    reg.add([src_a.clone(), src_b.clone(), src_c.clone()])
-        .unwrap();
+    reg.add([src_a, src_b, src_c]).unwrap();
     assert_eq!(reg.len(), 3);
 
     // The actual job-dispatch path needs a live Tauri context to

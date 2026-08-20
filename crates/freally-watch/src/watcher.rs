@@ -114,7 +114,7 @@ impl Watcher {
         let (out_tx, out_rx) = mpsc::channel::<FsEvent>(1024);
         let stop = Arc::new(Mutex::new(false));
         let stop_for_thread = Arc::clone(&stop);
-        let opts_for_thread = options.clone();
+        let opts_for_thread = options;
         let root_for_thread = root.to_path_buf();
 
         let pump = thread::Builder::new()

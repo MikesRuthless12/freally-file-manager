@@ -50,9 +50,19 @@ export default defineConfig({
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
     },
-    // WebKit + Firefox land here once the §4 specs are filled in
-    // and we want cross-engine coverage. Today the Tauri 2.x
-    // production runtime is WebView2 / WKWebView / WebKitGTK, so
-    // Chromium covers the largest single share.
+    // WebKit exists for the Gate 1 visual smoke, which runs per-OS in
+    // `.github/workflows/visual-smoke.yml`. Tauri 2.x renders in the
+    // platform webview — WebView2 (Chromium) on Windows, WKWebView on
+    // macOS, WebKitGTK on Linux — so a Chromium-everywhere smoke would
+    // photograph an engine two of the three platforms never run. The
+    // workflow therefore selects `--project=chromium` on Windows and
+    // `--project=webkit` on macOS and Linux.
+    //
+    // The §4 assertion specs stay Chromium-only: they assert behaviour,
+    // not pixels, and tripling their runtime buys nothing.
+    {
+      name: "webkit",
+      use: { ...devices["Desktop Safari"] },
+    },
   ],
 });

@@ -97,7 +97,7 @@ fn elevated_retry_copies_a_real_file() {
 
     let r = handle_request(
         &Request::ElevatedRetry {
-            src: src.clone(),
+            src,
             dst: dst.clone(),
         },
         &full_caps(),

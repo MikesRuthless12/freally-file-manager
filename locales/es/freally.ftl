@@ -1735,3 +1735,31 @@ settings-favorites-hotkey = Atajo
 a11y-queue-status = { $running } en curso, { $done } completados, { $failed } fallidos
 
 err-favorite-id-invalid = Identificador de favorito no válido
+
+# Previously hard-coded in the Svelte markup, so they stayed English
+# in every locale. Product names (Freally File Manager, PeerJS) and
+# the IAM / TRIM / QR / ID initialisms are intentionally untranslated.
+remote-account-name = Nombre de la cuenta
+remote-service-account = Cuenta de servicio
+remote-client-id = ID de cliente
+remote-secret = Secreto (clave de acceso / contraseña / token)
+remote-job-name = Nombre del trabajo
+remote-instance-size = Tamaño de la instancia
+remote-iam-role = Rol / identidad de IAM
+pair-always-connect = Conectar siempre a la aplicación móvil
+pair-broker-url = URL del broker PeerJS (en blanco = predeterminado público)
+pair-devices-heading = Dispositivos emparejados
+pair-onboarding-title = Obtén el complemento móvil de Freally File Manager
+pair-onboarding-loading-qr = Cargando QR…
+sanitize-confirm-backup = Confirmo que tengo una copia de seguridad de los datos que quiero conservar
+sanitize-model-mismatch = El nombre del modelo de la unidad no coincide.
+sanitize-trim-heading = TRIM de espacio libre
+details-avg-speed = Velocidad media
+pair-onboarding-body = Controla desde tu teléfono los trabajos de copia / movimiento / sincronización / borrado seguro de tu escritorio mediante un enlace WebRTC privado. Escanea el QR de abajo con la cámara de tu teléfono para abrir la URL de instalación en tu navegador y luego toca «Añadir a pantalla de inicio»: no necesitas la App Store.
+pair-onboarding-have-app = Ya tengo la app, emparejar ahora
+pair-onboarding-later = Quizá más tarde
+pair-no-device-warning = La conexión automática está activada, pero aún no hay ningún teléfono emparejado. Instala la PWA móvil de Freally File Manager en tu teléfono (escanea el QR de abajo con la cámara) y luego haz clic en «Iniciar emparejamiento» para que el escritorio sepa a dónde conectarse.
+pair-desktop-peer-id = ID de par del escritorio:
+sanitize-probe = Sondear capacidades
+sanitize-run = Ejecutar saneamiento
+sanitize-run-trim = Ejecutar TRIM de espacio libre

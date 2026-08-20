@@ -36,6 +36,7 @@ import type {
   InvokeHandler,
   InvokeRecord,
 } from "./tauri-shim";
+import { fullSettings } from "./settings";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -329,25 +330,17 @@ export const test = base.extend<Fixtures>({
         text: "# End User License Agreement\n(e2e fixture)",
         accepted: true,
       }));
-      reg.setHandlerIfMissing("get_settings", () => ({
-        general: {
-          locale: "en",
-          theme: "system",
-          autoResumeInterrupted: false,
-          mobileOnboardingDismissed: true,
-          errorPromptStyle: "modal",
-        },
-        transfer: {
-          verifyAlgo: "blake3",
-          dedupMode: "auto-ladder",
-          hardlinkPolicy: "off",
-          encryption: { recipients: [], recipientsFile: null },
-          compression: { mode: "off", level: 3 },
-        },
-        mobile: { pairings: [], desktopPeerId: "test-peer" },
-        network: { rateBps: null, scheduleEnabled: false },
-        power: { policy: "always" },
-      }));
+      // `fullSettings()` is the single source of truth for a complete
+      // `SettingsDto` — 12 specs already build their overrides from it.
+      // Inlining a second copy here let the two drift: the inline one
+      // used `general.locale` (the DTO field is `language`) and omitted
+      // `server.s3`, and it was missing shell / secureDelete / safety /
+      // advanced / filters / updater outright. A pane that reads a
+      // missing branch throws mid-render, and Svelte leaves the
+      // *previous* pane's DOM on screen — so a spec that opens Filters
+      // and asserts on what it finds is really asserting against
+      // Transfer, and passes.
+      reg.setHandlerIfMissing("get_settings", () => fullSettings());
       reg.setHandlerIfMissing("pending_resumes", () => []);
       reg.setHandlerIfMissing("plugin:dialog|open", () => null);
       // Build 3 (FFM-M17–M24) added these to the boot and

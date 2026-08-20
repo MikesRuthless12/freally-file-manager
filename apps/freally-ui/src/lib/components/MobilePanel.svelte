@@ -160,24 +160,19 @@
         type="checkbox"
         bind:checked={settings.mobile.autoConnect}
       />
-      <span class="label">Always connect to Mobile App</span>
+      <span class="label">{t("pair-always-connect")}</span>
     </label>
 
     {#if settings.mobile.autoConnect && settings.mobile.pairings.length === 0}
-      <p class="hint warn">
-        Auto-connect is on, but no phone is paired yet. Install the
-        Freally File Manager mobile PWA on your phone (scan the QR below with
-        your camera), then click "Start pairing" so the desktop
-        knows where to dial.
-      </p>
+      <p class="hint warn">{t("pair-no-device-warning")}</p>
     {/if}
 
     <p class="addr">
-      Desktop peer-id: {settings.mobile.desktopPeerId || "(minted on first pair)"}
+      {t("pair-desktop-peer-id")} {settings.mobile.desktopPeerId || "(minted on first pair)"}
     </p>
 
     <label class="row">
-      <span class="label">PeerJS broker URL (blank = public default)</span>
+      <span class="label">{t("pair-broker-url")}</span>
       <input
         type="text"
         bind:value={settings.mobile.peerjsBroker}
@@ -224,7 +219,7 @@
     </div>
   {/if}
 
-  <h4 class="subheading">Paired devices</h4>
+  <h4 class="subheading">{t("pair-devices-heading")}</h4>
   {#if !settings || !settings.mobile || settings.mobile.pairings.length === 0}
     <p class="hint">{t("settings-mobile-no-pairings")}</p>
   {:else}

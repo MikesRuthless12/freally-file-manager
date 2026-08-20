@@ -322,8 +322,17 @@ fn moving_an_unknown_job_errors_rather_than_silently_doing_nothing() {
     let reg = registry();
     let (_, _, _) = reg.route(JobKind::Copy, drive_a("s"), Some(drive_a("d")));
     let (qb, _, _) = reg.route(JobKind::Copy, drive_b("s"), Some(drive_b("d")));
-    assert!(matches!(
-        reg.move_job_to_queue(JobId::from_u64(9_999), qb),
-        Err(QueueMergeError::UnknownSrc(_))
-    ));
+    // `UnknownJob`, not `UnknownSrc`: no queue holds this job, so there
+    // is no source queue id to name. This used to assert `UnknownSrc`,
+    // which the code satisfied by reporting the *destination* queue —
+    // the one it had just found without trouble.
+    let err = reg
+        .move_job_to_queue(JobId::from_u64(9_999), qb)
+        .expect_err("moving a job nothing holds must be an error");
+    match err {
+        QueueMergeError::UnknownJob(id) => {
+            assert_eq!(id, JobId::from_u64(9_999), "must name the job asked for");
+        }
+        other => panic!("expected UnknownJob, got {other:?}"),
+    }
 }
