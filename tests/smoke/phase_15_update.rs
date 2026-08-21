@@ -24,9 +24,7 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use freally_settings::UpdaterSettings;
-use freally_ui_lib::updater::{
-    UpdateManifest, fetch_manifest_http, format_endpoint, is_strictly_newer,
-};
+use freally_ui_lib::updater::{UpdateManifest, fetch_manifest, format_endpoint, is_strictly_newer};
 
 const MANIFEST_BODY: &str = r#"{
   "version": "99.0.0",
@@ -110,13 +108,14 @@ fn handle_one(mut stream: TcpStream) -> std::io::Result<()> {
     Ok(())
 }
 
-#[test]
-fn fetches_and_parses_manifest_within_time_bound() {
+#[tokio::test]
+async fn fetches_and_parses_manifest_within_time_bound() {
     let (url, _shutdown) = spawn_manifest_server();
 
     let start = Instant::now();
-    let manifest: UpdateManifest = fetch_manifest_http(&url, Duration::from_secs(10))
-        .expect("fetch_manifest_http should succeed against local fixture");
+    let manifest: UpdateManifest = fetch_manifest(&url, Duration::from_secs(10))
+        .await
+        .expect("fetch_manifest should succeed against local fixture");
     let elapsed = start.elapsed();
 
     assert!(
@@ -143,11 +142,37 @@ fn fetches_and_parses_manifest_within_time_bound() {
     }
 }
 
-#[test]
-fn manifest_version_is_strictly_newer_than_running_binary() {
+/// The user-visible symptom of the old http-only client: clicking
+/// "Check for updates" produced "manifest url is malformed:
+/// unsupported scheme" against the `https://` endpoint the app ships
+/// with, so the button could never work. An https URL must at least
+/// get as far as the network — a DNS or TLS failure is a `Network`
+/// error, never `BadUrl`.
+#[tokio::test]
+async fn an_https_endpoint_is_not_rejected_as_malformed() {
+    // Reserved for documentation examples; resolves nowhere useful,
+    // which is the point — we want to see a network-class failure
+    // rather than a scheme rejection, without depending on a live host.
+    let err = fetch_manifest(
+        "https://freally-updater-endpoint.invalid/latest.json",
+        Duration::from_secs(5),
+    )
+    .await
+    .expect_err("an unreachable host cannot succeed");
+
+    let msg = err.to_string();
+    assert!(
+        !msg.contains("malformed"),
+        "https must not be refused as a malformed URL: {msg}"
+    );
+}
+
+#[tokio::test]
+async fn manifest_version_is_strictly_newer_than_running_binary() {
     let (url, _shutdown) = spawn_manifest_server();
-    let manifest = fetch_manifest_http(&url, Duration::from_secs(10))
-        .expect("fetch_manifest_http should succeed");
+    let manifest = fetch_manifest(&url, Duration::from_secs(10))
+        .await
+        .expect("fetch_manifest should succeed");
     let current = env!("CARGO_PKG_VERSION");
     assert!(
         is_strictly_newer(&manifest.version, current),

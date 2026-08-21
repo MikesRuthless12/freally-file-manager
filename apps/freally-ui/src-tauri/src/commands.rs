@@ -1683,15 +1683,12 @@ pub async fn updater_check_now(
         }
     };
 
-    // Network hit off the Tauri-runtime thread — the helper is
-    // blocking but bounded by the 10 s timeout.
-    let manifest_res = tokio::task::spawn_blocking(move || {
-        crate::updater::fetch_manifest_http(&endpoint, Duration::from_secs(10))
-    })
-    .await
-    .map_err(|e| format!("updater-task-join: {e}"))?;
-
-    let manifest = manifest_res.map_err(|e| e.to_string())?;
+    // The fetch is async and bounded by its own 10 s timeout, so it
+    // runs on the runtime directly. It used to be bounced through
+    // `spawn_blocking` because the helper was a blocking socket client.
+    let manifest = crate::updater::fetch_manifest(&endpoint, Duration::from_secs(10))
+        .await
+        .map_err(|e| e.to_string())?;
 
     let is_newer = crate::updater::is_strictly_newer(&manifest.version, &current_ver);
 
@@ -1745,8 +1742,18 @@ pub fn updater_dismiss_version(version: String, state: State<'_, AppState>) -> R
 /// - `{{channel}}` — `"stable"` / `"beta"` from `UpdaterSettings`.
 /// - `{{target}}` / `{{arch}}` — OS / CPU from `current_target_platform`.
 /// - `{{current_version}}` — `CARGO_PKG_VERSION`.
+///
+/// Defaults to the `latest.json` the release pipeline already publishes
+/// with every tag. It was `https://releases.freally.app/...`, a host
+/// that serves nothing — so even once the client could speak TLS there
+/// was no manifest at the other end. The published file has exactly the
+/// shape [`crate::updater::UpdateManifest`] expects, including platform
+/// keys that match `current_target_platform` (`windows-x86_64`,
+/// `darwin-aarch64`, `darwin-x86_64`, `linux-x86_64`), so it needs no
+/// per-platform placeholders — `format_endpoint` leaves a template with
+/// no placeholders alone.
 const DEFAULT_UPDATER_ENDPOINT_TEMPLATE: &str =
-    "https://releases.freally.app/{{channel}}/{{target}}-{{arch}}.json";
+    "https://github.com/MikesRuthless12/freally-file-manager/releases/latest/download/latest.json";
 
 /// Phase 14 — free bytes available on the volume backing `path`.
 /// Powers the preflight check in the UI. Returns `0` when the probe

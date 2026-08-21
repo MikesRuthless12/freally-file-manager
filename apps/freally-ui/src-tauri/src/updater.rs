@@ -19,11 +19,11 @@
 //!    the callsite lives. The setting persists across restarts, so a
 //!    launch within 24 h of the last successful check stays silent.
 //!
-//! Everything here is synchronous / blocking and free of Tauri
-//! dependencies, which keeps the smoke test short and CI-friendly.
+//! Free of Tauri dependencies, which keeps the smoke test short and
+//! CI-friendly. The fetch is async because it speaks TLS: the
+//! manifest lives on an `https://` endpoint, and the hand-rolled
+//! plain-TCP client this used to carry could not reach it.
 
-use std::io::{BufRead, BufReader, Read, Write};
-use std::net::{TcpStream, ToSocketAddrs};
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
@@ -119,109 +119,56 @@ pub fn current_target_platform() -> String {
     format!("{os}-{arch}")
 }
 
-/// Fetch and parse a manifest over plain HTTP or HTTPS. Written with
-/// a hand-rolled minimal HTTP client so the smoke test doesn't need
-/// `reqwest` in dev-deps, but the real auto-check path is happy to
-/// delegate to `tauri-plugin-updater` instead — this helper exists
-/// primarily for the pre-fetch "is there an update?" banner logic
-/// the UI shows before the user opts into the install.
+/// Fetch and parse an update manifest.
 ///
-/// Only supports `http://` for the smoke test (local fixture).
-/// Production code paths call through the Tauri plugin's own fetch,
-/// which uses `reqwest` under the hood with full TLS.
-pub fn fetch_manifest_http(url: &str, timeout: Duration) -> Result<UpdateManifest, UpdaterError> {
-    let (host, port, path) = parse_http_url(url)?;
-    let addr = format!("{host}:{port}");
-    let sa = addr
-        .to_socket_addrs()
-        .map_err(|e| UpdaterError::Network(format!("resolve {addr}: {e}")))?
-        .next()
-        .ok_or_else(|| UpdaterError::Network(format!("no addresses for {addr}")))?;
-    let mut sock = TcpStream::connect_timeout(&sa, timeout)
-        .map_err(|e| UpdaterError::Network(format!("connect {addr}: {e}")))?;
-    sock.set_read_timeout(Some(timeout))
-        .map_err(|e| UpdaterError::Network(format!("set_read_timeout: {e}")))?;
-    sock.set_write_timeout(Some(timeout))
-        .map_err(|e| UpdaterError::Network(format!("set_write_timeout: {e}")))?;
+/// This used to be a hand-rolled plain-TCP HTTP client, written that
+/// way so the smoke test would not need `reqwest` in dev-deps, with a
+/// comment explaining that production went through the Tauri
+/// plugin's own TLS-capable fetch instead. It did not: the
+/// "Check for updates" button calls straight into here. So the only
+/// path a user can trigger was the one that could not do TLS, and
+/// every click produced "manifest url is malformed: unsupported
+/// scheme" against the `https://` endpoint it was pointed at.
+///
+/// `reqwest` is already a dependency of this crate, with `rustls`.
+pub async fn fetch_manifest(url: &str, timeout: Duration) -> Result<UpdateManifest, UpdaterError> {
+    if !is_supported_scheme(url) {
+        return Err(UpdaterError::BadUrl(format!("unsupported scheme: {url}")));
+    }
 
-    let req = format!(
-        "GET {path} HTTP/1.1\r\nHost: {host}\r\nUser-Agent: freally/{}\r\nConnection: close\r\nAccept: application/json\r\n\r\n",
-        env!("CARGO_PKG_VERSION"),
-    );
-    sock.write_all(req.as_bytes())
-        .map_err(|e| UpdaterError::Network(format!("write: {e}")))?;
+    let client = reqwest::Client::builder()
+        .timeout(timeout)
+        .user_agent(concat!("freally/", env!("CARGO_PKG_VERSION")))
+        .build()
+        .map_err(|e| UpdaterError::Network(format!("http client: {e}")))?;
 
-    let mut reader = BufReader::new(sock);
-    let status_line = read_line(&mut reader)?;
-    let status = parse_status_code(&status_line)?;
+    let resp = client
+        .get(url)
+        .header(reqwest::header::ACCEPT, "application/json")
+        .send()
+        .await
+        .map_err(|e| UpdaterError::Network(e.to_string()))?;
+
+    let status = resp.status().as_u16();
     if !(200..300).contains(&status) {
         return Err(UpdaterError::BadStatus(status));
     }
 
-    // Drain headers (through the blank separator).
-    loop {
-        let line = read_line(&mut reader)?;
-        if line == "\r\n" || line.is_empty() {
-            break;
-        }
-    }
-
-    let mut body = String::new();
-    reader
-        .read_to_string(&mut body)
+    let body = resp
+        .text()
+        .await
         .map_err(|e| UpdaterError::Network(format!("read body: {e}")))?;
 
-    // Some HTTP responses use chunked transfer encoding; a dead-simple
-    // "first { to last }" window survives both chunked and identity.
-    let start = body
-        .find('{')
-        .ok_or_else(|| UpdaterError::BadJson("no opening brace".into()))?;
-    let end = body
-        .rfind('}')
-        .ok_or_else(|| UpdaterError::BadJson("no closing brace".into()))?;
-    let slice = &body[start..=end];
-
-    serde_json::from_str::<UpdateManifest>(slice).map_err(|e| UpdaterError::BadJson(e.to_string()))
+    serde_json::from_str::<UpdateManifest>(&body).map_err(|e| UpdaterError::BadJson(e.to_string()))
 }
 
-fn read_line<R: BufRead>(reader: &mut R) -> Result<String, UpdaterError> {
-    let mut line = String::new();
-    reader
-        .read_line(&mut line)
-        .map_err(|e| UpdaterError::Network(format!("read_line: {e}")))?;
-    Ok(line)
-}
-
-fn parse_status_code(line: &str) -> Result<u16, UpdaterError> {
-    // "HTTP/1.1 200 OK\r\n"
-    let mut parts = line.split_whitespace();
-    let _version = parts.next();
-    let code = parts
-        .next()
-        .ok_or_else(|| UpdaterError::Network(format!("malformed status line: {line:?}")))?;
-    code.parse::<u16>()
-        .map_err(|e| UpdaterError::Network(format!("bad status code {code:?}: {e}")))
-}
-
-fn parse_http_url(url: &str) -> Result<(String, u16, String), UpdaterError> {
-    let rest = url
-        .strip_prefix("http://")
-        .ok_or_else(|| UpdaterError::BadUrl(format!("unsupported scheme: {url}")))?;
-    let (authority, path) = match rest.find('/') {
-        Some(idx) => (&rest[..idx], &rest[idx..]),
-        None => (rest, "/"),
-    };
-    let (host, port) = match authority.rfind(':') {
-        Some(idx) => {
-            let h = &authority[..idx];
-            let p = authority[idx + 1..]
-                .parse::<u16>()
-                .map_err(|e| UpdaterError::BadUrl(format!("bad port in {authority:?}: {e}")))?;
-            (h.to_string(), p)
-        }
-        None => (authority.to_string(), 80),
-    };
-    Ok((host, port, path.to_string()))
+/// Schemes the updater will fetch over.
+///
+/// The endpoint comes from user settings, so this is a guard, not a
+/// formality: without it a `file://` or `ftp://` value would be
+/// handed straight to the HTTP client.
+fn is_supported_scheme(url: &str) -> bool {
+    url.starts_with("http://") || url.starts_with("https://")
 }
 
 /// Strictly greater semver-ish comparison. Only the three leading
@@ -322,28 +269,20 @@ mod tests {
         assert!(!is_strictly_newer("garbage", "0.0.1"));
     }
 
+    /// The endpoint is user-settable, so anything that is not HTTP(S)
+    /// must be refused before it reaches the client. The old parser
+    /// refused `https` too, which is what broke the update check.
     #[test]
-    fn parse_http_url_handles_port_and_path() {
-        let (h, p, path) = parse_http_url("http://127.0.0.1:5432/manifest.json").unwrap();
-        assert_eq!(h, "127.0.0.1");
-        assert_eq!(p, 5432);
-        assert_eq!(path, "/manifest.json");
+    fn only_http_and_https_are_fetchable() {
+        assert!(is_supported_scheme("http://127.0.0.1:5432/manifest.json"));
+        assert!(is_supported_scheme(
+            "https://github.com/o/r/releases/latest/download/latest.json"
+        ));
 
-        let (h, p, path) = parse_http_url("http://releases.example.com/latest.json").unwrap();
-        assert_eq!(h, "releases.example.com");
-        assert_eq!(p, 80);
-        assert_eq!(path, "/latest.json");
-
-        let (h, p, path) = parse_http_url("http://127.0.0.1:8080").unwrap();
-        assert_eq!(h, "127.0.0.1");
-        assert_eq!(p, 8080);
-        assert_eq!(path, "/");
-    }
-
-    #[test]
-    fn parse_http_url_rejects_https() {
-        let err = parse_http_url("https://example.com/foo.json").unwrap_err();
-        assert!(matches!(err, UpdaterError::BadUrl(_)));
+        assert!(!is_supported_scheme("file:///etc/passwd"));
+        assert!(!is_supported_scheme("ftp://example.com/latest.json"));
+        assert!(!is_supported_scheme("example.com/latest.json"));
+        assert!(!is_supported_scheme(""));
     }
 
     #[test]
