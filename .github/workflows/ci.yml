@@ -239,6 +239,17 @@ jobs:
           sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android /usr/local/share/boost /opt/hostedtoolcache/CodeQL || true
           sudo docker image prune --all --force || true
           df -h /
+      # Before clippy, not just before bundling. Tauri validates
+      # `bundle.externalBin` in the freally-ui BUILD SCRIPT, so any
+      # `cargo build` / `clippy` / `test` that touches that crate fails
+      # with "resource path ... does not exist" until the helper is
+      # staged — `tauri build` is not the only consumer.
+      - name: Stage the privileged helper
+        shell: bash
+        run: |
+          triple="$(rustc -vV | sed -n 's/^host: //p')"
+          cargo run -p xtask -- stage-helper --target "$triple"
+
       - name: Clippy
         run: cargo clippy --workspace --all-targets -- -D warnings
       # `cargo test --workspace` picks up every per-phase smoke via
@@ -347,6 +358,16 @@ jobs:
       # (msi+nsis on Windows, app+dmg on macOS, appimage+deb on
       # Linux) keeps CI fast without losing smoke coverage — the
       # Tauri bundler itself runs identically across targets.
+      # `bundle.externalBin` names the privileged helper, so the build
+      # refuses to start until that binary exists — even with
+      # `--no-bundle`, which resolves resources before it skips
+      # bundling. Stage it first. Without the sidecar the shipped
+      # installers carried only `freally-ui.exe`, and every elevated
+      # path failed at runtime with "helper binary not found".
+      - name: Stage the privileged helper (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: cargo run -p xtask -- stage-helper --target x86_64-unknown-linux-gnu
+
       - name: Tauri build (debug — Linux subset)
         if: matrix.os == 'ubuntu-latest'
         working-directory: apps/freally-ui
@@ -356,6 +377,16 @@ jobs:
         # bundling that exhausts runner disk is skipped. Full bundling
         # and signing stay verified at release time by release.yml.
         run: pnpm tauri build --debug --no-bundle
+      # Same staging for the macOS + Windows hosts. The triple is
+      # derived from the runner rather than hard-coded so this stays
+      # correct if the matrix gains a host.
+      - name: Stage the privileged helper (macOS / Windows)
+        if: matrix.os != 'ubuntu-latest'
+        shell: bash
+        run: |
+          triple="$(rustc -vV | sed -n 's/^host: //p')"
+          cargo run -p xtask -- stage-helper --target "$triple"
+
       - name: Tauri build (debug)
         if: matrix.os != 'ubuntu-latest'
         working-directory: apps/freally-ui

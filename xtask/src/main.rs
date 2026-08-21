@@ -36,6 +36,7 @@ mod overlay;
 mod plugins;
 mod qa;
 mod release;
+mod sidecar;
 
 const LOCALES: &[&str] = &[
     "en", "es", "zh-CN", "hi", "ar", "pt-BR", "ru", "ja", "de", "fr", "ko", "it", "tr", "vi", "pl",
@@ -124,6 +125,16 @@ fn main() -> ExitCode {
                 Ok(()) => ExitCode::SUCCESS,
                 Err(e) => {
                     eprintln!("xtask qa-automate: {e}");
+                    ExitCode::FAILURE
+                }
+            }
+        }
+        Some("stage-helper") => {
+            let rest: Vec<String> = args.collect();
+            match sidecar::run(rest) {
+                Ok(()) => ExitCode::SUCCESS,
+                Err(e) => {
+                    eprintln!("xtask stage-helper: {e}");
                     ExitCode::FAILURE
                 }
             }

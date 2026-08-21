@@ -205,3 +205,8 @@ REVIEW-BACKLOG.md
 # cargo-mutants run output. Regenerated per run and machine-specific.
 /mutants.out/
 /mutants.out.old/
+
+# Tauri sidecar staging. `xtask stage-helper` builds freally-helper
+# for the target triple and drops it here for the bundler to pick up;
+# it is a build output, not a source file.
+/apps/freally-ui/src-tauri/binaries/

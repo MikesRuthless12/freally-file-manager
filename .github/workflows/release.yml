@@ -175,6 +175,18 @@ jobs:
         working-directory: apps/freally-ui
         run: pnpm install --frozen-lockfile
 
+      # `bundle.externalBin` names the privileged helper, so the build
+      # refuses to start until that binary exists — even with
+      # `--no-bundle`, which resolves resources before it skips
+      # bundling. Stage it first. Without the sidecar the shipped
+      # installers carried only `freally-ui.exe`, and every elevated
+      # path failed at runtime with "helper binary not found".
+      # The matrix always passes an explicit --target (the Intel macOS
+      # bundle is cross-compiled on an Apple Silicon runner), so the
+      # triple comes from the matrix, not the host.
+      - name: Stage the privileged helper as a sidecar
+        run: cargo run -p xtask -- stage-helper --target ${{ matrix.target.rust-target }}
+
       - name: Tauri build (release, ${{ matrix.target.bundles }})
         working-directory: apps/freally-ui
         env:

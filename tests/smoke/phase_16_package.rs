@@ -78,6 +78,76 @@ fn read_to_string(path: &Path) -> String {
     fs::read_to_string(path).unwrap_or_else(|e| panic!("reading {}: {e}", path.display()))
 }
 
+/// The privileged helper must be declared as a bundled sidecar.
+///
+/// It was not, and nothing noticed: `freally-helper` built fine, its
+/// own tests passed, and elevation worked from a dev checkout because
+/// both binaries land in the same `target/` directory there. Only the
+/// shipped installers were broken — they carried `freally-ui` and
+/// nothing else, so `elevate::sibling_helper` found no helper beside
+/// the executable and every elevated path (elevated-retry on a
+/// permission-denied copy, shell-extension install/uninstall, hardware
+/// secure-erase) failed in the field with "helper binary not found".
+///
+/// Asserting on the manifest catches a regression without building an
+/// installer: drop the `externalBin` entry and the shipped artifact
+/// silently loses the helper again.
+#[test]
+fn tauri_conf_bundles_the_privileged_helper() {
+    let root = repo_root();
+    let conf = read_to_string(&root.join("apps/freally-ui/src-tauri/tauri.conf.json"));
+    let v: serde_json::Value = serde_json::from_str(&conf).expect("tauri.conf.json parses");
+
+    let external = v["bundle"]["externalBin"]
+        .as_array()
+        .expect("bundle.externalBin must be declared");
+    assert!(
+        external
+            .iter()
+            .filter_map(serde_json::Value::as_str)
+            .any(|s| s.ends_with("freally-helper")),
+        "the helper must be bundled as a sidecar; got {external:?}"
+    );
+
+    // Tauri resolves the entry by appending the target triple, so the
+    // declared path must not already carry one, or an extension.
+    for entry in external.iter().filter_map(serde_json::Value::as_str) {
+        assert!(
+            !entry.ends_with(".exe"),
+            "externalBin entries are triple-suffixed by Tauri, not spelled out \
+             per platform: {entry}"
+        );
+    }
+}
+
+/// Every workflow that builds the app has to stage the sidecar first.
+///
+/// `--no-bundle` does not skip this: Tauri resolves declared resources
+/// before it decides not to bundle, so a build with no staged helper
+/// fails outright with "resource path ... does not exist".
+#[test]
+fn every_build_workflow_stages_the_sidecar() {
+    let root = repo_root();
+    for wf in ["ci.yml", "release.yml"] {
+        let path = root.join(".github").join("workflows").join(wf);
+        let text = read_to_string(&path);
+        if !text.contains("tauri build") {
+            continue;
+        }
+        assert!(
+            text.contains("stage-helper"),
+            "{wf} runs `tauri build` but never stages the helper sidecar"
+        );
+    }
+
+    // The local runner mirrors CI, so it needs the same step.
+    let local = read_to_string(&root.join("scripts").join("ci-local.mjs"));
+    assert!(
+        local.contains("stage-helper"),
+        "scripts/ci-local.mjs must stage the helper before `tauri build`"
+    );
+}
+
 #[test]
 fn release_workflow_has_no_live_paid_tokens() {
     let root = repo_root();

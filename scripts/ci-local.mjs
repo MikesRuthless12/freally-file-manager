@@ -39,7 +39,7 @@
 //   --rust-only  run only the Rust checks (skip the slow Tauri build)
 //   --ui-only    run only the UI / Tauri build check
 //   --install    (re)install UI deps first: pnpm install --frozen-lockfile
-import { spawn, spawnSync } from "node:child_process";
+import { execSync, spawn, spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -60,6 +60,18 @@ const childEnv = { ...process.env, CARGO_INCREMENTAL: "0" };
 
 // Pass the whole probe as one shell string (not an args array) — with shell:true
 // an args array triggers a Node deprecation warning and isn't escaped anyway.
+// The Rust host triple, for staging the Tauri sidecar. Read from rustc
+// rather than mapped from process.platform so it stays right on hosts
+// where those disagree (musl, 32-bit toolchain on a 64-bit OS).
+function hostTriple() {
+  const line = execSync("rustc -vV", { encoding: "utf8" })
+    .split("\n")
+    .map((l) => l.trim())
+    .find((l) => l.startsWith("host: "));
+  if (!line) throw new Error("could not read the host triple from `rustc -vV`");
+  return line.slice("host: ".length).trim();
+}
+
 function have(commandLine) {
   return spawnSync(commandLine, { stdio: "ignore", shell: true }).status === 0;
 }
@@ -93,6 +105,16 @@ const auditIgnores = [
 
 if (!uiOnly && hasRust) {
   // job: rustfmt
+  // FIRST, ahead of clippy and test. Tauri validates
+  // `bundle.externalBin` inside the freally-ui build script, so every
+  // cargo invocation that touches that crate — not just
+  // `tauri build` — fails with "resource path ... does not exist"
+  // until the privileged helper is staged beside it.
+  step(
+    "rust: stage helper sidecar",
+    `cargo run -p xtask -- stage-helper --target ${hostTriple()}`,
+    repoRoot,
+  );
   step("rust: fmt", "cargo fmt --all -- --check", repoRoot);
   // job: i18n-lint — debug, not release. This is a key-parity check over 18
   // locale files, not a compute-bound one, and `--release` meant building the

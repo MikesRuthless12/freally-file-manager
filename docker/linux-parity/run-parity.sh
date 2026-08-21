@@ -39,6 +39,11 @@ step() {
 }
 
 # `--locked` so a container run can never rewrite Cargo.lock for the host.
+# First: Tauri validates bundle.externalBin inside the freally-ui build
+# script, so clippy and test both fail with "resource path ... does not
+# exist" until the privileged helper is staged beside it.
+step "stage-helper" cargo run --locked -p xtask -- stage-helper --target x86_64-unknown-linux-gnu
+
 step "fmt"          cargo fmt --all -- --check
 step "clippy"       cargo clippy --locked --workspace --all-targets -- -D warnings
 step "i18n-lint"    cargo run --locked -p xtask -- i18n-lint
