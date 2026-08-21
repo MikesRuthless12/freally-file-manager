@@ -29,7 +29,7 @@
         <div class="release-head">
           <div class="meta">
             <span class="badge">1.0.0</span>
-            <span class="date">Released August 20, 2026 · Latest</span>
+            <span class="date">Released August 21, 2026 · Latest</span>
           </div>
           <details class="dl">
             <summary>Download <span class="chev">▾</span></summary>
@@ -92,6 +92,11 @@
           <li><strong>Fixed:</strong> a server pinned to a <code>known_hosts</code> file was refused whenever it offered a key type other than the first one listed — which is most of the time on a normally-configured machine.</li>
           <li><strong>Fixed:</strong> ntfy phone notifications arrived as raw code instead of the message.</li>
           <li><strong>Fixed:</strong> Escape closed the wrong dialog when two were stacked, and a few panels of Settings were laid out incorrectly.</li>
+          <li><strong>Fixed (security):</strong> on Linux and macOS, another program running as you could hijack the administrator prompt. It swapped in its own connection while the password dialog was up, so the moment you approved, it — not Freally — was the thing running as administrator, free to read or write any file on the machine. The prompt no longer works in a way that can be swapped like that.</li>
+          <li><strong>Fixed:</strong> uploading a file larger than about 8 MB to Freally&rsquo;s S3 server failed outright. The AWS command-line tool and the AWS libraries split big uploads into parts without being asked, and Freally had no way to accept them. It does now, and it checks that every part is one you actually sent.</li>
+          <li><strong>Fixed:</strong> phone notifications could never arrive. Four separate things were wrong on the way out — for Android the message did not say which phone to deliver to, and for iPhone it was missing the header Apple requires. Both are now sent correctly. You will need to fill in the iOS app identifier under Settings &rarr; Mobile for Apple pushes.</li>
+          <li><strong>Fixed:</strong> on Windows and macOS, two names differing only in capitalisation — <code>Photo.jpg</code> and <code>photo.jpg</code> — are one file, but sync treated them as two. It copied each over the other, and a mirror could then delete the survivor. They are one file again.</li>
+          <li>Serving a folder that lives on a network drive no longer lets one slow response hold up every other request.</li>
           <li>Documentation that promised behaviour the code did not have has been corrected rather than left standing.</li>
         </ul>
 
