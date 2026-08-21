@@ -7,7 +7,7 @@
     - settings.mobile.pairings is empty
     - settings.general.mobileOnboardingDismissed is not yet true
 
-  Renders the desktop icon, the install-QR PNG (the QR scans the
+  Renders the app icon from `public/app-icons/`, the install-QR PNG (the QR scans the
   phone's camera straight to the deployed PWA URL — phone tap "Add
   to Home Screen" to install), and two actions:
     - "I have the app, pair now" → opens Settings → Mobile.
@@ -82,7 +82,18 @@
     use:escapeToClose={dismiss}
   >
     <div class="modal">
-      <img src="/icons/icon-128.png" alt="Freally File Manager" class="logo" />
+      <!-- `/app-icons/…`, not `/icons/…`: the latter was never a real
+           path. Nothing under `public/` is called `icons`, and no file
+           named `icon-128.png` exists anywhere in the repo, so this
+           rendered as a broken-image glyph with its alt text beside it
+           every time the modal opened. The app icons that DO reach the
+           webview live in `public/app-icons/`; `src-tauri/icons/` is the
+           bundler's input and is never served. -->
+      <img
+        src="/app-icons/freally-file-manager.png"
+        alt=""
+        class="logo"
+      />
       <h2 id="mobile-onboarding-title">{t("pair-onboarding-title")}</h2>
       <p class="hint">{t("pair-onboarding-body")}</p>
       {#if qrPngBase64}
