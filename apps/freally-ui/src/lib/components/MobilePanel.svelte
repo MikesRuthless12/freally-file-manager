@@ -28,13 +28,36 @@
 
   let { settings = $bindable() }: { settings: SettingsDto | null } = $props();
 
+  /** The install QR — the one `pair-no-device-warning` tells the reader to
+   *  scan. It is a different code from the pairing QR below: this one
+   *  carries the URL for getting the mobile app onto the phone, and the
+   *  pairing QR carries `cthat-pair://<peer-id>?sas=…` and only exists
+   *  once the pair-server is running. The warning promised this one and
+   *  the pane never rendered it, so there was no QR to scan at the point
+   *  the instructions said to scan one. */
+  type MobileOnboardingDto = { url: string; qrPngBase64: string };
+
   let status = $state<MobilePairStatus | null>(null);
+  let installQr = $state<MobileOnboardingDto | null>(null);
   let busy = $state(false);
   let pollHandle: ReturnType<typeof setInterval> | null = null;
 
   onMount(() => {
     void refreshStatus();
+    void loadInstallQr();
   });
+
+  async function loadInstallQr() {
+    try {
+      installQr = (await invoke("mobile_onboarding_qr", {
+        pwaUrl: null,
+      })) as MobileOnboardingDto;
+    } catch (e) {
+      // Non-fatal: the rest of the pane still pairs a phone that already
+      // has the app.
+      console.error("mobile_onboarding_qr", e);
+    }
+  }
 
   onDestroy(() => {
     stopPolling();
@@ -165,6 +188,27 @@
 
     {#if settings.mobile.autoConnect && settings.mobile.pairings.length === 0}
       <p class="hint warn">{t("pair-no-device-warning")}</p>
+    {/if}
+
+    <!-- Gated on `pairEnabled`, not on the warning above: with only
+         "Allow new pairings" ticked the warning does not show, but the
+         phone still needs the app, so the QR still has to be here.
+
+         Hidden once the pair-server is up. From that point the pairing
+         QR renders below, and two unlabelled 200px codes on one screen
+         is worse than none — this is the "get the app" step, that one is
+         the "connect this phone" step, and they are not interchangeable. -->
+    {#if settings.mobile.pairEnabled && settings.mobile.pairings.length === 0 && !status?.serverActive}
+      {#if installQr}
+        <img
+          src={`data:image/png;base64,${installQr.qrPngBase64}`}
+          alt="QR code linking to the mobile companion install page"
+          class="qr"
+        />
+        <p class="addr">{installQr.url}</p>
+      {:else}
+        <p class="hint">{t("pair-onboarding-loading-qr")}</p>
+      {/if}
     {/if}
 
     <p class="addr">

@@ -268,6 +268,13 @@ test.describe("documentation screenshots", () => {
         url: null,
       }),
     });
+    // The Mobile pane fetches the install QR when it mounts. The fixture's
+    // default answers with an empty base64 string, which renders a broken
+    // image, so give it a real one.
+    await tauri.handleValue("mobile_onboarding_qr", {
+      url: "https://github.com/MikesRuthless12/freally-file-manager#mobile-companion",
+      qrPngBase64: FAKE_QR_PNG_BASE64,
+    });
     await seedSettings(tauri);
     const modal = await openSettings(page);
 
