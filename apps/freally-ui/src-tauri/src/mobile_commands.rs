@@ -315,8 +315,15 @@ pub async fn mobile_pair_stop(state: tauri::State<'_, AppState>) -> Result<(), S
 /// builds where the PWA isn't yet hosted).
 #[tauri::command]
 pub fn mobile_onboarding_qr(pwa_url: Option<String>) -> Result<MobileOnboardingDto, String> {
+    // The fallback deep-links the README section that explains how to get
+    // the phone app. GitHub slugifies `### Mobile companion (Phase 37)` to
+    // `mobile-companion-phase-37`; the shorter `#mobile-companion` matched
+    // nothing and silently dropped the reader at the top of a very long
+    // README. Anchors track heading text, so this breaks again if that
+    // heading is renamed — `phase_37_mobile.rs` pins it.
     let url = pwa_url.filter(|s| !s.is_empty()).unwrap_or_else(|| {
-        "https://github.com/MikesRuthless12/freally-file-manager#mobile-companion".to_string()
+        "https://github.com/MikesRuthless12/freally-file-manager#mobile-companion-phase-37"
+            .to_string()
     });
     let png = generate_qr_png(&url, 8).map_err(|e| format!("qr: {e}"))?;
     Ok(MobileOnboardingDto {

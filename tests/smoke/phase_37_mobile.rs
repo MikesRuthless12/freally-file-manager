@@ -266,6 +266,54 @@ fn case06_phase_37_fluent_keys_present_in_every_locale() {
     }
 }
 
+/// The onboarding QR's fallback URL deep-links a README heading, and a
+/// GitHub anchor is derived from the heading text — so renaming the
+/// heading silently breaks the link with no compile or test failure. It
+/// had already drifted once: the URL said `#mobile-companion` while the
+/// heading had become `### Mobile companion (Phase 37)`, so every scan
+/// landed at the top of a very long README instead of the section that
+/// explains how to install the phone app.
+///
+/// Slugification here mirrors GitHub's: lowercase, drop anything that is
+/// not alphanumeric / space / hyphen, then spaces to hyphens.
+#[test]
+fn case07_onboarding_qr_anchor_matches_a_real_readme_heading() {
+    let root = locate_locales_dir()
+        .and_then(|p| p.parent().map(PathBuf::from))
+        .expect("locate repo root");
+
+    let readme = fs::read_to_string(root.join("README.md")).expect("read README.md");
+    let source = fs::read_to_string(
+        root.join("apps/freally-ui/src-tauri/src/mobile_commands.rs"),
+    )
+    .expect("read mobile_commands.rs");
+
+    let anchor = source
+        .split_once("freally-file-manager#")
+        .and_then(|(_, rest)| rest.split('"').next())
+        .expect("onboarding QR fallback URL carries an anchor")
+        .to_string();
+
+    let slugs: Vec<String> = readme
+        .lines()
+        .filter_map(|l| l.trim_start().strip_prefix('#'))
+        .map(|h| {
+            let text = h.trim_start_matches('#').trim().to_lowercase();
+            let cleaned: String = text
+                .chars()
+                .filter(|c| c.is_alphanumeric() || *c == ' ' || *c == '-')
+                .collect();
+            cleaned.split_whitespace().collect::<Vec<_>>().join("-")
+        })
+        .collect();
+
+    assert!(
+        slugs.iter().any(|s| *s == anchor),
+        "the onboarding QR points at `#{anchor}`, which is not a heading in README.md — \
+         a scan would land at the top of the file. Headings present: {slugs:?}"
+    );
+}
+
 fn locate_locales_dir() -> Option<PathBuf> {
     let mut cur = std::env::current_dir().ok()?;
     for _ in 0..6 {
