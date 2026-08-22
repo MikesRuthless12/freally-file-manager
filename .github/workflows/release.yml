@@ -272,17 +272,19 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           fail_on_unmatched_files: false
-          # Auto-generate the release body from merged PRs/commits on
-          # creation. docs/CHANGELOG.md is deliberately untracked (IP
-          # policy), so the release body is the release-notes source of
-          # record — publish-updater-manifest snapshots it into
-          # latest.json `notes` (shown by the in-app update dialog) right
-          # after the build finishes. Note: that snapshot is taken from
-          # the body as it exists at build time, so to curate the notes
-          # users see, edit the tag's release *description* and re-run the
-          # "Publish updater manifest" job — a later manual edit alone
-          # does not refresh latest.json.
-          generate_release_notes: true
+          # NOT `generate_release_notes` — this step runs once per build
+          # target, and each run appended another copy of the generated
+          # notes to the same release. v1.0.0 shipped with
+          # "**Full Changelog**: …" four times over, on the GitHub
+          # release page and in the in-app Updates pane, which reads the
+          # body verbatim.
+          #
+          # The body is written exactly once by publish-updater-manifest
+          # below, which runs after all four builds. That job is also
+          # what snapshots the body into latest.json `notes`, so the two
+          # cannot drift. To curate what users see, edit the release
+          # description and re-run that job.
+          generate_release_notes: false
           # Explicit rather than relying on the action default: this tag
           # is what /releases/latest and the docs-site download buttons
           # resolve to, and the in-app updater reads latest.json from that
@@ -315,6 +317,35 @@ jobs:
     permissions:
       contents: write
     steps:
+      # One set of release notes, written once.
+      #
+      # The build job used to do this via `generate_release_notes`, but
+      # it runs per target, so the notes landed four times. This job has
+      # `needs: build` and no matrix, so it runs exactly once — and it
+      # is already the thing that copies the body into latest.json, so
+      # writing the body here keeps the page and the in-app notes
+      # identical by construction.
+      #
+      # Only fills an empty body: a description edited by hand before
+      # this runs is the curated one and must win.
+      - name: Write the release notes (once)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          existing="$(gh release view "$TAG" -R "$REPO" --json body --jq .body)"
+          if [ -n "${existing//[[:space:]]/}" ]; then
+            echo "release body already set (${#existing} chars) — leaving it alone"
+            exit 0
+          fi
+          notes="$(gh api "repos/$REPO/releases/generate-notes" \
+            -f tag_name="$TAG" --jq .body)"
+          printf %s "$notes" > release-notes.md
+          gh release edit "$TAG" -R "$REPO" --notes-file release-notes.md
+          echo "wrote $(wc -c < release-notes.md) bytes of release notes"
+
       - name: Generate latest.json from the signed release assets
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

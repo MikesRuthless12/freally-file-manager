@@ -24,7 +24,26 @@
 <script lang="ts">
   import { save as saveDialog, open as openDialog } from "@tauri-apps/plugin-dialog";
   import { escapeToClose } from "../a11y";
+  import { isOpenableUrl, parseReleaseNotes } from "../release-notes";
   import { invoke } from "@tauri-apps/api/core";
+
+  /// Hand a release-notes link to the OS browser.
+  ///
+  /// Never navigates the webview: this window IS the app, so following
+  /// a link in place would replace it with a web page and strand the
+  /// user. Re-checks the scheme even though `parseReleaseNotes` only
+  /// emits http(s) — the notes are remote text, so the click path is
+  /// guarded on its own terms rather than by trusting its caller.
+  async function openReleaseLink(href: string) {
+    if (!isOpenableUrl(href)) return;
+    try {
+      const opener = await import("@tauri-apps/plugin-opener");
+      await opener.openUrl(href);
+    } catch {
+      // No opener (browser harness, or the plugin is unavailable) —
+      // the URL is still on screen to copy.
+    }
+  }
 
   import Icon from "../icons/Icon.svelte";
   import MobilePanel from "./MobilePanel.svelte";
@@ -1872,7 +1891,22 @@
                   {/if}
                 </div>
                 {#if lastCheck.notes}
-                  <p class="hint notes">{lastCheck.notes}</p>
+                  <!-- Segments, not `{@html}`: the notes are remote
+                       text, and rendering each piece through ordinary
+                       interpolation means no markup can come out of
+                       them at all. -->
+                  <p class="hint notes">
+                    {#each parseReleaseNotes(lastCheck.notes) as seg}
+                      {#if seg.kind === "link"}
+                        <button
+                          type="button"
+                          class="linkish"
+                          title={seg.href}
+                          onclick={() => openReleaseLink(seg.href)}
+                        >{seg.href}</button>
+                      {:else}{seg.value}{/if}
+                    {/each}
+                  </p>
                 {/if}
                 {#if lastCheck.isNewer}
                   <div class="row end">
@@ -2692,6 +2726,24 @@
     color: inherit;
   }
 
+  /* A link rendered as a button so it cannot navigate the webview —
+     the click handler hands the URL to the OS browser instead. Styled
+     to read as a link because that is what it is to the user. */
+  .linkish {
+    background: none;
+    border: 0;
+    padding: 0;
+    font: inherit;
+    color: var(--accent, #2563eb);
+    text-decoration: underline;
+    cursor: pointer;
+    word-break: break-all;
+    text-align: left;
+  }
+  .linkish:hover,
+  .linkish:focus-visible {
+    text-decoration-thickness: 2px;
+  }
   .hint {
     margin: 0;
     font-size: 11px;
