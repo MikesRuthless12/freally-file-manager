@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Freally File Manager v1.0.0",
+  "productName": "Freally File Manager",
   "version": "1.0.0",
   "identifier": "com.freally.filemanager",
   "mainBinaryName": "freally-ui",

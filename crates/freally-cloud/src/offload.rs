@@ -117,11 +117,9 @@ impl OffloadOpts {
 pub fn render_cloudinit_template(src: &Backend, dst: &Backend, opts: &OffloadOpts) -> String {
     let job = sanitize_label(&opts.job_name);
     let release = sanitize_label(&opts.freally_release);
-    // The Linux artifact name carries the version twice: once inside
-    // `productName` (which itself includes the `v` prefix) and once from
-    // Tauri's own version field —
-    // `Freally.File.Manager.v1.0.0_1.0.0_amd64.AppImage`. So the tag
-    // and the bare version are both needed to address it.
+    // The release tag carries a `v` prefix (`v1.0.0`) and the artifact
+    // name does not (`Freally.File.Manager_1.0.0_amd64.AppImage`), so the
+    // tag addresses the release and the bare version addresses the file.
     let version = release.strip_prefix('v').unwrap_or(&release);
     let watchdog_minutes = opts.self_destruct_minutes.max(1);
     let cmd = render_copy_command(src, dst);
@@ -145,7 +143,7 @@ write_files:
       # libfuse2; APPIMAGE_EXTRACT_AND_RUN makes the runtime unpack to a
       # temp dir instead, so no kernel module and no extra package.
       export APPIMAGE_EXTRACT_AND_RUN=1
-      curl -fsSL \"https://github.com/MikesRuthless12/freally-file-manager/releases/download/{release}/Freally.File.Manager.{release}_{version}_amd64.AppImage\" -o /usr/local/bin/freally
+      curl -fsSL \"https://github.com/MikesRuthless12/freally-file-manager/releases/download/{release}/Freally.File.Manager_{version}_amd64.AppImage\" -o /usr/local/bin/freally
       chmod +x /usr/local/bin/freally
       {cmd}
       shutdown -h +{watchdog_minutes}
@@ -577,12 +575,11 @@ mod tests {
             out.contains("github.com/MikesRuthless12/freally-file-manager/releases/download/"),
             "template must point at the real repository:\n{out}"
         );
-        // Exactly the name the Linux bundler emits — the version appears
-        // twice because `productName` carries the `v` prefix and Tauri
-        // appends its own version field.
+        // Exactly the name the Linux bundler emits: `productName` with
+        // spaces dotted, then Tauri's own version field.
         assert!(
             out.contains(&format!(
-                "Freally.File.Manager.v{version}_{version}_amd64.AppImage"
+                "Freally.File.Manager_{version}_amd64.AppImage"
             )),
             "template must name the real AppImage asset:\n{out}"
         );
