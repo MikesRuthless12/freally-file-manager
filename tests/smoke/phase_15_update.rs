@@ -142,6 +142,57 @@ async fn fetches_and_parses_manifest_within_time_bound() {
     }
 }
 
+/// The shipped default endpoint, fetched for real.
+///
+/// `#[ignore]` because it needs the network and a published release —
+/// neither belongs in a gate that has to pass offline and on a fork.
+/// Run it by hand when touching the updater, or to answer "is the
+/// live manifest still the shape we parse?":
+///
+/// ```text
+/// cargo test -p freally-ui --test phase_15_update -- --ignored
+/// ```
+///
+/// This is the check that would have caught the shipped bug: the
+/// endpoint was `https://` while the client spoke only plain HTTP, and
+/// the host it named served nothing, so "Check for updates" failed for
+/// every user on every platform while every offline test stayed green.
+#[tokio::test]
+#[ignore = "hits the network and the published release"]
+async fn the_shipped_endpoint_serves_a_manifest_we_can_parse() {
+    const ENDPOINT: &str = concat!(
+        "https://github.com/MikesRuthless12/freally-file-manager",
+        "/releases/latest/download/latest.json"
+    );
+
+    let manifest = fetch_manifest(ENDPOINT, Duration::from_secs(20))
+        .await
+        .expect("the published manifest must fetch and parse");
+
+    assert!(
+        !manifest.version.is_empty(),
+        "manifest carries a version: {manifest:?}"
+    );
+
+    // The platform key this build would look itself up under has to be
+    // present, or the update check finds a manifest and still tells the
+    // user nothing.
+    let key = freally_ui_lib::updater::current_target_platform();
+    assert!(
+        manifest.platforms.contains_key(&key),
+        "no artifact for {key}; manifest has {:?}",
+        manifest.platforms.keys().collect::<Vec<_>>()
+    );
+
+    let artifact = &manifest.platforms[&key];
+    assert!(
+        artifact.url.starts_with("https://"),
+        "url: {}",
+        artifact.url
+    );
+    assert!(!artifact.signature.is_empty(), "artifact must be signed");
+}
+
 /// The user-visible symptom of the old http-only client: clicking
 /// "Check for updates" produced "manifest url is malformed:
 /// unsupported scheme" against the `https://` endpoint the app ships
