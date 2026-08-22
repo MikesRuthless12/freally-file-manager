@@ -138,35 +138,45 @@
   .modal {
     background: var(--color-panel, #1e293b);
     color: var(--color-fg, #f1f5f9);
-    padding: 1.5rem;
+    padding: 1.25rem;
     border-radius: 0.75rem;
-    max-width: 420px;
+    max-width: 460px;
     width: 100%;
+    /* Never taller than the window it sits in. Without this the modal
+       grows with its content — a longer translation or a taller QR and
+       it reaches the top and bottom edges again, which is what made it
+       read as a full-height page instead of a centred dialog. */
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+    box-sizing: border-box;
     text-align: center;
     box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
   }
   .logo {
-    width: 64px;
-    height: 64px;
-    margin-bottom: 0.75rem;
-    border-radius: 12px;
+    width: 52px;
+    height: 52px;
+    margin-bottom: 0.5rem;
+    border-radius: 10px;
   }
   h2 {
-    margin: 0 0 0.5rem 0;
-    font-size: 1.25rem;
+    margin: 0 0 0.4rem 0;
+    font-size: 1.1rem;
+    line-height: 1.3;
   }
   .hint {
-    margin: 0.5rem 0;
-    font-size: 0.95rem;
+    margin: 0.35rem 0;
+    font-size: 0.875rem;
     line-height: 1.4;
     opacity: 0.85;
   }
   .qr {
-    margin: 1rem auto;
-    width: 220px;
-    height: 220px;
+    /* 150px still scans comfortably from a phone held at arm's length,
+       and it is the single biggest saving in the modal's height. */
+    margin: 0.7rem auto;
+    width: 150px;
+    height: 150px;
     image-rendering: pixelated;
-    border: 4px solid var(--color-border, #475569);
+    border: 3px solid var(--color-border, #475569);
     border-radius: 8px;
   }
   .addr {
@@ -179,12 +189,12 @@
   .actions {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    margin-top: 1rem;
+    gap: 0.45rem;
+    margin-top: 0.75rem;
   }
   .actions button {
     width: 100%;
-    padding: 0.75rem 1rem;
+    padding: 0.6rem 1rem;
     border-radius: 0.5rem;
     border: 0;
     cursor: pointer;
